@@ -1,0 +1,190 @@
+# Glasshouse institution registry.
+# Adding ANY filer = one entry here. `cik` is the 13-F filing CIK (the manager /
+# registered adviser, not always the top-level holding company). `npx_ciks` lists
+# the fund trusts / registrants that file N-PX vote reports for this institution.
+# CIKs verified against SEC EDGAR 2026-05-29 (carried from predecessor registry).
+
+institutions:
+  jpmorgan:
+    display_name: "JPMorgan Chase & Co."
+    short_name: "JPMorgan"
+    cik: "0000019617"
+    country: "USA"
+    type: "bank"
+    aum_usd_tr: 3.4
+    notes: "Largest US bank by assets; 13-F filed by JPMorgan Chase & Co."
+
+  blackrock:
+    display_name: "BlackRock Inc."
+    short_name: "BlackRock"
+    cik: "0001364742"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 10.0
+    notes: "World's largest asset manager by AUM."
+    npx_ciks:
+      - cik: "1100663"
+        name: "iShares Trust"
+        validated: "2026-06-10"
+
+  vanguard:
+    display_name: "The Vanguard Group, Inc."
+    short_name: "Vanguard"
+    cik: "0000102909"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 8.7
+    notes: "Mutual fund giant; client-owned structure."
+
+  morgan_stanley:
+    display_name: "Morgan Stanley"
+    short_name: "Morgan Stanley"
+    cik: "0000895421"
+    country: "USA"
+    type: "bank"
+    aum_usd_tr: 1.4
+    notes: "Investment bank and wealth management; CIK is Morgan Stanley."
+
+  state_street:
+    display_name: "State Street Corporation"
+    short_name: "State Street"
+    cik: "0000093751"
+    country: "USA"
+    type: "bank"
+    aum_usd_tr: 4.1
+    notes: "Custody bank; SSGA is the asset management arm."
+
+  goldman_sachs:
+    display_name: "Goldman Sachs Group Inc."
+    short_name: "Goldman Sachs"
+    cik: "0000886982"
+    country: "USA"
+    type: "bank"
+    aum_usd_tr: 2.8
+    notes: "Investment bank; also large 13-F filer through asset management division."
+
+  bank_of_america:
+    display_name: "Bank of America Corporation"
+    short_name: "Bank of America"
+    cik: "0000070858"
+    country: "USA"
+    type: "bank"
+    aum_usd_tr: 1.8
+    notes: "Major US bank; 13-F filed by Bank of America Corp."
+
+  citigroup:
+    display_name: "Citigroup Inc."
+    short_name: "Citi"
+    cik: "0000831001"
+    country: "USA"
+    type: "bank"
+    aum_usd_tr: 1.1
+    notes: "Global bank; 13-F filed by Citigroup Inc."
+
+  wells_fargo:
+    display_name: "Wells Fargo & Company"
+    short_name: "Wells Fargo"
+    cik: "0000072971"
+    country: "USA"
+    type: "bank"
+    aum_usd_tr: 2.0
+    notes: "Major US bank; 13-F filed by Wells Fargo & Company. Note: Wells Fargo withdrew from Net Zero Banking Alliance in Jan 2024."
+
+  fidelity:
+    display_name: "Fidelity Investments (FMR LLC)"
+    short_name: "Fidelity"
+    cik: "0000315066"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 4.5
+    notes: "Private fund manager; 13-F filed as FMR LLC."
+
+  t_rowe_price:
+    display_name: "T. Rowe Price Investment Management, Inc."
+    short_name: "T. Rowe Price"
+    cik: "0001897612"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 1.5
+    notes: "Active asset manager; parent is T. Rowe Price Group Inc. (TROW). 13-F filed by T. Rowe Price Investment Management, Inc. (CIK 0001897612), the registered investment adviser entity formed 2021."
+
+  invesco:
+    display_name: "Invesco Ltd."
+    short_name: "Invesco"
+    cik: "0000914208"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 1.7
+    notes: "Asset manager; NYSE-listed (IVZ). 13-F filed by Invesco Ltd. (CIK 0000914208)."
+
+  schwab:
+    display_name: "Charles Schwab Trust Company"
+    short_name: "Schwab"
+    cik: "0001789219"
+    country: "USA"
+    type: "broker_custodian"
+    aum_usd_tr: 8.5
+    notes: "Brokerage and custodian; SCHW-listed. 13-F filed by Charles Schwab Trust Company (CIK 0001789219)."
+
+  ubs:
+    display_name: "UBS Group AG"
+    short_name: "UBS"
+    cik: "0001610520"
+    country: "CHE"
+    type: "bank"
+    aum_usd_tr: 3.9
+    notes: "Swiss bank; acquired Credit Suisse (2023). 13-F filed through US securities filing subsidiary."
+
+  bnp_paribas:
+    display_name: "BNP Paribas Asset Management Holding S.A."
+    short_name: "BNP Paribas"
+    cik: "0001520354"
+    country: "FRA"
+    type: "asset_manager"
+    aum_usd_tr: 0.7
+    notes: "French bank's asset management arm; 13-F filed by BNP Paribas Asset Management Holding S.A. (CIK 0001520354)."
+
+  franklin_templeton:
+    display_name: "Franklin Resources Inc. (Franklin Templeton)"
+    short_name: "Franklin Templeton"
+    cik: "0000038777"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 1.5
+    notes: "Global asset manager; NYSE-listed (BEN). 13-F filed by Franklin Resources Inc. (CIK 0000038777)."
+
+  bny_mellon:
+    display_name: "Bank of New York Mellon Corp"
+    short_name: "BNY Mellon"
+    cik: "0001390777"
+    country: "USA"
+    type: "bank"
+    aum_usd_tr: 2.0
+    notes: "Custody bank and asset manager; NYSE-listed (BK). 13-F filed by Bank of New York Mellon Corp (CIK 0001390777)."
+
+  deutsche_bank:
+    display_name: "Deutsche Bank AG"
+    short_name: "Deutsche Bank"
+    cik: "0000948046"
+    country: "DEU"
+    type: "bank"
+    aum_usd_tr: 1.0
+    notes: "German bank; DWS Group is the asset management arm (majority-owned, publicly listed on Frankfurt Stock Exchange). 13-F filed by Deutsche Bank AG (CIK 0000948046)."
+
+  northern_trust:
+    display_name: "Northern Trust Corporation"
+    short_name: "Northern Trust"
+    cik: "0000073124"
+    country: "USA"
+    type: "bank"
+    aum_usd_tr: 1.2
+    notes: "Custody bank and wealth manager; NASDAQ-listed (NTRS)."
+
+  pimco:
+    display_name: "Allianz Asset Management GmbH (PIMCO)"
+    short_name: "PIMCO"
+    cik: "0001535323"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 1.9
+    notes: "Fixed income specialist; subsidiary of Allianz SE. 13-F filed by Allianz Asset Management GmbH (CIK 0001535323), the Allianz parent entity that covers PIMCO's US institutional holdings."

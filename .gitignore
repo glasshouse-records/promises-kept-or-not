@@ -1,0 +1,14 @@
+# Local data artifacts (the ledger DB is published as a release/Datasette artifact, not committed)
+data/
+!data/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+build/
+dist/
+
+# OS
+.DS_Store

@@ -1,0 +1,898 @@
+{
+ "siemens": [
+  {
+   "date": "2008-12-15",
+   "penalty_usd": 800000000,
+   "description": "Siemens AG (parent) entered DPA; three subsidiaries pleaded guilty to FCPA charges \u2014 systematic bribery of government officials in Argentina, Bangladesh, Iraq, Nigeria, Venezuela, and other countries. $800M total penalty (DOJ $448M + SEC $350M). Largest FCPA settlement at time of resolution.",
+   "doj_ref": "DOJ 08-1105"
+  }
+ ],
+ "halliburton": [
+  {
+   "date": "2009-02-11",
+   "penalty_usd": 559000000,
+   "description": "KBR Inc. (Halliburton subsidiary) pleaded guilty to FCPA violations \u2014 $180M in bribes to Nigerian government officials for LNG contracts.",
+   "doj_ref": "DOJ 09-048"
+  }
+ ],
+ "kbr": [
+  {
+   "date": "2009-02-11",
+   "penalty_usd": 402000000,
+   "description": "KBR Inc. pleaded guilty to FCPA violations for bribery of Nigerian officials. Halliburton (parent) paid additional $177M.",
+   "doj_ref": "DOJ 09-048"
+  }
+ ],
+ "bae systems": [
+  {
+   "date": "2010-03-01",
+   "penalty_usd": 400000000,
+   "description": "BAE Systems plc entered DPA for conspiracy to make payments to government officials in Saudi Arabia, Czech Republic, Hungary, and other countries.",
+   "doj_ref": "DOJ 10-209"
+  }
+ ],
+ "alcoa": [
+  {
+   "date": "2014-01-09",
+   "penalty_usd": 384000000,
+   "description": "Alcoa World Alumina LLC pleaded guilty to FCPA violations \u2014 $110M in bribes to Bahraini officials through a middleman.",
+   "doj_ref": "DOJ 14-015"
+  }
+ ],
+ "avon products": [
+  {
+   "date": "2014-12-17",
+   "penalty_usd": 135000000,
+   "description": "Avon Products Inc. entered DPA for FCPA violations \u2014 payments to Chinese government officials.",
+   "doj_ref": "DOJ 14-1364"
+  }
+ ],
+ "hewlett-packard": [
+  {
+   "date": "2014-04-09",
+   "penalty_usd": 108000000,
+   "description": "Hewlett-Packard enterprise subsidiaries (HP Russia ZAO, ZAO HP, HP Polska sp. z o.o., HP Mexico S. de R.L. de C.V.) pleaded guilty to criminal FCPA charges \u2014 bribery of government officials in Russia, Poland, and Mexico. Parent company HP Co. was the entity of record at time of action (pre-2015 split). After the 2015 split, these enterprise operations passed to Hewlett Packard Enterprise (HPE), not HP Inc. (which inherited consumer/printer businesses).",
+   "doj_ref": "DOJ 14-371"
+  }
+ ],
+ "hewlett packard enterprise": [
+  {
+   "date": "2014-04-09",
+   "penalty_usd": 108000000,
+   "description": "Hewlett Packard Enterprise is the successor entity to the enterprise services divisions of Hewlett-Packard Co. that resolved FCPA charges in 2014 (DOJ 14-371). HP enterprise subsidiaries in Russia, Poland, and Mexico pleaded guilty to bribing government officials. HPE was incorporated in 2015 when HP split; it inherited the relevant operations.",
+   "doj_ref": "DOJ 14-371"
+  }
+ ],
+ "jpmorgan chase": [
+  {
+   "date": "2016-11-17",
+   "penalty_usd": 264000000,
+   "description": "JPMorgan Chase & Co. entered DPA for FCPA violations \u2014 'Sons & Daughters' program hiring relatives of Chinese officials to win investment banking business.",
+   "doj_ref": "DOJ 16-1256"
+  }
+ ],
+ "jpmorgan": [
+  {
+   "date": "2016-11-17",
+   "penalty_usd": 264000000,
+   "description": "JPMorgan Chase & Co. entered DPA for FCPA violations \u2014 'Sons & Daughters' program hiring relatives of Chinese officials.",
+   "doj_ref": "DOJ 16-1256"
+  }
+ ],
+ "pfizer": [
+  {
+   "date": "2012-08-07",
+   "penalty_usd": 60300000,
+   "description": "Pfizer Inc. entered NPA for FCPA violations \u2014 improper payments to health care providers in Bulgaria, Croatia, Czech Republic, Hungary, Kazakhstan, Russia, Serbia.",
+   "doj_ref": "DOJ 12-630"
+  }
+ ],
+ "johnson & johnson": [
+  {
+   "date": "2011-04-08",
+   "penalty_usd": 70000000,
+   "description": "Johnson & Johnson entered DPA for FCPA violations \u2014 payments to public doctors in Greece, Poland, Romania, and to Iraqi officials.",
+   "doj_ref": "DOJ 11-433"
+  }
+ ],
+ "oracle": [
+  {
+   "date": "2012-08-16",
+   "penalty_usd": 2000000,
+   "description": "Oracle Corp reached SEC civil settlement (no criminal charges) \u2014 Oracle India subsidiary created a slush fund used to bribe Indian government officials to obtain technology contracts. $2M civil penalty.",
+   "doj_ref": "SEC Rel. 34-67574"
+  },
+  {
+   "date": "2022-09-27",
+   "penalty_usd": 23000000,
+   "description": "Oracle Corp reached SEC civil settlement (no criminal charges) \u2014 subsidiary employees bribed government officials in Turkey, UAE, and India between 2016-2019 to obtain technology contracts. $23M civil penalty (most recent of two Oracle FCPA enforcement actions).",
+   "doj_ref": "SEC Rel. 34-95971"
+  }
+ ],
+ "microsoft": [
+  {
+   "date": "2019-07-22",
+   "penalty_usd": 25300000,
+   "description": "Microsoft Corp entered NPA for FCPA violations \u2014 improper payments to government officials in Hungary, Saudi Arabia, Thailand, and Turkey.",
+   "doj_ref": "DOJ 19-777"
+  }
+ ],
+ "cognizant": [
+  {
+   "date": "2019-02-15",
+   "penalty_usd": 25000000,
+   "description": "Cognizant Technology Solutions Corp entered DPA for FCPA violations \u2014 bribery of Indian government officials to obtain construction permits.",
+   "doj_ref": "DOJ 19-143"
+  }
+ ],
+ "qualcomm": [
+  {
+   "date": "2016-03-01",
+   "penalty_usd": 7500000,
+   "description": "Qualcomm Incorporated entered NPA for FCPA violations \u2014 provided employment and paid internships to relatives of Chinese government officials.",
+   "doj_ref": "DOJ 16-223"
+  }
+ ],
+ "walmart": [
+  {
+   "date": "2019-06-20",
+   "penalty_usd": 282000000,
+   "description": "Walmart Inc. entered DPA for FCPA violations \u2014 bribery schemes in Mexico, Brazil, China, and India conducted by subsidiaries.",
+   "doj_ref": "DOJ 19-583"
+  }
+ ],
+ "wal-mart": [
+  {
+   "date": "2019-06-20",
+   "penalty_usd": 282000000,
+   "description": "Walmart Inc. entered DPA for FCPA violations \u2014 bribery in Mexico, Brazil, China, India.",
+   "doj_ref": "DOJ 19-583"
+  }
+ ],
+ "ericsson": [
+  {
+   "date": "2019-10-24",
+   "penalty_usd": 1060000000,
+   "description": "Telefonaktiebolaget LM Ericsson entered DPA for FCPA violations \u2014 bribery in Djibouti, China, Vietnam, Indonesia, and Kuwait.",
+   "doj_ref": "DOJ 19-1119"
+  }
+ ],
+ "goldman sachs": [
+  {
+   "date": "2020-10-22",
+   "penalty_usd": 2900000000,
+   "description": "Goldman Sachs Group Inc. entered DPA (parent company, no admission of guilt); Goldman Sachs (Malaysia) Sdn Bhd (subsidiary) pleaded guilty \u2014 1MDB sovereign wealth fund fraud; ~$1.6B in bribes paid to Malaysian and Abu Dhabi government officials to obtain bond underwriting mandates. $2.9B total penalty (DOJ $2.3B + other regulators). Largest FCPA penalty against a US financial institution.",
+   "doj_ref": "DOJ 20-1049"
+  }
+ ],
+ "fresenius": [
+  {
+   "date": "2019-03-29",
+   "penalty_usd": 231000000,
+   "description": "Fresenius Medical Care AG entered DPA for FCPA violations \u2014 bribery in West Africa, Saudi Arabia, Angola, and other countries.",
+   "doj_ref": "DOJ 19-268"
+  }
+ ],
+ "stryker": [
+  {
+   "date": "2013-12-20",
+   "penalty_usd": 13200000,
+   "description": "Stryker Corp entered NPA for FCPA violations \u2014 improper payments to government-employed doctors in Argentina, Greece, Mexico, Poland, and Romania.",
+   "doj_ref": "DOJ 13-1278"
+  }
+ ],
+ "tyco international": [
+  {
+   "date": "2012-09-24",
+   "penalty_usd": 26000000,
+   "description": "Tyco International Ltd. entered DPA for FCPA violations \u2014 bribery schemes across 11 countries.",
+   "doj_ref": "DOJ 12-1230"
+  }
+ ],
+ "eli lilly": [
+  {
+   "date": "2012-12-20",
+   "penalty_usd": 29400000,
+   "description": "Eli Lilly and Company entered NPA for FCPA violations \u2014 improper payments to government-employed physicians in Brazil, China, Poland, and Russia.",
+   "doj_ref": "DOJ 12-1418"
+  }
+ ],
+ "astrazeneca": [
+  {
+   "date": "2016-08-30",
+   "penalty_usd": 5500000,
+   "description": "AstraZeneca Plc. reached FCPA settlement with SEC \u2014 improper payments to government doctors in Russia and China.",
+   "doj_ref": "SEC Rel. 34-78722"
+  }
+ ],
+ "merck": [
+  {
+   "date": "2020-02-25",
+   "penalty_usd": 8300000,
+   "description": "Merck Sharp & Dohme Corp. entered NPA for FCPA violations \u2014 improper payments to government employees at state-owned hospitals in Russia, Ukraine.",
+   "doj_ref": "DOJ 20-174"
+  }
+ ],
+ "abbott laboratories": [
+  {
+   "date": "2012-10-03",
+   "penalty_usd": 6800000,
+   "description": "Abbott Laboratories entered NPA for FCPA violations \u2014 improper payments to doctors employed by state-owned hospitals in Greece.",
+   "doj_ref": "DOJ 12-1261"
+  }
+ ],
+ "smith & nephew": [
+  {
+   "date": "2012-02-06",
+   "penalty_usd": 22800000,
+   "description": "Smith & Nephew plc entered DPA for FCPA violations \u2014 payments to Greek government employed surgeons.",
+   "doj_ref": "DOJ 12-117"
+  }
+ ],
+ "baxter international": [
+  {
+   "date": "2010-01-27",
+   "penalty_usd": 3600000,
+   "description": "Baxter International Inc. entered NPA for FCPA violations \u2014 improper payments to officials in Argentina, Germany, Poland.",
+   "doj_ref": "DOJ 10-087"
+  }
+ ],
+ "biogen": [
+  {
+   "date": "2020-09-26",
+   "penalty_usd": 22600000,
+   "description": "Biogen Inc. paid SEC settlement for FCPA violations \u2014 improper payments to government doctors in Germany.",
+   "doj_ref": "SEC Rel. 34-89970"
+  }
+ ],
+ "general electric": [
+  {
+   "date": "2010-07-27",
+   "penalty_usd": 23400000,
+   "description": "General Electric Co. entered NPA for FCPA violations \u2014 improper payments to Iraqi government officials under the Oil-for-Food Programme.",
+   "doj_ref": "DOJ 10-776"
+  }
+ ],
+ "ge aerospace": [
+  {
+   "date": "2010-07-27",
+   "penalty_usd": 23400000,
+   "description": "General Electric Co. (now GE Aerospace) entered NPA for FCPA violations \u2014 improper payments to Iraqi government officials.",
+   "doj_ref": "DOJ 10-776"
+  }
+ ],
+ "airbus": [
+  {
+   "date": "2020-01-31",
+   "penalty_usd": 800000000,
+   "description": "Airbus SE entered DPA for FCPA violations \u2014 paid bribes through third-party business partners to government officials in Malaysia, Sri Lanka, Taiwan, Indonesia, Ghana, and other countries to obtain commercial aircraft contracts. $800M US portion of a total ~$4B multi-jurisdictional settlement (DOJ, UK SFO, French PNF). Largest aerospace FCPA settlement in history.",
+   "doj_ref": "DOJ 20-072"
+  }
+ ],
+ "mobile telesystems": [
+  {
+   "date": "2019-03-07",
+   "penalty_usd": 850000000,
+   "description": "Mobile TeleSystems PJSC (MTS, Russian telecom with NYSE ADR) entered DPA for FCPA violations \u2014 paid approximately $420M in bribes to Uzbek government officials (including a relative of the President) through shell companies to obtain telecom licenses. $850M total (DOJ $850M \u2014 joint resolution with SEC).",
+   "doj_ref": "DOJ 19-213"
+  }
+ ],
+ "mts pjsc": [
+  {
+   "date": "2019-03-07",
+   "penalty_usd": 850000000,
+   "description": "Mobile TeleSystems (MTS) PJSC entered DPA for FCPA violations \u2014 $420M in bribes to Uzbek officials. $850M total penalty.",
+   "doj_ref": "DOJ 19-213"
+  }
+ ],
+ "glencore": [
+  {
+   "date": "2022-05-24",
+   "penalty_usd": 1100000000,
+   "description": "Glencore plc (Swiss\u2013UK commodities company, London-listed) entered guilty plea for FCPA violations \u2014 paid more than $100M in bribes to government officials in Nigeria, Cameroon, Ivory Coast, Equatorial Guinea, Brazil, and Venezuela to obtain preferential oil allocation and contracts. $1.1B total US DOJ criminal fine. Also resolved related commodity price manipulation charges ($485M CFTC). Largest natural resource company FCPA case.",
+   "doj_ref": "DOJ 22-517"
+  }
+ ],
+ "vimpelcom": [
+  {
+   "date": "2016-02-18",
+   "penalty_usd": 795000000,
+   "description": "VimpelCom Ltd. (now VEON Ltd., Amsterdam-listed telecom with NASDAQ ADR) entered DPA for FCPA violations \u2014 paid approximately $114M in bribes to Uzbek government officials to obtain telecom licenses and regulatory approvals. $795M total US/Netherlands resolution. Company rebranded as VEON Ltd. in 2017.",
+   "doj_ref": "DOJ 16-224"
+  }
+ ],
+ "veon": [
+  {
+   "date": "2016-02-18",
+   "penalty_usd": 795000000,
+   "description": "VEON Ltd. (formerly VimpelCom Ltd.) entered DPA for FCPA violations \u2014 $114M in bribes to Uzbek officials for telecom licenses. $795M US/Netherlands penalty.",
+   "doj_ref": "DOJ 16-224"
+  }
+ ],
+ "alstom": [
+  {
+   "date": "2014-12-22",
+   "penalty_usd": 772000000,
+   "description": "Alstom SA subsidiaries pleaded guilty to FCPA charges \u2014 systematic bribery of government officials in Indonesia, Saudi Arabia, Egypt, the Bahamas, and Taiwan to obtain power plant and transportation contracts worth more than $4B. $772M DOJ criminal fine, the largest FCPA criminal penalty at time of resolution. GE later acquired Alstom's power business (2015).",
+   "doj_ref": "DOJ 14-1540"
+  }
+ ],
+ "teva pharmaceutical": [
+  {
+   "date": "2016-12-22",
+   "penalty_usd": 519000000,
+   "description": "Teva Pharmaceutical Industries Ltd. (Israel-based, NYSE-listed) entered DPA for FCPA violations \u2014 paid approximately $65M in bribes to government officials in Russia, Ukraine, and Mexico to increase pharmaceutical sales. $519M total (DOJ $283M + SEC $236M).",
+   "doj_ref": "DOJ 16-1405"
+  }
+ ],
+ "teva": [
+  {
+   "date": "2016-12-22",
+   "penalty_usd": 519000000,
+   "description": "Teva Pharmaceutical (NYSE: TEVA) entered DPA for FCPA violations \u2014 $65M in bribes to government officials in Russia, Ukraine, Mexico. $519M total penalty.",
+   "doj_ref": "DOJ 16-1405"
+  }
+ ],
+ "societe generale": [
+  {
+   "date": "2018-06-04",
+   "penalty_usd": 585000000,
+   "description": "Soci\u00e9t\u00e9 G\u00e9n\u00e9rale SA (French bank, NYSE ADR) entered DPA for FCPA violations \u2014 paid more than $90M in bribes to Libyan government officials through an intermediary to secure investments from Libya's sovereign wealth funds. $585M total US resolution (DOJ $292.5M + SEC $275.1M).",
+   "doj_ref": "DOJ 18-643"
+  }
+ ],
+ "soci\u00e9t\u00e9 g\u00e9n\u00e9rale": [
+  {
+   "date": "2018-06-04",
+   "penalty_usd": 585000000,
+   "description": "Soci\u00e9t\u00e9 G\u00e9n\u00e9rale SA entered DPA for FCPA violations \u2014 bribes to Libyan sovereign wealth fund officials. $585M total US resolution.",
+   "doj_ref": "DOJ 18-643"
+  }
+ ],
+ "braskem": [
+  {
+   "date": "2016-12-21",
+   "penalty_usd": 957000000,
+   "description": "Braskem S.A. (Brazilian petrochemical company, NYSE-listed) entered DPA for FCPA violations \u2014 paid approximately $250M in bribes to Brazilian government officials and Petrobras executives as part of the 'Lava Jato' (Car Wash) scandal to obtain contracts and preferential pricing. $957M total US/Brazil/Switzerland resolution.",
+   "doj_ref": "DOJ 16-1620"
+  }
+ ],
+ "keppel offshore": [
+  {
+   "date": "2017-12-22",
+   "penalty_usd": 422000000,
+   "description": "Keppel Offshore & Marine Ltd. (Singapore-listed, Keppel Corp subsidiary) entered DPA for FCPA violations \u2014 paid approximately $55M in bribes to Brazilian government officials including Petrobras executives to obtain offshore drilling contracts. $422M total US/Brazil/Singapore resolution.",
+   "doj_ref": "DOJ 17-1565"
+  }
+ ],
+ "keppel": [
+  {
+   "date": "2017-12-22",
+   "penalty_usd": 422000000,
+   "description": "Keppel Corp / Keppel Offshore & Marine entered DPA for FCPA violations \u2014 $55M in bribes to Petrobras officials. $422M total penalty.",
+   "doj_ref": "DOJ 17-1565"
+  }
+ ],
+ "och-ziff": [
+  {
+   "date": "2016-09-29",
+   "penalty_usd": 412000000,
+   "description": "Och-Ziff Capital Management Group (now Blue Owl Capital, NYSE-listed hedge fund) entered DPA for FCPA violations \u2014 paid more than $100M in bribes to government officials in Libya, Chad, Niger, Guinea, and Senegal to obtain sovereign wealth fund investments. $412M total (DOJ $213M + SEC $199M). First US hedge fund charged under FCPA.",
+   "doj_ref": "DOJ 16-1182"
+  }
+ ],
+ "blue owl": [
+  {
+   "date": "2016-09-29",
+   "penalty_usd": 412000000,
+   "description": "Blue Owl Capital Inc. (formerly Och-Ziff Capital Management) \u2014 predecessor Och-Ziff entered FCPA DPA for $412M for bribing African sovereign wealth fund officials; first hedge fund FCPA case.",
+   "doj_ref": "DOJ 16-1182"
+  }
+ ],
+ "total sa": [
+  {
+   "date": "2013-05-29",
+   "penalty_usd": 398000000,
+   "description": "Total S.A. (French integrated oil company, NYSE ADR) entered DPA for FCPA violations \u2014 paid approximately $60M in bribes to an intermediary connected to the Supreme Leader's office in Iran to obtain rights to develop oil fields (South Pars LNG project). $398M total (DOJ $245M + SEC $153M).",
+   "doj_ref": "DOJ 13-634"
+  }
+ ],
+ "totalenergies": [
+  {
+   "date": "2013-05-29",
+   "penalty_usd": 398000000,
+   "description": "TotalEnergies SE (formerly Total S.A., NYSE ADR) entered DPA for FCPA violations \u2014 $60M in bribes to Iranian officials for South Pars oil field rights. $398M total (DOJ $245M + SEC $153M).",
+   "doj_ref": "DOJ 13-634"
+  }
+ ],
+ "technip": [
+  {
+   "date": "2010-06-28",
+   "penalty_usd": 338000000,
+   "description": "Technip S.A. (French engineering, now TechnipFMC, NYSE-listed) entered DPA for FCPA violations \u2014 as part of the TSKJ consortium with Halliburton/KBR, Snamprogetti, and JGC, paid approximately $132M in bribes to Nigerian government officials for Bonny Island LNG plant contracts. $338M total (DOJ $240M + SEC $98M).",
+   "doj_ref": "DOJ 10-783"
+  }
+ ],
+ "technipfmc": [
+  {
+   "date": "2010-06-28",
+   "penalty_usd": 338000000,
+   "description": "TechnipFMC plc (successor to Technip S.A., NYSE/Euronext-listed) \u2014 Technip entered DPA for FCPA violations for Nigeria LNG bribery (TSKJ consortium). $338M total penalty.",
+   "doj_ref": "DOJ 10-783"
+  }
+ ],
+ "snamprogetti": [
+  {
+   "date": "2010-07-07",
+   "penalty_usd": 365000000,
+   "description": "Snamprogetti Netherlands BV (ENI subsidiary) entered DPA for FCPA violations \u2014 as part of the TSKJ consortium, paid ~$132M in bribes to Nigerian government officials for LNG plant contracts. $365M total ENI/Snamprogetti US penalty.",
+   "doj_ref": "DOJ 10-793"
+  }
+ ],
+ "eni": [
+  {
+   "date": "2010-07-07",
+   "penalty_usd": 365000000,
+   "description": "ENI S.p.A. (Italian state-controlled oil major, NYSE ADR) via Snamprogetti subsidiary entered DPA for FCPA violations \u2014 part of TSKJ Nigeria LNG bribery scheme. $365M total penalty.",
+   "doj_ref": "DOJ 10-793"
+  }
+ ],
+ "rolls-royce": [
+  {
+   "date": "2017-01-17",
+   "penalty_usd": 170000000,
+   "description": "Rolls-Royce plc (UK aerospace/defense, London-listed) entered DPA for FCPA violations \u2014 paid bribes to government officials in Thailand, Indonesia, India, Russia, Nigeria, China, and Iraq through intermediaries to obtain defense and energy contracts. $170M US DOJ portion of a total ~$800M multi-jurisdictional settlement (DOJ $170M + UK SFO \u00a3497M + Brazil $25M). NOTE: Separate from Rolls-Royce automotive (luxury cars).",
+   "doj_ref": "DOJ 17-064"
+  }
+ ],
+ "weatherford": [
+  {
+   "date": "2013-11-26",
+   "penalty_usd": 253000000,
+   "description": "Weatherford International Ltd. (oilfield services) entered DPA for FCPA violations \u2014 paid bribes to government officials in Angola, Algeria, Congo, Iraq, Libya, and Kuwait to obtain oilfield services contracts. $253M total (DOJ $153M + SEC $100M).",
+   "doj_ref": "DOJ 13-1353"
+  }
+ ],
+ "weatherford international": [
+  {
+   "date": "2013-11-26",
+   "penalty_usd": 253000000,
+   "description": "Weatherford International \u2014 DPA for FCPA violations, bribes in Angola, Algeria, Congo, Iraq, Libya, Kuwait. $253M total.",
+   "doj_ref": "DOJ 13-1353"
+  }
+ ],
+ "panasonic": [
+  {
+   "date": "2018-04-30",
+   "penalty_usd": 280000000,
+   "description": "Panasonic Avionics Corporation (US subsidiary of Panasonic Corporation, Japan) entered DPA for FCPA violations \u2014 paid bribes to government officials at state-owned airlines and used inflated consulting contracts to obtain in-flight entertainment contracts. $280M total (DOJ $137M + SEC $143M).",
+   "doj_ref": "DOJ 18-521"
+  }
+ ],
+ "embraer": [
+  {
+   "date": "2016-10-24",
+   "penalty_usd": 206000000,
+   "description": "Embraer S.A. (Brazilian aircraft manufacturer, NYSE-listed) entered DPA for FCPA violations \u2014 paid bribes to government officials in Dominican Republic, Saudi Arabia, Mozambique, and India to obtain aircraft sales. $206M total (DOJ $107M + SEC $98M).",
+   "doj_ref": "DOJ 16-1215"
+  }
+ ],
+ "daimler": [
+  {
+   "date": "2010-03-24",
+   "penalty_usd": 185000000,
+   "description": "Daimler AG (German automotive, NYSE ADR, now Mercedes-Benz Group) entered DPA for FCPA violations \u2014 systematic bribery of government officials in 22 countries including Russia, Croatia, Hungary, Latvia, and others to obtain vehicle contracts. $185M total (DOJ $93.6M + SEC $91.4M).",
+   "doj_ref": "DOJ 10-235"
+  }
+ ],
+ "mercedes-benz": [
+  {
+   "date": "2010-03-24",
+   "penalty_usd": 185000000,
+   "description": "Mercedes-Benz Group AG (formerly Daimler AG, NYSE ADR) entered DPA for FCPA violations \u2014 systematic bribery across 22 countries. $185M total penalty.",
+   "doj_ref": "DOJ 10-235"
+  }
+ ],
+ "alcatel-lucent": [
+  {
+   "date": "2010-12-27",
+   "penalty_usd": 137000000,
+   "description": "Alcatel-Lucent S.A. (French telecom equipment company, acquired by Nokia 2016) entered DPA for FCPA violations \u2014 paid more than $130M in bribes to government officials in Honduras, Malaysia, Taiwan, and Costa Rica through consultants to obtain telecom contracts. $137M total (DOJ $45M + SEC $92M).",
+   "doj_ref": "DOJ 10-1517"
+  }
+ ],
+ "nokia": [
+  {
+   "date": "2010-12-27",
+   "penalty_usd": 137000000,
+   "description": "Nokia Corporation (NYSE-listed, Finnish telecom) is successor to Alcatel-Lucent's FCPA DPA via its 2016 acquisition. Alcatel-Lucent paid $130M+ in bribes to officials in Honduras, Malaysia, Taiwan, and Costa Rica. $137M total penalty.",
+   "doj_ref": "DOJ 10-1517"
+  }
+ ],
+ "abb": [
+  {
+   "date": "2010-09-29",
+   "penalty_usd": 58300000,
+   "description": "ABB Ltd. (Swiss\u2013Swedish industrial conglomerate, NYSE-listed) entered DPA for FCPA violations \u2014 paid bribes to officials at state-owned utilities in Mexico, Honduras, Bangladesh, and Angola. $58.3M total (DOJ $19.1M + SEC $39.2M).",
+   "doj_ref": "DOJ 10-1125"
+  },
+  {
+   "date": "2022-03-02",
+   "penalty_usd": 315000000,
+   "description": "ABB Ltd. second FCPA DPA (recidivist \u2014 violated terms of 2010 DPA) \u2014 paid bribes to officials at state-owned utility Eskom in South Africa and to officials in Mozambique and Brazil for power infrastructure contracts. $315M total US/Brazil/South Africa resolution. ABB is a recidivist: two FCPA cases totalling $373M.",
+   "doj_ref": "DOJ 22-233"
+  }
+ ],
+ "abb ltd": [
+  {
+   "date": "2010-09-29",
+   "penalty_usd": 58300000,
+   "description": "ABB Ltd first FCPA DPA \u2014 bribes to utility officials in Mexico, Honduras, Bangladesh, Angola. $58.3M.",
+   "doj_ref": "DOJ 10-1125"
+  },
+  {
+   "date": "2022-03-02",
+   "penalty_usd": 315000000,
+   "description": "ABB Ltd second FCPA DPA (recidivist) \u2014 bribes to South Africa Eskom, Mozambique, Brazil. $315M.",
+   "doj_ref": "DOJ 22-233"
+  }
+ ],
+ "sap": [
+  {
+   "date": "2024-01-10",
+   "penalty_usd": 220000000,
+   "description": "SAP SE (German enterprise software, NYSE-listed) entered DPA for FCPA violations \u2014 paid bribes to government officials in South Africa (SOEs: Transnet, Eskom, Prasa), Indonesia, Malawi, Tanzania, Ghana, Kenya, and Azerbaijan to obtain government software contracts. $220M total (DOJ $118M + SEC $102M). Largest FCPA case against an enterprise software company.",
+   "doj_ref": "DOJ 24-014"
+  }
+ ],
+ "sap se": [
+  {
+   "date": "2024-01-10",
+   "penalty_usd": 220000000,
+   "description": "SAP SE entered DPA for FCPA violations \u2014 bribes to government officials in South Africa, Indonesia, and five other countries for software contracts. $220M total penalty.",
+   "doj_ref": "DOJ 24-014"
+  }
+ ],
+ "rio tinto": [
+  {
+   "date": "2022-10-17",
+   "penalty_usd": 98000000,
+   "description": "Rio Tinto plc (UK/Australian mining company, NYSE ADR) entered DPA for FCPA violations \u2014 paid approximately $10.5M to a consultant connected to a Guinean government official to obtain an iron ore mining license (Simandou project). $98M total (DOJ $30M + SEC $68M).",
+   "doj_ref": "DOJ 22-1162"
+  }
+ ],
+ "panalpina": [
+  {
+   "date": "2010-11-04",
+   "penalty_usd": 82000000,
+   "description": "Panalpina World Transport (Swiss logistics, acquired by DSV in 2019) entered DPA for FCPA violations \u2014 provided corrupt customs clearance payments across Nigeria, Russia, Kazakhstan, Brazil, Angola, and Azerbaijan. $82M total (DOJ $70.6M + SEC $11.4M).",
+   "doj_ref": "DOJ 10-1285"
+  }
+ ],
+ "dsv": [
+  {
+   "date": "2010-11-04",
+   "penalty_usd": 82000000,
+   "description": "DSV Panalpina A/S (Danish logistics, Copenhagen-listed) is successor to Panalpina World Transport, which entered DPA for FCPA violations for providing corrupt customs payments in multiple countries. $82M total penalty.",
+   "doj_ref": "DOJ 10-1285"
+  }
+ ],
+ "archer-daniels-midland": [
+  {
+   "date": "2013-12-20",
+   "penalty_usd": 36500000,
+   "description": "Archer-Daniels-Midland Company (ADM, NYSE-listed agri-food giant) entered DPA for FCPA violations \u2014 two ADM subsidiaries made improper payments to Ukrainian government officials to obtain VAT refunds on grain exports. $36.5M total (DOJ $17.8M + SEC $18.7M).",
+   "doj_ref": "DOJ 13-1378"
+  }
+ ],
+ "adm": [
+  {
+   "date": "2013-12-20",
+   "penalty_usd": 36500000,
+   "description": "ADM (Archer-Daniels-Midland) entered DPA for FCPA violations \u2014 improper payments to Ukrainian government officials for VAT refunds. $36.5M total.",
+   "doj_ref": "DOJ 13-1378"
+  }
+ ],
+ "sanofi": [
+  {
+   "date": "2018-09-04",
+   "penalty_usd": 25200000,
+   "description": "Sanofi SA (French pharmaceutical, NYSE ADR) reached SEC civil settlement for FCPA violations \u2014 subsidiaries in Kazakhstan and the Middle East made improper payments to government-employed healthcare providers in Russia. $25.2M civil penalty.",
+   "doj_ref": "SEC Rel. 34-83899"
+  }
+ ],
+ "textron": [
+  {
+   "date": "2010-08-04",
+   "penalty_usd": 20100000,
+   "description": "Textron Inc. (US aerospace/defense/industrial, NYSE) entered NPA for FCPA violations \u2014 Bell Helicopter Textron subsidiary made improper payments to government officials in India, Turkey, Nigeria, Taiwan, Bangladesh, Thailand, Indonesia, Lebanon, and Saudi Arabia to obtain aircraft contracts. $20.1M total (DOJ $10.5M + SEC $9.6M).",
+   "doj_ref": "DOJ 10-893"
+  }
+ ],
+ "diageo": [
+  {
+   "date": "2011-07-27",
+   "penalty_usd": 16400000,
+   "description": "Diageo plc (UK spirits company, NYSE ADR) reached SEC civil settlement for FCPA violations \u2014 subsidiaries made improper payments to government officials in India, Thailand, and South Korea. $16.4M SEC civil penalty.",
+   "doj_ref": "SEC Rel. 34-64978"
+  }
+ ],
+ "bristol-myers squibb": [
+  {
+   "date": "2015-10-05",
+   "penalty_usd": 14750000,
+   "description": "Bristol-Myers Squibb Company entered NPA for FCPA violations \u2014 subsidiary in China made improper payments to government-employed healthcare providers to increase pharmaceutical sales. $14.75M total (DOJ $5M + SEC $9.75M).",
+   "doj_ref": "DOJ 15-1180"
+  }
+ ],
+ "bms": [
+  {
+   "date": "2015-10-05",
+   "penalty_usd": 14750000,
+   "description": "Bristol-Myers Squibb (BMS) entered NPA for FCPA violations \u2014 improper payments to government healthcare providers in China. $14.75M total.",
+   "doj_ref": "DOJ 15-1180"
+  }
+ ],
+ "biomet": [
+  {
+   "date": "2012-03-26",
+   "penalty_usd": 22800000,
+   "description": "Biomet Inc. (orthopedic implants, now Zimmer Biomet) entered DPA for FCPA violations \u2014 improper payments to government-employed surgeons in Brazil, China, Germany, and Mexico. $22.8M total.",
+   "doj_ref": "DOJ 12-319"
+  },
+  {
+   "date": "2017-01-12",
+   "penalty_usd": 17400000,
+   "description": "Biomet second DPA (recidivist) \u2014 additional FCPA violations in Brazil, Mexico, and China found after the 2012 DPA. $17.4M penalty. Biomet is a recidivist FCPA violator.",
+   "doj_ref": "DOJ 17-050"
+  }
+ ],
+ "zimmer biomet": [
+  {
+   "date": "2012-03-26",
+   "penalty_usd": 22800000,
+   "description": "Zimmer Biomet Holdings (successor to Biomet) \u2014 first DPA for FCPA violations, improper payments to government surgeons in Brazil, China, Germany, Mexico. $22.8M + 2017 recidivist case $17.4M.",
+   "doj_ref": "DOJ 12-319"
+  }
+ ],
+ "zimmer": [
+  {
+   "date": "2012-03-26",
+   "penalty_usd": 22800000,
+   "description": "Zimmer Biomet \u2014 successor to Biomet which had FCPA DPA for improper payments to government surgeons. $22.8M (2012) + $17.4M (2017) total.",
+   "doj_ref": "DOJ 12-319"
+  }
+ ],
+ "hess corp": [
+  {
+   "date": "2013-08-06",
+   "penalty_usd": 7700000,
+   "description": "Hess Corporation reached SEC civil settlement for FCPA violations \u2014 subsidiary made improper payments to Libyan national oil company officials (Sirte Oil Company) to obtain oil exploration concessions. $7.7M SEC civil penalty.",
+   "doj_ref": "SEC Rel. 34-70217"
+  }
+ ],
+ "hess corporation": [
+  {
+   "date": "2013-08-06",
+   "penalty_usd": 7700000,
+   "description": "Hess Corporation \u2014 SEC civil FCPA settlement for improper payments to Libyan state oil company officials. $7.7M.",
+   "doj_ref": "SEC Rel. 34-70217"
+  }
+ ],
+ "maxwell technologies": [
+  {
+   "date": "2011-01-31",
+   "penalty_usd": 8000000,
+   "description": "Maxwell Technologies Inc. entered DPA for FCPA violations \u2014 paid bribes to government officials in China through third-party agents to obtain contracts for high-tech energy storage capacitors. $8M total (DOJ/SEC).",
+   "doj_ref": "DOJ 11-092"
+  }
+ ],
+ "tenaris": [
+  {
+   "date": "2011-05-17",
+   "penalty_usd": 5400000,
+   "description": "Tenaris S.A. (steel pipe manufacturer, NYSE-listed, Luxembourg) reached SEC civil settlement for FCPA violations \u2014 subsidiary made improper payments to Uzbek government officials to obtain oil country tubular goods contracts. $5.4M SEC civil penalty.",
+   "doj_ref": "SEC Rel. 34-64492"
+  }
+ ],
+ "willbros group": [
+  {
+   "date": "2008-05-14",
+   "penalty_usd": 22400000,
+   "description": "Willbros Group Inc. (engineering and construction) entered DPA for FCPA violations \u2014 subsidiary employees paid bribes to Nigerian government officials and Niger Delta Development Commission officials to obtain pipeline construction contracts. $22.4M total.",
+   "doj_ref": "DOJ 08-473"
+  }
+ ],
+ "vitol": [
+  {
+   "date": "2020-12-03",
+   "penalty_usd": 135000000,
+   "description": "Vitol Inc. (US entity of Swiss energy trader) pleaded guilty to FCPA violations \u2014 paid bribes to government officials in Brazil, Ecuador, and Mexico (including Petrobras and Pemex officials) to obtain oil trading contracts. $135M total penalty. NOTE: Vitol Group is privately held.",
+   "doj_ref": "EDNY 20-442"
+  }
+ ],
+ "olympus": [
+  {
+   "date": "2012-03-01",
+   "penalty_usd": 22800000,
+   "description": "Olympus Latin America Inc. (subsidiary of Olympus Corporation, Japanese medical devices, NYSE ADR) reached SEC civil settlement for FCPA violations \u2014 paid improper payments to government-employed physicians in Central and South America to sell medical devices. $22.8M SEC civil penalty.",
+   "doj_ref": "SEC Rel. 34-66572"
+  }
+ ],
+ "cobalt international energy": [
+  {
+   "date": "2017-11-01",
+   "penalty_usd": 148400000,
+   "description": "Cobalt International Energy, Inc. (offshore oil, NYSE-listed, subsequently bankrupt) reached SEC civil settlement for FCPA allegations \u2014 improper allocation of Angola oil blocks to a company connected to Angolan government officials. $148.4M settlement.",
+   "doj_ref": "SEC Rel. 34-81704"
+  }
+ ],
+ "magyar telekom": [
+  {
+   "date": "2011-12-29",
+   "penalty_usd": 95400000,
+   "description": "Magyar Telekom Plc (majority-owned by Deutsche Telekom AG, NYSE ADR) entered DPA for FCPA violations \u2014 paid approximately $14M to Macedonian and Montenegrin government officials to prevent new market entrants and obtain regulatory approvals for its telecom operations. $95.4M total (DOJ $59.7M + SEC $35.7M). Deutsche Telekom paid an additional $4.4M as controlling shareholder.",
+   "doj_ref": "DOJ 11-1692"
+  }
+ ],
+ "deutsche telekom": [
+  {
+   "date": "2011-12-29",
+   "penalty_usd": 95400000,
+   "description": "Deutsche Telekom AG (German telecom, NYSE ADR, T-Mobile US parent) \u2014 majority-owned subsidiary Magyar Telekom entered DPA for FCPA violations (bribery in Macedonia and Montenegro). Deutsche Telekom paid $4.4M additional as controlling shareholder; total resolution $95.4M.",
+   "doj_ref": "DOJ 11-1692"
+  }
+ ],
+ "pride international": [
+  {
+   "date": "2010-11-04",
+   "penalty_usd": 56200000,
+   "description": "Pride International Inc. (offshore drilling, now part of Valaris) entered DPA for FCPA violations \u2014 paid improper payments to customs officials in Venezuela, India, Mexico, and Kazakhstan. $56.2M total.",
+   "doj_ref": "DOJ 10-1281"
+  }
+ ],
+ "valaris": [
+  {
+   "date": "2010-11-04",
+   "penalty_usd": 56200000,
+   "description": "Valaris plc (offshore drilling, NYSE-listed) is successor to Pride International which entered DPA for FCPA violations for improper payments to customs officials in Venezuela, India, Mexico, Kazakhstan. $56.2M total.",
+   "doj_ref": "DOJ 10-1281"
+  }
+ ],
+ "orthofix": [
+  {
+   "date": "2012-09-10",
+   "penalty_usd": 7400000,
+   "description": "Orthofix International NV (medical devices, NYSE-listed) entered DPA for FCPA violations \u2014 subsidiary paid bribes to Mexican Social Security Institute employees to obtain medical device sales. $7.4M total.",
+   "doj_ref": "DOJ 12-1073"
+  }
+ ],
+ "comverse": [
+  {
+   "date": "2011-06-30",
+   "penalty_usd": 2800000,
+   "description": "Comverse Technology Inc. (telecom equipment, formerly NASDAQ-listed) entered DPA for FCPA violations \u2014 subsidiary paid bribes to government telecom officials in multiple countries. $2.8M total.",
+   "doj_ref": "DOJ 11-829"
+  }
+ ],
+ "novartis": [
+  {
+   "date": "2020-07-01",
+   "penalty_usd": 346000000,
+   "description": "Novartis AG (Swiss pharmaceutical, NYSE ADR) entered DPA and NPA for FCPA violations \u2014 subsidiaries Alcon Pte Ltd and Sandoz Inc. made improper payments to government-employed healthcare providers in Greece, Vietnam, and South Korea to increase pharmaceutical sales. $346M total (DOJ $233M + SEC $112M). Multiple subsidiaries involved across a decade of violations.",
+   "doj_ref": "DOJ 20-669"
+  }
+ ],
+ "novartis ag": [
+  {
+   "date": "2020-07-01",
+   "penalty_usd": 346000000,
+   "description": "Novartis AG entered DPA/NPA for FCPA violations \u2014 improper payments to government doctors in Greece, Vietnam, South Korea. $346M total.",
+   "doj_ref": "DOJ 20-669"
+  }
+ ],
+ "stericycle": [
+  {
+   "date": "2017-04-20",
+   "penalty_usd": 84000000,
+   "description": "Stericycle Inc. (US medical waste management, NASDAQ) entered DPA for FCPA violations \u2014 subsidiary employees paid bribes to government officials and private healthcare workers in Brazil, Mexico, and Argentina to retain and expand regulated medical waste contracts. $84M total (DOJ $35M + SEC $49M).",
+   "doj_ref": "DOJ 17-445"
+  }
+ ],
+ "cardinal health": [
+  {
+   "date": "2011-04-22",
+   "penalty_usd": 34000000,
+   "description": "Cardinal Health Inc. (US healthcare distributor, NYSE) reached SEC civil settlement for FCPA violations \u2014 subsidiary made improper payments to Chinese government officials to obtain pharmaceutical distribution licenses. $34M SEC civil penalty.",
+   "doj_ref": "SEC Rel. 34-64358"
+  }
+ ],
+ "diebold": [
+  {
+   "date": "2013-10-22",
+   "penalty_usd": 48100000,
+   "description": "Diebold Incorporated (now Diebold Nixdorf, NYSE-listed ATM and election technology) entered NPA for FCPA violations \u2014 subsidiaries made improper payments to government officials in Russia, Indonesia, China, and Venezuela. $48.1M total (DOJ $25.2M + SEC $22.9M).",
+   "doj_ref": "DOJ 13-1179"
+  }
+ ],
+ "diebold nixdorf": [
+  {
+   "date": "2013-10-22",
+   "penalty_usd": 48100000,
+   "description": "Diebold Nixdorf Inc. (formerly Diebold Incorporated) entered NPA for FCPA violations \u2014 bribes to government officials in Russia, Indonesia, China, Venezuela. $48.1M total.",
+   "doj_ref": "DOJ 13-1179"
+  }
+ ],
+ "medtronic": [
+  {
+   "date": "2017-12-05",
+   "penalty_usd": 8200000,
+   "description": "Medtronic plc (Irish-incorporated medical device company, NYSE) reached SEC civil settlement for FCPA violations \u2014 subsidiary made improper payments to government-employed physicians in China to increase surgical device sales. $8.2M SEC civil penalty.",
+   "doj_ref": "SEC Rel. 34-82266"
+  }
+ ],
+ "noble corporation": [
+  {
+   "date": "2010-11-04",
+   "penalty_usd": 8200000,
+   "description": "Noble Corporation (offshore drilling, NYSE) entered DPA for FCPA violations \u2014 made improper customs payments in Nigeria, Venezuela, and Mexico. $8.2M total (DOJ $2.6M + SEC $5.6M). Noble was one of several oil services companies in the DOJ 2010 oil services sweep.",
+   "doj_ref": "DOJ 10-1283"
+  }
+ ],
+ "universal corporation": [
+  {
+   "date": "2010-07-20",
+   "penalty_usd": 4400000,
+   "description": "Universal Corporation (tobacco leaf dealer, NYSE) reached SEC civil settlement for FCPA violations \u2014 subsidiary made improper payments to government officials in Thailand, Mozambique, and Malawi. $4.4M SEC civil penalty.",
+   "doj_ref": "SEC Rel. 34-62512"
+  }
+ ],
+ "parker hannifin": [
+  {
+   "date": "2007-07-30",
+   "penalty_usd": 4500000,
+   "description": "Parker Hannifin Corporation (industrial motion/control, NYSE) reached SEC civil settlement for FCPA violations \u2014 subsidiary made improper payments to French government employees and to officials in Germany. $4.5M SEC civil penalty.",
+   "doj_ref": "SEC Rel. 34-56148"
+  }
+ ],
+ "utstarcom": [
+  {
+   "date": "2009-12-31",
+   "penalty_usd": 3000000,
+   "description": "UTStarcom Inc. (US-China telecom equipment, NASDAQ) entered NPA for FCPA violations \u2014 provided all-expenses-paid trips and other benefits to Chinese government officials to obtain telecom contracts. $3M total (DOJ $1.5M + SEC $1.5M).",
+   "doj_ref": "DOJ 09-1088"
+  }
+ ],
+ "teradata": [
+  {
+   "date": "2019-12-10",
+   "penalty_usd": 9300000,
+   "description": "Teradata Corporation (data analytics, NYSE) reached SEC civil settlement for FCPA violations \u2014 subsidiary made improper payments to government employees in Turkey and Thailand to obtain data warehousing contracts. $9.3M SEC civil penalty.",
+   "doj_ref": "SEC Rel. 34-87603"
+  }
+ ],
+ "barrick gold": [
+  {
+   "date": "2018-03-26",
+   "penalty_usd": 36200000,
+   "description": "Barrick Gold Corporation (Canadian miner, NYSE) reached SEC civil settlement for FCPA violations \u2014 Acacia Mining (majority-owned subsidiary) paid approximately $6.2M to government officials in Tanzania to resolve a tax dispute and obtain mining concession benefits. $36.2M SEC civil penalty (primarily disgorgement).",
+   "doj_ref": "SEC Rel. 34-82860"
+  }
+ ],
+ "ingersoll rand": [
+  {
+   "date": "2007-10-31",
+   "penalty_usd": 13000000,
+   "description": "Ingersoll-Rand Company Ltd. (industrial equipment, NYSE) entered DPA for FCPA violations \u2014 subsidiary Hussmann International paid bribes to Iraqi government officials through the UN Oil-for-Food Programme. $13M total (DOJ $6.5M + SEC $6.5M).",
+   "doj_ref": "DOJ 07-1002"
+  }
+ ],
+ "ingersoll-rand": [
+  {
+   "date": "2007-10-31",
+   "penalty_usd": 13000000,
+   "description": "Ingersoll-Rand (NYSE: IR) entered DPA for FCPA violations \u2014 subsidiary bribes to Iraqi officials via UN Oil-for-Food. $13M.",
+   "doj_ref": "DOJ 07-1002"
+  }
+ ]
+}

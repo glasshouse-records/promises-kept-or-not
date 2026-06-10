@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<informationTable xmlns="http://www.sec.gov/edgar/document/npxproxy/informationtable">
+  <proxyTable>
+    <issuerName>ORACLE CORP</issuerName>
+    <cusip>68389X105</cusip>
+    <isin>US68389X1054</isin>
+    <meetingDate>11/15/2024</meetingDate>
+    <voteDescription>Shareholder proposal regarding report on anti-corruption accountability</voteDescription>
+    <voteCategories>
+      <voteCategory>
+        <categoryType>CORPORATE GOVERNANCE</categoryType>
+      </voteCategory>
+    </voteCategories>
+    <voteSource>ISSUER</voteSource>
+    <sharesOnLoan>0</sharesOnLoan>
+    <vote>
+      <voteRecord>
+        <howVoted>AGAINST</howVoted>
+        <sharesVoted>1250000</sharesVoted>
+        <managementRecommendation>AGAINST</managementRecommendation>
+      </voteRecord>
+      <voteRecord>
+        <howVoted>FOR</howVoted>
+        <sharesVoted>34000</sharesVoted>
+        <managementRecommendation>AGAINST</managementRecommendation>
+      </voteRecord>
+    </vote>
+    <voteSeries>S000004357</voteSeries>
+  </proxyTable>
+  <proxyTable>
+    <issuerName>MICROSOFT CORP</issuerName>
+    <cusip>594918104</cusip>
+    <isin>US5949181045</isin>
+    <meetingDate>12/10/2024</meetingDate>
+    <voteDescription>Election of director Jane Doe</voteDescription>
+    <voteCategories>
+      <voteCategory>
+        <categoryType>DIRECTOR ELECTIONS</categoryType>
+      </voteCategory>
+    </voteCategories>
+    <voteSource>ISSUER</voteSource>
+    <sharesOnLoan>120.5</sharesOnLoan>
+    <vote>
+      <voteRecord>
+        <howVoted>FOR</howVoted>
+        <sharesVoted>9000000</sharesVoted>
+        <managementRecommendation>FOR</managementRecommendation>
+      </voteRecord>
+    </vote>
+    <voteSeries>S000004358</voteSeries>
+  </proxyTable>
+  <proxyTable>
+    <issuerName>NOTES ONLY HOLDINGS PLC</issuerName>
+    <cusip>00000XAA1</cusip>
+    <meetingDate>01/05/2025</meetingDate>
+    <voteDescription>Meeting adjourned; no vote cast</voteDescription>
+  </proxyTable>
+</informationTable>
