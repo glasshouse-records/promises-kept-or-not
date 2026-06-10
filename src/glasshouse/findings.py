@@ -37,6 +37,8 @@ class FlaggedVote:
     action_date: str
     join_method: str
     quarantined: bool
+    issuer_lei: str = ""       # GLEIF-corroborated issuer identity, when enriched
+    issuer_country: str = ""
 
 
 @dataclass
@@ -119,10 +121,14 @@ def flagged_votes(conn: sqlite3.Connection, *, shareholder_proposals_only: bool 
         SELECT COALESCE(i.display_name, f.cik) AS institution,
                v.issuer_name, v.cusip, v.meeting_date, v.how_voted,
                v.management_recommendation, v.vote_description,
-               e.agency, e.resolution_type, e.primary_ref, e.action_date
+               e.agency, e.resolution_type, e.primary_ref, e.action_date,
+               COALESCE(ent.lei, '') AS issuer_lei,
+               COALESCE(ent.country, '') AS issuer_country
         FROM votes v
         JOIN filings f ON f.accession = v.accession
         LEFT JOIN institutions i ON i.id = f.institution_id
+        LEFT JOIN entity_cusips ec ON ec.cusip = v.cusip
+        LEFT JOIN entities ent ON ent.id = ec.entity_id
         JOIN enforcement_actions e
           ON gh_norm(e.company_name) = gh_norm(v.issuer_name)
          AND gh_norm(v.issuer_name) != ''
@@ -147,5 +153,6 @@ def flagged_votes(conn: sqlite3.Connection, *, shareholder_proposals_only: bool 
             primary_ref=r["primary_ref"], action_date=r["action_date"],
             join_method="name_exact",
             quarantined=True,  # name-only join: lead, not finding
+            issuer_lei=r["issuer_lei"], issuer_country=r["issuer_country"],
         ))
     return out

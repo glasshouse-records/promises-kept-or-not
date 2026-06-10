@@ -129,6 +129,14 @@ def cmd_report_vote_divergence(args) -> int:
     return 0
 
 
+def cmd_enrich_lei(args) -> int:
+    from .ingest import gleif
+    conn = _conn()
+    stats = gleif.enrich_from_votes(conn, limit=args.limit)
+    print(f"  GLEIF enrichment: {stats}")
+    return 0
+
+
 def cmd_diff(args) -> int:
     from . import diff
     conn = _conn()
@@ -157,6 +165,8 @@ def cmd_report_flagged_votes(args) -> int:
         return 0
     for r in rows:
         print(f"\n{r.institution} @ {r.issuer_name} ({r.meeting_date}) [LEAD — {r.join_method} join]")
+        if r.issuer_lei:
+            print(f"  issuer identity (GLEIF): LEI {r.issuer_lei}, country {r.issuer_country or '?'}")
         print(f"  voted {r.how_voted} (mgmt rec: {r.management_recommendation or '—'})")
         print(f"  proposal: {r.vote_description}")
         print(f"  enforcement: {r.agency} | {r.resolution_type} | {r.primary_ref or 'NO REF'} | {r.action_date}")
@@ -218,6 +228,11 @@ def main(argv: list[str] | None = None) -> int:
     vd.add_argument("--limit", type=int, default=100)
     vd.set_defaults(func=cmd_report_vote_divergence)
     rep.add_parser("policy-edits").set_defaults(func=cmd_report_policy_edits)
+
+    enr = sub.add_parser("enrich").add_subparsers(dest="how", required=True)
+    lei = enr.add_parser("lei", help="resolve voted issuers' ISINs via GLEIF (LEI, legal name, country)")
+    lei.add_argument("--limit", type=int, default=None)
+    lei.set_defaults(func=cmd_enrich_lei)
 
     df = sub.add_parser("diff")
     df.add_argument("--record", action="store_true",

@@ -124,6 +124,10 @@ confidence intervals, before any score is published.)*
 - Curated snapshot data may be stale; entries are marked and re-verified
   before use in claims.
 - Fuzzy name matches below threshold are never used in findings.
+- GLEIF's ISIN→LEI mapping is opt-in for LEI issuers and therefore partial
+  (strong for US/EU issuers, sparse elsewhere — e.g. Aldar Properties PJSC's
+  UAE ISIN is unmapped as of 2026-06-11). Issuers without an LEI stay
+  name-only leads.
 - **Even exact normalized-name matches are only leads.** Validated on the
   first live run (2026-06-11): OFAC's "ALDAR PROPERTIES" (Sudan, SDGT
   program) normalizes identically to Aldar Properties PJSC (Abu Dhabi-listed

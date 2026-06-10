@@ -107,7 +107,8 @@ CREATE TABLE IF NOT EXISTS entities (
     canonical_name  TEXT UNIQUE NOT NULL,
     normalized_name TEXT NOT NULL,
     cik             TEXT,
-    lei             TEXT
+    lei             TEXT,
+    country         TEXT DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_entities_norm ON entities(normalized_name);
 
@@ -156,7 +157,16 @@ def connect(db_path: Path | str = DB_PATH) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
+    _migrate(conn)
     return conn
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Additive migrations for ledgers created before a column existed."""
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(entities)")}
+    if "country" not in cols:
+        conn.execute("ALTER TABLE entities ADD COLUMN country TEXT DEFAULT ''")
+        conn.commit()
 
 
 @dataclass
