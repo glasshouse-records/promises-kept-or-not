@@ -116,6 +116,28 @@ CREATE TABLE IF NOT EXISTS entity_cusips (
     entity_id INTEGER NOT NULL REFERENCES entities(id)
 );
 
+CREATE TABLE IF NOT EXISTS commitments (
+    id                INTEGER PRIMARY KEY,
+    institution_id    TEXT NOT NULL REFERENCES institutions(id),
+    doc_label         TEXT NOT NULL,
+    url               TEXT NOT NULL,
+    retrieval_date    TEXT NOT NULL,
+    sha256            TEXT NOT NULL,
+    content_path      TEXT NOT NULL,
+    content_type      TEXT,
+    size_bytes        INTEGER,
+    wayback_timestamp TEXT NOT NULL DEFAULT '',  -- '' = live fetch
+    UNIQUE (institution_id, doc_label, sha256, wayback_timestamp)
+);
+
+CREATE TABLE IF NOT EXISTS runs (
+    id                INTEGER PRIMARY KEY,
+    ts                TEXT NOT NULL,
+    votes_maxid       INTEGER NOT NULL,
+    enf_maxid         INTEGER NOT NULL,
+    commitments_maxid INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS match_log (
     id        INTEGER PRIMARY KEY,
     ts        TEXT NOT NULL,

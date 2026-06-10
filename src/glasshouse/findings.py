@@ -39,6 +39,66 @@ class FlaggedVote:
     quarantined: bool
 
 
+@dataclass
+class VoteDivergence:
+    institution: str
+    issuer_name: str
+    cusip: str
+    meeting_date: str
+    vote_description: str
+    ways: dict[str, float]          # how_voted -> total shares voted that way
+    n_records: int
+
+
+def vote_divergence(conn: sqlite3.Connection, *, shareholder_proposals_only: bool = False,
+                    limit: int = 100) -> list[VoteDivergence]:
+    """Finding class (b), validated 2026-06-10: the same manager's funds
+    voting BOTH ways on an identical proposal (same issuer, meeting, text).
+
+    No external join, no entity-resolution risk — the contradiction is
+    internal to one filer's own N-PX report, which makes these the cleanest
+    finding-grade rows in Phase 1. Split votes inside a single proxyTable
+    (multiple voteRecords) and splits across a manager's filings both count.
+    """
+    sql = """
+        SELECT COALESCE(i.display_name, f.cik) AS institution,
+               v.issuer_name, v.cusip, v.meeting_date, v.vote_description,
+               COUNT(*) AS n_records,
+               COUNT(DISTINCT v.how_voted) AS n_ways
+        FROM votes v
+        JOIN filings f ON f.accession = v.accession
+        LEFT JOIN institutions i ON i.id = f.institution_id
+        WHERE v.how_voted != ''
+        GROUP BY institution, v.cusip, v.meeting_date, v.vote_description
+        HAVING n_ways > 1
+        ORDER BY n_records DESC
+        LIMIT ?
+    """
+    out = []
+    for r in conn.execute(sql, (limit,)).fetchall():
+        if shareholder_proposals_only:
+            desc = (r["vote_description"] or "").lower()
+            if not any(h in desc for h in _SHAREHOLDER_HINTS):
+                continue
+        shares = conn.execute(
+            """SELECT v.how_voted, SUM(v.shares_voted) AS total
+               FROM votes v JOIN filings f ON f.accession = v.accession
+               LEFT JOIN institutions i ON i.id = f.institution_id
+               WHERE COALESCE(i.display_name, f.cik) = ? AND v.cusip = ?
+                 AND v.meeting_date = ? AND v.vote_description = ? AND v.how_voted != ''
+               GROUP BY v.how_voted""",
+            (r["institution"], r["cusip"], r["meeting_date"], r["vote_description"]),
+        ).fetchall()
+        out.append(VoteDivergence(
+            institution=r["institution"], issuer_name=r["issuer_name"],
+            cusip=r["cusip"], meeting_date=r["meeting_date"],
+            vote_description=(r["vote_description"] or "")[:200],
+            ways={s["how_voted"]: s["total"] or 0.0 for s in shares},
+            n_records=r["n_records"],
+        ))
+    return out
+
+
 def flagged_votes(conn: sqlite3.Connection, *, shareholder_proposals_only: bool = False,
                   limit: int = 200) -> list[FlaggedVote]:
     """Votes at enforcement-flagged issuers (exact normalized-name join).

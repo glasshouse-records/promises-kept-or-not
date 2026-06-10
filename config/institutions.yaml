@@ -26,6 +26,12 @@ institutions:
       - cik: "1100663"
         name: "iShares Trust"
         validated: "2026-06-10"
+    commitments:
+      # URLs verified live before being added; rotted URLs are findings too
+      # (the non-response ledger will track disappearing policies).
+      - label: investment-stewardship-global-principles
+        url: "https://www.blackrock.com/corporate/literature/fact-sheet/blk-responsible-investment-engprinciples-global.pdf"
+        # verified 2026-06-11: 200, application/pdf
 
   vanguard:
     display_name: "The Vanguard Group, Inc."

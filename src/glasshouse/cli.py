@@ -78,6 +78,76 @@ def cmd_ingest_npx(args) -> int:
     return 0
 
 
+def cmd_ingest_commitments(args) -> int:
+    from .ingest import commitments
+    conn = _conn()
+    insts = registry.load()
+    new = commitments.fetch_live(conn, insts)
+    for key, is_new in new.items():
+        print(f"  {key:<56} {'NEW VERSION' if is_new else 'unchanged'}")
+    if args.wayback:
+        n = commitments.fetch_wayback(conn, insts, max_versions=args.wayback_limit)
+        print(f"  wayback: {n} historical versions archived")
+    if not new and not args.wayback:
+        print("no commitment documents configured (add `commitments:` entries "
+              "to config/institutions.yaml)")
+    return 0
+
+
+def cmd_report_policy_edits(_args) -> int:
+    from .ingest import commitments
+    conn = _conn()
+    edits = commitments.policy_edits(conn)
+    if not edits:
+        print("no documents with multiple versions yet")
+        return 0
+    for e in edits:
+        print(f"\n{e['institution_id']}/{e['doc_label']}: {e['n_versions']} versions "
+              f"({e['first_seen']} → {e['last_seen']})")
+        for v in e["versions"]:
+            when = v["wayback_timestamp"] or v["retrieval_date"]
+            print(f"  {when}  sha {v['sha256'][:12]}  {v['content_path']}")
+    print("\nEach multi-version document is a potential silent-policy-edit "
+          "finding; diff the content paths above.")
+    return 0
+
+
+def cmd_report_vote_divergence(args) -> int:
+    conn = _conn()
+    rows = findings.vote_divergence(
+        conn, shareholder_proposals_only=args.shareholder_proposals, limit=args.limit)
+    if not rows:
+        print("no vote divergence found (ingest N-PX data first)")
+        return 0
+    for r in rows:
+        split = " vs ".join(f"{how}: {int(n):,} sh" for how, n in sorted(r.ways.items()))
+        print(f"\n{r.institution} split at {r.issuer_name} ({r.meeting_date})")
+        print(f"  proposal: {r.vote_description}")
+        print(f"  {split}  ({r.n_records} vote records)")
+    print(f"\n{len(rows)} divergent proposals — the same manager voting both ways "
+          f"on identical questions. Finding-grade: internal to one filer's own N-PX.")
+    return 0
+
+
+def cmd_diff(args) -> int:
+    from . import diff
+    conn = _conn()
+    d = diff.compute(conn)
+    base = d.since or "ledger creation (first run)"
+    print(f"deltas since {base}:")
+    print(f"  votes                +{d.new_votes:,}")
+    print(f"  enforcement actions  +{d.new_enforcement:,}")
+    print(f"  commitment versions  +{d.new_commitment_versions:,}")
+    for s in d.enforcement_samples:
+        print(f"    new: {s['agency']} | {s['company_name']} | {s['resolution_type']} | {s['primary_ref'] or 'NO REF'}")
+    for s in d.commitment_samples:
+        print(f"    new: {s['institution_id']}/{s['doc_label']} @ {s['wayback_timestamp'] or s['retrieval_date']}")
+    if args.record:
+        ts = diff.record_run(conn)
+        print(f"run recorded at {ts}")
+    return 0
+
+
 def cmd_report_flagged_votes(args) -> int:
     conn = _conn()
     rows = findings.flagged_votes(
@@ -132,12 +202,27 @@ def main(argv: list[str] | None = None) -> int:
     npx_p.add_argument("--max-tables", type=int, default=None,
                        help="stop after N proxyTables per exhibit (smoke tests)")
     npx_p.set_defaults(func=cmd_ingest_npx)
+    com = ing.add_parser("commitments")
+    com.add_argument("--wayback", action="store_true",
+                     help="also archive historical versions from the Wayback Machine")
+    com.add_argument("--wayback-limit", type=int, default=10)
+    com.set_defaults(func=cmd_ingest_commitments)
 
     rep = sub.add_parser("report").add_subparsers(dest="which", required=True)
     fv = rep.add_parser("flagged-votes")
     fv.add_argument("--shareholder-proposals", action="store_true")
     fv.add_argument("--limit", type=int, default=200)
     fv.set_defaults(func=cmd_report_flagged_votes)
+    vd = rep.add_parser("vote-divergence")
+    vd.add_argument("--shareholder-proposals", action="store_true")
+    vd.add_argument("--limit", type=int, default=100)
+    vd.set_defaults(func=cmd_report_vote_divergence)
+    rep.add_parser("policy-edits").set_defaults(func=cmd_report_policy_edits)
+
+    df = sub.add_parser("diff")
+    df.add_argument("--record", action="store_true",
+                    help="record this ledger frontier as the new baseline run")
+    df.set_defaults(func=cmd_diff)
 
     sub.add_parser("integrity").set_defaults(func=cmd_integrity)
 

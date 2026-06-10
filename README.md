@@ -43,9 +43,17 @@ primary source.
 
 ## Status
 
-**Phase 1** (current): N-PX streaming ingestion, evidence ledger,
-entity resolution, first enforcement sources. See roadmap in
-[METHODOLOGY.md](METHODOLOGY.md#roadmap).
+- **Phase 1 done:** N-PX streaming ingestion (71k+ vote rows live-validated),
+  evidence ledger, entity resolution, first enforcement sources (12.7k
+  actions).
+- **Phase 2 started:** commitments ledger — versioned, content-addressed
+  snapshots of institutions' own policy documents, including Wayback history
+  (7 versions of BlackRock's stewardship principles, 2019→2026).
+- **Phase 3 started:** vote-divergence findings (same manager voting both
+  ways on identical proposals — 2,400+ split proposals in the first filing
+  alone) and the diff engine (deltas are the publishable unit).
+
+See roadmap in [METHODOLOGY.md](METHODOLOGY.md#roadmap).
 
 ## Quick start
 
@@ -57,7 +65,11 @@ glasshouse init-db                       # create data/glasshouse.db
 glasshouse seed                          # load curated enforcement snapshots
 glasshouse ingest enforcement --source ofac        # live OFAC SDN bulk
 glasshouse ingest npx --cik 1100663 --max-filings 1  # iShares Trust proxy votes (large download)
-glasshouse report flagged-votes          # votes at enforcement-flagged issuers
+glasshouse ingest commitments --wayback  # versioned policy snapshots + history
+glasshouse report flagged-votes          # votes at enforcement-flagged issuers (leads)
+glasshouse report vote-divergence        # same manager voting both ways (finding-grade)
+glasshouse report policy-edits           # documents with multiple versions
+glasshouse diff --record                 # deltas since last run — the publishable unit
 glasshouse integrity                     # ledger integrity checks
 ```
 
