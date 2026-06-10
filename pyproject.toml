@@ -13,6 +13,7 @@ dependencies = [
     "requests>=2.31",
     "lxml>=4.9",
     "PyYAML>=6.0",
+    "pypdf>=4.0",
 ]
 
 [project.optional-dependencies]

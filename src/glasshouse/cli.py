@@ -129,6 +129,30 @@ def cmd_report_vote_divergence(args) -> int:
     return 0
 
 
+def cmd_report_contradictions(args) -> int:
+    from . import contradictions
+    conn = _conn()
+    rows = contradictions.find_commitment_vote_contradictions(
+        conn, limit_per_theme=args.limit_per_theme)
+    if args.theme:
+        rows = [r for r in rows if r.theme == args.theme]
+    if not rows:
+        print("no commitment-vote contradiction candidates "
+              "(need ingested commitments AND N-PX votes for the same institution)")
+        return 0
+    for r in rows:
+        print(f"\n[{r.theme}] {r.institution_id} — CANDIDATE (quarantined; human review required)")
+        print(f"  SAYS ({r.doc_label} @ {r.doc_version}, sha {r.doc_sha256[:12]}):")
+        print(f"    \"{r.commitment_quote}\"")
+        print(f"    source: {r.doc_url}")
+        print(f"  DID  (N-PX {r.accession}, {r.issuer_name}, meeting {r.meeting_date}):")
+        print(f"    voted {r.how_voted} ({int(r.shares_voted):,} sh; mgmt rec {r.management_recommendation})")
+        print(f"    proposal: {r.vote_description}")
+    print(f"\n{len(rows)} candidates. None is a finding until a human reads the "
+          f"commitment and the proposal together (see PENDING_VERIFICATION.md).")
+    return 0
+
+
 def cmd_enrich_lei(args) -> int:
     from .ingest import gleif
     conn = _conn()
@@ -228,6 +252,11 @@ def main(argv: list[str] | None = None) -> int:
     vd.add_argument("--limit", type=int, default=100)
     vd.set_defaults(func=cmd_report_vote_divergence)
     rep.add_parser("policy-edits").set_defaults(func=cmd_report_policy_edits)
+    from .contradictions import THEMES
+    ct = rep.add_parser("contradictions")
+    ct.add_argument("--theme", choices=sorted(THEMES))
+    ct.add_argument("--limit-per-theme", type=int, default=25)
+    ct.set_defaults(func=cmd_report_contradictions)
 
     enr = sub.add_parser("enrich").add_subparsers(dest="how", required=True)
     lei = enr.add_parser("lei", help="resolve voted issuers' ISINs via GLEIF (LEI, legal name, country)")
