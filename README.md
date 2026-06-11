@@ -73,6 +73,11 @@ glasshouse report flagged-votes          # votes at enforcement-flagged issuers 
 glasshouse report vote-divergence        # same manager voting both ways (finding-grade)
 glasshouse report policy-edits           # documents with multiple versions
 glasshouse diff --record                 # deltas since last run — the publishable unit
+glasshouse review sync && glasshouse review list   # human gate: candidates → findings
+glasshouse report concern --company "Oracle"       # transparent concern index
+glasshouse report holdings-diff --institution blackrock
+glasshouse digest                        # render weekly digest body (human sends)
+glasshouse export                        # dated public SQLite snapshot for mirrors
 glasshouse integrity                     # ledger integrity checks
 ```
 

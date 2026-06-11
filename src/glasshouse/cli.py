@@ -43,15 +43,17 @@ def cmd_seed(_args) -> int:
 
 
 def cmd_ingest_enforcement(args) -> int:
-    from .ingest import doj_fcpa, ofac, ungc, worldbank
+    from .ingest import courtlistener, doj_fcpa, fed, ofac, ungc, worldbank
+    conn = _conn()
     sources = {
         "doj_fcpa": doj_fcpa.fetch,
         "ofac": ofac.fetch,
         "worldbank": worldbank.fetch,
         "ungc": ungc.fetch,
+        "fed": fed.fetch,
+        "dockets": lambda: courtlistener.fetch_for(courtlistener.tracked_names(conn)),
     }
     names = list(sources) if args.source == "all" else [args.source]
-    conn = _conn()
     for name in names:
         actions = sources[name]()
         n = ledger.insert_enforcement(conn, actions)
@@ -75,6 +77,40 @@ def cmd_ingest_npx(args) -> int:
         stats = npx.ingest_npx(conn, cik, institution_id=inst_id,
                                max_filings=args.max_filings, max_tables=args.max_tables)
         print(f"  CIK {cik}: {stats}")
+    return 0
+
+
+def cmd_ingest_nport(args) -> int:
+    from .ingest import nport
+    conn = _conn()
+    stats = nport.ingest_nport(conn, args.cik, institution_id=args.institution,
+                               max_filings=args.max_filings)
+    print(f"  {stats}")
+    return 0
+
+
+def cmd_digest(_args) -> int:
+    from . import digest
+    conn = _conn()
+    path = digest.render(conn)
+    print(f"  digest rendered → {path}")
+    print("  (a human sends it; this tool never does)")
+    return 0
+
+
+def cmd_export(_args) -> int:
+    from datetime import date as _date
+    from .http import DATA_DIR
+    conn = _conn()
+    out = DATA_DIR / "exports"
+    out.mkdir(parents=True, exist_ok=True)
+    dest = out / f"glasshouse-public-{_date.today().isoformat()}.db"
+    if dest.exists():
+        dest.unlink()
+    conn.execute("VACUUM INTO ?", (str(dest),))
+    size = dest.stat().st_size / 1e6
+    print(f"  snapshot → {dest} ({size:.0f} MB)")
+    print("  serve with: datasette {0} -m datasette/metadata.json".format(dest))
     return 0
 
 
@@ -455,8 +491,14 @@ def main(argv: list[str] | None = None) -> int:
     ing = sub.add_parser("ingest").add_subparsers(dest="what", required=True)
     enf = ing.add_parser("enforcement")
     enf.add_argument("--source", default="all",
-                     choices=["all", "doj_fcpa", "ofac", "worldbank", "ungc"])
+                     choices=["all", "doj_fcpa", "ofac", "worldbank", "ungc",
+                              "fed", "dockets"])
     enf.set_defaults(func=cmd_ingest_enforcement)
+    np = ing.add_parser("nport")
+    np.add_argument("--cik", required=True)
+    np.add_argument("--institution")
+    np.add_argument("--max-filings", type=int, default=1)
+    np.set_defaults(func=cmd_ingest_nport)
     npx_p = ing.add_parser("npx")
     npx_p.add_argument("--cik")
     npx_p.add_argument("--institution")
@@ -542,6 +584,10 @@ def main(argv: list[str] | None = None) -> int:
     sc.set_defaults(func=cmd_scan_events)
 
     sub.add_parser("site").set_defaults(func=cmd_site)
+    sub.add_parser("digest", help="render the weekly digest body to the outbox "
+                   "(a human sends it)").set_defaults(func=cmd_digest)
+    sub.add_parser("export", help="VACUUM a dated public snapshot of the ledger "
+                   "for Datasette/mirrors").set_defaults(func=cmd_export)
 
     out = sub.add_parser("outreach").add_subparsers(dest="action", required=True)
     od = out.add_parser("draft")

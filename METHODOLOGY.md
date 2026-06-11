@@ -96,6 +96,9 @@ a missed match is acceptable.
 | OFAC SDN + consolidated list | Sanctions designations | Free bulk CSV |
 | World Bank debarred firms | Procurement debarments | Free API |
 | UN Global Compact | Expelled participants | Free API |
+| SEC EDGAR N-PORT | Monthly mutual-fund portfolios (extends beyond 13-F filers) | Free API |
+| Federal Reserve enforcement actions | The banks' own records (administrative actions, bulk CSV) | Free CSV |
+| CourtListener / RECAP | Federal dockets — **allegations only, never findings; score zero** | Free API |
 | Curated snapshots (predecessor project, extracted 2026-05-26) | FCPA, SEC fraud, DOJ antitrust, World Bank, NLRB, UNGC | Hand-verified; re-verification required |
 
 All sources are free and public. No paid APIs are used anywhere.
