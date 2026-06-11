@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- XML comments appear in real covers (Vanguard, 2026-06-11) and must not break parsing -->
 <edgarSubmission xmlns="http://www.sec.gov/edgar/npx">
+  <!-- inner comment -->
   <headerData>
     <submissionType>N-PX</submissionType>
     <filerInfo>

@@ -78,6 +78,18 @@ def test_against_votes_qualify_whatever_management_recommended(conn, tmp_path):
     assert rows[0].management_recommendation == "FOR"
 
 
+def test_promise_language_outranks_definitional_filler():
+    from glasshouse.contradictions import score_commitment_sentence
+    weak = "Examples of environmental issues include, but are not limited to, water use and climate risk."
+    strong = "We expect companies to disclose how climate risk is overseen by the board."
+    binding = "We are committed to engaging on climate risk."
+    assert score_commitment_sentence(strong) > score_commitment_sentence(weak)
+    assert score_commitment_sentence(binding) > score_commitment_sentence(weak)
+    # And the ordering shows up in commitment_sentences output.
+    hits = commitment_sentences(f"{weak} {strong}", [r"climate"])
+    assert hits[0] == strong
+
+
 def test_off_theme_votes_do_not_match(conn, tmp_path):
     _setup(conn, tmp_path, vote_desc="Election of director Jane Doe")
     assert find_commitment_vote_contradictions(conn) == []

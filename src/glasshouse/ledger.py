@@ -203,6 +203,11 @@ def _migrate(conn: sqlite3.Connection) -> None:
     if "is_duplicate" not in vcols:
         conn.execute("ALTER TABLE votes ADD COLUMN is_duplicate INTEGER NOT NULL DEFAULT 0")
         conn.commit()
+    ecols = {r[1] for r in conn.execute("PRAGMA table_info(enforcement_actions)")}
+    if "is_duplicate" not in ecols:
+        conn.execute("ALTER TABLE enforcement_actions ADD COLUMN is_duplicate "
+                     "INTEGER NOT NULL DEFAULT 0")
+        conn.commit()
 
 
 def dedupe_votes(conn: sqlite3.Connection) -> int:
@@ -269,6 +274,31 @@ def insert_enforcement(conn: sqlite3.Connection, actions: list[EnforcementAction
         n += cur.rowcount
     conn.commit()
     return n
+
+
+def dedupe_enforcement(conn: sqlite3.Connection) -> int:
+    """Reconcile curated snapshots against live scrapes so counts never
+    double-dip (found 2026-06-11: 13 FCPA companies in both).
+
+    Where the same normalized company name appears in a curated row and a
+    live row for the same enforcement domain (FCPA), the LIVE row is marked
+    duplicate: the curated row carries the verified detail (date, penalty,
+    resolution type), the live index row carries none. Both stay in the
+    ledger; analytics count one.
+    """
+    from .entities import normalize_name
+    conn.create_function("gh_norm", 1, normalize_name)
+    conn.execute("UPDATE enforcement_actions SET is_duplicate = 0")
+    cur = conn.execute(
+        """UPDATE enforcement_actions SET is_duplicate = 1
+           WHERE source_kind = 'live' AND agency LIKE '%FCPA%'
+             AND EXISTS (SELECT 1 FROM enforcement_actions c
+                         WHERE c.source_kind = 'curated_snapshot'
+                           AND c.agency LIKE '%FCPA%'
+                           AND gh_norm(c.company_name) = gh_norm(
+                               enforcement_actions.company_name))""")
+    conn.commit()
+    return cur.rowcount
 
 
 def integrity_check(conn: sqlite3.Connection) -> dict[str, list]:

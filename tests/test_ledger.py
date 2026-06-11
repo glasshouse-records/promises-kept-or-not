@@ -77,6 +77,39 @@ def test_flagged_votes_joins_on_normalized_name_and_quarantines_all(conn):
     assert {r.primary_ref for r in rows} == {"SEC Rel. 34-67574", ""}
 
 
+def test_dedupe_votes_marks_within_and_across_exhibits(conn):
+    conn.execute("INSERT INTO filings (accession, cik, form_type, period_of_report, "
+                 "source_url, retrieval_date) VALUES ('A1','36405','N-PX','2025-06-30','u','d')")
+    conn.execute("INSERT INTO filings (accession, cik, form_type, period_of_report, "
+                 "source_url, retrieval_date) VALUES ('A2','36405','N-PX','2025-06-30','u','d')")
+    row = ("ORACLE CORP", "68389X105", "2024-11-15", "Proposal X", "S1", "FOR", 100.0)
+    for acc in ("A1", "A1", "A2"):  # repeated in one exhibit + refiled in another
+        conn.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, "
+                     "vote_description, vote_series, how_voted, shares_voted) "
+                     "VALUES (?,?,?,?,?,?,?,?)", (acc, *row))
+    assert ledger.dedupe_votes(conn) == 2
+    clean = conn.execute("SELECT COUNT(*) FROM votes WHERE is_duplicate=0").fetchone()[0]
+    assert clean == 1
+
+
+def test_dedupe_enforcement_prefers_curated_over_live_index(conn):
+    ledger.insert_enforcement(conn, [
+        EnforcementAction(agency="DOJ/SEC (FCPA)", company_name="BAE Systems plc",
+                          action_date="2010-03-01", resolution_type="guilty_plea",
+                          primary_ref="DOJ 10-209", source_url="https://j.gov/x",
+                          source_kind="curated_snapshot"),
+        EnforcementAction(agency="DOJ (FCPA)", company_name="BAE Systems plc",
+                          resolution_type="unverified", source_url="https://j.gov/y"),
+        EnforcementAction(agency="DOJ (FCPA)", company_name="Unrelated Corp",
+                          resolution_type="unverified", source_url="https://j.gov/z"),
+    ])
+    assert ledger.dedupe_enforcement(conn) == 1
+    kept = conn.execute("SELECT company_name, source_kind FROM enforcement_actions "
+                        "WHERE is_duplicate=0 ORDER BY id").fetchall()
+    assert [(r[0], r[1]) for r in kept] == [
+        ("BAE Systems plc", "curated_snapshot"), ("Unrelated Corp", "live")]
+
+
 def test_flagged_votes_does_not_match_unrelated_issuers(conn):
     _add_vote(conn, "Apple Hospitality REIT Inc")
     ledger.insert_enforcement(conn, [EnforcementAction(

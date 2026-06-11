@@ -427,9 +427,9 @@ def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
     cands = find_commitment_vote_contradictions(conn, limit_per_theme=10)
 
     stats = {r[0]: r[1] for r in conn.execute(
-        "SELECT 'votes', COUNT(*) FROM votes UNION ALL "
-        "SELECT 'enforcement', COUNT(*) FROM enforcement_actions UNION ALL "
-        "SELECT 'holdings', COUNT(*) FROM holdings UNION ALL "
+        "SELECT 'votes', COUNT(*) FROM votes WHERE is_duplicate = 0 UNION ALL "
+        "SELECT 'enforcement', COUNT(*) FROM enforcement_actions WHERE is_duplicate = 0 "
+        "UNION ALL SELECT 'holdings', COUNT(*) FROM holdings UNION ALL "
         "SELECT 'commitments', COUNT(*) FROM commitments UNION ALL "
         "SELECT 'issuers', COUNT(DISTINCT issuer_name) FROM votes")}
 
@@ -453,8 +453,8 @@ def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
 
 def _build_index(conn, out_dir, stats, insts, cands) -> None:
     enf = conn.execute(
-        "SELECT agency, COUNT(*) FROM enforcement_actions GROUP BY agency "
-        "ORDER BY 2 DESC LIMIT 8").fetchall()
+        "SELECT agency, COUNT(*) FROM enforcement_actions WHERE is_duplicate = 0 "
+        "GROUP BY agency ORDER BY 2 DESC LIMIT 8").fetchall()
     split = _vote_split(conn)
     featured = max(cands, key=lambda c: c.shares_voted) if cands else None
     top = next((r for r in insts if r["n_votes"]), None)
@@ -503,8 +503,12 @@ Resolution types are preserved and legally distinct.</p>
 <div class=r>{_mosaic([(a, n, 'how-to-read.html') for a, n in enf])}</div>
 
 <p class=kicker>Who</p><h2>Institutions under glass</h2>
-{_inst_cards(conn, insts[:6])}
-<p class=meta><a href='institutions.html'>All {len(insts)} institutions →</a></p>"""
+<p class=secnote>Only institutions with ingested data appear here — showing an
+empty page would imply a clean record that no one has checked.
+{sum(1 for r in insts if not (r['n_votes'] or r['n_docs'] or r['n_holdings']))} more
+are registered and queued for ingestion.</p>
+{_inst_cards(conn, [r for r in insts if r['n_votes'] or r['n_docs'] or r['n_holdings']])}
+<p class=meta><a href='institutions.html'>Full registry, including not-yet-ingested →</a></p>"""
     (out_dir / "index.html").write_text(_page("Glasshouse", body, "home"))
 
 

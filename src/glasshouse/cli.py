@@ -313,6 +313,8 @@ def cmd_dedupe(_args) -> int:
     total = conn.execute("SELECT COUNT(*) FROM votes").fetchone()[0]
     print(f"  marked {n:,} duplicate vote rows of {total:,} "
           f"(kept in ledger as filed; excluded from analytics)")
+    ne = ledger.dedupe_enforcement(conn)
+    print(f"  marked {ne:,} live enforcement rows superseded by curated records")
     return 0
 
 

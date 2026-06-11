@@ -37,6 +37,10 @@ institutions:
     display_name: "The Vanguard Group, Inc."
     short_name: "Vanguard"
     cik: "0000102909"
+    npx_ciks:
+      - cik: "36405"
+        name: "Vanguard Index Funds"
+        validated: "2026-06-11"
     country: "USA"
     type: "asset_manager"
     aum_usd_tr: 8.7
@@ -52,6 +56,10 @@ institutions:
     notes: "Investment bank and wealth management; CIK is Morgan Stanley."
 
   state_street:
+    npx_ciks:
+      - cik: "1064642"
+        name: "SPDR Series Trust"
+        validated: "2026-06-11"
     display_name: "State Street Corporation"
     short_name: "State Street"
     cik: "0000093751"

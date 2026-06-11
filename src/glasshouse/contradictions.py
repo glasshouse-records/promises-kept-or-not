@@ -75,16 +75,70 @@ def extract_text(pdf_path: Path) -> str:
     return text
 
 
+# Commitment-strength scoring: a quotable SAY-side sentence is one where the
+# institution binds ITSELF to something. First-person commitment verbs score
+# up; definitional/illustrative phrasing ("examples include", "such as") and
+# hedges score down. Found necessary 2026-06-11: pure lexical matching ranked
+# "Examples of environmental issues include ... climate risk" above actual
+# promise language.
+_COMMITMENT_UP = [
+    (r"\bwe (?:are committed|commit)\b", 5.0),
+    (r"\bwe (?:will|shall)\b", 4.0),
+    (r"\bwe (?:expect|require|ask|encourage|urge)\b", 4.0),
+    (r"\bwe (?:hold|may hold).{0,40}accountable\b", 4.0),
+    (r"\bwe (?:engage|vote|advocate|support|oppose)\b", 3.0),
+    (r"\bour (?:expectation|commitment|approach|policy)\b", 2.5),
+    (r"\bwe (?:believe|consider|assess|evaluate|look (?:for|to))\b", 1.5),
+    (r"\bwe (?:find it helpful|may (?:signal|vote|not support)|seek)\b", 2.5),
+    (r"\bwe (?:ask|asking)\b|\basking companies\b", 2.5),
+    (r"\bboards? (?:should|are expected)\b", 1.5),
+    (r"\bcompanies (?:should|are expected|must)\b", 1.5),
+    (r"\bwe \w+\b", 1.0),   # any first-person agency beats pure description
+]
+_COMMITMENT_DOWN = [
+    (r"\bexamples? (?:of|include)\b", -4.0),
+    (r"\bsuch as\b", -2.0),
+    (r"\bincluding,? but not limited to\b", -4.0),
+    (r"\bmay (?:include|vary|differ)\b", -2.0),
+    (r"\bfor (?:example|instance)\b", -3.0),
+    (r"\bthis document\b|\bthese principles\b", -1.5),
+    (r"\bplease (?:refer|see)\b|\bfor more information\b|\bto learn more\b", -3.0),
+    (r"\b\w*\d{5,}\w*\b", -3.0),   # page-footer/document-id artifacts
+]
+
+
+def score_commitment_sentence(s: str) -> float:
+    """Higher = more binding, more quotable. Negative = definitional filler."""
+    score = 0.0
+    for pat, w in _COMMITMENT_UP + _COMMITMENT_DOWN:
+        if re.search(pat, s, re.IGNORECASE):
+            score += w
+    # Mild preference for sentences a card can carry whole.
+    if len(s) > 450:
+        score -= 1.0
+    return score
+
+
+def _repair_extraction(flat: str) -> str:
+    """Undo common PDF text-extraction damage so quotes stay verbatim to the
+    source document: spaces injected around hyphens ('Climate -related') and
+    runs of whitespace. Restores, never rewrites — only artifacts with an
+    unambiguous original are repaired."""
+    flat = re.sub(r"(\w) +-(\w)", r"\1-\2", flat)
+    flat = re.sub(r"(\w)- +(\w)", r"\1-\2", flat)
+    return re.sub(r"\s+", " ", flat)
+
+
 def commitment_sentences(text: str, patterns: list[str]) -> list[str]:
-    """Sentences in policy text matching any theme pattern — the verbatim
-    words a claim would quote."""
-    flat = re.sub(r"\s+", " ", text)
+    """Sentences in policy text matching any theme pattern, strongest
+    commitment language first — the verbatim words a claim would quote."""
+    flat = _repair_extraction(text)
     out = []
     for sentence in _SENTENCE_SPLIT.split(flat):
         s = sentence.strip()
         if 20 <= len(s) <= 600 and any(re.search(p, s, re.IGNORECASE) for p in patterns):
             out.append(s)
-    return out
+    return sorted(out, key=score_commitment_sentence, reverse=True)
 
 
 @dataclass

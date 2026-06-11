@@ -47,6 +47,10 @@ class NpxCover:
 
 
 def _local(el: etree._Element) -> str:
+    # Comments and processing instructions have non-string tags; QName()
+    # raises on them. Vanguard covers contain XML comments (2026-06-11).
+    if not isinstance(el.tag, str):
+        return ""
     return etree.QName(el).localname
 
 
@@ -204,11 +208,21 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
             cover_bytes = http.get(f"{filing.directory_url}/primary_doc.xml").content
             cover = parse_cover(cover_bytes)
         except Exception as exc:
-            # Pre-2024 N-PX filings (before the vote-level XML rule) have no
-            # primary_doc.xml cover. Record the filing so it isn't retried,
-            # but ingest no votes from it.
-            logger.warning("no parseable cover for %s (%s) — recording as legacy, skipping votes",
-                           filing.accession_number, exc)
+            # Only a definitive 404 means a pre-2024 legacy filing (no
+            # primary_doc.xml cover existed before the vote-level XML rule).
+            # Anything else — throttling, network, parse — must NOT be
+            # recorded, so the filing is retried on the next run. (Found
+            # 2026-06-11: SEC 403s during parallel ingests permanently
+            # mislabeled three live Vanguard filings as legacy.)
+            import requests as _rq
+            status = getattr(getattr(exc, "response", None), "status_code", None)
+            if not (isinstance(exc, _rq.HTTPError) and status == 404):
+                logger.warning("transient cover failure for %s (%s) — will retry next run",
+                               filing.accession_number, exc)
+                stats["skipped"] += 1
+                continue
+            logger.warning("no cover for %s (404) — recording as legacy, skipping votes",
+                           filing.accession_number)
             conn.execute(
                 """INSERT INTO filings (accession, cik, institution_id, form_type, filing_date,
                                         period_of_report, report_type, source_url, retrieval_date)
