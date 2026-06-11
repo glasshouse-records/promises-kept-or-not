@@ -41,6 +41,10 @@ institutions:
       - cik: "36405"
         name: "Vanguard Index Funds"
         validated: "2026-06-11"
+    commitments:
+      - label: us-proxy-voting-policy
+        url: "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/US_Proxy_Voting.pdf"
+        # live URL soft-404s as of 2026-06-11; 7 distinct Wayback versions exist
     country: "USA"
     type: "asset_manager"
     aum_usd_tr: 8.7
@@ -60,6 +64,10 @@ institutions:
       - cik: "1064642"
         name: "SPDR Series Trust"
         validated: "2026-06-11"
+    commitments:
+      - label: proxy-voting-engagement-guidelines
+        url: "https://www.ssga.com/library-content/pdfs/global/proxy-voting-and-engagement-guidelines.pdf"
+        # live URL 404s as of 2026-06-11; 3 distinct Wayback versions exist
     display_name: "State Street Corporation"
     short_name: "State Street"
     cik: "0000093751"

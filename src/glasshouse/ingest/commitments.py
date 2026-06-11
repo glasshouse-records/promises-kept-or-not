@@ -86,8 +86,15 @@ def fetch_live(conn: sqlite3.Connection, institutions: dict[str, dict]) -> dict[
             except Exception as exc:
                 logger.warning("%s/%s fetch failed: %s", inst_id, label, exc)
                 continue
-            is_new = record_snapshot(conn, inst_id, label, url, resp.content,
-                                     resp.headers.get("Content-Type", ""))
+            ctype = resp.headers.get("Content-Type", "")
+            # Soft-404 guard: a .pdf URL answering with HTML is an error page
+            # with status 200 (observed live: Vanguard, 2026-06-11). Recording
+            # it would forge a phantom policy "version".
+            if url.lower().split("?")[0].endswith(".pdf") and "html" in ctype.lower():
+                logger.warning("%s/%s: .pdf URL returned HTML (soft 404) — skipping; "
+                               "wayback history may still serve", inst_id, label)
+                continue
+            is_new = record_snapshot(conn, inst_id, label, url, resp.content, ctype)
             key = f"{inst_id}/{label}"
             new_versions[key] = int(is_new)
             logger.info("%s: %s", key, "NEW VERSION" if is_new else "unchanged")

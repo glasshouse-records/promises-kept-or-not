@@ -28,8 +28,12 @@ jobs:
       - name: Daily event scan
         run: |
           glasshouse init-db
-          glasshouse scan-events
+          glasshouse scan-events --news
+          glasshouse ingest enforcement --source fed
+          glasshouse ingest enforcement --source dockets
+          glasshouse dedupe
           glasshouse diff --record
+          glasshouse digest
         env:
           GLASSHOUSE_CONTACT: ${{ vars.GLASSHOUSE_CONTACT }}
       - name: Upload alerts + site

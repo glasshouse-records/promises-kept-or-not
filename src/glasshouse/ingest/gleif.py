@@ -75,6 +75,10 @@ def enrich_from_votes(conn: sqlite3.Connection, limit: int | None = None) -> dic
             stats["resolved"] += 1
         else:
             stats["unmapped"] += 1
+        # Commit per lookup: this loop spends minutes in network waits and
+        # must never hold the write lock across them (2026-06-11: a 5-minute
+        # open transaction here starved a parallel N-PX ingest).
+        conn.commit()
         time.sleep(_PAUSE)
     conn.commit()
     logger.info("GLEIF enrichment: %s", stats)
