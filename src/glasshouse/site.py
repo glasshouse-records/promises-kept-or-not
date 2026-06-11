@@ -202,8 +202,8 @@ def _e(s) -> str:
 
 def _page(title: str, body: str, active: str = "") -> str:
     links = [("index.html", "Overview", "home"), ("institutions.html", "Institutions", "inst"),
-             ("candidates.html", "Candidates", "cand"), ("how-to-read.html", "How to read", "how"),
-             ("feed.xml", "Feed", "feed")]
+             ("findings.html", "Findings", "find"), ("candidates.html", "Candidates", "cand"),
+             ("how-to-read.html", "How to read", "how"), ("feed.xml", "Feed", "feed")]
     nav = "".join(f"<a href='{h}'{' class=on' if k == active else ''}>{t}</a>"
                   for h, t, k in links)
     return (f"<!doctype html><html lang=en><head><meta charset=utf-8>"
@@ -446,9 +446,80 @@ def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
     _build_institutions_index(conn, out_dir, insts)
     n_inst = sum(_build_institution(conn, out_dir, r, cands) for r in insts)
     _build_candidates(out_dir, cands)
+    _build_findings(conn, out_dir)
     _build_how_to_read(out_dir)
     _write_feed(conn, out_dir)
-    return {"pages": 4 + n_inst, "candidates": len(cands)}
+    _write_institution_feeds(conn, out_dir, insts, cands)
+    return {"pages": 5 + n_inst, "candidates": len(cands)}
+
+
+def _build_findings(conn, out_dir) -> None:
+    import json as _json
+    rows = conn.execute("SELECT status, reviewer_note, reviewed_date, payload "
+                        "FROM findings ORDER BY reviewed_date DESC").fetchall()
+    approved = [r for r in rows if r["status"] == "approved"]
+    n_rejected = sum(1 for r in rows if r["status"] == "rejected")
+    n_pending = sum(1 for r in rows if r["status"] == "pending")
+
+    cards = ""
+    for r in approved:
+        p = _json.loads(r["payload"])
+        cards += f"""<div class='card claim fitem r'>
+  <h3 style='margin-top:0'>{_e(p['institution_id'])} · {_e(p['theme'])} · {_e(p['issuer_name'])}</h3>
+  <div class=grid2>
+    <div class='saydid say'><div class=tag>What it says</div>
+      <blockquote>“{_e(p['commitment_quote'])}”</blockquote>
+      <div class=cite>{_e(p['doc_label'])} · version {_e(p['doc_version'])} · sha256
+      {_e(p['doc_sha256'][:16])}… · <a href='{_e(p['doc_url'])}'>source document</a></div></div>
+    <div class='saydid did'><div class=tag>What it did</div>
+      <blockquote>Voted <b style='color:var(--against)'>{_e(p['how_voted'])}</b> —
+      {int(float(p['shares_voted'])):,} shares</blockquote>
+      <div class=cite>“{_e(p['vote_description'])}” — {_e(p['issuer_name'])}, meeting
+      {_e(p['meeting_date'])} · SEC Form N-PX {_e(p['accession'])}</div></div>
+  </div>
+  <p class=meta>Human-verified {_e(r['reviewed_date'])}: {_e(r['reviewer_note'])}</p></div>"""
+
+    if not approved:
+        cards = ("<div class=card><p>No findings have cleared human review yet. "
+                 "The machine produces <a href='candidates.html'>candidates</a>; a "
+                 "person promotes them — or doesn't, on the record.</p></div>")
+    body = f"""<h1>Findings</h1>
+<p class=lede>A finding is a candidate that survived human review of both primary
+sources. The numbers below are part of the method: what we discard matters as
+much as what we publish.</p>
+<div class=statband>{_stat(len(approved), 'approved findings')}
+{_stat(n_rejected, 'rejected after review')}{_stat(n_pending, 'pending review')}</div>
+{cards}"""
+    (out_dir / "findings.html").write_text(_page("Findings", body, "find"))
+
+
+def _write_institution_feeds(conn, out_dir, insts, cands) -> None:
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    for r in insts:
+        if not (r["n_votes"] or r["n_docs"]):
+            continue
+        entries = []
+        for c in [c for c in cands if c.institution_id == r["id"]][:15]:
+            title = f"Candidate: {c.theme} — voted {c.how_voted} at {c.issuer_name} ({c.meeting_date})"
+            entries.append(
+                f"<entry><title>{_e(title)}</title>"
+                f"<id>urn:glasshouse:cand:{_e(c.accession)}:{_e(c.cusip)}:{_e(c.theme)}</id>"
+                f"<updated>{now}</updated><content type='text'>QUARANTINED CANDIDATE. "
+                f"{_e(c.commitment_quote[:200])} | N-PX {_e(c.accession)}</content></entry>")
+        for d in conn.execute(
+                "SELECT doc_label, sha256, retrieval_date FROM commitments "
+                "WHERE institution_id=? GROUP BY sha256 ORDER BY id DESC LIMIT 10", (r["id"],)):
+            entries.append(
+                f"<entry><title>Policy version: {_e(d['doc_label'])}</title>"
+                f"<id>urn:glasshouse:doc:{_e(d['sha256'][:16])}</id>"
+                f"<updated>{now}</updated><content type='text'>sha256 "
+                f"{_e(d['sha256'])}</content></entry>")
+        feed = (f"<?xml version='1.0' encoding='utf-8'?>"
+                f"<feed xmlns='http://www.w3.org/2005/Atom'>"
+                f"<title>Glasshouse — {_e(r['display_name'])}</title>"
+                f"<id>urn:glasshouse:feed:{_e(r['id'])}</id>"
+                f"<updated>{now}</updated>{''.join(entries)}</feed>")
+        (out_dir / f"feed-{r['id']}.xml").write_text(feed)
 
 
 def _build_index(conn, out_dir, stats, insts, cands) -> None:

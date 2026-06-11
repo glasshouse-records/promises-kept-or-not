@@ -42,6 +42,43 @@ class FlaggedVote:
 
 
 @dataclass
+class OwnRecordRow:
+    institution: str
+    institution_id: str
+    agency: str
+    company_name: str          # as it appears in the enforcement record
+    action_date: str
+    resolution_type: str
+    penalty_usd: int
+    primary_ref: str
+    description: str
+    source_url: str
+    quarantined: bool          # always True: name join + needs subsidiary check
+
+
+def own_record(conn: sqlite3.Connection) -> list[OwnRecordRow]:
+    """Finding class (c): the tracked institutions' OWN enforcement records.
+
+    An institution's rap sheet vs. its marketing is a first-class finding.
+    Joined by exact normalized name against the registry's display name —
+    quarantined like every name join, and doubly so here because enforcement
+    often names a subsidiary (e.g. a securities arm) rather than the parent;
+    a human must confirm the corporate relationship before use.
+    """
+    conn.create_function("gh_norm", 1, normalize_name)
+    rows = conn.execute(
+        """SELECT i.display_name AS institution, i.id AS institution_id,
+                  e.agency, e.company_name, e.action_date, e.resolution_type,
+                  e.penalty_usd, e.primary_ref, e.description, e.source_url
+           FROM institutions i
+           JOIN enforcement_actions e
+             ON gh_norm(e.company_name) = gh_norm(i.display_name)
+           WHERE e.is_duplicate = 0
+           ORDER BY i.display_name, e.action_date DESC""").fetchall()
+    return [OwnRecordRow(**dict(r), quarantined=True) for r in rows]
+
+
+@dataclass
 class VoteDivergence:
     institution: str
     issuer_name: str

@@ -58,6 +58,46 @@ def compute(conn: sqlite3.Connection) -> Delta:
     return d
 
 
+def holdings_changes(conn: sqlite3.Connection, institution_id: str,
+                     min_value_usd: int = 10_000_000) -> dict:
+    """Positions opened / closed / materially changed between the two most
+    recent 13-F periods on record for an institution. Position-level deltas
+    are the publishable unit of the holdings story."""
+    periods = [r[0] for r in conn.execute(
+        """SELECT DISTINCT f.period_of_report FROM filings f
+           WHERE f.institution_id = ? AND f.form_type LIKE '13F%'
+           ORDER BY f.period_of_report DESC LIMIT 2""", (institution_id,))]
+    if len(periods) < 2:
+        return {"periods": periods, "opened": [], "closed": [], "changed": []}
+    new_p, old_p = periods[0], periods[1]
+
+    def positions(period):
+        return {r["cusip"]: dict(r) for r in conn.execute(
+            """SELECT h.cusip, h.issuer_name, SUM(h.value_usd) AS value_usd,
+                      SUM(h.shares) AS shares
+               FROM holdings h JOIN filings f ON f.accession = h.accession
+               WHERE f.institution_id = ? AND f.period_of_report = ? AND h.cusip != ''
+               GROUP BY h.cusip""", (institution_id, period))}
+
+    new, old = positions(new_p), positions(old_p)
+    opened = sorted((v for k, v in new.items() if k not in old),
+                    key=lambda v: -v["value_usd"])
+    closed = sorted((v for k, v in old.items() if k not in new),
+                    key=lambda v: -v["value_usd"])
+    changed = []
+    for k in new.keys() & old.keys():
+        ds = new[k]["shares"] - old[k]["shares"]
+        if old[k]["shares"] and abs(ds) / old[k]["shares"] >= 0.10 \
+                and max(new[k]["value_usd"], old[k]["value_usd"]) >= min_value_usd:
+            changed.append({**new[k], "shares_delta": ds,
+                            "pct": 100 * ds / old[k]["shares"]})
+    changed.sort(key=lambda v: -abs(v["shares_delta"] * v["value_usd"] / (v["shares"] or 1)))
+    return {"periods": [new_p, old_p],
+            "opened": [o for o in opened if o["value_usd"] >= min_value_usd],
+            "closed": [c for c in closed if c["value_usd"] >= min_value_usd],
+            "changed": changed}
+
+
 def record_run(conn: sqlite3.Connection) -> str:
     """Snapshot the current ledger frontier as a run; future diffs are
     computed against the most recent run."""

@@ -59,19 +59,110 @@ voted {how_voted} ({shares:,.0f} sh) on "{proposal_short}" at {issuer}, {meeting
 N-PX {accession}.
 """
 
+_PITCH_TEMPLATE = """\
+To: {reporter} ({outlet}) — beat: {beat}
+From: Glasshouse (public-interest accountability project)
+Date: {today}
+
+Subject: Documented: {institution} voted {how_voted} on {theme} at {issuer} — \
+against its own published policy language
+
+Peg: {issuer}'s {meeting_date} meeting (SEC Form N-PX {accession}).
+
+The records, all public and linked:
+1. {institution}'s policy "{doc_label}" (retrieved {doc_version}, SHA-256
+   {doc_sha}) states: "{commitment_quote}" — {doc_url}
+2. Its funds voted {how_voted} with {shares:,.0f} shares on: "{proposal}"
+   (management recommendation: {mgmt_rec}).
+
+We can provide the full evidence pack: archived policy versions, the vote
+records as filed, and our methodology including what we exclude and why.
+One follow-up at most; we track and publish institutional responses either way.
+"""
+
+_FIDUCIARY_TEMPLATE = """\
+To: {official} ({jurisdiction})
+From: Glasshouse (public-interest accountability project)
+Date: {today}
+
+Subject: Public comment for the record — proxy voting by {institution}, a manager
+of public beneficiaries' assets
+
+For the investment committee's public record:
+
+1. {institution}'s published policy "{doc_label}" (retrieved {doc_version},
+   SHA-256 {doc_sha}) states: "{commitment_quote}" ({doc_url})
+2. SEC Form N-PX {accession} reports its funds voted {how_voted} with
+   {shares:,.0f} shares on: "{proposal}" at {issuer}, meeting of {meeting_date}.
+
+Question for the record: has the committee assessed whether this voting record
+is consistent with the policy on the basis of which the manager was retained?
+
+All sources are public filings; we will publish any response verbatim.
+"""
+
+_DATA_OFFER_TEMPLATE = """\
+To: {org}
+From: Glasshouse (public-interest accountability project)
+Date: {today}
+
+Subject: Evidence pack offer — {institution} / {theme} ({issuer}, {meeting_date})
+
+Your campaigns cover {focus}. We hold a documented, citable record that may
+serve as a footnote in yours:
+
+- {institution}'s archived policy language: "{commitment_quote}"
+  ({doc_label}, retrieved {doc_version}, SHA-256 {doc_sha}, {doc_url})
+- Its vote: {how_voted}, {shares:,.0f} shares, on "{proposal}" at {issuer}
+  ({meeting_date}, SEC Form N-PX {accession}).
+
+The full pack (machine-readable, with methodology and limitations) is yours
+to use with attribution. No exclusivity, no conditions.
+"""
+
+
+def _contacts() -> dict:
+    import yaml
+    path = Path(__file__).resolve().parents[2] / "config" / "contacts.yaml"
+    if not path.exists():
+        return {}
+    return yaml.safe_load(path.read_text()) or {}
+
 
 def _record(conn: sqlite3.Connection, kind: str, institution_id: str,
-            subject: str, body: str) -> int:
+            subject: str, body: str, finding_fingerprint: str = "") -> int:
     OUTBOX_DIR.mkdir(parents=True, exist_ok=True)
     ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     stem = f"{date.today().isoformat()}_{kind}_{institution_id}_{abs(hash(subject)) % 10**8}"
     path = OUTBOX_DIR / f"{stem}.md"
     path.write_text(body)
     cur = conn.execute(
-        "INSERT INTO outreach (kind, institution_id, subject, body_path, created_ts) "
-        "VALUES (?,?,?,?,?)", (kind, institution_id, subject, str(path), ts))
+        "INSERT INTO outreach (kind, institution_id, subject, body_path, created_ts, "
+        "finding_fingerprint) VALUES (?,?,?,?,?,?)",
+        (kind, institution_id, subject, str(path), ts, finding_fingerprint))
     conn.commit()
     return cur.lastrowid
+
+
+# The escalation ladder, in order. A finding moves down it one human-sent
+# step at a time; `ladder()` reports where each finding stands.
+LADDER = ("social_post", "pitch", "inquiry", "non_response", "fiduciary", "data_offer")
+
+
+def ladder(conn: sqlite3.Connection) -> list[dict]:
+    """Per finding: which escalation steps have been drafted/sent."""
+    rows = conn.execute(
+        """SELECT finding_fingerprint, kind, status, sent_date FROM outreach
+           WHERE finding_fingerprint != '' ORDER BY finding_fingerprint, id""").fetchall()
+    by_f: dict[str, dict] = {}
+    for r in rows:
+        f = by_f.setdefault(r["finding_fingerprint"], {"steps": {}})
+        f["steps"][r["kind"]] = f"{r['status']}{' ' + r['sent_date'] if r['sent_date'] else ''}"
+    out = []
+    for fp, d in by_f.items():
+        next_step = next((s for s in LADDER if s not in d["steps"]), None)
+        out.append({"fingerprint": fp, "steps": d["steps"], "next": next_step})
+    return out
 
 
 def draft_from_candidate(conn: sqlite3.Connection, candidate, kind: str = "inquiry",
@@ -89,17 +180,21 @@ def draft_from_candidate(conn: sqlite3.Connection, candidate, kind: str = "inqui
     from datetime import timedelta
     deadline = (date.today() + timedelta(days=deadline_days)).isoformat()
 
+    common = dict(
+        institution=institution, today=date.today().isoformat(),
+        theme=candidate.theme, doc_label=candidate.doc_label,
+        doc_version=candidate.doc_version, doc_sha=candidate.doc_sha256,
+        commitment_quote=candidate.commitment_quote, doc_url=candidate.doc_url,
+        accession=candidate.accession, issuer=candidate.issuer_name,
+        meeting_date=candidate.meeting_date, proposal=candidate.vote_description,
+        how_voted=candidate.how_voted, shares=candidate.shares_voted,
+        mgmt_rec=candidate.management_recommendation)
+    contacts = _contacts()
+
     if kind == "inquiry":
         body = _INQUIRY_TEMPLATE.format(
-            institution=institution, today=date.today().isoformat(),
             subject=f"{candidate.theme} / {candidate.issuer_name}",
-            doc_label=candidate.doc_label, doc_version=candidate.doc_version,
-            doc_sha=candidate.doc_sha256, commitment_quote=candidate.commitment_quote,
-            doc_url=candidate.doc_url, accession=candidate.accession,
-            issuer=candidate.issuer_name, meeting_date=candidate.meeting_date,
-            proposal=candidate.vote_description, how_voted=candidate.how_voted,
-            shares=candidate.shares_voted, mgmt_rec=candidate.management_recommendation,
-            deadline=deadline)
+            deadline=deadline, **common)
     elif kind == "social_post":
         body = _POST_TEMPLATE.format(
             institution=institution, doc_version=candidate.doc_version,
@@ -108,11 +203,33 @@ def draft_from_candidate(conn: sqlite3.Connection, candidate, kind: str = "inqui
             proposal_short=candidate.vote_description[:80],
             issuer=candidate.issuer_name, meeting_date=candidate.meeting_date,
             accession=candidate.accession)
+    elif kind == "pitch":
+        match = next((r for r in contacts.get("reporters") or []
+                      if candidate.theme in (r.get("beats") or [])), None)
+        body = _PITCH_TEMPLATE.format(
+            reporter=match["name"] if match else "[CONTACT — add to config/contacts.yaml]",
+            outlet=match["outlet"] if match else "[OUTLET]",
+            beat=candidate.theme, **common)
+    elif kind == "fiduciary":
+        match = next(iter(contacts.get("officials") or []), None)
+        body = _FIDUCIARY_TEMPLATE.format(
+            official=match["name"] if match else "[OFFICIAL — add to config/contacts.yaml]",
+            jurisdiction=match["jurisdiction"] if match else "[JURISDICTION]",
+            **common)
+    elif kind == "data_offer":
+        match = next((o for o in contacts.get("advocacy_orgs") or []
+                      if candidate.theme in (o.get("focus") or [])), None)
+        body = _DATA_OFFER_TEMPLATE.format(
+            org=match["name"] if match else "[ORG]",
+            focus=", ".join(match.get("focus", [])) if match else "[FOCUS AREAS]",
+            **common)
     else:
-        raise NotImplementedError(f"draft kind {kind} not implemented yet")
+        raise ValueError(f"unknown draft kind {kind}")
 
+    from .review import fingerprint
     subject = f"{candidate.theme}: {candidate.issuer_name} {candidate.meeting_date}"
-    return _record(conn, kind, candidate.institution_id, subject, body)
+    return _record(conn, kind, candidate.institution_id, subject, body,
+                   finding_fingerprint=fingerprint(candidate))
 
 
 def mark_sent(conn: sqlite3.Connection, outreach_id: int, *, human_confirmed: bool) -> None:

@@ -114,7 +114,8 @@ def test_site_build(conn, tmp_path):
     assert (out / "candidates.html").exists()
     assert (out / "how-to-read.html").exists()
     assert (out / "feed.xml").read_text().startswith("<?xml")
-    assert stats["pages"] == 5
+    assert stats["pages"] == 6
+    assert (out / "findings.html").exists()
     # Reader guidance must ship with the data, not live only in the repo.
     how = (out / "how-to-read.html").read_text()
     assert "Guilty plea" in how and "Allegation only" in how

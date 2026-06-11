@@ -62,6 +62,29 @@ def scan(conn: sqlite3.Connection, sources: list[str] | None = None) -> dict:
     return {"new_actions": len(new_rows), "alerts": n_alerts}
 
 
+def news_scan(conn: sqlite3.Connection, timespan: str = "1d") -> int:
+    """GDELT pass: news pairing tracked institutions with enforcement terms.
+    Output is a trigger file for HUMAN verification against primary sources;
+    nothing from this pass enters the evidence ledger."""
+    from .ingest.gdelt import news_triggers
+    names = [r[0] for r in conn.execute(
+        "SELECT display_name FROM institutions WHERE id IN "
+        "(SELECT DISTINCT institution_id FROM filings WHERE institution_id IS NOT NULL)")]
+    hits = news_triggers(names, timespan=timespan)
+    if not hits:
+        return 0
+    ALERTS_DIR.mkdir(parents=True, exist_ok=True)
+    path = ALERTS_DIR / f"{date.today().isoformat()}_news_triggers.md"
+    lines = ["# News triggers (GDELT)", "",
+             "NOT CITABLE. Each line is a lead to verify against a primary source",
+             "(DOJ/SEC/court records) before any use whatsoever.", ""]
+    for h in hits:
+        lines.append(f"- [{h['name']}] {h['title']} — {h['domain']} "
+                     f"({h['seendate']}) {h['url']}")
+    path.write_text("\n".join(lines) + "\n")
+    return len(hits)
+
+
 def _write_alert(action, votes, holds) -> None:
     ALERTS_DIR.mkdir(parents=True, exist_ok=True)
     slug = normalize_name(action["company_name"]).replace(" ", "-")[:50] or "unknown"

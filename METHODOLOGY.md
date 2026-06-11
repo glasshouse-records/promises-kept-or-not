@@ -131,10 +131,31 @@ path (bulk download, official API) is found.
   leans on the management recommendation must first be verified against the
   issuer's proxy statement.
 
-## Scoring
+## Scoring — the Concern Index (v0)
 
-*(Not yet implemented — will be documented here in full, with formula and
-confidence intervals, before any score is published.)*
+For a company's set of resolved enforcement actions:
+
+```
+concern_raw = recidivism × Σ severity(resolution_type) × 0.5^(age_years / 5)
+score       = 100 × (1 − e^(−concern_raw / 20))
+```
+
+- **Severity** (fixed table, anchored to legal weight): guilty plea 10,
+  sanction designation 9, DPA 7, NPA 6, debarment 6, civil settlement 5,
+  civil violation / board order 4, administrative 3, expulsion 2.
+  **Allegations and unverified records score zero** — quarantined data
+  never moves a score.
+- **Recency**: 5-year half-life; undated actions are discounted as if 10
+  years old.
+- **Recidivism**: × (1 + 0.15 × (n − 1)), capped at 2.0.
+- Duplicate-marked rows are excluded before scoring.
+
+Every score is reproducible from the public ledger
+(`glasshouse report concern --company X` prints the full per-action
+breakdown). The index is an analytical summary of public records, not a
+legal finding. **v0 limitation:** no confidence intervals on gapped data
+yet; scores on companies with sparse coverage understate, never overstate,
+because absent records contribute nothing.
 
 ## Limitations
 

@@ -147,6 +147,25 @@ CREATE TABLE IF NOT EXISTS outreach (
     response_summary TEXT NOT NULL DEFAULT ''
 );
 
+CREATE TABLE IF NOT EXISTS findings (
+    id            INTEGER PRIMARY KEY,
+    fingerprint   TEXT UNIQUE NOT NULL,   -- stable id of the underlying candidate
+    theme         TEXT NOT NULL,
+    institution_id TEXT NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'pending',  -- pending | approved | rejected
+    reviewer_note TEXT NOT NULL DEFAULT '',
+    reviewed_date TEXT NOT NULL DEFAULT '',
+    payload       TEXT NOT NULL            -- JSON citation chain, frozen at review time
+);
+
+CREATE TABLE IF NOT EXISTS signals (
+    id         INTEGER PRIMARY KEY,
+    ts         TEXT NOT NULL,
+    kind       TEXT NOT NULL,   -- pitch_reply | citation | subscriber | inquiry_response | other
+    detail     TEXT NOT NULL,
+    source_url TEXT NOT NULL DEFAULT ''
+);
+
 CREATE TABLE IF NOT EXISTS commitments (
     id                INTEGER PRIMARY KEY,
     institution_id    TEXT NOT NULL REFERENCES institutions(id),
@@ -207,6 +226,11 @@ def _migrate(conn: sqlite3.Connection) -> None:
     if "is_duplicate" not in ecols:
         conn.execute("ALTER TABLE enforcement_actions ADD COLUMN is_duplicate "
                      "INTEGER NOT NULL DEFAULT 0")
+        conn.commit()
+    ocols = {r[1] for r in conn.execute("PRAGMA table_info(outreach)")}
+    if "finding_fingerprint" not in ocols:
+        conn.execute("ALTER TABLE outreach ADD COLUMN finding_fingerprint "
+                     "TEXT NOT NULL DEFAULT ''")
         conn.commit()
 
 

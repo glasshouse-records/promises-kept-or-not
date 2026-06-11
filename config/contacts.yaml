@@ -1,0 +1,29 @@
+# Outreach contact registry — PUBLIC contact information only (published
+# bylines, public desk addresses, org contact pages). Fill before drafting
+# pitches/fiduciary letters; drafts address "[CONTACT]" placeholders until
+# a matching entry exists. Nothing is ever sent by the tool either way.
+
+reporters:
+  # - name: "Jane Doe"
+  #   outlet: "Example Financial News"
+  #   beats: [climate, lobbying-disclosure]      # matched to finding themes
+  #   contact: "jane.doe@example-outlet.com"     # from their public byline page
+  #   source: "https://example-outlet.com/staff/jane-doe"
+
+officials:
+  # Fiduciary channel: officials with legal standing over public money.
+  # - name: "Office of the State Treasurer"
+  #   jurisdiction: "Example State"
+  #   contact: "comments@treasurer.example.gov"
+  #   source: "https://treasurer.example.gov/contact"
+
+advocacy_orgs:
+  - name: "As You Sow"
+    focus: [climate, lobbying-disclosure, board-diversity]
+    source: "https://www.asyousow.org"
+  - name: "Majority Action"
+    focus: [climate, human-rights]
+    source: "https://www.majorityaction.us"
+  - name: "ShareAction"
+    focus: [climate, human-rights, lobbying-disclosure]
+    source: "https://shareaction.org"

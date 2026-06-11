@@ -168,6 +168,8 @@ def cmd_scan_events(args) -> int:
     from . import events
     conn = _conn()
     stats = events.scan(conn, sources=args.source)
+    if getattr(args, "news", False):
+        stats["news_triggers"] = events.news_scan(conn)
     print(f"  {stats} — alert packs in {events.ALERTS_DIR}/")
     return 0
 
@@ -307,6 +309,115 @@ def cmd_report_flagged_votes(args) -> int:
     return 0
 
 
+def cmd_review(args) -> int:
+    from . import review
+    conn = _conn()
+    if args.action == "sync":
+        n = review.sync(conn)
+        print(f"  {n} new candidates queued; totals: {review.stats(conn)}")
+    elif args.action == "list":
+        for f in review.queue(conn, args.status):
+            p = f["payload"]
+            print(f"\n#{f['id']} [{f['status']}] {f['theme']} | {f['institution_id']} "
+                  f"@ {p['issuer_name']} ({p['meeting_date']})")
+            print(f"   says: \"{p['commitment_quote'][:110]}\"")
+            print(f"   did:  {p['how_voted']} {int(float(p['shares_voted'])):,} sh — "
+                  f"{p['vote_description'][:110]}")
+            if f["reviewer_note"]:
+                print(f"   note: {f['reviewer_note']} ({f['reviewed_date']})")
+    else:  # approve / reject
+        from . import review as rv
+        rv.decide(conn, args.id, "approved" if args.action == "approve" else "rejected",
+                  args.note or "")
+        print(f"  #{args.id} {args.action}d; totals: {rv.stats(conn)}")
+    return 0
+
+
+def cmd_report_own_record(_args) -> int:
+    conn = _conn()
+    rows = findings.own_record(conn)
+    if not rows:
+        print("no enforcement records matching tracked institutions' names")
+        return 0
+    for r in rows:
+        print(f"\n{r.institution} [LEAD — name join; confirm corporate relationship]")
+        print(f"  {r.agency} | {r.resolution_type} | {r.primary_ref or 'NO REF'} | "
+              f"{r.action_date} | ${r.penalty_usd or 0:,}")
+        print(f"  {(r.description or '')[:180]}")
+    print(f"\n{len(rows)} records. An institution's own record vs its marketing is a "
+          f"first-class finding class — after human verification.")
+    return 0
+
+
+def cmd_report_holdings_diff(args) -> int:
+    from . import diff
+    conn = _conn()
+    d = diff.holdings_changes(conn, args.institution)
+    if len(d["periods"]) < 2:
+        print(f"need two 13-F periods for {args.institution}; have {d['periods']}")
+        return 1
+    print(f"{args.institution}: {d['periods'][1]} → {d['periods'][0]} "
+          f"(positions ≥ $10M)")
+    for label in ("opened", "closed"):
+        print(f"\n  {label.upper()} ({len(d[label])}):")
+        for p in d[label][:10]:
+            print(f"    {p['issuer_name']:<45} ${p['value_usd']:,}")
+    print(f"\n  CHANGED ≥10% ({len(d['changed'])}):")
+    for p in d["changed"][:10]:
+        print(f"    {p['issuer_name']:<45} {p['pct']:+.0f}% shares")
+    return 0
+
+
+def cmd_report_concern(args) -> int:
+    from . import scoring
+    conn = _conn()
+    if args.company:
+        rows = conn.execute(
+            "SELECT company_name, resolution_type, action_date FROM enforcement_actions "
+            "WHERE is_duplicate=0 AND company_name LIKE ?", (f"%{args.company}%",)).fetchall()
+        s = scoring.concern_index([dict(r) for r in rows])
+        print(f"{args.company}: score {s['score']}/100 (raw {s['raw']}, "
+              f"{s['n_scored_actions']} scored actions, ×{s['recidivism_multiplier']})")
+        for p in s["breakdown"]:
+            print(f"  {p['action_date']:<12} {p['resolution_type']:<18} "
+                  f"sev {p['severity']} × decay {p['decay']} = {p['contribution']:.2f}")
+    else:
+        for s in scoring.company_scores(conn, limit=args.limit):
+            print(f"  {s['score']:>5}/100  {s['company']:<50} "
+                  f"({s['n_scored_actions']} actions)")
+    print("\nFormula: severity × 0.5^(age/5y), recidivism ×(1+0.15(n−1)) cap 2.0; "
+          "allegations and unverified rows score zero. See METHODOLOGY.md.")
+    return 0
+
+
+def cmd_report_ladder(_args) -> int:
+    from . import outreach
+    conn = _conn()
+    rows = outreach.ladder(conn)
+    if not rows:
+        print("no outreach tied to findings yet")
+        return 0
+    for r in rows:
+        steps = ", ".join(f"{k}:{v}" for k, v in r["steps"].items())
+        print(f"  {r['fingerprint']}: {steps} → next: {r['next'] or 'ladder complete'}")
+    return 0
+
+
+def cmd_signal(args) -> int:
+    from datetime import datetime, timezone
+    conn = _conn()
+    if args.action == "record":
+        conn.execute("INSERT INTO signals (ts, kind, detail, source_url) VALUES (?,?,?,?)",
+                     (datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                      args.kind, args.detail, args.url or ""))
+        conn.commit()
+        print("  recorded")
+    else:
+        for r in conn.execute("SELECT ts, kind, detail, source_url FROM signals ORDER BY id"):
+            print(f"  {r['ts']} [{r['kind']}] {r['detail']} {r['source_url']}")
+    return 0
+
+
 def cmd_dedupe(_args) -> int:
     conn = _conn()
     n = ledger.dedupe_votes(conn)
@@ -392,17 +503,50 @@ def main(argv: list[str] | None = None) -> int:
 
     rep.add_parser("non-response").set_defaults(func=cmd_report_non_response)
     rep.add_parser("awards").set_defaults(func=cmd_report_awards)
+    rep.add_parser("own-record").set_defaults(func=cmd_report_own_record)
+    hd = rep.add_parser("holdings-diff")
+    hd.add_argument("--institution", required=True)
+    hd.set_defaults(func=cmd_report_holdings_diff)
+    cc = rep.add_parser("concern")
+    cc.add_argument("--company")
+    cc.add_argument("--limit", type=int, default=20)
+    cc.set_defaults(func=cmd_report_concern)
+    rep.add_parser("ladder").set_defaults(func=cmd_report_ladder)
+
+    rv = sub.add_parser("review").add_subparsers(dest="action", required=True)
+    rv.add_parser("sync").set_defaults(func=cmd_review)
+    rl = rv.add_parser("list")
+    rl.add_argument("--status", choices=["pending", "approved", "rejected"])
+    rl.set_defaults(func=cmd_review)
+    for act in ("approve", "reject"):
+        ra = rv.add_parser(act)
+        ra.add_argument("id", type=int)
+        ra.add_argument("--note", required=True,
+                        help="why — every decision is documented")
+        ra.set_defaults(func=cmd_review)
+
+    sg = sub.add_parser("signal").add_subparsers(dest="action", required=True)
+    sr = sg.add_parser("record")
+    sr.add_argument("kind", choices=["pitch_reply", "citation", "subscriber",
+                                     "inquiry_response", "other"])
+    sr.add_argument("detail")
+    sr.add_argument("--url")
+    sr.set_defaults(func=cmd_signal)
+    sg.add_parser("list").set_defaults(func=cmd_signal)
 
     sc = sub.add_parser("scan-events")
     sc.add_argument("--source", action="append", default=None,
                     choices=["doj_fcpa", "ofac", "worldbank", "ungc"])
+    sc.add_argument("--news", action="store_true",
+                    help="also run the GDELT news-trigger pass (never citable)")
     sc.set_defaults(func=cmd_scan_events)
 
     sub.add_parser("site").set_defaults(func=cmd_site)
 
     out = sub.add_parser("outreach").add_subparsers(dest="action", required=True)
     od = out.add_parser("draft")
-    od.add_argument("--kind", default="inquiry", choices=["inquiry", "social_post"])
+    od.add_argument("--kind", default="inquiry",
+                    choices=["inquiry", "social_post", "pitch", "fiduciary", "data_offer"])
     od.add_argument("--institution")
     od.add_argument("--theme")
     od.set_defaults(func=cmd_outreach_draft)
