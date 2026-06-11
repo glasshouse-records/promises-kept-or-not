@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "evidence-site",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8000", "-d", "data/_site"],
+      "port": 8000
+    },
+    {
+      "name": "datasette-ledger",
+      "runtimeExecutable": ".venv/bin/datasette",
+      "runtimeArgs": ["data/glasshouse.db", "-m", "datasette/metadata.json", "--port", "8001", "--setting", "sql_time_limit_ms", "5000"],
+      "port": 8001
+    }
+  ]
+}
