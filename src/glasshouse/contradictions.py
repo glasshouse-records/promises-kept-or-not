@@ -115,16 +115,27 @@ def find_commitment_vote_contradictions(
     """Candidates where an institution's archived commitment language and its
     AGAINST votes on same-theme shareholder proposals coexist.
 
-    Vote side is restricted to the strongest shape: the institution voted
-    AGAINST while management also recommended AGAINST (i.e. the fund sided
-    with management to kill a proposal on a theme its policy embraces).
+    Vote side: the institution voted AGAINST a proposal on a theme its
+    policy embraces. The management recommendation is carried through for
+    disclosure, not filtered on — live data (2026-06-11) shows theme votes
+    split both ways relative to management (say-on-climate items are
+    management-sponsored with mgmt FOR; US shareholder proposals have mgmt
+    AGAINST), and both shapes are reviewable candidates.
     """
-    docs = conn.execute(
+    # Most recent version per document by date (wayback timestamps and live
+    # retrieval dates compared on a common YYYYMMDD key, not by insert order).
+    all_docs = conn.execute(
         """SELECT c.institution_id, c.doc_label, c.url, c.sha256, c.content_path,
                   COALESCE(NULLIF(c.wayback_timestamp,''), c.retrieval_date) AS version
-           FROM commitments c
-           WHERE c.id IN (SELECT MAX(id) FROM commitments GROUP BY institution_id, doc_label)"""
+           FROM commitments c"""
     ).fetchall()
+    latest: dict[tuple[str, str], sqlite3.Row] = {}
+    for d in all_docs:
+        key = (d["institution_id"], d["doc_label"])
+        datekey = d["version"].replace("-", "")[:8]
+        if key not in latest or datekey > latest[key]["version"].replace("-", "")[:8]:
+            latest[key] = d
+    docs = list(latest.values())
 
     candidates: list[ContradictionCandidate] = []
     for doc in docs:
@@ -144,7 +155,6 @@ def find_commitment_vote_contradictions(
                    JOIN filings f ON f.accession = v.accession
                    WHERE f.institution_id = ?
                      AND v.how_voted = 'AGAINST'
-                     AND v.management_recommendation = 'AGAINST'
                    ORDER BY v.shares_voted DESC""",
                 (doc["institution_id"],),
             ).fetchall()

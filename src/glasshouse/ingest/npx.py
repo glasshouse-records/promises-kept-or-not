@@ -200,8 +200,26 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
             stats["skipped"] += 1
             continue
 
-        cover_bytes = http.get(f"{filing.directory_url}/primary_doc.xml").content
-        cover = parse_cover(cover_bytes)
+        try:
+            cover_bytes = http.get(f"{filing.directory_url}/primary_doc.xml").content
+            cover = parse_cover(cover_bytes)
+        except Exception as exc:
+            # Pre-2024 N-PX filings (before the vote-level XML rule) have no
+            # primary_doc.xml cover. Record the filing so it isn't retried,
+            # but ingest no votes from it.
+            logger.warning("no parseable cover for %s (%s) — recording as legacy, skipping votes",
+                           filing.accession_number, exc)
+            conn.execute(
+                """INSERT INTO filings (accession, cik, institution_id, form_type, filing_date,
+                                        period_of_report, report_type, source_url, retrieval_date)
+                   VALUES (?,?,?,?,?,?,?,?,?)""",
+                (filing.accession_number, filing.cik, institution_id, filing.form_type,
+                 filing.filing_date, filing.period_of_report, "LEGACY_NO_COVER",
+                 filing.directory_url, today),
+            )
+            conn.commit()
+            stats["skipped"] += 1
+            continue
 
         conn.execute(
             """INSERT INTO filings (accession, cik, institution_id, form_type, filing_date,

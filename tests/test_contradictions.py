@@ -53,13 +53,29 @@ def test_say_do_join_produces_quarantined_candidate_with_citation_chain(conn, tm
     assert r.how_voted == "AGAINST" and r.shares_voted == 1_250_000
 
 
-def test_only_against_against_votes_qualify(conn, tmp_path):
+def test_for_votes_do_not_qualify(conn, tmp_path):
     # FOR votes on theme proposals are consistent with the commitment, not
-    # contradictions; they must not appear.
+    # contradictions; they must not appear regardless of management's rec.
     _setup(conn, tmp_path,
            vote_desc="Shareholder proposal: report on anti-corruption accountability",
            how="FOR", mgmt="AGAINST")
     assert find_commitment_vote_contradictions(conn) == []
+
+
+def test_against_votes_qualify_whatever_management_recommended(conn, tmp_path):
+    # Say-on-climate shape: management sponsored the climate plan (mgmt FOR),
+    # the fund voted AGAINST — still a reviewable say-do candidate.
+    _setup(conn, tmp_path,
+           vote_desc="Approve the company's climate transition action plan",
+           how="AGAINST", mgmt="FOR")
+    policy = conn.execute("SELECT content_path FROM commitments").fetchone()[0]
+    from pathlib import Path
+    Path(policy).write_text("Our approach to climate risk informs our voting.")
+    Path(policy + ".txt").unlink(missing_ok=True)
+    rows = find_commitment_vote_contradictions(conn)
+    assert len(rows) == 1
+    assert rows[0].theme == "climate"
+    assert rows[0].management_recommendation == "FOR"
 
 
 def test_off_theme_votes_do_not_match(conn, tmp_path):

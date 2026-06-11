@@ -100,6 +100,13 @@ a missed match is acceptable.
 
 All sources are free and public. No paid APIs are used anywhere.
 
+Source-access notes (probed 2026-06-11): the World Bank debarment API and
+CFPB enforcement pages reject non-browser clients at the CDN; the UNGC
+participants JSON endpoint and the SEC litigation-release RSS URL both moved
+or now serve HTML. Glasshouse does not impersonate browsers to evade CDN
+rules — blocked sources stay on curated snapshots until a sanctioned access
+path (bulk download, official API) is found.
+
 ### N-PX parsing notes (validated 2026-06-10)
 
 - Vote tables are separate XML exhibits in the filing directory (65–124 MB),
