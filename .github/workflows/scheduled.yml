@@ -1,0 +1,43 @@
+# Scheduler = GitHub Actions ONLY. Files-first; nothing to babysit.
+# These jobs are inert until the repo is pushed to GitHub (publication is
+# currently deferred by the maintainer).
+name: Scheduled runs
+
+on:
+  schedule:
+    - cron: "17 11 * * *"   # daily: enforcement event scan
+    - cron: "31 6 20 2,5,8,11 *"  # quarterly: 13-F (45 days after quarter end)
+    - cron: "45 7 5 9 *"    # annual: N-PX (proxy-season close, filings due Aug 31)
+  workflow_dispatch:
+
+jobs:
+  scheduled:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Restore ledger artifact
+        uses: actions/cache@v4
+        with:
+          path: data/glasshouse.db
+          key: ledger-${{ github.run_id }}
+          restore-keys: ledger-
+      - name: Daily event scan
+        run: |
+          glasshouse init-db
+          glasshouse scan-events
+          glasshouse diff --record
+        env:
+          GLASSHOUSE_CONTACT: ${{ vars.GLASSHOUSE_CONTACT }}
+      - name: Upload alerts + site
+        run: glasshouse site
+      - uses: actions/upload-artifact@v4
+        with:
+          name: alerts-and-site-${{ github.run_number }}
+          path: |
+            data/alerts/
+            data/_site/
+          if-no-files-found: ignore

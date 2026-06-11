@@ -1,0 +1,17 @@
+{
+  "title": "Glasshouse evidence ledger",
+  "description": "What financial institutions publicly commit to vs. what they do. Every record carries source_url, retrieval_date, primary_ref, resolution_type. DPA/NPA are not convictions; dockets are allegations; quarantined rows are leads, not findings. See METHODOLOGY.md.",
+  "license": "CC-BY-4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "databases": {
+    "glasshouse": {
+      "tables": {
+        "votes": {"description": "SEC Form N-PX proxy votes, one row per voteRecord. Source: filings.source_url per accession."},
+        "enforcement_actions": {"description": "Enforcement universe. resolution_type is legally material: guilty_plea != dpa != npa != civil_settlement. 'unverified' rows and rows without primary_ref are quarantined."},
+        "commitments": {"description": "Versioned, content-addressed snapshots of institutions' own published policies (live + Wayback)."},
+        "holdings": {"description": "SEC Form 13-F holdings (full dollars). Holdings alone are the weakest evidence class: the passive-index alibi applies."},
+        "match_log": {"description": "Every fuzzy entity-match attempt, accepted or not. Precision over recall."}
+      }
+    }
+  }
+}

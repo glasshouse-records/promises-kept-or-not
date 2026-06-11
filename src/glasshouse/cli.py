@@ -153,6 +153,112 @@ def cmd_report_contradictions(args) -> int:
     return 0
 
 
+def cmd_ingest_13f(args) -> int:
+    from .ingest import thirteenf
+    conn = _conn()
+    insts = registry.load()
+    cik = args.cik or insts[args.institution]["cik"]
+    stats = thirteenf.ingest_13f(conn, cik, institution_id=args.institution,
+                                 max_filings=args.max_filings)
+    print(f"  {stats}")
+    return 0
+
+
+def cmd_scan_events(args) -> int:
+    from . import events
+    conn = _conn()
+    stats = events.scan(conn, sources=args.source)
+    print(f"  {stats} — alert packs in {events.ALERTS_DIR}/")
+    return 0
+
+
+def cmd_site(_args) -> int:
+    from . import site
+    conn = _conn()
+    stats = site.build(conn)
+    print(f"  built {stats['pages']} pages, {stats['candidates']} candidates → {site.SITE_DIR}/")
+    print(f"  preview: python -m http.server -d {site.SITE_DIR}")
+    return 0
+
+
+def cmd_outreach_draft(args) -> int:
+    from . import contradictions, outreach
+    conn = _conn()
+    cands = contradictions.find_commitment_vote_contradictions(conn, limit_per_theme=10)
+    cands = [c for c in cands
+             if (not args.institution or c.institution_id == args.institution)
+             and (not args.theme or c.theme == args.theme)]
+    if not cands:
+        print("no matching contradiction candidates to draft from")
+        return 1
+    c = max(cands, key=lambda x: x.shares_voted)
+    oid = outreach.draft_from_candidate(conn, c, kind=args.kind)
+    row = conn.execute("SELECT body_path FROM outreach WHERE id=?", (oid,)).fetchone()
+    print(f"  draft #{oid} ({args.kind}) → {row['body_path']}")
+    print("  NOTHING IS SENT. Review, send manually, then: "
+          f"glasshouse outreach mark-sent {oid} --i-sent-this")
+    return 0
+
+
+def cmd_outreach_list(_args) -> int:
+    conn = _conn()
+    for r in conn.execute("SELECT id, kind, institution_id, subject, status, sent_date, "
+                          "response_date FROM outreach ORDER BY id"):
+        print(f"  #{r['id']} [{r['status']:<8}] {r['kind']:<12} {r['institution_id']} — "
+              f"{r['subject']} (sent: {r['sent_date'] or '—'}; response: {r['response_date'] or '—'})")
+    return 0
+
+
+def cmd_outreach_mark_sent(args) -> int:
+    from . import outreach
+    outreach.mark_sent(_conn(), args.id, human_confirmed=args.i_sent_this)
+    print(f"  #{args.id} marked sent {'' if args.i_sent_this else '(refused)'}")
+    return 0
+
+
+def cmd_outreach_record_response(args) -> int:
+    from . import outreach
+    outreach.record_response(_conn(), args.id, args.summary)
+    print(f"  #{args.id} response recorded")
+    return 0
+
+
+def cmd_report_non_response(_args) -> int:
+    from . import outreach
+    rows = outreach.non_response_ledger(_conn())
+    if not rows:
+        print("non-response ledger is empty")
+        return 0
+    for r in rows:
+        print(f"  Asked {r['institution_id']} on {r['sent_date']} about "
+              f"\"{r['subject']}\". Day {r['days_without_response']}: no response.")
+    return 0
+
+
+def cmd_report_awards(_args) -> int:
+    from . import contradictions, outreach
+    conn = _conn()
+    cands = contradictions.find_commitment_vote_contradictions(conn, limit_per_theme=25)
+    by_inst: dict[str, dict] = {}
+    for c in cands:
+        d = by_inst.setdefault(c.institution_id, {"n": 0, "shares": 0.0})
+        d["n"] += 1
+        d["shares"] += c.shares_voted
+    print("ANNUAL RANKED AWARDS (draft — candidates only, all quarantined)\n")
+    print("Most votes against own stated policy themes:")
+    for inst, d in sorted(by_inst.items(), key=lambda kv: -kv[1]["n"]):
+        print(f"  {inst}: {d['n']} candidate votes")
+    print("\nLargest say–do gap (shares-weighted candidates):")
+    for inst, d in sorted(by_inst.items(), key=lambda kv: -kv[1]["shares"]):
+        print(f"  {inst}: {int(d['shares']):,} shares voted against own themes")
+    nr = outreach.non_response_ledger(conn)
+    if nr:
+        print("\nLongest non-response:")
+        for r in sorted(nr, key=lambda x: -x["days_without_response"])[:5]:
+            print(f"  {r['institution_id']}: day {r['days_without_response']} — {r['subject']}")
+    return 0
+
+
 def cmd_enrich_lei(args) -> int:
     from .ingest import gleif
     conn = _conn()
@@ -241,6 +347,11 @@ def main(argv: list[str] | None = None) -> int:
                      help="also archive historical versions from the Wayback Machine")
     com.add_argument("--wayback-limit", type=int, default=10)
     com.set_defaults(func=cmd_ingest_commitments)
+    t13 = ing.add_parser("13f")
+    t13.add_argument("--cik")
+    t13.add_argument("--institution")
+    t13.add_argument("--max-filings", type=int, default=1)
+    t13.set_defaults(func=cmd_ingest_13f)
 
     rep = sub.add_parser("report").add_subparsers(dest="which", required=True)
     fv = rep.add_parser("flagged-votes")
@@ -267,6 +378,33 @@ def main(argv: list[str] | None = None) -> int:
     df.add_argument("--record", action="store_true",
                     help="record this ledger frontier as the new baseline run")
     df.set_defaults(func=cmd_diff)
+
+    rep.add_parser("non-response").set_defaults(func=cmd_report_non_response)
+    rep.add_parser("awards").set_defaults(func=cmd_report_awards)
+
+    sc = sub.add_parser("scan-events")
+    sc.add_argument("--source", action="append", default=None,
+                    choices=["doj_fcpa", "ofac", "worldbank", "ungc"])
+    sc.set_defaults(func=cmd_scan_events)
+
+    sub.add_parser("site").set_defaults(func=cmd_site)
+
+    out = sub.add_parser("outreach").add_subparsers(dest="action", required=True)
+    od = out.add_parser("draft")
+    od.add_argument("--kind", default="inquiry", choices=["inquiry", "social_post"])
+    od.add_argument("--institution")
+    od.add_argument("--theme")
+    od.set_defaults(func=cmd_outreach_draft)
+    out.add_parser("list").set_defaults(func=cmd_outreach_list)
+    oms = out.add_parser("mark-sent")
+    oms.add_argument("id", type=int)
+    oms.add_argument("--i-sent-this", action="store_true",
+                     help="explicit human confirmation that YOU sent it")
+    oms.set_defaults(func=cmd_outreach_mark_sent)
+    orr = out.add_parser("record-response")
+    orr.add_argument("id", type=int)
+    orr.add_argument("summary")
+    orr.set_defaults(func=cmd_outreach_record_response)
 
     sub.add_parser("integrity").set_defaults(func=cmd_integrity)
 

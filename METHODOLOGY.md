@@ -116,6 +116,11 @@ path (bulk download, official API) is found.
   `reportType = FUND NOTICE REPORT` are cover-only notices with no votes.
 - One `proxyTable` may contain **multiple** `voteRecord` elements; all are
   parsed.
+- `managementRecommendation` values look inconsistent with proxy-statement
+  norms in some rows (e.g. "FOR" on shareholder proposals). Glasshouse
+  reports the field verbatim with its accession; any published claim that
+  leans on the management recommendation must first be verified against the
+  issuer's proxy statement.
 
 ## Scoring
 

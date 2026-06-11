@@ -117,6 +117,36 @@ CREATE TABLE IF NOT EXISTS entity_cusips (
     entity_id INTEGER NOT NULL REFERENCES entities(id)
 );
 
+CREATE TABLE IF NOT EXISTS holdings (
+    id            INTEGER PRIMARY KEY,
+    accession     TEXT NOT NULL REFERENCES filings(accession),
+    issuer_name   TEXT,
+    cusip         TEXT,
+    title_class   TEXT,
+    value_usd     INTEGER,           -- full dollars (SEC 13-F amendment, 2024)
+    shares        REAL,
+    shares_type   TEXT,              -- SH | PRN
+    put_call      TEXT,
+    discretion    TEXT,
+    voting_sole   INTEGER,
+    voting_shared INTEGER,
+    voting_none   INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_holdings_cusip ON holdings(cusip);
+
+CREATE TABLE IF NOT EXISTS outreach (
+    id               INTEGER PRIMARY KEY,
+    kind             TEXT NOT NULL,   -- social_post | pitch | inquiry | fiduciary | data_offer
+    institution_id   TEXT,
+    subject          TEXT NOT NULL,
+    body_path        TEXT NOT NULL,
+    created_ts       TEXT NOT NULL,
+    status           TEXT NOT NULL DEFAULT 'draft',  -- draft | approved | sent | declined
+    sent_date        TEXT NOT NULL DEFAULT '',
+    response_date    TEXT NOT NULL DEFAULT '',
+    response_summary TEXT NOT NULL DEFAULT ''
+);
+
 CREATE TABLE IF NOT EXISTS commitments (
     id                INTEGER PRIMARY KEY,
     institution_id    TEXT NOT NULL REFERENCES institutions(id),

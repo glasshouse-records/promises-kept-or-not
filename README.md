@@ -43,17 +43,20 @@ primary source.
 
 ## Status
 
-- **Phase 1 done:** N-PX streaming ingestion (71k+ vote rows live-validated),
-  evidence ledger, entity resolution, first enforcement sources (12.7k
-  actions).
-- **Phase 2 started:** commitments ledger — versioned, content-addressed
-  snapshots of institutions' own policy documents, including Wayback history
-  (7 versions of BlackRock's stewardship principles, 2019→2026).
-- **Phase 3 started:** vote-divergence findings (same manager voting both
-  ways on identical proposals — 2,400+ split proposals in the first filing
-  alone) and the diff engine (deltas are the publishable unit).
+All seven phases have working implementations (live-validated 2026-06-11):
 
-See roadmap in [METHODOLOGY.md](METHODOLOGY.md#roadmap).
+- **Data:** 2.16M N-PX vote rows, 48k 13-F holdings, 12.7k enforcement
+  actions, versioned commitment snapshots incl. Wayback history.
+- **Findings:** contradiction engine (SAY×DO candidates with full citation
+  chains), vote-divergence report, diff engine, event-triggered alert packs.
+- **Interfaces:** static site + Atom feed (`glasshouse site`), Datasette
+  config ([datasette/metadata.json](datasette/metadata.json)), MCP server
+  (`python -m glasshouse.mcp_server`).
+- **Outreach:** human-gated draft queue (inquiries, posts), non-response
+  ledger, annual awards rankings. Nothing sends itself, ever.
+
+Publication is currently deferred by the maintainer; everything builds and
+runs locally. Roadmap in [METHODOLOGY.md](METHODOLOGY.md#roadmap).
 
 ## Quick start
 
