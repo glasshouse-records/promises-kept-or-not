@@ -1,11 +1,16 @@
-"""Phase 4 — the public evidence site, built straight from the ledger.
+"""Phase 4 — the public evidence site: an editorial, visual reading
+experience generated straight from the ledger.
 
-Not a database dump: a guided reading experience. Every page answers three
-reader questions in order — what is this, what did we find, how do I verify
-it myself. Visual synthesis (vote-behavior bars, enforcement landscape,
-policy timelines) is generated as dependency-free HTML/CSS from ledger
-queries; claim cards show SAY and DID side by side with the full citation
-chain. Static output, GitHub-Pages-ready, no build toolchain.
+Design principle: one visual idiom per story, never a generic table.
+  - scale            → waffle grid (100 squares = all votes)
+  - theme opposition → butterfly chart (AGAINST pulls left, FOR pulls right)
+  - one claim        → editorial SAY|DID card + donut gauge of shares
+  - policy history   → SVG timeline with a year axis (drift made visible)
+  - enforcement mix  → mosaic tiles (a landscape, not a ranking)
+  - internal splits  → tug-of-war bars from a center spine
+
+Static output, no build toolchain, no external assets; dark-mode aware;
+tiny inline vanilla JS for scroll-reveal, count-up and filtering only.
 """
 
 from __future__ import annotations
@@ -20,91 +25,175 @@ from .http import DATA_DIR
 
 SITE_DIR = DATA_DIR / "_site"
 
-# ── design system ────────────────────────────────────────────────────────────
+# ── design tokens ────────────────────────────────────────────────────────────
 
 _CSS = """
 :root{
-  --bg:#faf9f7; --panel:#ffffff; --ink:#1c1b19; --muted:#6b675f;
-  --line:#e6e2da; --accent:#0e6e6e; --accent-ink:#0a5252;
-  --warn-bg:#fdf3d7; --warn-ink:#7a5a00; --warn-line:#ecd9a0;
-  --for:#2e7d54; --against:#b4452f; --abstain:#b08c2e; --other:#8a8a8a;
-  --serif:Georgia,'Times New Roman',serif;
+  --bg:#f7f5f1; --panel:#fffefb; --ink:#191713; --muted:#716c62;
+  --line:#e7e2d8; --accent:#0d6b6b; --accent-soft:#e3f0ee;
+  --for:#2c7a52; --against:#bb4430; --abstain:#c39a2e; --other:#9b958a;
+  --shadow:0 1px 2px rgba(25,23,19,.05),0 8px 28px -12px rgba(25,23,19,.18);
+  --serif:'Iowan Old Style',Georgia,'Times New Roman',serif;
   --sans:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root{
-  --bg:#171614; --panel:#201f1c; --ink:#ece9e2; --muted:#a39d92;
-  --line:#36332d; --accent:#5fc4c4; --accent-ink:#8fd8d8;
-  --warn-bg:#332a10; --warn-ink:#e8c96a; --warn-line:#5a4a1a;
+  --bg:#15140f; --panel:#1e1c17; --ink:#ece8df; --muted:#a59e90;
+  --line:#332f27; --accent:#62c2c2; --accent-soft:#173434;
+  --for:#4caf7d; --against:#e06a52; --abstain:#d9b04a;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -12px rgba(0,0,0,.6);
 }}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);
-  font:16px/1.55 var(--sans)}
-a{color:var(--accent-ink);text-decoration:none} a:hover{text-decoration:underline}
-.wrap{max-width:68rem;margin:0 auto;padding:0 1.25rem}
-nav{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);
-  z-index:9;backdrop-filter:blur(6px)}
-nav .wrap{display:flex;gap:1.4rem;align-items:baseline;padding:.7rem 1.25rem;flex-wrap:wrap}
-.wordmark{font:700 1.05rem var(--serif);letter-spacing:.14em;color:var(--ink)}
-nav a{color:var(--muted);font-size:.92rem} nav a.on{color:var(--ink);font-weight:600}
-h1{font:700 2.1rem/1.15 var(--serif);margin:1.6rem 0 .4rem}
-h2{font:700 1.35rem/1.2 var(--serif);margin:2.4rem 0 .8rem}
-h3{font:600 1.05rem var(--sans);margin:1.2rem 0 .5rem}
-.lede{font-size:1.12rem;color:var(--muted);max-width:46rem}
-.statband{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));
-  gap:.8rem;margin:1.6rem 0}
-.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.9rem 1rem}
-.stat b{display:block;font:700 1.7rem var(--serif)}
-.stat span{color:var(--muted);font-size:.85rem}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
-  padding:1.1rem 1.25rem;margin:.9rem 0}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-@media(max-width:760px){.grid2{grid-template-columns:1fr}}
-.saydid{border-left:4px solid var(--accent);padding-left:.9rem}
-.saydid.did{border-color:var(--against)}
-.saydid .tag{font:700 .72rem var(--sans);letter-spacing:.12em;color:var(--muted)}
-blockquote{margin:.4rem 0;font:italic 1.05rem/1.5 var(--serif)}
-.cite{font-size:.8rem;color:var(--muted);word-break:break-word}
-.ribbon{display:inline-block;background:var(--warn-bg);color:var(--warn-ink);
-  border:1px solid var(--warn-line);border-radius:6px;padding:.15rem .55rem;
-  font-size:.78rem;font-weight:600;margin-bottom:.5rem}
-.bar{display:flex;height:1.05rem;border-radius:6px;overflow:hidden;margin:.35rem 0 .2rem}
-.bar i{display:block;height:100%}
-.legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
-.legend i{display:inline-block;width:.7rem;height:.7rem;border-radius:3px;
-  margin-right:.3rem;vertical-align:-1px}
-.hrow{display:grid;grid-template-columns:11rem 1fr 4.5rem;gap:.6rem;align-items:center;
-  font-size:.88rem;margin:.3rem 0}
-.hrow .track{background:var(--line);border-radius:5px;height:.8rem}
-.hrow .fill{background:var(--accent);height:100%;border-radius:5px}
-.hrow b{text-align:right;font-variant-numeric:tabular-nums}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans)}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+.wrap{max-width:72rem;margin:0 auto;padding:0 1.4rem}
+nav{position:sticky;top:0;background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:9}
+nav .wrap{display:flex;gap:1.5rem;align-items:baseline;padding:.85rem 1.4rem;flex-wrap:wrap}
+.wordmark{font:700 1rem var(--serif);letter-spacing:.22em;color:var(--ink)}
+.wordmark em{color:var(--accent);font-style:normal}
+nav a{color:var(--muted);font-size:.9rem} nav a.on{color:var(--ink);font-weight:650}
+
+h1{font:760 clamp(2.1rem,5.5vw,3.4rem)/1.08 var(--serif);letter-spacing:-.01em;
+  margin:2.6rem 0 1rem;max-width:50rem}
+h2{font:700 1.65rem/1.15 var(--serif);margin:3.2rem 0 .35rem}
+h3{font:650 1.05rem var(--sans);margin:1rem 0 .4rem}
+.kicker{font:700 .72rem var(--sans);letter-spacing:.18em;color:var(--accent);
+  text-transform:uppercase;margin:3.2rem 0 -2.9rem}
+.lede{font-size:1.18rem;color:var(--muted);max-width:46rem;line-height:1.65}
+.secnote{color:var(--muted);max-width:44rem;margin:.1rem 0 1.2rem}
+
+.statband{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));
+  gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;
+  overflow:hidden;margin:2rem 0}
+.stat{background:var(--panel);padding:1.1rem 1.2rem}
+.stat b{display:block;font:740 clamp(1.5rem,3vw,2.1rem)/1.1 var(--serif);
+  font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:.82rem}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+  padding:1.4rem 1.5rem;margin:1rem 0;box-shadow:var(--shadow)}
+.card.flat{box-shadow:none}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+.grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:1rem}
+@media(max-width:780px){.grid2{grid-template-columns:1fr}}
+
+/* claim card */
+.claim{position:relative;overflow:hidden}
+.claim::before{content:'';position:absolute;inset:0 auto 0 0;width:5px;
+  background:linear-gradient(180deg,var(--accent),var(--against))}
+.ribbon{display:inline-flex;align-items:center;gap:.4rem;background:#0000;
+  color:var(--abstain);border:1.5px dashed var(--abstain);border-radius:999px;
+  padding:.18rem .7rem;font-size:.74rem;font-weight:700;letter-spacing:.06em;
+  margin-bottom:.8rem;text-transform:uppercase}
+.saydid .tag{font:700 .7rem var(--sans);letter-spacing:.18em;text-transform:uppercase}
+.saydid.say .tag{color:var(--accent)} .saydid.did .tag{color:var(--against)}
+blockquote{margin:.5rem 0;font:italic 740 1.25rem/1.45 var(--serif);
+  hanging-punctuation:first}
+.did blockquote{font-style:normal}
+.cite{font-size:.8rem;color:var(--muted);word-break:break-word;margin-top:.4rem;
+  padding-top:.5rem;border-top:1px dotted var(--line)}
+.vs{display:flex;align-items:center;justify-content:center}
+.vs span{font:800 .8rem var(--sans);letter-spacing:.1em;color:var(--muted);
+  border:1px solid var(--line);border-radius:999px;padding:.3rem .7rem;background:var(--bg)}
+
+/* waffle */
+.waffle{display:grid;grid-template-columns:repeat(20,1fr);gap:4px;max-width:34rem}
+.waffle i{aspect-ratio:1;border-radius:3px;display:block;transition:transform .15s}
+.waffle i:hover{transform:scale(1.35)}
+.legend{display:flex;gap:1.2rem;flex-wrap:wrap;font-size:.83rem;color:var(--muted);margin-top:.9rem}
+.legend i{display:inline-block;width:.72rem;height:.72rem;border-radius:3px;
+  margin-right:.35rem;vertical-align:-1px}
+
+/* donut */
+.donut{display:flex;align-items:center;gap:1.1rem}
+.donut svg{flex:0 0 auto}
+.dval{font:740 1.5rem var(--serif);fill:var(--ink)}
+.dlab{font:600 .62rem var(--sans);fill:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+
+/* butterfly */
+.bf{display:grid;grid-template-columns:1fr 9.5rem 1fr;align-items:center;
+  gap:.7rem;margin:.65rem 0}
+.bfl,.bfr{display:grid;align-items:center;gap:.5rem;min-height:1.5rem}
+.bfl{grid-template-columns:auto 1fr}
+.bfr{grid-template-columns:1fr auto}
+.trk{display:block;width:100%}
+.bfl .trk i,.bfr .trk i{display:block;height:1.5rem;border-radius:4px;min-width:2px}
+.bfl .trk i{background:var(--against);border-radius:6px 2px 2px 6px;margin-left:auto}
+.bfr .trk i{background:var(--for);border-radius:2px 6px 6px 2px}
+.bf b{font-size:.82rem;font-variant-numeric:tabular-nums;color:var(--muted);
+  white-space:nowrap}
+.bfc{text-align:center;font:650 .86rem var(--sans)}
+.bfhead{display:grid;grid-template-columns:1fr 9.5rem 1fr;font:700 .68rem var(--sans);
+  letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:.4rem}
+.bfhead :first-child{text-align:right;color:var(--against)}
+.bfhead :last-child{color:var(--for)}
+
+/* mosaic */
+.mosaic{display:flex;flex-wrap:wrap;gap:5px;border-radius:14px;overflow:hidden}
+.mosaic a{display:flex;flex-direction:column;justify-content:end;color:#fff;
+  padding:.7rem .8rem;border-radius:8px;min-height:5.2rem;text-decoration:none;
+  transition:filter .15s} .mosaic a:hover{filter:brightness(1.12)}
+.mosaic b{font:740 1.25rem var(--serif)} .mosaic span{font-size:.74rem;opacity:.85}
+
+/* tug of war */
+.tug{padding:.9rem 0;border-bottom:1px solid var(--line)}
+.tug:last-child{border-bottom:none}
+.tugmeta{font-size:.88rem;margin-bottom:.45rem}
+.tugmeta b{font:650 1rem var(--serif)}
+.tugbar{display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:start}
+.tugL{border-right:2px solid var(--ink);text-align:right}
+.tugR{text-align:left}
+.tugL .trk i{background:var(--against);border-radius:6px 0 0 6px;margin-left:auto}
+.tugR .trk i{background:var(--for);border-radius:0 6px 6px 0}
+.tugbar .trk i{display:block;height:1.15rem;min-width:2px}
+.tugbar b{display:block;font-size:.74rem;color:var(--muted);
+  font-variant-numeric:tabular-nums;margin-top:.25rem;padding:0 .4rem}
+
+/* timeline */
+.tlwrap{overflow-x:auto}
+.tl-axis{stroke:var(--line);stroke-width:2}
+.tl-node{fill:var(--accent)} .tl-node.live{fill:var(--against)}
+.tl-year{font:600 .68rem var(--sans);fill:var(--muted)}
+.tl-sha{font:.62rem ui-monospace,monospace;fill:var(--muted)}
+
 table{border-collapse:collapse;width:100%;font-size:.92rem}
-td,th{border-bottom:1px solid var(--line);padding:.5rem .4rem;text-align:left;vertical-align:top}
-th{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td,th{border-bottom:1px solid var(--line);padding:.55rem .4rem;text-align:left;vertical-align:top}
+th{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .meta{color:var(--muted);font-size:.85rem}
-input.filter{width:100%;padding:.55rem .8rem;border:1px solid var(--line);border-radius:8px;
-  background:var(--panel);color:var(--ink);font:inherit;margin:.6rem 0}
-.timeline{border-left:2px solid var(--line);margin:.6rem 0 .6rem .4rem;padding-left:1.1rem}
-.tl{position:relative;margin:.7rem 0}
-.tl::before{content:'';position:absolute;left:-1.45rem;top:.35rem;width:.6rem;height:.6rem;
-  border-radius:50%;background:var(--accent)}
-.tl b{font-variant-numeric:tabular-nums}
-footer{margin:3.5rem 0 2rem;color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);
-  padding-top:1.2rem}
-.steps{counter-reset:s;display:grid;gap:.8rem;margin:1rem 0;padding:0;list-style:none}
-.steps li{background:var(--panel);border:1px solid var(--line);border-radius:10px;
-  padding:.9rem 1rem .9rem 3.2rem;position:relative}
-.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:1rem;top:.85rem;
-  width:1.5rem;height:1.5rem;border-radius:50%;background:var(--accent);color:#fff;
-  font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center}
+input.filter{width:100%;padding:.65rem .95rem;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel);color:var(--ink);font:inherit;margin:.7rem 0}
+
+.steps{counter-reset:s;display:grid;gap:.85rem;margin:1.2rem 0;padding:0;list-style:none}
+.steps li{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:1rem 1.1rem 1rem 3.4rem;position:relative;box-shadow:var(--shadow)}
+.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:1rem;top:.95rem;
+  width:1.6rem;height:1.6rem;border-radius:50%;background:var(--accent);color:#fff;
+  font-weight:750;font-size:.85rem;display:flex;align-items:center;justify-content:center}
+
+.r{opacity:0;transform:translateY(14px);transition:opacity .6s,transform .6s}
+.r.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.r{opacity:1;transform:none;transition:none}}
+footer{margin:4rem 0 2.2rem;color:var(--muted);font-size:.85rem;
+  border-top:1px solid var(--line);padding-top:1.3rem;max-width:50rem}
 """
 
-_FILTER_JS = """<script>
+_JS = """<script>
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+document.querySelectorAll('.r').forEach(el=>io.observe(el));
+document.querySelectorAll('[data-count]').forEach(el=>{
+  const end=+el.dataset.count, t0=performance.now(), d=900;
+  const f=t=>{const p=Math.min(1,(t-t0)/d), v=Math.round(end*(1-Math.pow(1-p,3)));
+    el.textContent=v.toLocaleString(); if(p<1)requestAnimationFrame(f)};
+  requestAnimationFrame(f)});
 function ghFilter(inp){const q=inp.value.toLowerCase();
-  document.querySelectorAll(inp.dataset.target+' tbody tr, '+inp.dataset.target+' .card')
+  document.querySelectorAll(inp.dataset.target+' .fitem')
   .forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q)?'':'none'})}
 </script>"""
 
 _VOTE_COLORS = {"FOR": "var(--for)", "AGAINST": "var(--against)",
-                "ABSTAIN": "var(--abstain)"}
+                "ABSTAIN": "var(--abstain)", "OTHER": "var(--other)"}
+_MOSAIC_COLORS = ["#0d6b6b", "#bb4430", "#c39a2e", "#46598a", "#2c7a52",
+                  "#8a4674", "#9b958a", "#5b7c99"]
 
 
 def _e(s) -> str:
@@ -120,58 +209,160 @@ def _page(title: str, body: str, active: str = "") -> str:
     return (f"<!doctype html><html lang=en><head><meta charset=utf-8>"
             f"<meta name=viewport content='width=device-width,initial-scale=1'>"
             f"<title>{_e(title)} — Glasshouse</title><style>{_CSS}</style></head><body>"
-            f"<nav><div class=wrap><span class=wordmark>GLASSHOUSE</span>{nav}</div></nav>"
+            f"<nav><div class=wrap><span class=wordmark>GLASS<em>HOUSE</em></span>{nav}</div></nav>"
             f"<div class=wrap>{body}"
             f"<footer>Every claim traces to a primary source with a reference number and "
             f"retrieval date. Resolution types are legally distinct — a DPA or NPA is not a "
             f"conviction; a docket is an allegation. Items marked <b>quarantined</b> are "
             f"unverified leads, never findings. <a href='how-to-read.html'>How to read "
-            f"Glasshouse</a>.</footer></div>{_FILTER_JS}</body></html>")
+            f"Glasshouse</a>.</footer></div>{_JS}</body></html>")
 
 
 # ── visual components ────────────────────────────────────────────────────────
 
-def _stacked_bar(parts: list[tuple[str, int]]) -> str:
+def _stat(value: int | str, label: str) -> str:
+    if isinstance(value, int):
+        return (f"<div class=stat><b data-count={value}>0</b>"
+                f"<span>{_e(label)}</span></div>")
+    return f"<div class=stat><b>{_e(value)}</b><span>{_e(label)}</span></div>"
+
+
+def _waffle(parts: list[tuple[str, int]], cells: int = 200) -> str:
+    """Each square ≈ total/cells records. Scale you can feel, not read."""
     total = sum(v for _, v in parts) or 1
-    segs = "".join(
-        f"<i style='width:{100*v/total:.2f}%;background:{_VOTE_COLORS.get(k, 'var(--other)')}'"
-        f" title='{_e(k)}: {v:,}'></i>" for k, v in parts if v)
-    leg = "".join(
-        f"<span><i style='background:{_VOTE_COLORS.get(k, 'var(--other)')}'></i>"
-        f"{_e(k or 'OTHER')} {v:,} ({100*v/total:.0f}%)</span>" for k, v in parts if v)
-    return f"<div class=bar>{segs}</div><div class=legend>{leg}</div>"
+    sq, acc = [], 0.0
+    for name, v in parts:
+        acc += v / total * cells
+        while len(sq) < min(cells, round(acc)):
+            sq.append(name)
+    while len(sq) < cells:
+        sq.append(parts[-1][0] if parts else "OTHER")
+    cs = "".join(f"<i style='background:{_VOTE_COLORS.get(n, 'var(--other)')}' "
+                 f"title='{_e(n)}'></i>" for n in sq)
+    leg = "".join(f"<span><i style='background:{_VOTE_COLORS.get(k, 'var(--other)')}'></i>"
+                  f"{_e(k)} {v:,} ({100*v/total:.0f}%)</span>" for k, v in parts if v)
+    per = f"{total // cells:,}"
+    return (f"<div class=waffle>{cs}</div><div class=legend>{leg}</div>"
+            f"<p class=meta>One square ≈ {per} votes.</p>")
 
 
-def _hbars(items: list[tuple[str, int]]) -> str:
-    mx = max((v for _, v in items), default=1) or 1
-    return "".join(
-        f"<div class=hrow><span>{_e(k)}</span><span class=track>"
-        f"<span class=fill style='width:{100*v/mx:.1f}%'></span></span><b>{v:,}</b></div>"
-        for k, v in items)
+def _donut(pct: float, label: str, color: str = "var(--against)", sub: str = "") -> str:
+    dash = max(0.0, min(100.0, pct)) * 3.0159  # r=48 → C≈301.59
+    return f"""<div class=donut><svg width=110 height=110 viewBox='0 0 110 110'>
+<circle cx=55 cy=55 r=48 fill=none stroke=var(--line) stroke-width=11/>
+<circle cx=55 cy=55 r=48 fill=none stroke={color} stroke-width=11 stroke-linecap=round
+ stroke-dasharray='{dash:.1f} 301.6' transform='rotate(-90 55 55)'/>
+<text x=55 y=53 text-anchor=middle class=dval>{pct:.0f}%</text>
+<text x=55 y=70 text-anchor=middle class=dlab>{_e(label)}</text></svg>
+<div class=meta style='max-width:13rem'>{sub}</div></div>"""
 
 
-def _stat(value: str, label: str) -> str:
-    return f"<div class=stat><b>{value}</b><span>{_e(label)}</span></div>"
+def _butterfly(rows: list[dict]) -> str:
+    """rows: {label, against, for} — opposition pulls left, support right."""
+    mx = max((max(r["against"], r["for"]) for r in rows), default=1) or 1
+    body = "".join(
+        f"<div class='bf r'><div class=bfl><b>{r['against']:,}</b>"
+        f"<span class=trk><i style='width:{96*r['against']/mx:.1f}%'></i></span></div>"
+        f"<div class=bfc>{_e(r['label'])}</div>"
+        f"<div class=bfr><span class=trk><i style='width:{96*r['for']/mx:.1f}%'></i></span>"
+        f"<b>{r['for']:,}</b></div></div>"
+        for r in rows)
+    return (f"<div class=bfhead><span>voted against ←</span><span></span>"
+            f"<span>→ voted for</span></div>{body}")
 
 
-def _candidate_card(c) -> str:
-    return f"""<div class=card>
-  <span class=ribbon>QUARANTINED CANDIDATE — human review required</span>
-  <h3>{_e(c.institution_id)} · {_e(c.theme)} · {_e(c.issuer_name)}</h3>
+def _mosaic(items: list[tuple[str, int, str]]) -> str:
+    """(label, value, href) tiles sized by share — a landscape, not a ranking."""
+    total = sum(v for _, v, _ in items) or 1
+    tiles = ""
+    for i, (label, v, href) in enumerate(items):
+        share = v / total
+        grow = max(share * 100, 6)
+        tiles += (f"<a href='{_e(href)}' style='flex:{grow:.1f} 1 "
+                  f"{max(share*38, 9):.0f}rem;background:{_MOSAIC_COLORS[i % len(_MOSAIC_COLORS)]}'>"
+                  f"<b>{v:,}</b><span>{_e(label)}</span></a>")
+    return f"<div class=mosaic>{tiles}</div>"
+
+
+def _tug(rows: list[dict]) -> str:
+    """rows: {title, sub, left, right} in shares — disagreement from a spine.
+
+    Bars are scaled per row (share of that proposal's FOR+AGAINST total): the
+    visual is the balance of the disagreement, the labels carry the scale.
+    """
+    out = ""
+    for r in rows:
+        total = (r["left"] + r["right"]) or 1
+        lp, rp = 100 * r["left"] / total, 100 * r["right"] / total
+        out += f"""<div class='tug fitem r'>
+<div class=tugmeta><b>{_e(r['title'])}</b> <span class=meta>{_e(r['sub'])}</span></div>
+<div class=tugbar>
+<div class=tugL><span class=trk><i style='width:{0.95*lp:.1f}%'></i></span>
+<b>{r['left']:,.0f} sh ({lp:.0f}%) AGAINST</b></div>
+<div class=tugR><span class=trk><i style='width:{0.95*rp:.1f}%'></i></span>
+<b>{r['right']:,.0f} sh ({rp:.0f}%) FOR</b></div>
+</div></div>"""
+    return out
+
+
+def _timeline_svg(versions: list[dict]) -> str:
+    """versions: {date 'YYYY-MM-DD', label, sha, live} on a real year axis."""
+    if not versions:
+        return ""
+    def yr(v):
+        return int(v["date"][:4]) + (int(v["date"][5:7]) - 1) / 12
+    lo = int(min(yr(v) for v in versions))
+    hi = int(max(yr(v) for v in versions)) + 1
+    W, H, pad = 980, 130, 50
+    def x(v):
+        return pad + (yr(v) - lo) / max(hi - lo, 1) * (W - 2 * pad)
+    years = "".join(
+        f"<text class=tl-year x={pad + (y - lo)/max(hi - lo, 1)*(W - 2*pad):.0f} y={H-12} "
+        f"text-anchor=middle>{y}</text>"
+        f"<line x1={pad + (y - lo)/max(hi - lo, 1)*(W - 2*pad):.0f} y1={H-38} "
+        f"x2={pad + (y - lo)/max(hi - lo, 1)*(W - 2*pad):.0f} y2={H-30} class=tl-axis/>"
+        for y in range(lo, hi + 1))
+    nodes = ""
+    for i, v in enumerate(versions):
+        cx = x(v)
+        cy = H - 34
+        ty = 28 + (i % 2) * 16
+        nodes += (f"<line x1={cx:.0f} y1={cy} x2={cx:.0f} y2={ty+6} class=tl-axis "
+                  f"stroke-dasharray='2 3'/>"
+                  f"<circle class='tl-node{' live' if v.get('live') else ''}' "
+                  f"cx={cx:.0f} cy={cy} r=6><title>{_e(v['date'])} sha {_e(v['sha'])}</title></circle>"
+                  f"<text class=tl-sha x={cx:.0f} y={ty} text-anchor=middle>"
+                  f"{_e(v['date'])}</text>")
+    return (f"<div class=tlwrap><svg viewBox='0 0 {W} {H}' width='100%' "
+            f"preserveAspectRatio='xMidYMid meet'>"
+            f"<line x1={pad} y1={H-34} x2={W-pad} y2={H-34} class=tl-axis/>{years}{nodes}"
+            f"</svg></div>")
+
+
+def _candidate_card(c, featured: bool = False) -> str:
+    pct_note = (f"<div style='margin-top:1rem'>"
+                + _donut(100.0, "of cited shares", "var(--against)",
+                         f"{int(c.shares_voted):,} shares were voted "
+                         f"{_e(c.how_voted)} on this proposal")
+                + "</div>") if featured else ""
+    return f"""<div class='card claim fitem r'>
+  <span class=ribbon>◌ quarantined candidate — human review required</span>
+  <h3 style='margin-top:0'>{_e(c.institution_id)} · {_e(c.theme)} · {_e(c.issuer_name)}</h3>
   <div class=grid2>
-    <div class=saydid><div class=tag>WHAT IT SAYS</div>
+    <div class='saydid say'><div class=tag>What it says</div>
       <blockquote>“{_e(c.commitment_quote)}”</blockquote>
-      <div class=cite>{_e(c.doc_label)}, version {_e(c.doc_version)}, sha256
+      <div class=cite>{_e(c.doc_label)} · version {_e(c.doc_version)} · sha256
       {_e(c.doc_sha256[:16])}… · <a href='{_e(c.doc_url)}'>source document</a></div></div>
-    <div class='saydid did'><div class=tag>WHAT IT DID</div>
-      <blockquote>Voted <b>{_e(c.how_voted)}</b> with {int(c.shares_voted):,} shares
-      (management recommendation: {_e(c.management_recommendation or '—')})</blockquote>
-      <div class=cite>“{_e(c.vote_description)}” — {_e(c.issuer_name)},
-      meeting {_e(c.meeting_date)} · SEC Form N-PX {_e(c.accession)}</div></div>
+    <div class='saydid did'><div class=tag>What it did</div>
+      <blockquote>Voted <b style='color:var(--against)'>{_e(c.how_voted)}</b> —
+      {int(c.shares_voted):,} shares <span class=meta>(management rec:
+      {_e(c.management_recommendation or '—')})</span></blockquote>
+      <div class=cite>“{_e(c.vote_description)}” — {_e(c.issuer_name)}, meeting
+      {_e(c.meeting_date)} · SEC Form N-PX {_e(c.accession)}</div>{pct_note}</div>
   </div></div>"""
 
 
-# ── data synthesis queries ───────────────────────────────────────────────────
+# ── data synthesis ───────────────────────────────────────────────────────────
 
 def _vote_split(conn, inst_id: str | None = None) -> list[tuple[str, int]]:
     where, args = "", ()
@@ -188,8 +379,6 @@ def _vote_split(conn, inst_id: str | None = None) -> list[tuple[str, int]]:
 
 
 def _theme_stances(conn, inst_id: str) -> list[dict]:
-    """One pass over the institution's votes: per theme, how often its funds
-    voted FOR vs AGAINST proposals mentioning that theme."""
     from .contradictions import THEMES
     kw = {"climate": "climate", "human-rights": "human rights",
           "lobbying-disclosure": "lobbying", "board-diversity": "diversity",
@@ -207,8 +396,24 @@ def _theme_stances(conn, inst_id: str) -> list[dict]:
     for t in kw:
         f_, a_ = row[f"{t}_for"], row[f"{t}_against"]
         if f_ or a_:
-            out.append({"theme": t, "for": f_, "against": a_})
+            out.append({"label": t.replace("-", " "), "for": f_, "against": a_})
     return sorted(out, key=lambda d: -(d["for"] + d["against"]))
+
+
+def _splits(conn, inst_id: str, limit: int = 12) -> list[dict]:
+    groups = conn.execute(
+        """SELECT v.issuer_name, v.meeting_date, v.vote_description, v.cusip,
+                  SUM(CASE WHEN v.how_voted='AGAINST' THEN v.shares_voted ELSE 0 END) AS sh_against,
+                  SUM(CASE WHEN v.how_voted='FOR' THEN v.shares_voted ELSE 0 END) AS sh_for
+           FROM votes v JOIN filings f ON f.accession=v.accession
+           WHERE f.institution_id=? AND v.how_voted IN ('FOR','AGAINST')
+           GROUP BY v.cusip, v.meeting_date, v.vote_description
+           HAVING sh_against > 0 AND sh_for > 0
+           ORDER BY MIN(sh_against, sh_for) DESC LIMIT ?""",
+        (inst_id, limit)).fetchall()
+    return [{"title": g["issuer_name"], "left": g["sh_against"], "right": g["sh_for"],
+             "sub": f"{g['meeting_date']} — {(g['vote_description'] or '')[:130]}"}
+            for g in groups]
 
 
 # ── pages ────────────────────────────────────────────────────────────────────
@@ -235,12 +440,12 @@ def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
            FROM institutions i ORDER BY n_votes DESC, i.display_name""").fetchall()
 
     _build_index(conn, out_dir, stats, insts, cands)
-    _build_institutions_index(out_dir, insts)
-    n_inst_pages = sum(_build_institution(conn, out_dir, r, cands) for r in insts)
+    _build_institutions_index(conn, out_dir, insts)
+    n_inst = sum(_build_institution(conn, out_dir, r, cands) for r in insts)
     _build_candidates(out_dir, cands)
     _build_how_to_read(out_dir)
     _write_feed(conn, out_dir)
-    return {"pages": 4 + n_inst_pages, "candidates": len(cands)}
+    return {"pages": 4 + n_inst, "candidates": len(cands)}
 
 
 def _build_index(conn, out_dir, stats, insts, cands) -> None:
@@ -249,60 +454,82 @@ def _build_index(conn, out_dir, stats, insts, cands) -> None:
         "ORDER BY 2 DESC LIMIT 8").fetchall()
     split = _vote_split(conn)
     featured = max(cands, key=lambda c: c.shares_voted) if cands else None
+    top = next((r for r in insts if r["n_votes"]), None)
 
     body = f"""
-<h1>The gap between what institutions say and what they do</h1>
+<h1>What they promise.<br>How they vote.<br>The gap, on the record.</h1>
 <p class=lede>Glasshouse joins the published commitments of major financial
 institutions with their actual proxy votes, holdings, and the documented
 enforcement records of the companies they fund. Every clause of every claim
-traces to a public primary source. <a href='how-to-read.html'>Start here if
-you're new</a>.</p>
-<div class=statband>
-{_stat(f"{stats.get('votes',0):,}", 'proxy votes on record (SEC N-PX)')}
-{_stat(f"{stats.get('issuers',0):,}", 'companies voted on')}
-{_stat(f"{stats.get('holdings',0):,}", '13-F holdings')}
-{_stat(f"{stats.get('enforcement',0):,}", 'enforcement actions indexed')}
-{_stat(f"{stats.get('commitments',0):,}", 'archived policy versions')}
+traces to a public primary source. <a href='how-to-read.html'>New here? Start
+with how to read this →</a></p>
+<div class='statband r'>
+{_stat(stats.get('votes', 0), 'proxy votes on record (SEC N-PX)')}
+{_stat(stats.get('issuers', 0), 'companies voted on')}
+{_stat(stats.get('holdings', 0), '13-F holdings')}
+{_stat(stats.get('enforcement', 0), 'enforcement actions indexed')}
+{_stat(stats.get('commitments', 0), 'archived policy versions')}
 </div>"""
 
     if featured:
-        body += f"<h2>Latest contradiction candidate</h2>{_candidate_card(featured)}" \
-                f"<p class=meta><a href='candidates.html'>All candidates →</a></p>"
+        body += (f"<p class=kicker>Exhibit A</p><h2>The latest say–do candidate</h2>"
+                 f"<p class=secnote>A verbatim sentence from the institution's own archived "
+                 f"policy, next to a vote its funds actually cast.</p>"
+                 + _candidate_card(featured, featured=True)
+                 + "<p class=meta><a href='candidates.html'>All candidates →</a></p>")
 
     body += f"""
-<h2>How the tracked institutions vote</h2>
-<div class=card>{_stacked_bar(split)}
-<p class=meta>Every vote is an active choice — the “passive index” defense
-does not apply to voting. Distribution across all ingested N-PX records.</p></div>
+<p class=kicker>Scale</p><h2>Two million votes, square by square</h2>
+<p class=secnote>Every square is ~{(sum(v for _, v in split) or 200)//200:,} proxy votes
+cast by the tracked institutions. Voting is an active choice — the “passive index”
+defense does not apply.</p>
+<div class='card r'>{_waffle(split)}</div>"""
 
-<h2>The enforcement universe</h2>
-<div class=card>{_hbars([(a, n) for a, n in enf])}
-<p class=meta>Actions indexed per agency. Resolution types are preserved and
-legally distinct — see <a href='how-to-read.html'>how to read Glasshouse</a>.
-Query everything yourself via the Datasette interface or the raw SQLite ledger.</p></div>
+    if top:
+        stances = _theme_stances(conn, top["id"])
+        if stances:
+            body += (f"<p class=kicker>Stances</p><h2>{_e(top['display_name'])}, when the "
+                     f"proposal mentions…</h2><p class=secnote>Keyword match on proposal "
+                     f"text; opposition pulls left. Context varies — verify any individual "
+                     f"vote before citing it.</p><div class='card r'>{_butterfly(stances)}</div>")
 
-<h2>Institutions</h2>
-{_inst_cards(insts[:6])}
+    body += f"""
+<p class=kicker>The record</p><h2>The enforcement landscape</h2>
+<p class=secnote>Documented actions indexed per agency — each tile sized by count.
+Resolution types are preserved and legally distinct.</p>
+<div class=r>{_mosaic([(a, n, 'how-to-read.html') for a, n in enf])}</div>
+
+<p class=kicker>Who</p><h2>Institutions under glass</h2>
+{_inst_cards(conn, insts[:6])}
 <p class=meta><a href='institutions.html'>All {len(insts)} institutions →</a></p>"""
     (out_dir / "index.html").write_text(_page("Glasshouse", body, "home"))
 
 
-def _inst_cards(insts) -> str:
+def _inst_cards(conn, insts) -> str:
     cards = ""
     for r in insts:
-        cards += f"""<div class=card><h3><a href='institution-{_e(r['id'])}.html'>
-{_e(r['display_name'])}</a></h3>
-<div class=meta>{_e(r['type'] or '')} · {_e(r['country'] or '')}</div>
-<div class=statband style='margin:.6rem 0 0'>
-{_stat(f"{r['n_votes']:,}", 'votes')}{_stat(f"{r['n_holdings']:,}", 'holdings')}
-{_stat(str(r['n_docs']), 'policy versions')}</div></div>"""
-    return cards
+        gauge = ""
+        if r["n_votes"]:
+            split = dict(_vote_split(conn, r["id"]))
+            total = sum(split.values()) or 1
+            with_mgmt = 100 * split.get("FOR", 0) / total
+            gauge = _donut(with_mgmt, "voted for", "var(--accent)",
+                           f"{r['n_votes']:,} votes on record")
+        else:
+            gauge = "<p class=meta>Not yet ingested — an empty row means no data, not innocence.</p>"
+        cards += f"""<div class='card fitem r'><h3 style='margin-top:0'>
+<a href='institution-{_e(r['id'])}.html'>{_e(r['display_name'])}</a></h3>
+<div class=meta>{_e(r['type'] or '')} · {_e(r['country'] or '')} ·
+{r['n_docs']} policy versions · {r['n_holdings']:,} holdings</div>
+<div style='margin-top:.7rem'>{gauge}</div></div>"""
+    return f"<div class=grid3>{cards}</div>"
 
 
-def _build_institutions_index(out_dir, insts) -> None:
+def _build_institutions_index(conn, out_dir, insts) -> None:
     body = (f"<h1>Institutions</h1><p class=lede>One entry in the registry adds any "
-            f"SEC 13-F filer. Counts reflect what has been ingested so far — an empty "
-            f"row means not-yet-ingested, not innocence.</p>{_inst_cards(insts)}")
+            f"SEC 13-F filer. Counts reflect what has been ingested so far.</p>"
+            f"<input class=filter placeholder='Filter institutions…' data-target='#il' "
+            f"oninput='ghFilter(this)'><div id=il>{_inst_cards(conn, insts)}</div>")
     (out_dir / "institutions.html").write_text(_page("Institutions", body, "inst"))
 
 
@@ -310,68 +537,55 @@ def _build_institution(conn, out_dir, r, cands) -> int:
     inst_id = r["id"]
     body = f"""<h1>{_e(r['display_name'])}</h1>
 <p class=meta>{_e(r['type'] or '')} · {_e(r['country'] or '')}</p>
-<div class=statband>
-{_stat(f"{r['n_votes']:,}", 'proxy votes on record')}
-{_stat(f"{r['n_holdings']:,}", '13-F holdings')}
-{_stat(str(r['n_docs']), 'archived policy versions')}</div>"""
+<div class='statband r'>
+{_stat(r['n_votes'], 'proxy votes on record')}
+{_stat(r['n_holdings'], '13-F holdings')}
+{_stat(r['n_docs'], 'archived policy versions')}</div>"""
 
     if r["n_votes"]:
-        body += f"<h2>Voting behavior</h2><div class=card>{_stacked_bar(_vote_split(conn, inst_id))}</div>"
+        split = _vote_split(conn, inst_id)
+        body += (f"<p class=kicker>Behavior</p><h2>How its funds vote</h2>"
+                 f"<div class='card r'>{_waffle(split)}</div>")
         stances = _theme_stances(conn, inst_id)
         if stances:
-            rows = "".join(
-                f"<tr><td>{_e(s['theme'])}</td><td>{s['for']:,}</td><td>{s['against']:,}</td>"
-                f"<td><div class=bar style='max-width:14rem'>"
-                f"<i style='width:{100*s['for']/(s['for']+s['against']):.0f}%;background:var(--for)'></i>"
-                f"<i style='width:{100*s['against']/(s['for']+s['against']):.0f}%;background:var(--against)'></i>"
-                f"</div></td></tr>" for s in stances)
-            body += (f"<h2>Votes on proposals mentioning…</h2><div class=card><table>"
-                     f"<tr><th>Theme</th><th>For</th><th>Against</th><th>Split</th></tr>{rows}</table>"
-                     f"<p class=meta>Keyword match on proposal text — context varies; verify any "
-                     f"individual vote before citing it.</p></div>")
+            body += (f"<p class=kicker>Stances</p><h2>When the proposal mentions…</h2>"
+                     f"<p class=secnote>Keyword match on proposal text; opposition pulls "
+                     f"left, support pulls right.</p>"
+                     f"<div class='card r'>{_butterfly(stances)}</div>")
 
     docs = conn.execute(
-        """SELECT doc_label, sha256, content_path,
+        """SELECT doc_label, sha256, wayback_timestamp,
                   COALESCE(NULLIF(wayback_timestamp,''), retrieval_date) AS version
            FROM commitments WHERE institution_id=? GROUP BY sha256 ORDER BY version""",
         (inst_id,)).fetchall()
     if docs:
-        items = ""
+        versions = []
         for d in docs:
             v = d["version"]
             pretty = f"{v[:4]}-{v[4:6]}-{v[6:8]}" if re.fullmatch(r"\d{14}", v) else v
-            items += (f"<div class=tl><b>{_e(pretty)}</b> — {_e(d['doc_label'])} "
-                      f"<span class=meta>sha {_e(d['sha256'][:10])}</span></div>")
-        body += (f"<h2>Policy paper trail</h2><div class=card><div class=timeline>{items}</div>"
-                 f"<p class=meta>Each dot is a distinct archived version of the institution's own "
-                 f"document (live fetch or Wayback Machine). Differences between versions are "
-                 f"silent edits — findings in themselves.</p></div>")
+            versions.append({"date": pretty, "label": d["doc_label"],
+                             "sha": d["sha256"][:10], "live": not d["wayback_timestamp"]})
+        body += (f"<p class=kicker>Paper trail</p><h2>Every version of its own words</h2>"
+                 f"<p class=secnote>Each node is a distinct archived version of the "
+                 f"institution's policy (teal = Wayback Machine, red = live fetch). The "
+                 f"differences between nodes are silent edits — findings in themselves.</p>"
+                 f"<div class='card r'>{_timeline_svg(versions)}</div>")
 
     mine = [c for c in cands if c.institution_id == inst_id]
     if mine:
-        body += f"<h2>Contradiction candidates</h2>" + "".join(_candidate_card(c) for c in mine[:5])
+        body += ("<p class=kicker>Say × do</p><h2>Contradiction candidates</h2>"
+                 + "".join(_candidate_card(c) for c in mine[:5]))
 
     if r["n_votes"]:
-        div = conn.execute(
-            """SELECT v.issuer_name, v.meeting_date, v.vote_description,
-                      COUNT(DISTINCT v.how_voted) AS ways, COUNT(*) AS n
-               FROM votes v JOIN filings f ON f.accession=v.accession
-               WHERE f.institution_id=? AND v.how_voted != ''
-               GROUP BY v.cusip, v.meeting_date, v.vote_description HAVING ways > 1
-               ORDER BY n DESC LIMIT 40""", (inst_id,)).fetchall()
-        if div:
-            rows = "".join(
-                f"<tr><td>{_e(d['issuer_name'])}</td><td>{_e(d['meeting_date'])}</td>"
-                f"<td>{_e((d['vote_description'] or '')[:170])}</td><td>{d['ways']}</td></tr>"
-                for d in div)
-            body += (f"<h2>Split votes — its own funds disagreeing</h2>"
-                     f"<p class=meta>The same manager voting multiple ways on the identical "
-                     f"proposal. Finding-grade: the contradiction is internal to one filer's "
-                     f"own N-PX report.</p>"
+        tug_rows = _splits(conn, inst_id)
+        if tug_rows:
+            body += (f"<p class=kicker>House divided</p><h2>Its own funds, disagreeing</h2>"
+                     f"<p class=secnote>The same manager casting shares on both sides of the "
+                     f"identical proposal. Finding-grade: the contradiction is internal to one "
+                     f"filer's own N-PX report. Ranked by the size of the losing side.</p>"
                      f"<input class=filter placeholder='Filter by company or proposal…' "
                      f"data-target='#split' oninput='ghFilter(this)'>"
-                     f"<table id=split><thead><tr><th>Issuer</th><th>Meeting</th><th>Proposal</th>"
-                     f"<th>Ways</th></tr></thead><tbody>{rows}</tbody></table>")
+                     f"<div id=split class=card>{_tug(tug_rows)}</div>")
 
     (out_dir / f"institution-{inst_id}.html").write_text(_page(r["display_name"], body, "inst"))
     return 1
@@ -381,10 +595,10 @@ def _build_candidates(out_dir, cands) -> None:
     cards = "".join(_candidate_card(c) for c in cands) or \
         "<p class=meta>No candidates yet — ingest commitments and votes for the same institution.</p>"
     body = f"""<h1>Contradiction candidates</h1>
-<p class=lede>Each card pairs an institution's own archived policy language with a
-vote its funds actually cast on a proposal touching the same theme. The match is
-lexical: <b>every card is a quarantined lead</b> until a human reads the policy and
-the proposal together and confirms they speak to each other.</p>
+<p class=lede>Each card pairs an institution's own archived policy language with a vote
+its funds actually cast on a proposal touching the same theme. The match is lexical:
+<b>every card is a quarantined lead</b> until a human reads the policy and the proposal
+together and confirms they speak to each other.</p>
 <input class=filter placeholder='Filter by institution, company, or theme…'
  data-target='#cands' oninput='ghFilter(this)'><div id=cands>{cards}</div>"""
     (out_dir / "candidates.html").write_text(_page("Contradiction candidates", body, "cand"))
@@ -396,7 +610,7 @@ def _build_how_to_read(out_dir) -> None:
 financial institutions publicly commit to and what they actually do. Here is how to
 use it without being misled — by us or by anyone.</p>
 
-<h2>The anatomy of a claim</h2>
+<p class=kicker>Anatomy</p><h2>The anatomy of a claim</h2>
 <ol class=steps>
 <li><b>SAY</b> — a verbatim sentence from the institution's own published policy,
 pinned to a dated, content-hashed archived version. We never paraphrase commitments.</li>
@@ -406,17 +620,16 @@ accession number), a holding (SEC Form 13-F), or a documented silence.</li>
 same company. The strength of every claim lives or dies on this join.</li>
 </ol>
 
-<h2>Leads vs. findings</h2>
-<div class=card><p>Anything marked <span class=ribbon>QUARANTINED</span> is a
-<b>lead</b>: a machine-generated candidate awaiting human verification. We publish
-the distinction because the failure mode is real — on our first live run, a sanctions
-entry for “Aldar Properties” (a Sudan-based entity) matched the name of Aldar
-Properties PJSC, an unrelated Abu Dhabi-listed developer. Same normalized name,
-different company. <b>Name matches are never findings.</b> A lead is promoted only
-when corroborated by an identifier (CUSIP, LEI, CIK) or human review of the primary
-source.</p></div>
+<p class=kicker>Trust</p><h2>Leads vs. findings</h2>
+<div class=card><p>Anything marked <span class=ribbon>◌ quarantined</span> is a
+<b>lead</b>: a machine-generated candidate awaiting human verification. The failure
+mode is real — on our first live run, a sanctions entry for “Aldar Properties” (a
+Sudan-based entity) matched the name of Aldar Properties PJSC, an unrelated Abu
+Dhabi-listed developer. Same normalized name, different company. <b>Name matches are
+never findings.</b> A lead is promoted only when corroborated by an identifier
+(CUSIP, LEI, CIK) or human review of the primary source.</p></div>
 
-<h2>Resolution types are not interchangeable</h2>
+<p class=kicker>Law</p><h2>Resolution types are not interchangeable</h2>
 <table>
 <tr><th>Resolution</th><th>Criminal conviction?</th><th>Admission of guilt?</th></tr>
 <tr><td><b>Guilty plea</b></td><td>Yes</td><td>Yes</td></tr>
@@ -426,16 +639,25 @@ source.</p></div>
 <tr><td><b>Debarment / sanction / expulsion</b></td><td>No (administrative)</td><td>N/A</td></tr>
 <tr><td><b>Docket / pending matter</b></td><td><b>Allegation only — never a finding</b></td><td>—</td></tr>
 </table>
-<p class=meta>Every enforcement record in the ledger carries its resolution type, the
-agency's own reference number, the source URL, and the retrieval date.</p>
 
-<h2>Why votes, not just holdings</h2>
+<p class=kicker>Charts</p><h2>What the visuals mean</h2>
+<ol class=steps>
+<li><b>Waffle grids</b> — every square is the same number of votes; the colors are how
+they were cast. Scale you can feel rather than read.</li>
+<li><b>Butterfly charts</b> — opposition pulls left (red), support pulls right (green),
+from a shared spine. The asymmetry is the picture.</li>
+<li><b>Tug-of-war bars</b> — one proposal, the same manager's shares on both sides of it.</li>
+<li><b>Timelines</b> — each node is a distinct, content-hashed version of the
+institution's own policy document. Drift between nodes is a silent edit.</li>
+</ol>
+
+<p class=kicker>Why votes</p><h2>Why votes, not just holdings</h2>
 <div class=card><p>Holding a stock through an index fund supports a credible “we just
 track the index” defense. <b>Voting does not.</b> Every proxy vote is an active choice
 by the institution's stewardship team — which is why N-PX voting records are the spine
 of this project, and holdings-only claims are explicitly labeled as the weakest class.</p></div>
 
-<h2>Verify everything yourself</h2>
+<p class=kicker>Verify</p><h2>Verify everything yourself</h2>
 <ol class=steps>
 <li>Every vote cites its SEC accession number — open the filing directly on EDGAR.</li>
 <li>Every policy quote links the source document and its content hash — fetch and hash it.</li>
