@@ -307,6 +307,15 @@ def cmd_report_flagged_votes(args) -> int:
     return 0
 
 
+def cmd_dedupe(_args) -> int:
+    conn = _conn()
+    n = ledger.dedupe_votes(conn)
+    total = conn.execute("SELECT COUNT(*) FROM votes").fetchone()[0]
+    print(f"  marked {n:,} duplicate vote rows of {total:,} "
+          f"(kept in ledger as filed; excluded from analytics)")
+    return 0
+
+
 def cmd_integrity(_args) -> int:
     conn = _conn()
     problems = ledger.integrity_check(conn)
@@ -407,6 +416,8 @@ def main(argv: list[str] | None = None) -> int:
     orr.set_defaults(func=cmd_outreach_record_response)
 
     sub.add_parser("integrity").set_defaults(func=cmd_integrity)
+    sub.add_parser("dedupe", help="mark exact-duplicate vote rows so analytics "
+                   "never sum the same shares twice").set_defaults(func=cmd_dedupe)
 
     args = p.parse_args(argv)
     return args.func(args)

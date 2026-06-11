@@ -116,6 +116,15 @@ path (bulk download, official API) is found.
   `reportType = FUND NOTICE REPORT` are cover-only notices with no votes.
 - One `proxyTable` may contain **multiple** `voteRecord` elements; all are
   parsed.
+- **Duplicate vote records are endemic in N-PX as filed** (found 2026-06-11
+  during an editorial audit): the same voteRecord repeated within one
+  exhibit (one copy per share class) and the same series' votes filed in
+  two exhibits of the same period — 107,088 of 2,158,394 ingested rows
+  (~5%). Rows are kept as filed but marked `is_duplicate`; every analytic
+  query excludes them. **Never sum `shares_voted` without this filter.**
+  Rows where identical share counts appear FOR and AGAINST the same
+  proposal are additionally excluded from divergence visuals as likely
+  as-filed duplication, pending verification.
 - `managementRecommendation` values look inconsistent with proxy-statement
   norms in some rows (e.g. "FOR" on shareholder proposals). Glasshouse
   reports the field verbatim with its accession; any published claim that

@@ -199,6 +199,33 @@ def _migrate(conn: sqlite3.Connection) -> None:
     if "country" not in cols:
         conn.execute("ALTER TABLE entities ADD COLUMN country TEXT DEFAULT ''")
         conn.commit()
+    vcols = {r[1] for r in conn.execute("PRAGMA table_info(votes)")}
+    if "is_duplicate" not in vcols:
+        conn.execute("ALTER TABLE votes ADD COLUMN is_duplicate INTEGER NOT NULL DEFAULT 0")
+        conn.commit()
+
+
+def dedupe_votes(conn: sqlite3.Connection) -> int:
+    """Mark exact-duplicate vote rows (same filing, security, meeting,
+    proposal, series, direction, AND share count) so analytics never sum the
+    same shares twice. Found in the wild 2026-06-11: ~105k redundant rows
+    (e.g. the same voteRecord repeated x2/x4 within one exhibit, likely one
+    copy per share class). Rows are marked, never deleted — the ledger
+    preserves filings as filed; queries filter on is_duplicate = 0."""
+    conn.execute("UPDATE votes SET is_duplicate = 0")
+    # Scope: one filer's reporting period. Two real shapes found 2026-06-11:
+    # the same voteRecord repeated within one exhibit (x2/x4, one copy per
+    # share class), and the same series' votes filed in TWO exhibits of the
+    # same period (~100k rows). Both collapse to one row per natural key.
+    cur = conn.execute(
+        """UPDATE votes SET is_duplicate = 1 WHERE id NOT IN (
+               SELECT MIN(v.id) FROM votes v
+               JOIN filings f ON f.accession = v.accession
+               GROUP BY f.cik, f.period_of_report, v.issuer_name, v.cusip,
+                        v.meeting_date, v.vote_description, v.vote_series,
+                        v.how_voted, v.shares_voted)""")
+    conn.commit()
+    return cur.rowcount
 
 
 @dataclass

@@ -70,7 +70,7 @@ def vote_divergence(conn: sqlite3.Connection, *, shareholder_proposals_only: boo
         FROM votes v
         JOIN filings f ON f.accession = v.accession
         LEFT JOIN institutions i ON i.id = f.institution_id
-        WHERE v.how_voted != ''
+        WHERE v.how_voted != '' AND v.is_duplicate = 0
         GROUP BY institution, v.cusip, v.meeting_date, v.vote_description
         HAVING n_ways > 1
         ORDER BY n_records DESC
@@ -87,7 +87,7 @@ def vote_divergence(conn: sqlite3.Connection, *, shareholder_proposals_only: boo
                FROM votes v JOIN filings f ON f.accession = v.accession
                LEFT JOIN institutions i ON i.id = f.institution_id
                WHERE COALESCE(i.display_name, f.cik) = ? AND v.cusip = ?
-                 AND v.meeting_date = ? AND v.vote_description = ? AND v.how_voted != ''
+                 AND v.meeting_date = ? AND v.vote_description = ? AND v.how_voted != '' AND v.is_duplicate = 0
                GROUP BY v.how_voted""",
             (r["institution"], r["cusip"], r["meeting_date"], r["vote_description"]),
         ).fetchall()
@@ -132,7 +132,7 @@ def flagged_votes(conn: sqlite3.Connection, *, shareholder_proposals_only: bool 
         JOIN enforcement_actions e
           ON gh_norm(e.company_name) = gh_norm(v.issuer_name)
          AND gh_norm(v.issuer_name) != ''
-        WHERE v.how_voted != ''
+        WHERE v.how_voted != '' AND v.is_duplicate = 0
         ORDER BY e.resolution_type != 'unverified' DESC, v.meeting_date DESC
         LIMIT ?
     """

@@ -154,21 +154,32 @@ def find_commitment_vote_contradictions(
                    FROM votes v
                    JOIN filings f ON f.accession = v.accession
                    WHERE f.institution_id = ?
-                     AND v.how_voted = 'AGAINST'
+                     AND v.how_voted = 'AGAINST' AND v.is_duplicate = 0
                    ORDER BY v.shares_voted DESC""",
                 (doc["institution_id"],),
             ).fetchall()
             n = 0
+            seen: set[tuple] = set()
             for v in votes:
                 desc = v["vote_description"] or ""
                 if not re.search(proposal_re, desc, re.IGNORECASE):
                     continue
+                # One card per proposal: the same vote appears once per fund
+                # series in N-PX; votes are ordered by shares DESC, so the
+                # largest series represents the proposal.
+                key = (v["issuer_name"], v["meeting_date"], desc)
+                if key in seen:
+                    continue
+                seen.add(key)
                 candidates.append(ContradictionCandidate(
                     theme=theme,
                     institution_id=doc["institution_id"],
                     doc_label=doc["doc_label"], doc_version=doc["version"],
                     doc_sha256=doc["sha256"], doc_url=doc["url"],
-                    commitment_quote=quotes[0][:400],
+                    # Rotate through the policy's matching sentences so a
+                    # reader scanning cards sees the breadth of the language,
+                    # not one sentence ten times.
+                    commitment_quote=quotes[n % len(quotes)][:400],
                     accession=v["accession"], issuer_name=v["issuer_name"],
                     cusip=v["cusip"], meeting_date=v["meeting_date"],
                     vote_description=desc[:300], how_voted=v["how_voted"],

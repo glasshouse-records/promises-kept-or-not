@@ -43,7 +43,7 @@ def scan(conn: sqlite3.Connection, sources: list[str] | None = None) -> dict:
                       v.meeting_date, v.how_voted, v.vote_description
                FROM votes v JOIN filings f ON f.accession = v.accession
                LEFT JOIN institutions i ON i.id = f.institution_id
-               WHERE gh_norm(v.issuer_name) = gh_norm(?) AND v.how_voted != ''
+               WHERE gh_norm(v.issuer_name) = gh_norm(?) AND v.how_voted != '' AND v.is_duplicate = 0
                ORDER BY v.meeting_date DESC LIMIT 5""",
             (action["company_name"],)).fetchall()
         holds = conn.execute(

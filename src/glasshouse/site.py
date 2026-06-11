@@ -371,7 +371,7 @@ def _vote_split(conn, inst_id: str | None = None) -> list[tuple[str, int]]:
     rows = conn.execute(
         f"""SELECT v.how_voted, COUNT(*) FROM votes v
             JOIN filings f ON f.accession = v.accession
-            WHERE v.how_voted != '' {where}
+            WHERE v.how_voted != '' AND v.is_duplicate = 0 {where}
             GROUP BY v.how_voted ORDER BY 2 DESC""", args).fetchall()
     main = [(k, n) for k, n in rows if k in _VOTE_COLORS]
     other = sum(n for k, n in rows if k not in _VOTE_COLORS)
@@ -391,7 +391,7 @@ def _theme_stances(conn, inst_id: str) -> list[dict]:
         for t in THEMES if t in kw)
     row = conn.execute(
         f"SELECT {cases} FROM votes v JOIN filings f ON f.accession=v.accession "
-        f"WHERE f.institution_id = ?", (inst_id,)).fetchone()
+        f"WHERE f.institution_id = ? AND v.is_duplicate = 0", (inst_id,)).fetchone()
     out = []
     for t in kw:
         f_, a_ = row[f"{t}_for"], row[f"{t}_against"]
@@ -406,11 +406,14 @@ def _splits(conn, inst_id: str, limit: int = 12) -> list[dict]:
                   SUM(CASE WHEN v.how_voted='AGAINST' THEN v.shares_voted ELSE 0 END) AS sh_against,
                   SUM(CASE WHEN v.how_voted='FOR' THEN v.shares_voted ELSE 0 END) AS sh_for
            FROM votes v JOIN filings f ON f.accession=v.accession
-           WHERE f.institution_id=? AND v.how_voted IN ('FOR','AGAINST')
+           WHERE f.institution_id=? AND v.how_voted IN ('FOR','AGAINST') AND v.is_duplicate = 0
            GROUP BY v.cusip, v.meeting_date, v.vote_description
-           HAVING sh_against > 0 AND sh_for > 0
+           HAVING sh_against > 0 AND sh_for > 0 AND sh_against != sh_for
            ORDER BY MIN(sh_against, sh_for) DESC LIMIT ?""",
         (inst_id, limit)).fetchall()
+    # sh_against != sh_for: identical share counts on both sides are, in the
+    # data we have seen, the same position reported twice as filed — an
+    # artifact, not a disagreement. Excluded pending verification.
     return [{"title": g["issuer_name"], "left": g["sh_against"], "right": g["sh_for"],
              "sub": f"{g['meeting_date']} — {(g['vote_description'] or '')[:130]}"}
             for g in groups]
