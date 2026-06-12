@@ -345,6 +345,21 @@ def cmd_report_flagged_votes(args) -> int:
     return 0
 
 
+def cmd_workbench(args) -> int:
+    from . import workbench
+    server = workbench.serve(port=args.port)
+    print(f"  workbench → http://127.0.0.1:{args.port}  (local only; Ctrl-C to stop)")
+    print("  review candidates, label leads (grows the eval gold set), manage")
+    print("  outreach, record signals — all through the same gates as the CLI.")
+    try:
+        import time
+        while True:
+            time.sleep(3600)
+    except KeyboardInterrupt:
+        server.shutdown()
+    return 0
+
+
 def cmd_doctor(args) -> int:
     from . import doctor
     conn = _conn()
@@ -629,6 +644,11 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("doctor", help="self-diagnosis: source freshness, integrity, "
                    "queues; emits a repair task for the source-medic agent"
                    ).set_defaults(func=cmd_doctor)
+
+    wb = sub.add_parser("workbench", help="local operator desk: review candidates, "
+                        "label leads, manage outreach, record signals")
+    wb.add_argument("--port", type=int, default=8010)
+    wb.set_defaults(func=cmd_workbench)
 
     tr = sub.add_parser("triage").add_subparsers(dest="what", required=True)
     for what, hlp in (("leads", "LLM-adjudicate quarantined name-join leads (advisory)"),

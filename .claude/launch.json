@@ -8,6 +8,12 @@
       "port": 8000
     },
     {
+      "name": "workbench",
+      "runtimeExecutable": ".venv/bin/glasshouse",
+      "runtimeArgs": ["workbench", "--port", "8010"],
+      "port": 8010
+    },
+    {
       "name": "datasette-ledger",
       "runtimeExecutable": ".venv/bin/datasette",
       "runtimeArgs": ["data/glasshouse.db", "-m", "datasette/metadata.json", "--port", "8001", "--setting", "sql_time_limit_ms", "5000"],

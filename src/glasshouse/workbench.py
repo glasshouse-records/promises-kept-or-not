@@ -1,0 +1,373 @@
+"""The operator workbench — the human side of the tool, as a tool.
+
+A local-only (127.0.0.1) interactive desk over the ledger for the work the
+charter reserves for a person: reviewing candidates, adjudicating entity
+leads, managing the outreach queue, and recording distribution signals.
+
+This is NOT a public interface and does not soften the spec's "no custom
+API server" rule: the public surfaces stay static site + Datasette + MCP.
+The workbench is the operator's desk — it binds to localhost, writes
+through the same gated functions the CLI uses, and adds one new loop:
+every human lead adjudication is saved as a labeled pair in
+data/labels/lead_labels.jsonl, which grows the eval gold set that gates
+the LLM triage tier. Your review work trains your own quality bar.
+"""
+
+from __future__ import annotations
+
+import json
+import sqlite3
+import threading
+from datetime import date, datetime, timezone
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+from .http import DATA_DIR
+from .ledger import DB_PATH
+
+LABELS_PATH = DATA_DIR / "labels" / "lead_labels.jsonl"
+
+
+# ── state assembly (read side) ───────────────────────────────────────────────
+
+def _conn() -> sqlite3.Connection:
+    from . import ledger, registry
+    conn = ledger.connect(DB_PATH)
+    registry.sync_to_ledger(conn)
+    return conn
+
+
+def _labeled_keys() -> set[str]:
+    if not LABELS_PATH.exists():
+        return set()
+    keys = set()
+    for line in LABELS_PATH.read_text().splitlines():
+        try:
+            keys.add(json.loads(line)["lead_key"])
+        except (json.JSONDecodeError, KeyError):
+            continue
+    return keys
+
+
+def state(conn: sqlite3.Connection) -> dict:
+    from . import review
+    from .findings import own_record
+
+    pending = review.queue(conn, "pending")
+    done = _labeled_keys()
+
+    leads = []
+    for r in own_record(conn):
+        key = f"own:{r.institution_id}:{r.primary_ref}:{r.action_date}"
+        if key in done:
+            continue
+        leads.append({
+            "lead_key": key,
+            "kind": "own-record",
+            "a": {"name": r.institution, "context": "tracked institution (registry)"},
+            "b": {"name": r.company_name,
+                  "context": f"{r.agency} {r.resolution_type} {r.primary_ref or ''} "
+                             f"{r.action_date}".strip()},
+            "detail": (r.description or "")[:240],
+        })
+
+    outreach_rows = [dict(r) for r in conn.execute(
+        "SELECT id, kind, institution_id, subject, status, sent_date, response_date, "
+        "body_path FROM outreach ORDER BY id DESC LIMIT 50")]
+
+    doctor_report = {}
+    rp = DATA_DIR / "doctor" / "report.json"
+    if rp.exists():
+        doctor_report = json.loads(rp.read_text())
+
+    signals = [dict(r) for r in conn.execute(
+        "SELECT ts, kind, detail FROM signals ORDER BY id DESC LIMIT 10")]
+
+    return {
+        "review": pending,
+        "review_stats": review.stats(conn),
+        "leads": leads[:40],
+        "outreach": outreach_rows,
+        "doctor": doctor_report,
+        "signals": signals,
+        "gold_labels": len(done),
+    }
+
+
+# ── actions (write side — all through existing gated functions) ─────────────
+
+def act(conn: sqlite3.Connection, action: str, payload: dict) -> dict:
+    from . import outreach, review
+
+    if action == "review":
+        review.decide(conn, int(payload["id"]), payload["decision"], payload["note"])
+        return {"ok": True}
+
+    if action == "lead":
+        label = payload["label"]
+        if label not in ("match", "no_match", "unsure"):
+            raise ValueError("label must be match/no_match/unsure")
+        if not payload.get("note", "").strip():
+            raise ValueError("a note is required — labels without reasons aren't evidence")
+        LABELS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(LABELS_PATH, "a") as fh:
+            fh.write(json.dumps({
+                "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "lead_key": payload["lead_key"], "label": label,
+                "why": payload["note"], "a": payload["a"], "b": payload["b"],
+            }) + "\n")
+        conn.execute(
+            "INSERT OR REPLACE INTO triage (kind, input_key, verdict, confidence, "
+            "rationale, model, ts) VALUES ('entity_match', ?, ?, 'high', ?, 'human', ?)",
+            (f"human:{payload['lead_key']}", label, payload["note"][:400],
+             datetime.now(timezone.utc).isoformat(timespec="seconds")))
+        conn.commit()
+        return {"ok": True}
+
+    if action == "outreach_sent":
+        outreach.mark_sent(conn, int(payload["id"]),
+                           human_confirmed=bool(payload.get("i_sent_this")))
+        return {"ok": True}
+
+    if action == "outreach_response":
+        outreach.record_response(conn, int(payload["id"]), payload["summary"])
+        return {"ok": True}
+
+    if action == "signal":
+        conn.execute("INSERT INTO signals (ts, kind, detail, source_url) VALUES (?,?,?,?)",
+                     (datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                      payload["kind"], payload["detail"], payload.get("url", "")))
+        conn.commit()
+        return {"ok": True}
+
+    if action == "dossier":
+        path = review.dossier(conn, int(payload["id"]))
+        return {"ok": True, "path": path, "body": open(path).read()}
+
+    raise ValueError(f"unknown action {action}")
+
+
+# ── HTTP plumbing (localhost only) ───────────────────────────────────────────
+
+class _Handler(BaseHTTPRequestHandler):
+    def log_message(self, *args):  # quiet
+        pass
+
+    def _send(self, code: int, body: bytes, ctype: str) -> None:
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self):
+        if self.path == "/" or self.path.startswith("/index"):
+            self._send(200, _page().encode(), "text/html; charset=utf-8")
+        elif self.path == "/api/state":
+            conn = _conn()
+            try:
+                self._send(200, json.dumps(state(conn), default=str).encode(),
+                           "application/json")
+            finally:
+                conn.close()
+        else:
+            self._send(404, b"not found", "text/plain")
+
+    def do_POST(self):
+        if not self.path.startswith("/api/act/"):
+            self._send(404, b"not found", "text/plain")
+            return
+        action = self.path.rsplit("/", 1)[-1]
+        length = int(self.headers.get("Content-Length", 0))
+        payload = json.loads(self.rfile.read(length) or b"{}")
+        conn = _conn()
+        try:
+            out = act(conn, action, payload)
+            self._send(200, json.dumps(out, default=str).encode(), "application/json")
+        except Exception as exc:
+            self._send(400, json.dumps({"ok": False, "error": str(exc)}).encode(),
+                       "application/json")
+        finally:
+            conn.close()
+
+
+def serve(port: int = 8010) -> ThreadingHTTPServer:
+    server = ThreadingHTTPServer(("127.0.0.1", port), _Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server
+
+
+# ── the page ─────────────────────────────────────────────────────────────────
+
+def _page() -> str:
+    from .site import _CSS
+    return """<!doctype html><html lang=en><head><meta charset=utf-8>
+<meta name=viewport content='width=device-width,initial-scale=1'>
+<title>Workbench — Glasshouse</title><style>""" + _CSS + """
+.tabs{display:flex;gap:.4rem;margin:1.4rem 0 .6rem;flex-wrap:wrap}
+.tabs button{font:700 .78rem var(--mono);letter-spacing:.08em;text-transform:uppercase;
+  padding:.45rem .9rem;border:1px solid var(--edge);border-radius:999px;cursor:pointer;
+  background:var(--panel);color:var(--muted)}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.tabs button .n{font-weight:400;opacity:.8}
+textarea,input[type=text]{width:100%;padding:.55rem .8rem;border:1px solid var(--edge);
+  border-radius:8px;background:var(--panel);color:var(--ink);font:400 .92rem var(--sans)}
+.actions{display:flex;gap:.5rem;margin-top:.6rem;flex-wrap:wrap;align-items:center}
+.actions button{font:700 .78rem var(--mono);letter-spacing:.06em;padding:.5rem .9rem;
+  border-radius:8px;border:1px solid var(--edge);cursor:pointer;background:var(--panel);
+  color:var(--ink)}
+button.approve{background:var(--accent);border-color:var(--accent);color:#fff}
+button.reject{background:var(--against);border-color:var(--against);color:#fff}
+button.ghost{background:none}
+.ok-note{font:400 .8rem var(--mono);color:var(--for)}
+.err{font:400 .8rem var(--mono);color:var(--against)}
+pre.dossier{font:400 .74rem/1.55 var(--mono);white-space:pre-wrap;background:var(--bg);
+  border:1px solid var(--edge);border-radius:8px;padding:1rem;max-height:24rem;overflow:auto}
+.empty{color:var(--muted);font-family:var(--sans);padding:2rem 0}
+label.chk{display:flex;gap:.5rem;align-items:center;font:400 .85rem var(--sans);color:var(--muted)}
+</style></head><body>
+<nav><div class=wrap><span class=wordmark>GLASS<em>HOUSE</em></span>
+<a href='#' class=on>Workbench</a><a href='http://localhost:8000' target=_blank>Public site</a></div></nav>
+<div class=wrap>
+<h1>The desk</h1>
+<p class=lede>Everything the charter reserves for a human, in one place.
+Decisions write to the ledger through the same gates as the CLI; lead labels
+also grow the eval gold set.</p>
+<div class=tabs id=tabs></div>
+<div id=main></div>
+</div>
+<script>
+let S=null, tab='review';
+const $=s=>document.querySelector(s);
+const e=t=>{const d=document.createElement('div');d.textContent=t??'';return d.innerHTML};
+
+async function load(){S=await (await fetch('/api/state')).json();render()}
+async function post(action,payload,el){
+  const r=await (await fetch('/api/act/'+action,{method:'POST',body:JSON.stringify(payload)})).json();
+  if(!r.ok){el&&(el.innerHTML="<span class=err>"+e(r.error)+"</span>");return null}
+  return r}
+
+function tabs(){
+  const t=[['review','Review',S.review.length],['leads','Leads',S.leads.length],
+    ['outreach','Outreach',S.outreach.filter(o=>o.status!=='declined').length],
+    ['signals','Signals',S.signals.length],['doctor','Doctor',
+      (S.doctor.checks||[]).filter(c=>!c.ok).length]];
+  $('#tabs').innerHTML=t.map(([k,l,n])=>
+    `<button class='${k===tab?'on':''}' onclick='tab="${k}";render()'>${l} <span class=n>${n}</span></button>`).join('')}
+
+function render(){tabs();({review,leads,outreach,signals,doctor})[tab]()}
+
+function review(){
+  const q=S.review;
+  if(!q.length){$('#main').innerHTML=`<p class=empty>Review queue is empty. ${S.review_stats.approved||0} approved, ${S.review_stats.rejected||0} rejected so far — run <code>glasshouse review sync</code> after new ingests.</p>`;return}
+  $('#main').innerHTML=q.map(f=>{const p=f.payload;return `
+  <div class='card claim'><span class=ribbon>quarantined — your call</span>
+   <h3>#${f.id} · ${e(p.institution_id)} · ${e(p.theme)} · ${e(p.issuer_name)}</h3>
+   <div class=grid2>
+    <div class='saydid say'><div class=tag>What it says</div>
+     <blockquote>“${e(p.commitment_quote)}”</blockquote>
+     <div class=cite>${e(p.doc_label)} @ ${e(p.doc_version)} · sha ${e(p.doc_sha256.slice(0,12))}…</div></div>
+    <div class='saydid did'><div class=tag>What it did</div>
+     <blockquote>Voted <b style='color:var(--against)'>${e(p.how_voted)}</b> — ${Math.round(Number(p.shares_voted)).toLocaleString('en-US')} sh</blockquote>
+     <div class=cite>“${e(p.vote_description)}” — ${e(p.meeting_date)} · N-PX ${e(p.accession)}</div></div>
+   </div>
+   <div class=actions>
+    <button class=ghost onclick='dossier(${f.id},this)'>Open dossier</button>
+   </div><div class=dz></div>
+   <textarea rows=2 placeholder='Reviewer note — required. Why does this hold up, or why not?'></textarea>
+   <div class=actions>
+    <button class=approve onclick='decide(this,${f.id},"approved")'>Approve as finding</button>
+    <button class=reject onclick='decide(this,${f.id},"rejected")'>Reject</button>
+    <span class=st></span></div></div>`}).join('')}
+
+async function decide(btn,id,decision){
+  const card=btn.closest('.card'), note=card.querySelector('textarea').value.trim(),
+        st=card.querySelector('.st');
+  if(!note){st.innerHTML="<span class=err>note required — every decision is documented</span>";return}
+  if(await post('review',{id,decision,note},st)){card.style.opacity=.35;
+    st.innerHTML="<span class=ok-note>recorded: "+decision+"</span>";setTimeout(load,600)}}
+
+async function dossier(id,btn){
+  const card=btn.closest('.card'), dz=card.querySelector('.dz');
+  const r=await post('dossier',{id},dz);
+  if(r) dz.innerHTML="<pre class=dossier>"+e(r.body)+"</pre>"}
+
+function leads(){
+  const q=S.leads;
+  if(!q.length){$('#main').innerHTML=`<p class=empty>No unlabeled leads. ${S.gold_labels} human labels recorded — they feed the eval gold set.</p>`;return}
+  $('#main').innerHTML=`<p class=secnote>Same legal entity, or not? Your label is saved as
+   evidence (data/labels/) and grows the gold set that gates the LLM triage tier.
+   ${S.gold_labels} labels so far.</p>`+q.map((l,i)=>`
+  <div class=card><h3>${e(l.kind)} lead</h3>
+   <div class=grid2>
+    <div class='saydid say'><div class=tag>Record A</div><blockquote>${e(l.a.name)}</blockquote>
+     <div class=cite>${e(l.a.context)}</div></div>
+    <div class='saydid did'><div class=tag>Record B</div><blockquote>${e(l.b.name)}</blockquote>
+     <div class=cite>${e(l.b.context)}</div></div></div>
+   <p class=meta>${e(l.detail)}</p>
+   <textarea rows=1 placeholder='Why? (required — e.g. "same CIK", "subsidiary not parent", "different country")'></textarea>
+   <div class=actions>
+    <button class=approve onclick='lead(this,${i},"match")'>Same entity</button>
+    <button class=reject onclick='lead(this,${i},"no_match")'>Different</button>
+    <button onclick='lead(this,${i},"unsure")'>Unsure</button><span class=st></span></div></div>`).join('')}
+
+async function lead(btn,i,label){
+  const l=S.leads[i],card=btn.closest('.card'),note=card.querySelector('textarea').value.trim(),
+        st=card.querySelector('.st');
+  if(!note){st.innerHTML="<span class=err>note required</span>";return}
+  if(await post('lead',{lead_key:l.lead_key,label,note,a:l.a,b:l.b},st)){
+    card.style.opacity=.35;st.innerHTML="<span class=ok-note>labeled "+label+"</span>";setTimeout(load,600)}}
+
+function outreach(){
+  const q=S.outreach;
+  if(!q.length){$('#main').innerHTML="<p class=empty>No outreach drafts yet — <code>glasshouse outreach draft</code>.</p>";return}
+  $('#main').innerHTML=q.map(o=>`
+  <div class=card><h3>#${o.id} [${e(o.status)}] ${e(o.kind)} — ${e(o.institution_id)}</h3>
+   <p class=meta>${e(o.subject)} · sent: ${e(o.sent_date||'—')} · response: ${e(o.response_date||'—')}</p>
+   <p class=cite>${e(o.body_path)}</p>
+   ${o.status==='draft'?`<label class=chk><input type=checkbox> I sent this myself, outside the tool</label>
+   <div class=actions><button class=approve onclick='sent(this,${o.id})'>Mark sent</button><span class=st></span></div>`:''}
+   ${o.status==='sent'&&!o.response_date?`<textarea rows=1 placeholder='Response summary'></textarea>
+   <div class=actions><button onclick='resp(this,${o.id})'>Record response</button><span class=st></span></div>`:''}
+  </div>`).join('')}
+
+async function sent(btn,id){
+  const card=btn.closest('.card'),st=card.querySelector('.st');
+  if(!card.querySelector('input[type=checkbox]').checked){
+    st.innerHTML="<span class=err>confirm you sent it yourself — the tool never sends</span>";return}
+  if(await post('outreach_sent',{id,i_sent_this:true},st)){setTimeout(load,400)}}
+
+async function resp(btn,id){
+  const card=btn.closest('.card'),st=card.querySelector('.st'),
+        summary=card.querySelector('textarea').value.trim();
+  if(!summary){st.innerHTML="<span class=err>summary required</span>";return}
+  if(await post('outreach_response',{id,summary},st)){setTimeout(load,400)}}
+
+function signals(){
+  $('#main').innerHTML=`<div class=card><h3>Record a distribution signal</h3>
+   <p class=secnote>Pitch replies, citations, subscriber counts — §0 makes these
+   first-class inputs that re-rank the roadmap.</p>
+   <div class=actions>
+    <select id=sk style='font:inherit;padding:.5rem'>
+     <option>citation</option><option>pitch_reply</option><option>inquiry_response</option>
+     <option>subscriber</option><option>other</option></select></div>
+   <textarea id=sd rows=1 placeholder='What happened?'></textarea>
+   <input type=text id=su placeholder='URL (optional)' style='margin-top:.5rem'>
+   <div class=actions><button class=approve onclick='sig(this)'>Record</button><span class=st></span></div></div>
+   <h2 style='margin-top:2rem'>Recent</h2>`+
+   (S.signals.map(s=>`<div class=stat><span>${e(s.ts)} [${e(s.kind)}] ${e(s.detail)}</span></div>`).join('')||"<p class=empty>none yet</p>")}
+
+async function sig(btn){
+  const st=btn.parentElement.querySelector('.st');
+  const d=$('#sd').value.trim(); if(!d){st.innerHTML="<span class=err>detail required</span>";return}
+  if(await post('signal',{kind:$('#sk').value,detail:d,url:$('#su').value},st)){setTimeout(load,400)}}
+
+function doctor(){
+  const cs=S.doctor.checks||[];
+  if(!cs.length){$('#main').innerHTML="<p class=empty>No report — run <code>glasshouse doctor</code>.</p>";return}
+  $('#main').innerHTML=`<p class=secnote>As of ${e(S.doctor.ts)} — ${S.doctor.n_errors} errors,
+   ${S.doctor.n_warnings} warnings. Repairs: <code>claude --agent source-medic -p "$(cat data/doctor/task.md)"</code></p>`+
+   cs.map(c=>`<div class=stat><span>${c.ok?'·':'⚠'} ${e(c.name)} — ${e(c.detail)}</span></div>`).join('')}
+
+load();
+</script></body></html>"""

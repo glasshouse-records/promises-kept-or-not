@@ -22,11 +22,28 @@ GOLD_PATH = Path(__file__).resolve().parents[2] / "tests" / "gold_pairs.jsonl"
 PRECISION_BAR = 0.97
 
 
+def gold_cases(gold_path: Path = GOLD_PATH) -> list[dict]:
+    """Curated gold pairs + every human lead adjudication from the workbench
+    (data/labels/lead_labels.jsonl). Review work grows the eval set for free."""
+    cases = [json.loads(line) for line in gold_path.read_text().splitlines() if line.strip()]
+    from .workbench import LABELS_PATH
+    if LABELS_PATH.exists():
+        for line in LABELS_PATH.read_text().splitlines():
+            try:
+                d = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if d.get("label") in ("match", "no_match"):
+                cases.append({"label": d["label"], "why": d.get("why", "human lead label"),
+                              "a": d["a"], "b": d["b"]})
+    return cases
+
+
 def run_matcher_eval(conn: sqlite3.Connection, model: str | None = None,
                      gold_path: Path = GOLD_PATH) -> dict:
     from . import llm, triage
     model = model or llm.DEFAULT_MODEL
-    cases = [json.loads(line) for line in gold_path.read_text().splitlines() if line.strip()]
+    cases = gold_cases(gold_path)
     results = []
     for c in cases:
         d = triage.adjudicate_pair(conn, c["a"], c["b"], model=model)
