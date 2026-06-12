@@ -36,6 +36,8 @@ jobs:
           glasshouse digest
         env:
           GLASSHOUSE_CONTACT: ${{ vars.GLASSHOUSE_CONTACT }}
+      - name: Self-diagnosis (emits repair task for the source-medic agent)
+        run: glasshouse doctor || true
       - name: Upload alerts + site
         run: glasshouse site
       - uses: actions/upload-artifact@v4
@@ -44,4 +46,5 @@ jobs:
           path: |
             data/alerts/
             data/_site/
+            data/doctor/
           if-no-files-found: ignore

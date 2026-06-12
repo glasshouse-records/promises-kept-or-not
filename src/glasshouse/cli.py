@@ -345,9 +345,65 @@ def cmd_report_flagged_votes(args) -> int:
     return 0
 
 
+def cmd_doctor(args) -> int:
+    from . import doctor
+    conn = _conn()
+    report_path, task_path = doctor.emit(conn)
+    import json as _json
+    report = _json.loads(open(report_path).read())
+    for c in report["checks"]:
+        mark = "ok " if c["ok"] else ("ERR" if c["severity"] == "error" else "WRN")
+        print(f"  [{mark}] {c['name']}: {c['detail']}")
+    print(f"\n  report → {report_path}")
+    if task_path:
+        print(f"  repair task → {task_path}")
+        print("  hand it to the repair loop: claude --agent source-medic "
+              f"-p \"$(cat {task_path})\"")
+    return 0 if report["healthy"] else 1
+
+
+def cmd_triage(args) -> int:
+    from . import triage
+    from .llm import NotConfigured
+    conn = _conn()
+    try:
+        if args.what == "leads":
+            stats = triage.triage_leads(conn, limit=args.limit)
+        else:
+            stats = triage.classify_proposals(conn, limit=args.limit)
+        print(f"  {stats} (ADVISORY — stored in triage table, gate unchanged)")
+        return 0
+    except NotConfigured as exc:
+        print(f"  {exc}")
+        return 2
+
+
+def cmd_eval(args) -> int:
+    from . import evals
+    from .llm import NotConfigured
+    conn = _conn()
+    try:
+        r = evals.run_matcher_eval(conn)
+    except NotConfigured as exc:
+        print(f"  {exc}")
+        return 2
+    print(f"  model {r['model']} on {r['n']} gold pairs: "
+          f"precision(match)={r['precision_on_match']} recall={r['recall_on_match']} "
+          f"unsure={r['unsure']}")
+    print(f"  bar: precision ≥ {r['bar']} with zero false matches → "
+          f"{'PASSES — triage may be trusted' if r['passes_bar'] else 'FAILS — do not trust triage output'}")
+    for f in r["failures"]:
+        print(f"    MISS [{f['label']} judged {f['verdict']}] {f['why']} — {f['rationale']}")
+    return 0 if r["passes_bar"] else 1
+
+
 def cmd_review(args) -> int:
     from . import review
     conn = _conn()
+    if args.action == "dossier":
+        path = review.dossier(conn, args.id)
+        print(f"  dossier → {path}")
+        return 0
     if args.action == "sync":
         n = review.sync(conn)
         print(f"  {n} new candidates queued; totals: {review.stats(conn)}")
@@ -566,6 +622,24 @@ def main(argv: list[str] | None = None) -> int:
         ra.add_argument("--note", required=True,
                         help="why — every decision is documented")
         ra.set_defaults(func=cmd_review)
+    rd = rv.add_parser("dossier", help="assemble the verification dossier for one candidate")
+    rd.add_argument("id", type=int)
+    rd.set_defaults(func=cmd_review)
+
+    sub.add_parser("doctor", help="self-diagnosis: source freshness, integrity, "
+                   "queues; emits a repair task for the source-medic agent"
+                   ).set_defaults(func=cmd_doctor)
+
+    tr = sub.add_parser("triage").add_subparsers(dest="what", required=True)
+    for what, hlp in (("leads", "LLM-adjudicate quarantined name-join leads (advisory)"),
+                      ("proposals", "LLM theme-classification of AGAINST proposals (cached)")):
+        tp = tr.add_parser(what, help=hlp)
+        tp.add_argument("--limit", type=int, default=20)
+        tp.set_defaults(func=cmd_triage)
+
+    ev = sub.add_parser("eval").add_subparsers(dest="which2", required=True)
+    ev.add_parser("matcher", help="gold-set gate for the match adjudicator"
+                  ).set_defaults(func=cmd_eval)
 
     sg = sub.add_parser("signal").add_subparsers(dest="action", required=True)
     sr = sg.add_parser("record")

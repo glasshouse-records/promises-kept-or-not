@@ -19,6 +19,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
 mcp = ["mcp>=1.0"]
+llm = ["anthropic>=0.40"]
 
 [project.scripts]
 glasshouse = "glasshouse.cli:main"

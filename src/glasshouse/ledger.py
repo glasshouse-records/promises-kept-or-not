@@ -158,6 +158,28 @@ CREATE TABLE IF NOT EXISTS findings (
     payload       TEXT NOT NULL            -- JSON citation chain, frozen at review time
 );
 
+CREATE TABLE IF NOT EXISTS llm_log (
+    id          INTEGER PRIMARY KEY,
+    ts          TEXT NOT NULL,
+    model       TEXT NOT NULL,
+    purpose     TEXT NOT NULL,        -- match_adjudication | proposal_theme | dossier_draft
+    prompt_sha  TEXT NOT NULL,        -- hash of the full rendered prompt
+    input_key   TEXT NOT NULL,        -- stable key of the thing judged
+    output      TEXT NOT NULL,        -- raw model output, verbatim
+    advisory    INTEGER NOT NULL DEFAULT 1  -- ALWAYS 1: LLM output never becomes ledger fact
+);
+
+CREATE TABLE IF NOT EXISTS triage (
+    id          INTEGER PRIMARY KEY,
+    kind        TEXT NOT NULL,        -- entity_match | proposal_theme
+    input_key   TEXT UNIQUE NOT NULL,
+    verdict     TEXT NOT NULL,        -- match | no_match | unsure | <theme>|none
+    confidence  TEXT NOT NULL,        -- high | medium | low
+    rationale   TEXT NOT NULL,
+    model       TEXT NOT NULL,
+    ts          TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS signals (
     id         INTEGER PRIMARY KEY,
     ts         TEXT NOT NULL,
