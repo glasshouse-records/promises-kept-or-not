@@ -34,6 +34,11 @@ where = ["src"]
 testpaths = ["tests"]
 addopts = "-q"
 
+# NOTE: mutation testing (Trail of Bits mutation-testing skill) is a wanted
+# follow-up — mutmut 3.x's mutants/ sandbox doesn't resolve this project's
+# src-layout editable install, so it needs a dedicated runner venv before it
+# runs clean. Tracked rather than shipped half-working.
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
