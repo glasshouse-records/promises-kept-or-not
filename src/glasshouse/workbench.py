@@ -29,10 +29,19 @@ LABELS_PATH = DATA_DIR / "labels" / "lead_labels.jsonl"
 
 # ── state assembly (read side) ───────────────────────────────────────────────
 
-def _conn() -> sqlite3.Connection:
+_synced_dbs: set[str] = set()
+
+
+def _conn(write: bool = False) -> sqlite3.Connection:
+    """Reads must not take the write lock: the registry sync (20 upserts +
+    commit) runs once per ledger, not per request — found in review when
+    GET /api/state contended with a running ingest. Keyed by DB path so a
+    second distinct ledger in the same process still gets synced."""
     from . import ledger, registry
     conn = ledger.connect(DB_PATH)
-    registry.sync_to_ledger(conn)
+    if write and str(DB_PATH) not in _synced_dbs:
+        registry.sync_to_ledger(conn)
+        _synced_dbs.add(str(DB_PATH))
     return conn
 
 
@@ -172,15 +181,32 @@ class _Handler(BaseHTTPRequestHandler):
         else:
             self._send(404, b"not found", "text/plain")
 
+    def _origin_ok(self) -> bool:
+        """CSRF guard: browsers attach an Origin header to cross-site POSTs.
+        Only the workbench's own origin (or non-browser clients sending no
+        Origin) may write — without this, any webpage open in the operator's
+        browser could forge ledger decisions via fetch() to localhost."""
+        origin = self.headers.get("Origin")
+        if origin is None:
+            return True
+        host = self.headers.get("Host", "")
+        return origin in (f"http://{host}", f"http://127.0.0.1:{self.server.server_address[1]}",
+                          f"http://localhost:{self.server.server_address[1]}")
+
     def do_POST(self):
         if not self.path.startswith("/api/act/"):
             self._send(404, b"not found", "text/plain")
             return
+        if not self._origin_ok():
+            self._send(403, json.dumps({"ok": False, "error":
+                       "cross-origin request rejected (CSRF origin check)"}).encode(),
+                       "application/json")
+            return
         action = self.path.rsplit("/", 1)[-1]
-        length = int(self.headers.get("Content-Length", 0))
-        payload = json.loads(self.rfile.read(length) or b"{}")
-        conn = _conn()
+        conn = _conn(write=True)
         try:
+            length = int(self.headers.get("Content-Length", 0))
+            payload = json.loads(self.rfile.read(length) or b"{}")
             out = act(conn, action, payload)
             self._send(200, json.dumps(out, default=str).encode(), "application/json")
         except Exception as exc:
@@ -191,6 +217,7 @@ class _Handler(BaseHTTPRequestHandler):
 
 
 def serve(port: int = 8010) -> ThreadingHTTPServer:
+    _conn(write=True).close()  # one registry sync at startup; reads never write
     server = ThreadingHTTPServer(("127.0.0.1", port), _Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()

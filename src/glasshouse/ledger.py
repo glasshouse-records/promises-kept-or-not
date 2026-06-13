@@ -254,6 +254,10 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE outreach ADD COLUMN finding_fingerprint "
                      "TEXT NOT NULL DEFAULT ''")
         conn.commit()
+    # Every analytic join goes votes→filings on accession; 2.8M rows pay for
+    # this index many times per site build (found in review).
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_votes_accession ON votes(accession)")
+    conn.commit()
 
 
 def dedupe_votes(conn: sqlite3.Connection) -> int:
