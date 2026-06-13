@@ -91,6 +91,7 @@ def state(conn: sqlite3.Connection) -> dict:
     signals = [dict(r) for r in conn.execute(
         "SELECT ts, kind, detail FROM signals ORDER BY id DESC LIMIT 10")]
 
+    from . import newsroom
     return {
         "review": pending,
         "review_stats": review.stats(conn),
@@ -99,6 +100,8 @@ def state(conn: sqlite3.Connection) -> dict:
         "doctor": doctor_report,
         "signals": signals,
         "gold_labels": len(done),
+        "newsroom": newsroom.story_queue(conn),
+        "pipeline": newsroom.pipeline_status(conn),
     }
 
 
@@ -131,6 +134,12 @@ def act(conn: sqlite3.Connection, action: str, payload: dict) -> dict:
              datetime.now(UTC).isoformat(timespec="seconds")))
         conn.commit()
         return {"ok": True}
+
+    if action == "draft_story":
+        from . import newsroom
+        oid = newsroom.draft_story(conn, payload["payload"], payload.get("kind", "social_post"))
+        row = conn.execute("SELECT body_path FROM outreach WHERE id=?", (oid,)).fetchone()
+        return {"ok": True, "id": oid, "body": open(row["body_path"]).read()}
 
     if action == "outreach_sent":
         outreach.mark_sent(conn, int(payload["id"]),
@@ -264,7 +273,7 @@ also grow the eval gold set.</p>
 <div id=main></div>
 </div>
 <script>
-let S=null, tab='review';
+let S=null, tab='newsroom';
 const $=s=>document.querySelector(s);
 const e=t=>{const d=document.createElement('div');d.textContent=t??'';return d.innerHTML};
 
@@ -275,14 +284,52 @@ async function post(action,payload,el){
   return r}
 
 function tabs(){
-  const t=[['review','Review',S.review.length],['leads','Leads',S.leads.length],
+  const t=[['newsroom','Newsroom',(S.newsroom||[]).length],
+    ['review','Review',S.review.length],['leads','Leads',S.leads.length],
     ['outreach','Outreach',S.outreach.filter(o=>o.status!=='declined').length],
     ['signals','Signals',S.signals.length],['doctor','Doctor',
-      (S.doctor.checks||[]).filter(c=>!c.ok).length]];
+      (S.doctor.checks||[]).filter(c=>!c.ok).length],
+    ['pipeline','Pipeline',(S.pipeline||[]).filter(p=>!p.ok).length]];
   $('#tabs').innerHTML=t.map(([k,l,n])=>
     `<button class='${k===tab?'on':''}' onclick='tab="${k}";render()'>${l} <span class=n>${n}</span></button>`).join('')}
 
-function render(){tabs();({review,leads,outreach,signals,doctor})[tab]()}
+function render(){tabs();({newsroom,review,leads,outreach,signals,doctor,pipeline})[tab]()}
+
+function newsroom(){
+  const q=S.newsroom||[];
+  if(!q.length){$('#main').innerHTML="<p class=empty>No stories yet — approve a candidate in Review, or run scan-events.</p>";return}
+  $('#main').innerHTML=`<p class=secnote>What's publishable now, ranked by newsworthiness with the
+   analysis behind each. The newsroom drafts; <b>only you send</b>. Findings float to the top;
+   candidates need review first; fresh enforcement triggers are pegged to the news cycle.</p>`+
+   q.map((s,i)=>{
+    const tag={finding:'var(--for)',candidate:'var(--hold)',event:'var(--accent)'}[s.kind]||'var(--muted)';
+    const draftBtns=s.draftable?`
+      <button class=approve onclick='draftStory(${i},"social_post",this)'>Draft social post</button>
+      <button onclick='draftStory(${i},"pitch",this)'>Draft pitch</button>
+      <button onclick='draftStory(${i},"inquiry",this)'>Draft inquiry</button>`
+      :`<span class=meta>${s.next_step==='review'?'→ review in the Review tab before drafting':s.next_step==='verify'?'→ verify against primary source (alert pack on disk)':''}</span>`;
+    return `<div class=card>
+     <div style='display:flex;gap:.6rem;align-items:center;margin-bottom:.3rem'>
+      <span class=ribbon style='color:${tag};border-color:${tag};transform:none'>${e(s.kind)}</span>
+      <span class=meta>score ${s.score} · ${e(s.status)}</span></div>
+     <h3 style='margin:.2rem 0'>${e(s.headline)}</h3>
+     <div class=meta>${s.why.map(w=>'· '+e(w)).join('<br>')}</div>
+     ${s.drafted.length?`<div class=meta style='margin-top:.4rem'>drafted: ${s.drafted.map(e).join(', ')}</div>`:''}
+     <div class=actions>${draftBtns}<span class=st></span></div>
+     <div class=dz></div></div>`}).join('')}
+
+async function draftStory(i,kind,btn){
+  const s=S.newsroom[i],card=btn.closest('.card'),st=card.querySelector('.st'),dz=card.querySelector('.dz');
+  const r=await post('draft_story',{payload:s.payload,kind},st);
+  if(r){st.innerHTML="<span class=ok-note>drafted "+kind+" → Outreach tab (NOT sent)</span>";
+    dz.innerHTML="<pre class=dossier>"+e(r.body)+"</pre>"}}
+
+function pipeline(){
+  const q=S.pipeline||[];
+  $('#main').innerHTML=`<p class=secnote>Every stage of the pipeline, what it has produced, and
+   whether it looks alive. This is the verifiable-it's-running view.</p>`+
+   q.map(p=>`<div class=stat><span>${p.ok?'·':'⚠'} <b style='font-family:var(--mono)'>${e(p.stage)}</b>
+     — ${e(p.detail)}${p.note?` <span style='color:var(--hold)'>(${e(p.note)})</span>`:''}</span></div>`).join('')}
 
 function review(){
   const q=S.review;
