@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import sqlite3
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 @dataclass
@@ -101,7 +101,7 @@ def holdings_changes(conn: sqlite3.Connection, institution_id: str,
 def record_run(conn: sqlite3.Connection) -> str:
     """Snapshot the current ledger frontier as a run; future diffs are
     computed against the most recent run."""
-    ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    ts = datetime.now(UTC).isoformat(timespec="seconds")
     conn.execute(
         "INSERT INTO runs (ts, votes_maxid, enf_maxid, commitments_maxid) VALUES (?,?,?,?)",
         (ts, _maxid(conn, "votes"), _maxid(conn, "enforcement_actions"),

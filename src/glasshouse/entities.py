@@ -13,8 +13,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 # Threshold for any fuzzy join used in a finding (stricter than exploration).
 FINDING_THRESHOLD = 0.85
@@ -99,8 +98,13 @@ def fuzzy_match(query: str, candidate: str, threshold: float = 0.55) -> tuple[bo
     if _CUSIP_RE.match(query.strip().upper()) or _CUSIP_RE.match(candidate.strip().upper()):
         return query.strip().upper() == candidate.strip().upper(), 0.0
 
+    # Identity: a record always matches itself at 1.0 — even degenerate
+    # single-character names, whose normalized form is empty (normalize_name
+    # drops 1-char tokens but _token_set keeps them, so without this the
+    # self-match leaks into the 0.85 token-subsequence branch). Found by a
+    # Hypothesis self-match property, 2026-06.
     nq, nc = normalize_name(query), normalize_name(candidate)
-    if nq == nc and nq:
+    if (nq == nc and nq) or query.strip().lower() == candidate.strip().lower():
         return True, 1.0
 
     if _length_ratio(query, candidate) >= 0.40:
@@ -113,8 +117,8 @@ def fuzzy_match(query: str, candidate: str, threshold: float = 0.55) -> tuple[bo
     return False, j
 
 
-def best_match(query: str, candidates: list[str], threshold: float = 0.55) -> Optional[tuple[str, float]]:
-    best: Optional[tuple[str, float]] = None
+def best_match(query: str, candidates: list[str], threshold: float = 0.55) -> tuple[str, float] | None:
+    best: tuple[str, float] | None = None
     for c in candidates:
         matched, score = fuzzy_match(query, c, threshold=threshold)
         if matched and (best is None or score > best[1]):
@@ -126,14 +130,14 @@ def log_match(conn: sqlite3.Connection, query: str, candidate: str,
               method: str, score: float, accepted: bool) -> None:
     conn.execute(
         "INSERT INTO match_log (ts, query, candidate, method, score, accepted) VALUES (?,?,?,?,?,?)",
-        (datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        (datetime.now(UTC).isoformat(timespec="seconds"),
          query, candidate, method, score, int(accepted)),
     )
 
 
 def resolve(conn: sqlite3.Connection, *, name: str = "", cusip: str = "",
             lei: str = "", cik: str = "",
-            threshold: float = FINDING_THRESHOLD) -> Optional[sqlite3.Row]:
+            threshold: float = FINDING_THRESHOLD) -> sqlite3.Row | None:
     """Resolve to an `entities` row by CUSIP → LEI → CIK → fuzzy name.
 
     Exact-key hits are not logged (they are deterministic); fuzzy attempts
@@ -163,7 +167,7 @@ def resolve(conn: sqlite3.Connection, *, name: str = "", cusip: str = "",
         ).fetchone()
         if row:
             return row
-        best: Optional[tuple[sqlite3.Row, float]] = None
+        best: tuple[sqlite3.Row, float] | None = None
         for cand in conn.execute("SELECT * FROM entities").fetchall():
             matched, score = fuzzy_match(name, cand["canonical_name"], threshold=threshold)
             accepted = matched and score >= threshold

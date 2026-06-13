@@ -6,8 +6,8 @@ from datetime import date
 import pytest
 
 from glasshouse import diff, ledger, outreach, review, scoring
-from glasshouse.findings import own_record
 from glasshouse.contradictions import ContradictionCandidate
+from glasshouse.findings import own_record
 from glasshouse.ledger import EnforcementAction
 
 

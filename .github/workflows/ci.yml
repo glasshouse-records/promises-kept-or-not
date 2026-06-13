@@ -13,6 +13,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
+      # Lint (ruff) + invariant scan (semgrep) gate the diff before tests.
+      - run: ruff check src/ tests/
+      - run: semgrep --config .semgrep.yml src/ --error --metrics off
       - run: pytest
       # Ledger integrity gate: seed the curated snapshots into a fresh ledger
       # and run the integrity checker (exit 1 on any hard failure).

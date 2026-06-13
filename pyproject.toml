@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "hypothesis>=6.0", "ruff>=0.6", "semgrep>=1.0"]
 mcp = ["mcp>=1.0"]
 llm = ["anthropic>=0.40"]
 
@@ -33,3 +33,24 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src"]
+
+[tool.ruff.lint]
+# Trail of Bits modern-python leans toward select=["ALL"]; we start with the
+# high-signal sets that catch real bugs (not stylistic churn) for a mature
+# codebase, and grow the selection over time.
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "C4", "PIE", "RET"]
+ignore = [
+    "E501",    # long lines are mostly SQL/CSS strings; semgrep guards what matters
+    "SIM115",  # inline open() in tests/CLI one-shots is fine here
+    "SIM102",  # nested ifs read clearer than combined in the matcher
+    "B905",    # zip strict= not needed where lengths are construction-guaranteed
+    "SIM113",  # manual counter is clearer than enumerate() over lxml iterparse
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 from .. import http
 
@@ -24,7 +23,7 @@ class Filing:
     company_name: str
     form_type: str
     filing_date: str
-    period_of_report: Optional[str]
+    period_of_report: str | None
     accession_number: str
 
     @property

@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
-from datetime import date, datetime, timezone
+from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from .http import DATA_DIR
@@ -120,7 +120,7 @@ def act(conn: sqlite3.Connection, action: str, payload: dict) -> dict:
         LABELS_PATH.parent.mkdir(parents=True, exist_ok=True)
         with open(LABELS_PATH, "a") as fh:
             fh.write(json.dumps({
-                "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "ts": datetime.now(UTC).isoformat(timespec="seconds"),
                 "lead_key": payload["lead_key"], "label": label,
                 "why": payload["note"], "a": payload["a"], "b": payload["b"],
             }) + "\n")
@@ -128,7 +128,7 @@ def act(conn: sqlite3.Connection, action: str, payload: dict) -> dict:
             "INSERT OR REPLACE INTO triage (kind, input_key, verdict, confidence, "
             "rationale, model, ts) VALUES ('entity_match', ?, ?, 'high', ?, 'human', ?)",
             (f"human:{payload['lead_key']}", label, payload["note"][:400],
-             datetime.now(timezone.utc).isoformat(timespec="seconds")))
+             datetime.now(UTC).isoformat(timespec="seconds")))
         conn.commit()
         return {"ok": True}
 
@@ -143,7 +143,7 @@ def act(conn: sqlite3.Connection, action: str, payload: dict) -> dict:
 
     if action == "signal":
         conn.execute("INSERT INTO signals (ts, kind, detail, source_url) VALUES (?,?,?,?)",
-                     (datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                     (datetime.now(UTC).isoformat(timespec="seconds"),
                       payload["kind"], payload["detail"], payload.get("url", "")))
         conn.commit()
         return {"ok": True}

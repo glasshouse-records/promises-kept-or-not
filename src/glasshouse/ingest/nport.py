@@ -18,7 +18,7 @@ from pathlib import Path
 from lxml import etree
 
 from .. import http
-from .edgar import Filing, list_filings
+from .edgar import list_filings
 
 logger = logging.getLogger(__name__)
 

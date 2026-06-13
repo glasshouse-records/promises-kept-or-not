@@ -94,7 +94,7 @@ def test_event_alert_joins_new_action_to_votes(conn, monkeypatch):
     from glasshouse.ingest import doj_fcpa, ofac, ungc, worldbank
     monkeypatch.setattr(ofac, "fetch", lambda: fake)
     for mod in (doj_fcpa, worldbank, ungc):
-        monkeypatch.setattr(mod, "fetch", lambda: [])
+        monkeypatch.setattr(mod, "fetch", list)
 
     stats = events.scan(conn)
     assert stats == {"new_actions": 1, "alerts": 1}

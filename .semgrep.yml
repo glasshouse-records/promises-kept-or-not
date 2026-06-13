@@ -1,0 +1,49 @@
+# Glasshouse invariants as mechanical rules (Trail of Bits semgrep-rule-creator
+# methodology). Each rule encodes one line of the glasshouse-reviewer checklist
+# so the project's fatal-mistake classes are caught in CI, not just in review.
+#
+# Run: semgrep --config .semgrep.yml src/
+rules:
+# NOTE: two invariants — "no unfiltered SUM(shares_voted)" and "only the
+# human-gated mark_sent may write status='sent'" — live in
+# tests/test_invariants.py instead of here: both depend on multiline SQL /
+# cross-statement guards that regex rules can only catch with false
+# positives, and a noisy rule is worse than none (Trail of Bits fp-check).
+
+  - id: llm-output-must-not-write-ledger-facts
+    languages: [python]
+    severity: ERROR
+    message: >
+      LLM/triage code must never INSERT/UPDATE ledger fact tables
+      (enforcement_actions, votes, holdings, commitments, findings). LLM
+      output is advisory only and belongs in triage/llm_log. Found a write
+      to a ledger table from an advisory module.
+    patterns:
+      - pattern-regex: '(?i)(INSERT\s+INTO|UPDATE)\s+(enforcement_actions|votes|holdings|commitments|findings)\b'
+    paths:
+      include: ['**/llm.py', '**/triage.py']
+
+  - id: enforcement-action-needs-source-url
+    languages: [python]
+    severity: WARNING
+    message: >
+      Every EnforcementAction must carry source_url (provenance invariant).
+      Construct it with an explicit source_url= argument.
+    patterns:
+      - pattern: EnforcementAction(...)
+      - pattern-not: EnforcementAction(..., source_url=$U, ...)
+      - pattern-not: EnforcementAction(..., source_url=$U)
+    paths:
+      include: ['**/src/glasshouse/']
+      exclude: ['*test*']
+
+  - id: no-browser-user-agent-impersonation
+    languages: [python]
+    severity: ERROR
+    message: >
+      Honest access only: do not spoof a browser User-Agent to evade CDN/bot
+      rules. Use the project's identifying UA via glasshouse.http.
+    patterns:
+      - pattern-regex: '(?i)User-Agent.{0,80}(Mozilla/5|Chrome/|Safari/|AppleWebKit)'
+    paths:
+      include: ['**/src/glasshouse/']

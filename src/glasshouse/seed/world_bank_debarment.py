@@ -60,23 +60,6 @@ WORLD_BANK_DEBARRED: dict[str, dict] = {
         "note": "Debarment expired 2023; company operates under AtkinsRéalis brand.",
     },
 
-    "alstom": {
-        "company": "Alstom SA",
-        "debarment_date": "2015-03-06",
-        "debarment_length_years": 3,
-        "debarment_expiry": "2018-03-06",
-        "basis": (
-            "World Bank debarment following corruption findings related to "
-            "railway and power plant contracts in multiple countries. Related "
-            "to the DOJ $772M FCPA settlement (2014) — Alstom's subsidiaries "
-            "pleaded guilty to bribing government officials in Indonesia, Saudi "
-            "Arabia, Egypt, the Bahamas, and Taiwan. GE acquired Alstom's power "
-            "business in 2015."
-        ),
-        "source_url": "https://projects.worldbank.org/en/projects-operations/procurement/debarred-firms",
-        "note": "Alstom power business acquired by GE (2015); transport business remains independent.",
-    },
-
     "lahmeyer": {
         "company": "Lahmeyer International GmbH",
         "debarment_date": "2006-11-06",
@@ -135,51 +118,6 @@ WORLD_BANK_DEBARRED: dict[str, dict] = {
         ),
         "source_url": "https://projects.worldbank.org/en/projects-operations/procurement/debarred-firms",
         "note": "Debarment expired 2023.",
-    },
-
-    "saipem": {
-        "company": "Saipem S.p.A. (ENI subsidiary)",
-        "debarment_date": "2015-06-08",
-        "debarment_length_years": 2,
-        "debarment_expiry": "2017-06-08",
-        "basis": (
-            "World Bank debarment for corrupt practices — Saipem used an intermediary "
-            "to pay bribes to Algerian state oil company (Sonatrach) officials to "
-            "obtain construction contracts. Italian prosecutors also investigated. "
-            "Saipem is majority-owned by ENI (Italian state-controlled oil company), "
-            "listed on the Milan stock exchange."
-        ),
-        "source_url": "https://projects.worldbank.org/en/projects-operations/procurement/debarred-firms",
-        "note": "Debarment expired 2017.",
-    },
-
-    "technip": {
-        "company": "Technip S.A. (now TechnipFMC plc)",
-        "debarment_date": "2012-06-29",
-        "debarment_length_years": 3,
-        "debarment_expiry": "2015-06-29",
-        "basis": (
-            "World Bank debarment following the 2010 FCPA resolution (DOJ $338M) — "
-            "Technip paid bribes to Nigerian government officials as part of the TSKJ "
-            "consortium for Bonny Island LNG plant contracts. TechnipFMC is the "
-            "successor entity (Paris/NYSE-listed)."
-        ),
-        "source_url": "https://projects.worldbank.org/en/projects-operations/procurement/debarred-firms",
-        "note": "Debarment expired 2015; Technip merged with FMC Technologies → TechnipFMC.",
-    },
-
-    "technipfmc": {
-        "company": "TechnipFMC plc (successor to Technip S.A.)",
-        "debarment_date": "2012-06-29",
-        "debarment_length_years": 3,
-        "debarment_expiry": "2015-06-29",
-        "basis": (
-            "TechnipFMC is successor to Technip S.A., which received a World Bank "
-            "debarment for FCPA-related bribes to Nigerian officials (TSKJ consortium). "
-            "Debarment has expired; company continues as London/NYSE dual-listed entity."
-        ),
-        "source_url": "https://projects.worldbank.org/en/projects-operations/procurement/debarred-firms",
-        "note": "Debarment expired 2015.",
     },
 
     # ── Additional major debarments from public World Bank / MDB records ──────

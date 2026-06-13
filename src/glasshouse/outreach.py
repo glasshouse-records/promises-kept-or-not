@@ -17,7 +17,7 @@ non-response ledger → fiduciary submission → annual awards.
 from __future__ import annotations
 
 import sqlite3
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from .http import DATA_DIR
@@ -132,7 +132,7 @@ def _contacts() -> dict:
 def _record(conn: sqlite3.Connection, kind: str, institution_id: str,
             subject: str, body: str, finding_fingerprint: str = "") -> int:
     OUTBOX_DIR.mkdir(parents=True, exist_ok=True)
-    ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    ts = datetime.now(UTC).isoformat(timespec="seconds")
     stem = f"{date.today().isoformat()}_{kind}_{institution_id}_{abs(hash(subject)) % 10**8}"
     path = OUTBOX_DIR / f"{stem}.md"
     path.write_text(body)
@@ -180,15 +180,15 @@ def draft_from_candidate(conn: sqlite3.Connection, candidate, kind: str = "inqui
     from datetime import timedelta
     deadline = (date.today() + timedelta(days=deadline_days)).isoformat()
 
-    common = dict(
-        institution=institution, today=date.today().isoformat(),
-        theme=candidate.theme, doc_label=candidate.doc_label,
-        doc_version=candidate.doc_version, doc_sha=candidate.doc_sha256,
-        commitment_quote=candidate.commitment_quote, doc_url=candidate.doc_url,
-        accession=candidate.accession, issuer=candidate.issuer_name,
-        meeting_date=candidate.meeting_date, proposal=candidate.vote_description,
-        how_voted=candidate.how_voted, shares=candidate.shares_voted,
-        mgmt_rec=candidate.management_recommendation)
+    common = {
+        "institution": institution, "today": date.today().isoformat(),
+        "theme": candidate.theme, "doc_label": candidate.doc_label,
+        "doc_version": candidate.doc_version, "doc_sha": candidate.doc_sha256,
+        "commitment_quote": candidate.commitment_quote, "doc_url": candidate.doc_url,
+        "accession": candidate.accession, "issuer": candidate.issuer_name,
+        "meeting_date": candidate.meeting_date, "proposal": candidate.vote_description,
+        "how_voted": candidate.how_voted, "shares": candidate.shares_voted,
+        "mgmt_rec": candidate.management_recommendation}
     contacts = _contacts()
 
     if kind == "inquiry":

@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from datetime import UTC
 
 from . import findings, ledger, registry
 
@@ -100,6 +101,7 @@ def cmd_digest(_args) -> int:
 
 def cmd_export(_args) -> int:
     from datetime import date as _date
+
     from .http import DATA_DIR
     conn = _conn()
     out = DATA_DIR / "exports"
@@ -110,7 +112,7 @@ def cmd_export(_args) -> int:
     conn.execute("VACUUM INTO ?", (str(dest),))
     size = dest.stat().st_size / 1e6
     print(f"  snapshot → {dest} ({size:.0f} MB)")
-    print("  serve with: datasette {0} -m datasette/metadata.json".format(dest))
+    print(f"  serve with: datasette {dest} -m datasette/metadata.json")
     return 0
 
 
@@ -511,11 +513,11 @@ def cmd_report_ladder(_args) -> int:
 
 
 def cmd_signal(args) -> int:
-    from datetime import datetime, timezone
+    from datetime import datetime
     conn = _conn()
     if args.action == "record":
         conn.execute("INSERT INTO signals (ts, kind, detail, source_url) VALUES (?,?,?,?)",
-                     (datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                     (datetime.now(UTC).isoformat(timespec="seconds"),
                       args.kind, args.detail, args.url or ""))
         conn.commit()
         print("  recorded")

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from .http import DATA_DIR
 
@@ -89,7 +89,7 @@ def diagnose(conn: sqlite3.Connection) -> dict:
 
     failures = [c for c in checks if not c["ok"] and c["severity"] == "error"]
     return {
-        "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "ts": datetime.now(UTC).isoformat(timespec="seconds"),
         "healthy": not failures,
         "n_errors": len(failures),
         "n_warnings": sum(1 for c in checks if not c["ok"] and c["severity"] == "warn"),

@@ -17,10 +17,10 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Iterator, Optional
 
 from lxml import etree
 

@@ -75,10 +75,10 @@ def test_state_exposes_all_desks(server):
 def test_review_decision_requires_note_and_persists(server):
     s = _get(server + "/api/state")
     fid = s["review"][0]["id"]
-    code, out = _post(server + f"/api/act/review",
+    code, out = _post(server + "/api/act/review",
                       {"id": fid, "decision": "approved", "note": "  "})
     assert code == 400 and "note" in out["error"]
-    code, out = _post(server + f"/api/act/review",
+    code, out = _post(server + "/api/act/review",
                       {"id": fid, "decision": "approved",
                        "note": "verified quote in PDF p.15; proposal confirmed on EDGAR"})
     assert code == 200

@@ -18,7 +18,7 @@ import hashlib
 import json
 import re
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from . import llm
 
@@ -61,7 +61,7 @@ def _store(conn: sqlite3.Connection, kind: str, input_key: str, d: dict,
         "rationale, model, ts) VALUES (?,?,?,?,?,?,?)",
         (kind, input_key, str(d["verdict"]), str(d["confidence"]),
          str(d["rationale"])[:400], model,
-         datetime.now(timezone.utc).isoformat(timespec="seconds")))
+         datetime.now(UTC).isoformat(timespec="seconds")))
     conn.commit()
 
 

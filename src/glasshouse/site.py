@@ -18,7 +18,7 @@ from __future__ import annotations
 import html
 import re
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .http import DATA_DIR
@@ -368,7 +368,7 @@ def _timeline_svg(versions: list[dict]) -> str:
 
 
 def _candidate_card(c, featured: bool = False) -> str:
-    pct_note = (f"<div style='margin-top:1rem'>"
+    pct_note = ("<div style='margin-top:1rem'>"
                 + _donut(100.0, "of cited shares", "var(--against)",
                          f"{int(c.shares_voted):,} shares were voted "
                          f"{_e(c.how_voted)} on this proposal")
@@ -523,7 +523,7 @@ much as what we publish.</p>
 
 
 def _write_institution_feeds(conn, out_dir, insts, cands) -> None:
-    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    now = datetime.now(UTC).isoformat(timespec="seconds")
     for r in insts:
         if not (r["n_votes"] or r["n_docs"]):
             continue
@@ -575,9 +575,9 @@ with how to read this →</a></p>
 </div>"""
 
     if featured:
-        body += (f"<p class=kicker>Exhibit A</p><h2>The latest say–do candidate</h2>"
-                 f"<p class=secnote>A verbatim sentence from the institution's own archived "
-                 f"policy, next to a vote its funds actually cast.</p>"
+        body += ("<p class=kicker>Exhibit A</p><h2>The latest say–do candidate</h2>"
+                 "<p class=secnote>A verbatim sentence from the institution's own archived "
+                 "policy, next to a vote its funds actually cast.</p>"
                  + _candidate_card(featured, featured=True)
                  + "<p class=meta><a href='candidates.html'>All candidates →</a></p>")
 
@@ -776,7 +776,7 @@ this project is built on.</p>"""
 
 
 def _write_feed(conn, out_dir) -> None:
-    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    now = datetime.now(UTC).isoformat(timespec="seconds")
     entries = []
     for r in conn.execute(
             "SELECT agency, company_name, resolution_type, primary_ref, retrieval_date "

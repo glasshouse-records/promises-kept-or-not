@@ -73,13 +73,9 @@ def test_adjudication_is_logged_cached_and_advisory(conn, monkeypatch):
 
 def test_eval_gate_passes_perfect_and_fails_sloppy(conn, monkeypatch):
     def perfect(c, ra, rb, model=None):
-        gold = {l.split('"label": "')[1].split('"')[0]
-                for l in []}  # not used; oracle below
         # Oracle: country conflict or subsidiary language → no_match, else match.
         txt = json.dumps([ra, rb])
-        if ra.get("country") and rb.get("country") and ra["country"] != rb["country"]:
-            v = "no_match"
-        elif "Sudan" in txt or "SDGT" in txt or "Hospitality" in txt \
+        if ra.get("country") and rb.get("country") and ra["country"] != rb["country"] or "Sudan" in txt or "SDGT" in txt or "Hospitality" in txt \
                 or "spun-off" in txt or "Egyptian" in txt or "different registry" in txt:
             v = "no_match"
         else:

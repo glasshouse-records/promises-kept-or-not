@@ -13,15 +13,21 @@ accusation is fatal; precision beats recall everywhere.
    reproducibility) — in the plan, the PR, or the commit message.
 2. **Red before green.** Write the failing test first; run it; watch it
    fail; then implement. Bug fixes start from a regression test that
-   reproduces the bug. No fix ships without its test.
+   reproduces the bug. No fix ships without its test. For pure functions
+   (parsers, the entity matcher, scoring) reach for property-based tests
+   (Hypothesis, `tests/test_properties.py`): roundtrip/idempotence/invariant
+   properties find the edge cases examples miss.
 3. **Verify against reality, not fixtures alone.** Anything touching a
    data source gets a live smoke check; anything touching the site or
    workbench gets checked in a real browser (screenshots have caught real
    bugs here: flex-clamped charts, locale formatting, soft-404s).
 4. **Review before done.** Run the `glasshouse-reviewer` agent (or an
    equivalent skeptical pass) over the diff: correctness, the invariants
-   below, concurrency, and security. Then `pytest`, then
-   `glasshouse integrity`, then `glasshouse doctor`.
+   below, concurrency, and security. Then the gates: `ruff check src/ tests/`,
+   `semgrep --config .semgrep.yml src/`, `pytest`, `glasshouse integrity`,
+   `glasshouse doctor`. The invariants below are enforced mechanically —
+   `.semgrep.yml` (LLM-no-ledger-write, no-UA-spoofing, source_url required)
+   and `tests/test_invariants.py` (the dedupe-filter and no-self-send rules).
 
 ## Invariants the review must always check
 

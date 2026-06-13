@@ -1,8 +1,7 @@
 import pytest
 
-from glasshouse import contradictions, ledger
-from glasshouse.contradictions import (commitment_sentences,
-                                       find_commitment_vote_contradictions)
+from glasshouse import ledger
+from glasshouse.contradictions import commitment_sentences, find_commitment_vote_contradictions
 
 
 @pytest.fixture

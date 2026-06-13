@@ -115,7 +115,7 @@ def dossier(conn: sqlite3.Connection, finding_id: int) -> str:
         "2. Verify the proposal text against the issuer's proxy statement —",
         "   the N-PX managementRecommendation field is known-unreliable:",
         f"   EDGAR DEF 14A search: {fts}",
-        f"3. Confirm the vote rows: sqlite3 data/glasshouse.db \"SELECT how_voted,",
+        "3. Confirm the vote rows: sqlite3 data/glasshouse.db \"SELECT how_voted,",
         f"   shares_voted, vote_series FROM votes WHERE accession='{p['accession']}'",
         f"   AND cusip='{p['cusip']}' AND is_duplicate=0\"",
         "4. Does the policy language actually speak to this proposal? (theme match",

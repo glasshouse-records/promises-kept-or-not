@@ -83,8 +83,13 @@ def _company_from_description(desc: str) -> str:
 
 def load_all(conn: sqlite3.Connection) -> dict[str, int]:
     """Load every curated snapshot into the ledger. Idempotent."""
-    from . import (doj_antitrust, nlrb_violations, sec_enforcement,
-                   ungc_expulsions, world_bank_debarment)
+    from . import (
+        doj_antitrust,
+        nlrb_violations,
+        sec_enforcement,
+        ungc_expulsions,
+        world_bank_debarment,
+    )
 
     counts: dict[str, int] = {}
 

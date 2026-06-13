@@ -1,9 +1,8 @@
 """Tests for N-PORT parsing, Fed CSV mapping, CourtListener allegation
 invariant, and the digest renderer."""
 
-import pytest
 
-from glasshouse import digest, ledger, outreach
+from glasshouse import digest, ledger
 from glasshouse.ingest import fed
 from glasshouse.ingest.nport import iter_positions
 

@@ -16,7 +16,7 @@ from __future__ import annotations
 import hashlib
 import os
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 DEFAULT_MODEL = "claude-fable-5"
 
@@ -51,7 +51,7 @@ def call(conn: sqlite3.Connection, *, purpose: str, input_key: str,
     conn.execute(
         "INSERT INTO llm_log (ts, model, purpose, prompt_sha, input_key, output) "
         "VALUES (?,?,?,?,?,?)",
-        (datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        (datetime.now(UTC).isoformat(timespec="seconds"),
          model, purpose, prompt_sha, input_key, text))
     conn.commit()
     return text
