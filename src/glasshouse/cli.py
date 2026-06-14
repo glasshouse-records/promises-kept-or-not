@@ -119,6 +119,10 @@ def cmd_export(_args) -> int:
 def cmd_ingest_commitments(args) -> int:
     from .ingest import commitments
     conn = _conn()
+    if args.purge_errors:
+        n = commitments.purge_error_pages(conn)
+        print(f"  purged {n} error-page rows masquerading as policy versions")
+        return 0
     insts = registry.load()
     new = commitments.fetch_live(conn, insts)
     for key, is_new in new.items():
@@ -583,6 +587,9 @@ def main(argv: list[str] | None = None) -> int:
     com.add_argument("--wayback", action="store_true",
                      help="also archive historical versions from the Wayback Machine")
     com.add_argument("--wayback-limit", type=int, default=10)
+    com.add_argument("--purge-errors", action="store_true",
+                     help="remove already-ingested error pages (rotted-URL 404s) "
+                          "that masquerade as policy versions")
     com.set_defaults(func=cmd_ingest_commitments)
     t13 = ing.add_parser("13f")
     t13.add_argument("--cik")

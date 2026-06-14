@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import re
 import sqlite3
 from datetime import date
 from pathlib import Path
@@ -43,12 +44,49 @@ def _ext_for(content_type: str, url: str) -> str:
     return suffix if suffix else ".bin"
 
 
+# Error-page signatures. A rotted policy URL returns (or Wayback captured) an
+# HTML 404/error page; recording it as a "policy version" is provenance rot —
+# found 2026-06 when 6 of 7 archived Vanguard versions were the site's 404
+# page, masquerading as policy drift and silently killing the contradiction
+# engine for that institution.
+_ERROR_SIGNATURES = (
+    "404 error", "page not found", "page cannot be found", "page isn't available",
+    "404 - ", "error 404", "not found | ", "access denied", "forbidden",
+)
+
+
+def looks_like_error_page(content: bytes, content_type: str = "") -> bool:
+    """True if content is an HTML error/404 page rather than a real document.
+
+    Only inspects HTML-ish payloads (a real PDF's bytes won't trip these).
+    Checks the <title> and document head, where error pages announce
+    themselves, not the whole body (a real policy may discuss '404'
+    nowhere meaningful)."""
+    base = (content_type or "").split(";")[0].strip().lower()
+    head = content[:2000].decode("utf-8", "replace").lower()
+    is_html = base in ("text/html", "application/xhtml+xml") or head.lstrip().startswith(
+        ("<!doctype html", "<html"))
+    if not is_html:
+        return False
+    title = ""
+    m = re.search(r"<title[^>]*>(.*?)</title>", head, re.DOTALL)
+    if m:
+        title = m.group(1)
+    hay = title + " " + head[:600]
+    return any(sig in hay for sig in _ERROR_SIGNATURES)
+
+
 def record_snapshot(conn: sqlite3.Connection, institution_id: str, doc_label: str,
                     url: str, content: bytes, content_type: str = "",
                     wayback_timestamp: str = "",
                     retrieval_date: str | None = None) -> bool:
     """Store one snapshot of a commitment document. Returns True if this is
-    new content (a new version), False if the hash was already recorded."""
+    new content (a new version), False if already recorded OR rejected as an
+    error page (a rotted-URL 404 is not a policy version)."""
+    if looks_like_error_page(content, content_type):
+        logger.warning("%s/%s: content looks like an error page (rotted URL?) — "
+                        "not recording as a policy version", institution_id, doc_label)
+        return False
     sha = hashlib.sha256(content).hexdigest()
     exists = conn.execute(
         "SELECT 1 FROM commitments WHERE institution_id=? AND doc_label=? "
@@ -144,6 +182,23 @@ def fetch_wayback(conn: sqlite3.Connection, institutions: dict[str, dict],
                     n_new += 1
                     logger.info("%s/%s: archived wayback version %s", inst_id, label, ts)
     return n_new
+
+
+def purge_error_pages(conn: sqlite3.Connection) -> int:
+    """Remove already-ingested commitment rows whose stored content is an
+    error page (retroactive fix for snapshots taken before the ingestion
+    guard existed). Deletes the row and its on-disk file. Returns count."""
+    purged = 0
+    for r in conn.execute("SELECT id, content_path, content_type FROM commitments").fetchall():
+        p = Path(r["content_path"])
+        if not p.exists():
+            continue
+        if looks_like_error_page(p.read_bytes(), r["content_type"] or ""):
+            conn.execute("DELETE FROM commitments WHERE id = ?", (r["id"],))
+            p.unlink(missing_ok=True)
+            purged += 1
+    conn.commit()
+    return purged
 
 
 def policy_edits(conn: sqlite3.Connection) -> list[dict]:
