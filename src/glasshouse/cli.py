@@ -102,16 +102,15 @@ def cmd_digest(_args) -> int:
 def cmd_export(_args) -> int:
     from datetime import date as _date
 
+    from . import publish
     from .http import DATA_DIR
     conn = _conn()
-    out = DATA_DIR / "exports"
-    out.mkdir(parents=True, exist_ok=True)
-    dest = out / f"glasshouse-public-{_date.today().isoformat()}.db"
-    if dest.exists():
-        dest.unlink()
-    conn.execute("VACUUM INTO ?", (str(dest),))
+    dest = DATA_DIR / "exports" / f"glasshouse-public-{_date.today().isoformat()}.db"
+    publish.build_public_snapshot(conn, dest)
     size = dest.stat().st_size / 1e6
-    print(f"  snapshot → {dest} ({size:.0f} MB)")
+    print(f"  public snapshot → {dest} ({size:.0f} MB)")
+    print("  contains only publishable data (no triage/llm_log/outreach/signals/"
+          "match_log; only approved findings)")
     print(f"  serve with: datasette {dest} -m datasette/metadata.json")
     return 0
 
