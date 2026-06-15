@@ -417,9 +417,25 @@ def cmd_eval(args) -> int:
     return 0 if r["passes_bar"] else 1
 
 
+def cmd_review_council(args) -> int:
+    from . import council
+    from .llm import NotConfigured
+    conn = _conn()
+    try:
+        tally = council.evaluate_pending(conn, limit=args.limit)
+    except NotConfigured as exc:
+        print(f"  {exc}")
+        return 2
+    print(f"  council tiers (advisory; your approval still required): {tally}")
+    print("  per-candidate reasoning is in the workbench Review tab.")
+    return 0
+
+
 def cmd_review(args) -> int:
     from . import review
     conn = _conn()
+    if args.action == "council":
+        return cmd_review_council(args)
     if args.action == "dossier":
         path = review.dossier(conn, args.id)
         print(f"  dossier → {path}")
@@ -645,6 +661,10 @@ def main(argv: list[str] | None = None) -> int:
         ra.add_argument("--note", required=True,
                         help="why — every decision is documented")
         ra.set_defaults(func=cmd_review)
+    rc = rv.add_parser("council", help="run the advisory AI review council over the "
+                       "pending queue (tiers candidates; never auto-approves)")
+    rc.add_argument("--limit", type=int, default=50)
+    rc.set_defaults(func=cmd_review)
     rd = rv.add_parser("dossier", help="assemble the verification dossier for one candidate")
     rd.add_argument("id", type=int)
     rd.set_defaults(func=cmd_review)

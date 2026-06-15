@@ -91,7 +91,10 @@ def state(conn: sqlite3.Connection) -> dict:
     signals = [dict(r) for r in conn.execute(
         "SELECT ts, kind, detail FROM signals ORDER BY id DESC LIMIT 10")]
 
-    from . import newsroom
+    from . import council, newsroom
+    recs = council.recommendations(conn)
+    for f in pending:
+        f["council"] = recs.get(f["fingerprint"])
     return {
         "review": pending,
         "review_stats": review.stats(conn),
@@ -134,6 +137,20 @@ def act(conn: sqlite3.Connection, action: str, payload: dict) -> dict:
              datetime.now(UTC).isoformat(timespec="seconds")))
         conn.commit()
         return {"ok": True}
+
+    if action == "council":
+        from . import council
+        from .llm import NotConfigured
+        try:
+            if payload.get("id"):
+                f = next(x for x in review.queue(conn, "pending")
+                         if x["id"] == int(payload["id"]))
+                rec = council.evaluate(conn, f["payload"], key=f["fingerprint"])
+                return {"ok": True, "rec": rec}
+            tally = council.evaluate_pending(conn, limit=int(payload.get("limit", 50)))
+            return {"ok": True, "tally": tally}
+        except NotConfigured as exc:
+            return {"ok": False, "error": str(exc)}
 
     if action == "draft_story":
         from . import newsroom
@@ -331,12 +348,30 @@ function pipeline(){
    q.map(p=>`<div class=stat><span>${p.ok?'·':'⚠'} <b style='font-family:var(--mono)'>${e(p.stage)}</b>
      — ${e(p.detail)}${p.note?` <span style='color:var(--hold)'>(${e(p.note)})</span>`:''}</span></div>`).join('')}
 
+const CV={finding:'var(--for)',reject:'var(--against)',needs_human:'var(--hold)'};
+function councilBox(c){
+  if(!c) return "<div class=meta>AI council: not yet run.</div>";
+  const col=CV[c.verdict]||'var(--muted)';
+  const notes=c.notes?Object.entries(c.notes).map(([k,v])=>`<b>${e(k)}:</b> ${e(v)}`).join('<br>'):'';
+  return `<div class=card style='border-color:${col};margin:.4rem 0'>
+   <div style='display:flex;gap:.6rem;align-items:center'>
+    <span class=ribbon style='color:${col};border-color:${col};transform:none'>AI council: ${e(c.verdict)}</span>
+    <span class=meta>confidence ${e(c.confidence)} · advisory — your decision stands</span></div>
+   <p class=meta style='margin:.4rem 0'>${e(c.rationale||'')}</p>
+   <details><summary class=meta>reviewer passes</summary><div class=meta style='margin-top:.4rem'>${notes}</div></details>
+  </div>`}
+
 function review(){
   const q=S.review;
   if(!q.length){$('#main').innerHTML=`<p class=empty>Review queue is empty. ${S.review_stats.approved||0} approved, ${S.review_stats.rejected||0} rejected so far — run <code>glasshouse review sync</code> after new ingests.</p>`;return}
-  $('#main').innerHTML=q.map(f=>{const p=f.payload;return `
+  const nrec=q.filter(f=>f.council).length;
+  $('#main').innerHTML=`<div class=card style='box-shadow:none'>
+    <div class=actions><button class=approve onclick='runCouncil(this)'>Run AI council on the queue</button>
+    <span class=meta>${nrec}/${q.length} evaluated · the council does the legwork; you ratify. Nothing publishes without your click.</span><span class=st></span></div></div>`+
+    q.map(f=>{const p=f.payload;return `
   <div class='card claim'><span class=ribbon>quarantined — your call</span>
    <h3>#${f.id} · ${e(p.institution_id)} · ${e(p.theme)} · ${e(p.issuer_name)}</h3>
+   ${councilBox(f.council)}
    <div class=grid2>
     <div class='saydid say'><div class=tag>What it says</div>
      <blockquote>“${e(p.commitment_quote)}”</blockquote>
@@ -347,12 +382,24 @@ function review(){
    </div>
    <div class=actions>
     <button class=ghost onclick='dossier(${f.id},this)'>Open dossier</button>
+    <button class=ghost onclick='councilOne(${f.id},this)'>Run council on this</button>
    </div><div class=dz></div>
    <textarea rows=2 placeholder='Reviewer note — required. Why does this hold up, or why not?'></textarea>
    <div class=actions>
     <button class=approve onclick='decide(this,${f.id},"approved")'>Approve as finding</button>
     <button class=reject onclick='decide(this,${f.id},"rejected")'>Reject</button>
     <span class=st></span></div></div>`}).join('')}
+
+async function runCouncil(btn){
+  const st=btn.parentElement.querySelector('.st');
+  st.innerHTML="<span class=meta>running… (one batch)</span>";
+  const r=await post('council',{limit:50},st);
+  if(r){st.innerHTML="<span class=ok-note>tiers: "+JSON.stringify(r.tally)+"</span>";setTimeout(load,800)}}
+
+async function councilOne(id,btn){
+  const st=btn.closest('.card').querySelector('.st');
+  st.innerHTML="<span class=meta>running…</span>";
+  if(await post('council',{id},st)) setTimeout(load,500)}
 
 async function decide(btn,id,decision){
   const card=btn.closest('.card'), note=card.querySelector('textarea').value.trim(),
