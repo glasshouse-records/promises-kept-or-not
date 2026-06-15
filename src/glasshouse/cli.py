@@ -219,7 +219,7 @@ def cmd_site(_args) -> int:
     from . import site
     conn = _conn()
     stats = site.build(conn)
-    print(f"  built {stats['pages']} pages, {stats['candidates']} candidates → {site.SITE_DIR}/")
+    print(f"  built {stats['pages']} pages, {stats['findings']} published findings → {site.SITE_DIR}/")
     print(f"  preview: python -m http.server -d {site.SITE_DIR}")
     return 0
 

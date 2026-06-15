@@ -79,6 +79,35 @@ def test_newest_snapshot_selection(tmp_path):
     assert publish.newest_snapshot(tmp_path).name == "glasshouse-public-2026-06-14.db"
 
 
+def test_public_site_never_leaks_unreviewed_candidates(conn, tmp_path, monkeypatch):
+    """The static site is a publication surface: an unreviewed candidate must
+    not appear on ANY public page, even when 93 exist and 0 are approved."""
+    from glasshouse import review, site
+    cand = _candidate()  # institution=blackrock, issuer=AMAZON, climate
+
+    import glasshouse.contradictions as ct
+    monkeypatch.setattr(ct, "find_commitment_vote_contradictions", lambda c, **kw: [cand])
+    review.sync(conn)  # 1 PENDING candidate, not approved
+
+    out = tmp_path / "_site"
+    stats = site.build(conn, out)
+    assert "findings" in stats and stats.get("findings", 0) == 0
+    assert not (out / "candidates.html").exists()
+    # The candidate's specifics must appear nowhere public.
+    blob = "".join(p.read_text() for p in out.glob("*.html")) + \
+           "".join(p.read_text() for p in out.glob("*.xml"))
+    assert "quarantined candidate" not in blob.lower()
+    assert cand.commitment_quote not in blob          # the SAY language
+    assert "EMISSIONS PROPOSAL" not in blob           # the proposal text
+
+    # Approve it → now it is allowed to appear, stamped verified.
+    fid = review.queue(conn, "pending")[0]["id"]
+    review.decide(conn, fid, "approved", "verified both sources")
+    site.build(conn, out)
+    findings_html = (out / "findings.html").read_text()
+    assert cand.commitment_quote in findings_html and "verified" in findings_html.lower()
+
+
 def test_mcp_query_rejects_operator_tables(conn, tmp_path, monkeypatch):
     # Build a snapshot and point the MCP server's data dir at it.
     publish.build_public_snapshot(conn, tmp_path / "exports" / "glasshouse-public-2026-06-14.db")

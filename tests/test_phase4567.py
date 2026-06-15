@@ -111,11 +111,14 @@ def test_site_build(conn, tmp_path):
     assert (out / "index.html").exists()
     assert (out / "institutions.html").exists()
     assert (out / "institution-blackrock.html").exists()
-    assert (out / "candidates.html").exists()
     assert (out / "how-to-read.html").exists()
     assert (out / "feed.xml").read_text().startswith("<?xml")
-    assert stats["pages"] == 6
+    assert stats["pages"] == 5
     assert (out / "findings.html").exists()
+    # The public site must NOT publish a candidates page — unreviewed leads
+    # are operator-only (workbench). The publish boundary, on the most public
+    # surface.
+    assert not (out / "candidates.html").exists()
     # Reader guidance must ship with the data, not live only in the repo.
     how = (out / "how-to-read.html").read_text()
     assert "Guilty plea" in how and "Allegation only" in how

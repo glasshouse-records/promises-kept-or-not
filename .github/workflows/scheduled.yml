@@ -38,13 +38,21 @@ jobs:
           GLASSHOUSE_CONTACT: ${{ vars.GLASSHOUSE_CONTACT }}
       - name: Self-diagnosis (emits repair task for the source-medic agent)
         run: glasshouse doctor || true
-      - name: Upload alerts + site
-        run: glasshouse site
+      - name: Build PUBLIC artifacts (site = approved findings only; snapshot = publishable rows only)
+        run: |
+          glasshouse site
+          glasshouse export
+      # Publishable artifact: the static site and the public snapshot contain
+      # only approved findings + non-duplicate primary-source rows. Safe to
+      # expose on a public repo.
       - uses: actions/upload-artifact@v4
         with:
-          name: alerts-and-site-${{ github.run_number }}
+          name: public-${{ github.run_number }}
           path: |
-            data/alerts/
             data/_site/
-            data/doctor/
+            data/exports/
           if-no-files-found: ignore
+      # Operator-internal outputs (event-alert leads, the doctor/repair brief,
+      # the digest draft) are NOT published — they hold unreviewed name-level
+      # joins and queue state. On a public repo these stay out of artifacts;
+      # the operator reviews them locally or via a private runner.

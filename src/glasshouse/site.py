@@ -230,7 +230,7 @@ def _e(s) -> str:
 
 def _page(title: str, body: str, active: str = "") -> str:
     links = [("index.html", "Overview", "home"), ("institutions.html", "Institutions", "inst"),
-             ("findings.html", "Findings", "find"), ("candidates.html", "Candidates", "cand"),
+             ("findings.html", "Findings", "find"),
              ("how-to-read.html", "How to read", "how"), ("feed.xml", "Feed", "feed")]
     nav = "".join(f"<a href='{h}'{' class=on' if k == active else ''}>{t}</a>"
                   for h, t, k in links)
@@ -367,29 +367,6 @@ def _timeline_svg(versions: list[dict]) -> str:
             f"</svg></div>")
 
 
-def _candidate_card(c, featured: bool = False) -> str:
-    pct_note = ("<div style='margin-top:1rem'>"
-                + _donut(100.0, "of cited shares", "var(--against)",
-                         f"{int(c.shares_voted):,} shares were voted "
-                         f"{_e(c.how_voted)} on this proposal")
-                + "</div>") if featured else ""
-    return f"""<div class='card claim fitem r'>
-  <span class=ribbon>◌ quarantined candidate — human review required</span>
-  <h3 style='margin-top:0'>{_e(c.institution_id)} · {_e(c.theme)} · {_e(c.issuer_name)}</h3>
-  <div class=grid2>
-    <div class='saydid say'><div class=tag>What it says</div>
-      <blockquote>“{_e(c.commitment_quote)}”</blockquote>
-      <div class=cite>{_e(c.doc_label)} · version {_e(c.doc_version)} · sha256
-      {_e(c.doc_sha256[:16])}… · <a href='{_e(c.doc_url)}'>source document</a></div></div>
-    <div class='saydid did'><div class=tag>What it did</div>
-      <blockquote>Voted <b style='color:var(--against)'>{_e(c.how_voted)}</b> —
-      {int(c.shares_voted):,} shares <span class=meta>(management rec:
-      {_e(c.management_recommendation or '—')})</span></blockquote>
-      <div class=cite>“{_e(c.vote_description)}” — {_e(c.issuer_name)}, meeting
-      {_e(c.meeting_date)} · SEC Form N-PX {_e(c.accession)}</div>{pct_note}</div>
-  </div></div>"""
-
-
 # ── data synthesis ───────────────────────────────────────────────────────────
 
 def _vote_split(conn, inst_id: str | None = None) -> list[tuple[str, int]]:
@@ -449,10 +426,54 @@ def _splits(conn, inst_id: str, limit: int = 12) -> list[dict]:
 
 # ── pages ────────────────────────────────────────────────────────────────────
 
+def _approved_findings(conn) -> list[dict]:
+    """Human-approved findings only — the publish boundary for the static
+    site. Unreviewed candidates are operator-facing (workbench) and must
+    never reach a public page; a candidate is an unverified lead, and a
+    public page naming an institution on a lead is the false-accusation
+    risk the whole project guards against."""
+    import json as _json
+    out = []
+    for r in conn.execute(
+            "SELECT payload, reviewer_note, reviewed_date FROM findings "
+            "WHERE status='approved' ORDER BY reviewed_date DESC").fetchall():
+        out.append({**_json.loads(r["payload"]),
+                    "_note": r["reviewer_note"], "_reviewed": r["reviewed_date"]})
+    return out
+
+
+def _finding_card(p: dict, featured: bool = False) -> str:
+    extra = ""
+    if featured:
+        extra = ("<div style='margin-top:1rem'>"
+                 + _donut(100.0, "of cited shares", "var(--against)",
+                          f"{int(float(p['shares_voted'])):,} shares voted "
+                          f"{_e(p['how_voted'])} on this proposal") + "</div>")
+    return f"""<div class='card claim fitem r'>
+  <span class='ribbon ok'>verified · human reviewed {_e(p.get('_reviewed', ''))}</span>
+  <h3 style='margin-top:0'>{_e(p['institution_id'])} · {_e(p['theme'])} · {_e(p['issuer_name'])}</h3>
+  <div class=grid2>
+    <div class='saydid say'><div class=tag>What it says</div>
+      <blockquote>“{_e(p['commitment_quote'])}”</blockquote>
+      <div class=cite>{_e(p['doc_label'])} · version {_e(p['doc_version'])} · sha256
+      {_e(p['doc_sha256'][:16])}… · <a href='{_e(p['doc_url'])}'>source document</a></div></div>
+    <div class='saydid did'><div class=tag>What it did</div>
+      <blockquote>Voted <b style='color:var(--against)'>{_e(p['how_voted'])}</b> —
+      {int(float(p['shares_voted'])):,} shares</blockquote>
+      <div class=cite>“{_e(p['vote_description'])}” — {_e(p['issuer_name'])}, meeting
+      {_e(p['meeting_date'])} · SEC Form N-PX {_e(p['accession'])}</div>{extra}</div>
+  </div>
+  <p class=meta>Reviewer's note: {_e(p.get('_note', ''))}</p></div>"""
+
+
 def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
-    from .contradictions import find_commitment_vote_contradictions
-    cands = find_commitment_vote_contradictions(conn, limit_per_theme=10)
+    # Clear previously generated pages so a page we no longer emit (e.g. the
+    # retired candidates.html) can never linger and leak. The site dir holds
+    # only generated artifacts.
+    for stale in (*out_dir.glob("*.html"), *out_dir.glob("*.xml")):
+        stale.unlink()
+    findings = _approved_findings(conn)
 
     stats = {r[0]: r[1] for r in conn.execute(
         "SELECT 'votes', COUNT(*) FROM votes WHERE is_duplicate = 0 UNION ALL "
@@ -470,15 +491,14 @@ def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
                    WHERE f.institution_id=i.id) AS n_holdings
            FROM institutions i ORDER BY n_votes DESC, i.display_name""").fetchall()
 
-    _build_index(conn, out_dir, stats, insts, cands)
+    _build_index(conn, out_dir, stats, insts, findings)
     _build_institutions_index(conn, out_dir, insts)
-    n_inst = sum(_build_institution(conn, out_dir, r, cands) for r in insts)
-    _build_candidates(out_dir, cands)
+    n_inst = sum(_build_institution(conn, out_dir, r, findings) for r in insts)
     _build_findings(conn, out_dir)
     _build_how_to_read(out_dir)
     _write_feed(conn, out_dir)
-    _write_institution_feeds(conn, out_dir, insts, cands)
-    return {"pages": 5 + n_inst, "candidates": len(cands)}
+    _write_institution_feeds(conn, out_dir, insts, findings)
+    return {"pages": 4 + n_inst, "findings": len(findings)}
 
 
 def _build_findings(conn, out_dir) -> None:
@@ -489,29 +509,16 @@ def _build_findings(conn, out_dir) -> None:
     n_rejected = sum(1 for r in rows if r["status"] == "rejected")
     n_pending = sum(1 for r in rows if r["status"] == "pending")
 
-    cards = ""
-    for r in approved:
-        p = _json.loads(r["payload"])
-        cards += f"""<div class='card claim fitem r'>
-  <span class='ribbon ok'>verified · human reviewed {_e(r['reviewed_date'])}</span>
-  <h3 style='margin-top:0'>{_e(p['institution_id'])} · {_e(p['theme'])} · {_e(p['issuer_name'])}</h3>
-  <div class=grid2>
-    <div class='saydid say'><div class=tag>What it says</div>
-      <blockquote>“{_e(p['commitment_quote'])}”</blockquote>
-      <div class=cite>{_e(p['doc_label'])} · version {_e(p['doc_version'])} · sha256
-      {_e(p['doc_sha256'][:16])}… · <a href='{_e(p['doc_url'])}'>source document</a></div></div>
-    <div class='saydid did'><div class=tag>What it did</div>
-      <blockquote>Voted <b style='color:var(--against)'>{_e(p['how_voted'])}</b> —
-      {int(float(p['shares_voted'])):,} shares</blockquote>
-      <div class=cite>“{_e(p['vote_description'])}” — {_e(p['issuer_name'])}, meeting
-      {_e(p['meeting_date'])} · SEC Form N-PX {_e(p['accession'])}</div></div>
-  </div>
-  <p class=meta>Reviewer's note: {_e(r['reviewer_note'])}</p></div>"""
+    cards = "".join(
+        _finding_card({**_json.loads(r["payload"]), "_note": r["reviewer_note"],
+                       "_reviewed": r["reviewed_date"]})
+        for r in approved)
 
     if not approved:
         cards = ("<div class=card><p>No findings have cleared human review yet. "
-                 "The machine produces <a href='candidates.html'>candidates</a>; a "
-                 "person promotes them — or doesn't, on the record.</p></div>")
+                 "The machine produces candidates; a person promotes them — or "
+                 "doesn't, on the record. Candidates are reviewed in the private "
+                 "operator workbench and only appear here once verified.</p></div>")
     body = f"""<h1>Findings</h1>
 <p class=lede>A finding is a candidate that survived human review of both primary
 sources. The numbers below are part of the method: what we discard matters as
@@ -522,19 +529,21 @@ much as what we publish.</p>
     (out_dir / "findings.html").write_text(_page("Findings", body, "find"))
 
 
-def _write_institution_feeds(conn, out_dir, insts, cands) -> None:
+def _write_institution_feeds(conn, out_dir, insts, findings) -> None:
     now = datetime.now(UTC).isoformat(timespec="seconds")
     for r in insts:
         if not (r["n_votes"] or r["n_docs"]):
             continue
         entries = []
-        for c in [c for c in cands if c.institution_id == r["id"]][:15]:
-            title = f"Candidate: {c.theme} — voted {c.how_voted} at {c.issuer_name} ({c.meeting_date})"
+        # Approved findings only — feeds are a publication surface; candidates
+        # never go out over RSS.
+        for p in [p for p in findings if p["institution_id"] == r["id"]][:15]:
+            title = f"Finding: {p['theme']} — voted {p['how_voted']} at {p['issuer_name']} ({p['meeting_date']})"
             entries.append(
                 f"<entry><title>{_e(title)}</title>"
-                f"<id>urn:glasshouse:cand:{_e(c.accession)}:{_e(c.cusip)}:{_e(c.theme)}</id>"
-                f"<updated>{now}</updated><content type='text'>QUARANTINED CANDIDATE. "
-                f"{_e(c.commitment_quote[:200])} | N-PX {_e(c.accession)}</content></entry>")
+                f"<id>urn:glasshouse:finding:{_e(p['accession'])}:{_e(p['cusip'])}:{_e(p['theme'])}</id>"
+                f"<updated>{now}</updated><content type='text'>VERIFIED FINDING. "
+                f"{_e(p['commitment_quote'][:200])} | N-PX {_e(p['accession'])}</content></entry>")
         for d in conn.execute(
                 "SELECT doc_label, sha256, retrieval_date FROM commitments "
                 "WHERE institution_id=? GROUP BY sha256 ORDER BY id DESC LIMIT 10", (r["id"],)):
@@ -551,12 +560,12 @@ def _write_institution_feeds(conn, out_dir, insts, cands) -> None:
         (out_dir / f"feed-{r['id']}.xml").write_text(feed)
 
 
-def _build_index(conn, out_dir, stats, insts, cands) -> None:
+def _build_index(conn, out_dir, stats, insts, findings) -> None:
     enf = conn.execute(
         "SELECT agency, COUNT(*) FROM enforcement_actions WHERE is_duplicate = 0 "
         "GROUP BY agency ORDER BY 2 DESC LIMIT 8").fetchall()
     split = _vote_split(conn)
-    featured = max(cands, key=lambda c: c.shares_voted) if cands else None
+    featured = max(findings, key=lambda p: float(p["shares_voted"])) if findings else None
     top = next((r for r in insts if r["n_votes"]), None)
 
     body = f"""
@@ -575,11 +584,19 @@ with how to read this →</a></p>
 </div>"""
 
     if featured:
-        body += ("<p class=kicker>Exhibit A</p><h2>The latest say–do candidate</h2>"
+        body += ("<p class=kicker>Exhibit A</p><h2>The latest verified finding</h2>"
                  "<p class=secnote>A verbatim sentence from the institution's own archived "
-                 "policy, next to a vote its funds actually cast.</p>"
-                 + _candidate_card(featured, featured=True)
-                 + "<p class=meta><a href='candidates.html'>All candidates →</a></p>")
+                 "policy, next to a vote its funds actually cast — confirmed by human "
+                 "review of both primary sources.</p>"
+                 + _finding_card(featured, featured=True)
+                 + "<p class=meta><a href='findings.html'>All findings →</a></p>")
+    else:
+        body += ("<p class=kicker>Method</p><h2>Findings, not allegations</h2>"
+                 "<p class=secnote>No findings have cleared human review yet. The machine "
+                 "selects candidates; a person verifies both primary sources before "
+                 "anything is published here. Candidates are never shown publicly — that "
+                 "discipline is the point. <a href='how-to-read.html'>How to read "
+                 "Glasshouse →</a></p>")
 
     body += f"""
 <p class=kicker>Scale</p><h2>Two million votes, square by square</h2>
@@ -640,7 +657,7 @@ def _build_institutions_index(conn, out_dir, insts) -> None:
     (out_dir / "institutions.html").write_text(_page("Institutions", body, "inst"))
 
 
-def _build_institution(conn, out_dir, r, cands) -> int:
+def _build_institution(conn, out_dir, r, findings) -> int:
     inst_id = r["id"]
     body = f"""<h1>{_e(r['display_name'])}</h1>
 <p class=meta>{_e(r['type'] or '')} · {_e(r['country'] or '')}</p>
@@ -678,10 +695,10 @@ def _build_institution(conn, out_dir, r, cands) -> int:
                  f"differences between nodes are silent edits — findings in themselves.</p>"
                  f"<div class='card r'>{_timeline_svg(versions)}</div>")
 
-    mine = [c for c in cands if c.institution_id == inst_id]
+    mine = [p for p in findings if p["institution_id"] == inst_id]
     if mine:
-        body += ("<p class=kicker>Say × do</p><h2>Contradiction candidates</h2>"
-                 + "".join(_candidate_card(c) for c in mine[:5]))
+        body += ("<p class=kicker>Say × do</p><h2>Verified findings</h2>"
+                 + "".join(_finding_card(p) for p in mine[:5]))
 
     if r["n_votes"]:
         tug_rows = _splits(conn, inst_id)
@@ -696,19 +713,6 @@ def _build_institution(conn, out_dir, r, cands) -> int:
 
     (out_dir / f"institution-{inst_id}.html").write_text(_page(r["display_name"], body, "inst"))
     return 1
-
-
-def _build_candidates(out_dir, cands) -> None:
-    cards = "".join(_candidate_card(c) for c in cands) or \
-        "<p class=meta>No candidates yet — ingest commitments and votes for the same institution.</p>"
-    body = f"""<h1>Contradiction candidates</h1>
-<p class=lede>Each card pairs an institution's own archived policy language with a vote
-its funds actually cast on a proposal touching the same theme. The match is lexical:
-<b>every card is a quarantined lead</b> until a human reads the policy and the proposal
-together and confirms they speak to each other.</p>
-<input class=filter placeholder='Filter by institution, company, or theme…'
- data-target='#cands' oninput='ghFilter(this)'><div id=cands>{cards}</div>"""
-    (out_dir / "candidates.html").write_text(_page("Contradiction candidates", body, "cand"))
 
 
 def _build_how_to_read(out_dir) -> None:
