@@ -33,8 +33,8 @@ def test_review_gate_requires_note_and_is_durable(conn, monkeypatch):
     import glasshouse.contradictions as ct
     monkeypatch.setattr(ct, "find_commitment_vote_contradictions",
                         lambda c, **kw: [_candidate()])
-    assert review.sync(conn) == 1
-    assert review.sync(conn) == 0  # idempotent
+    assert review.sync(conn)["added"] == 1
+    assert review.sync(conn)["added"] == 0  # idempotent
     fid = review.queue(conn)[0]["id"]
     with pytest.raises(ValueError):
         review.decide(conn, fid, "approved", "   ")  # empty note refused

@@ -81,12 +81,17 @@ def extract_text(pdf_path: Path) -> str:
 # hedges score down. Found necessary 2026-06-11: pure lexical matching ranked
 # "Examples of environmental issues include ... climate risk" above actual
 # promise language.
+# First-person ("we …") and third-person fund voice ("a/the fund …") are
+# treated alike — BlackRock writes "we", Vanguard writes "a fund".
+_AGENT = r"(?:we|(?:a|the|each|our) funds?)"
 _COMMITMENT_UP = [
-    (r"\bwe (?:are committed|commit)\b", 5.0),
-    (r"\bwe (?:will|shall)\b", 4.0),
-    (r"\bwe (?:expect|require|ask|encourage|urge)\b", 4.0),
-    (r"\bwe (?:hold|may hold).{0,40}accountable\b", 4.0),
-    (r"\bwe (?:engage|vote|advocate|support|oppose)\b", 3.0),
+    (rf"\b{_AGENT} (?:are committed|is committed|commit)\b", 5.0),
+    (rf"\b{_AGENT} (?:will|shall|is likely to|are likely to)\b", 4.0),
+    (rf"\b{_AGENT} (?:expect|expects|require|requires|ask|asks|encourage|"
+     r"encourages|urge|urges)\b", 4.0),
+    (r"\b(?:we|funds?) (?:hold|holds|may hold).{0,40}accountable\b", 4.0),
+    (rf"\b{_AGENT} (?:engage|engages|vote|votes|advocate|advocates|support|"
+     r"supports|oppose|opposes)\b", 3.0),
     (r"\bour (?:expectation|commitment|approach|policy)\b", 2.5),
     (r"\bwe (?:believe|consider|assess|evaluate|look (?:for|to))\b", 1.5),
     (r"\bwe (?:find it helpful|may (?:signal|vote|not support)|seek)\b", 2.5),
@@ -163,6 +168,61 @@ class ContradictionCandidate:
     quarantined: bool = field(default=True, init=False)  # ALWAYS — human review required
 
 
+# ── polarity guards (added 2026-06-15 after an interactive council review) ──
+# The engine flags "voted AGAINST a theme proposal." But AGAINST is only a
+# contradiction when the proposal ADVANCES the theme. Half of one live batch
+# were false positives: voting AGAINST an anti-DEI proposal DEFENDS diversity;
+# a "case by case" policy can't be contradicted by one vote. Precision beats
+# recall — when these fire, drop the candidate rather than risk a backwards
+# (defamatory) accusation.
+
+# Oppositional verb aimed at the theme's OWN program (anti-theme), not at a
+# harm the theme opposes — "cease DEI efforts" (anti) vs "end forced labour"
+# (pro). Requires a theme-program noun, so harms like forced labour/corruption
+# don't trip it.
+_ANTI_THEME = re.compile(
+    r"\b(cease|stop|end|eliminate|abolish|repeal|reverse|terminate|rescind|"
+    r"reconsider|scale\s*back|wind\s*down|phase\s*out|roll\s*back)\b[^.]{0,30}?"
+    r"\b(dei|d\.e\.i|diversity|equity|inclusion|esg|climate|net[\s-]?zero|"
+    r"sustainability|emissions[\s-]?reduction|affirmative\s+action)\b",
+    re.IGNORECASE)
+
+# Known anti-ESG / anti-DEI shareholder-proposal genres: a counter-report, or
+# a "risks/costs of [theme] to returns/beneficiaries" framing, or anti-DEI
+# discrimination framing. Voting AGAINST these is consistent with a pro-theme
+# policy.
+_ANTI_GENRE = re.compile(
+    r"alternative\s+\w*\s*report|"
+    r"\b(risks?|costs?|harms?|burden|impact)\b[^.]{0,40}\b(retirement|pension|"
+    r"beneficiar|shareholder\s+returns?|fiduciary)\b|"
+    r"\bmerit[\s-]?based\b|\bviewpoint\s+discrimination\b|"
+    r"\breverse\s+discrimination\b|\bracial\s+discrimination\b",
+    re.IGNORECASE)
+
+# Policy language that reserves discretion or merely lists "factors we
+# consider" — neither is a binding commitment, so a single vote can't
+# contradict it. (The factors-list phrasing was behind several weak-quote
+# false positives the council flagged.)
+_DISCRETIONARY = re.compile(
+    r"\bcase[\s-]?by[\s-]?case\b|\bon\s+a\s+case\b|\bvote\s+case\b|"
+    r"\bcase\s+basis\b|\bat\s+(the|our|its)\b[^.]{0,20}\bdiscretion\b|"
+    r"\bmay\s+vote\s+(either|for\s+or\s+against)\b|"
+    r"\bfactors?\b[^.]{0,30}\bconsider(ation)?s?\b|"      # "factors ... to consider"
+    r"\bconsiderations?\s+include\b|\bfactors?\s+include\b",
+    re.IGNORECASE)
+
+
+def proposal_is_oppositional(text: str) -> bool:
+    """True if the proposal works AGAINST the theme (so voting it down is
+    consistent, not hypocritical)."""
+    return bool(_ANTI_THEME.search(text) or _ANTI_GENRE.search(text))
+
+
+def commitment_is_discretionary(quote: str) -> bool:
+    """True if the policy sentence explicitly reserves case-by-case discretion."""
+    return bool(_DISCRETIONARY.search(quote))
+
+
 def find_commitment_vote_contradictions(
     conn: sqlite3.Connection, *, limit_per_theme: int = 25,
 ) -> list[ContradictionCandidate]:
@@ -198,8 +258,17 @@ def find_commitment_vote_contradictions(
             continue
         for theme, pats in THEMES.items():
             quotes = commitment_sentences(text, pats["commitment"])
+            # Keep only real, promissory commitment sentences: drop
+            # discretionary ("case by case" / "factors we consider") language
+            # and require a positive commitment-strength score so the card
+            # never quotes a fragment or a considerations-list. commitment_
+            # sentences is sorted best-first, so the single best quote leads.
+            quotes = [q for q in quotes
+                      if not commitment_is_discretionary(q)
+                      and score_commitment_sentence(q) >= 1.0]
             if not quotes:
                 continue
+            best_quote = quotes[0]
             proposal_re = "|".join(pats["proposal"])
             votes = conn.execute(
                 """SELECT v.accession, v.issuer_name, v.cusip, v.meeting_date,
@@ -218,6 +287,11 @@ def find_commitment_vote_contradictions(
                 desc = v["vote_description"] or ""
                 if not re.search(proposal_re, desc, re.IGNORECASE):
                     continue
+                # Polarity guard: skip proposals that work AGAINST the theme
+                # (anti-DEI, anti-ESG counter-reports) — voting them down is
+                # consistent with the policy, not a contradiction.
+                if proposal_is_oppositional(desc):
+                    continue
                 # One card per proposal: the same vote appears once per fund
                 # series in N-PX; votes are ordered by shares DESC, so the
                 # largest series represents the proposal.
@@ -230,10 +304,7 @@ def find_commitment_vote_contradictions(
                     institution_id=doc["institution_id"],
                     doc_label=doc["doc_label"], doc_version=doc["version"],
                     doc_sha256=doc["sha256"], doc_url=doc["url"],
-                    # Rotate through the policy's matching sentences so a
-                    # reader scanning cards sees the breadth of the language,
-                    # not one sentence ten times.
-                    commitment_quote=quotes[n % len(quotes)][:400],
+                    commitment_quote=best_quote[:400],
                     accession=v["accession"], issuer_name=v["issuer_name"],
                     cusip=v["cusip"], meeting_date=v["meeting_date"],
                     vote_description=desc[:300], how_voted=v["how_voted"],

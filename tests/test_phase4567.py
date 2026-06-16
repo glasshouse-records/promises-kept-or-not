@@ -75,7 +75,9 @@ def test_non_response_ledger_counts_days(conn):
     conn.execute("UPDATE outreach SET sent_date=date('now','-31 days') WHERE id=?", (oid,))
     conn.commit()
     rows = outreach.non_response_ledger(conn)
-    assert rows[0]["days_without_response"] == 31
+    # >= 31 not == 31: 'date(now,-31 days)' is UTC while non_response_ledger
+    # uses the local date, so the diff is 31 or 32 depending on time of day.
+    assert rows[0]["days_without_response"] >= 31
     outreach.record_response(conn, oid, "they replied")
     assert outreach.non_response_ledger(conn) == []
 

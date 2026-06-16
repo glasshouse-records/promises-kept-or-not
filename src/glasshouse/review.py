@@ -27,21 +27,33 @@ def fingerprint(c) -> str:
     return hashlib.sha256(key.encode()).hexdigest()[:16]
 
 
-def sync(conn: sqlite3.Connection) -> int:
-    """Snapshot current contradiction candidates into the review queue.
-    Existing rows (any status) are never touched — review decisions are
-    durable even when the candidate generator changes."""
+def sync(conn: sqlite3.Connection) -> dict:
+    """Reconcile the review queue with the current candidate set.
+
+    Adds new candidates as pending, and PRUNES pending rows the engine no
+    longer produces — so an engine precision fix (e.g. dropping a backwards
+    anti-DEI false positive) actually removes the bad candidate from the
+    queue. Human decisions are durable: approved/rejected rows are never
+    touched, even if the candidate stops being generated.
+    """
     from .contradictions import find_commitment_vote_contradictions
-    n = 0
-    for c in find_commitment_vote_contradictions(conn, limit_per_theme=25):
+    current = {fingerprint(c): c
+               for c in find_commitment_vote_contradictions(conn, limit_per_theme=25)}
+    added = 0
+    for fp, c in current.items():
         cur = conn.execute(
             "INSERT OR IGNORE INTO findings (fingerprint, theme, institution_id, payload) "
             "VALUES (?,?,?,?)",
-            (fingerprint(c), c.theme, c.institution_id,
-             json.dumps(asdict(c), default=str)))
-        n += cur.rowcount
+            (fp, c.theme, c.institution_id, json.dumps(asdict(c), default=str)))
+        added += cur.rowcount
+    pending = conn.execute("SELECT id, fingerprint FROM findings WHERE status='pending'").fetchall()
+    pruned = 0
+    for row in pending:
+        if row["fingerprint"] not in current:
+            conn.execute("DELETE FROM findings WHERE id=?", (row["id"],))
+            pruned += 1
     conn.commit()
-    return n
+    return {"added": added, "pruned": pruned, "pending": len(current)}
 
 
 def decide(conn: sqlite3.Connection, finding_id: int, status: str, note: str) -> None:

@@ -441,8 +441,9 @@ def cmd_review(args) -> int:
         print(f"  dossier → {path}")
         return 0
     if args.action == "sync":
-        n = review.sync(conn)
-        print(f"  {n} new candidates queued; totals: {review.stats(conn)}")
+        r = review.sync(conn)
+        print(f"  +{r['added']} new, -{r['pruned']} pruned (no longer generated); "
+              f"{r['pending']} live candidates. totals: {review.stats(conn)}")
     elif args.action == "list":
         for f in review.queue(conn, args.status):
             p = f["payload"]
