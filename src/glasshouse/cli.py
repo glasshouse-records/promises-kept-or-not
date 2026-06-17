@@ -100,17 +100,25 @@ def cmd_digest(_args) -> int:
 
 
 def cmd_export(_args) -> int:
+    import json as _json
     from datetime import date as _date
 
-    from . import publish
+    from . import dataset, publish
     from .http import DATA_DIR
     conn = _conn()
-    dest = DATA_DIR / "exports" / f"glasshouse-public-{_date.today().isoformat()}.db"
+    out = DATA_DIR / "exports"
+    dest = out / f"glasshouse-public-{_date.today().isoformat()}.db"
     publish.build_public_snapshot(conn, dest)
+    # The dataset ships self-describing: datasheet + machine-readable package.
+    (out / "DATASHEET.md").write_text(dataset.build_datasheet(conn))
+    (out / "datapackage.json").write_text(
+        _json.dumps(dataset.build_datapackage(conn), indent=2))
     size = dest.stat().st_size / 1e6
     print(f"  public snapshot → {dest} ({size:.0f} MB)")
-    print("  contains only publishable data (no triage/llm_log/outreach/signals/"
-          "match_log; only approved findings)")
+    print(f"  datasheet       → {out / 'DATASHEET.md'}")
+    print(f"  datapackage     → {out / 'datapackage.json'}")
+    print("  publishable data only (no operator tables; approved findings only); "
+          "self-describing schema + honest coverage bundled.")
     print(f"  serve with: datasette {dest} -m datasette/metadata.json")
     return 0
 

@@ -1,9 +1,16 @@
 # Glasshouse — working conventions
 
-Public-interest watchdog: joins what financial institutions SAY (archived
-policies) with what they DO (N-PX votes, 13-F/N-PORT holdings) and the
-enforcement record. The atomic output is a defensible, cited claim. A false
-accusation is fatal; precision beats recall everywhere.
+Public-interest accountability **dataset**: the cleanest, best-documented,
+most-trustworthy machine-readable record of what financial institutions SAY
+(archived policies) vs. what they DO (N-PX votes, 13-F/N-PORT holdings) and
+the enforcement record.
+
+**The dataset is the product** (decided 2026-06-15). Its quality, provenance,
+coverage honesty, and self-description are the core values — built so other
+researchers, journalists, and advocacy orgs can consume and cite it. Findings,
+the newsroom, outreach, and the static site are OPTIONAL LAYERS built on top
+of the dataset, not the point of it. A false data point is fatal; precision
+beats recall everywhere; every record is self-describing and traceable.
 
 ## The development loop (follow it in order)
 
