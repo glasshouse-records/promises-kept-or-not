@@ -236,75 +236,76 @@ def find_commitment_vote_contradictions(
     management-sponsored with mgmt FOR; US shareholder proposals have mgmt
     AGAINST), and both shapes are reviewable candidates.
     """
-    # Most recent version per document by date (wayback timestamps and live
-    # retrieval dates compared on a common YYYYMMDD key, not by insert order).
-    all_docs = conn.execute(
+    # All commitment versions, grouped by document and sorted oldest→newest.
+    versions: dict[tuple[str, str], list[sqlite3.Row]] = {}
+    for d in conn.execute(
         """SELECT c.institution_id, c.doc_label, c.url, c.sha256, c.content_path,
                   COALESCE(NULLIF(c.wayback_timestamp,''), c.retrieval_date) AS version
-           FROM commitments c"""
-    ).fetchall()
-    latest: dict[tuple[str, str], sqlite3.Row] = {}
-    for d in all_docs:
-        key = (d["institution_id"], d["doc_label"])
-        datekey = d["version"].replace("-", "")[:8]
-        if key not in latest or datekey > latest[key]["version"].replace("-", "")[:8]:
-            latest[key] = d
-    docs = list(latest.values())
+           FROM commitments c"""):
+        versions.setdefault((d["institution_id"], d["doc_label"]), []).append(d)
+    for vs in versions.values():
+        vs.sort(key=lambda d: _yyyymmdd(d["version"]))
+
+    # The best promissory, non-discretionary quote for (version, theme),
+    # cached so each PDF is parsed once.
+    quote_cache: dict[tuple[str, str], str | None] = {}
+
+    def theme_quote(doc_row, theme: str, pats: dict) -> str | None:
+        ck = (doc_row["content_path"], theme)
+        if ck not in quote_cache:
+            text = extract_text(Path(doc_row["content_path"]))
+            qs = commitment_sentences(text, pats["commitment"]) if text else []
+            qs = [q for q in qs if not commitment_is_discretionary(q)
+                  and score_commitment_sentence(q) >= 1.0]
+            quote_cache[ck] = qs[0] if qs else None
+        return quote_cache[ck]
 
     candidates: list[ContradictionCandidate] = []
-    for doc in docs:
-        text = extract_text(Path(doc["content_path"]))
-        if not text:
-            continue
+    for (inst_id, label), vs in versions.items():
+        votes = conn.execute(
+            """SELECT v.accession, v.issuer_name, v.cusip, v.meeting_date,
+                      v.vote_description, v.how_voted,
+                      v.management_recommendation, v.shares_voted
+               FROM votes v JOIN filings f ON f.accession = v.accession
+               WHERE f.institution_id = ?
+                 AND v.how_voted = 'AGAINST' AND v.is_duplicate = 0
+               ORDER BY v.shares_voted DESC""", (inst_id,)).fetchall()
         for theme, pats in THEMES.items():
-            quotes = commitment_sentences(text, pats["commitment"])
-            # Keep only real, promissory commitment sentences: drop
-            # discretionary ("case by case" / "factors we consider") language
-            # and require a positive commitment-strength score so the card
-            # never quotes a fragment or a considerations-list. commitment_
-            # sentences is sorted best-first, so the single best quote leads.
-            quotes = [q for q in quotes
-                      if not commitment_is_discretionary(q)
-                      and score_commitment_sentence(q) >= 1.0]
-            if not quotes:
-                continue
-            best_quote = quotes[0]
             proposal_re = "|".join(pats["proposal"])
-            votes = conn.execute(
-                """SELECT v.accession, v.issuer_name, v.cusip, v.meeting_date,
-                          v.vote_description, v.how_voted,
-                          v.management_recommendation, v.shares_voted
-                   FROM votes v
-                   JOIN filings f ON f.accession = v.accession
-                   WHERE f.institution_id = ?
-                     AND v.how_voted = 'AGAINST' AND v.is_duplicate = 0
-                   ORDER BY v.shares_voted DESC""",
-                (doc["institution_id"],),
-            ).fetchall()
             n = 0
             seen: set[tuple] = set()
             for v in votes:
                 desc = v["vote_description"] or ""
                 if not re.search(proposal_re, desc, re.IGNORECASE):
                     continue
-                # Polarity guard: skip proposals that work AGAINST the theme
-                # (anti-DEI, anti-ESG counter-reports) — voting them down is
-                # consistent with the policy, not a contradiction.
+                # Polarity guard: skip proposals that work AGAINST the theme.
                 if proposal_is_oppositional(desc):
                     continue
-                # One card per proposal: the same vote appears once per fund
-                # series in N-PX; votes are ordered by shares DESC, so the
-                # largest series represents the proposal.
                 key = (v["issuer_name"], v["meeting_date"], desc)
                 if key in seen:
                     continue
+                # Temporal alignment: quote the latest policy version that was
+                # in force ON OR BEFORE the vote — never accuse an institution
+                # of breaking a commitment it had not yet made. If no version
+                # predates the vote, there is no fair contradiction to draw.
+                vote_day = _yyyymmdd(v["meeting_date"])
+                chosen, quote = None, None
+                for d in reversed(vs):  # newest first
+                    dday = _yyyymmdd(d["version"])
+                    if not (dday and vote_day and dday <= vote_day):
+                        continue
+                    q = theme_quote(d, theme, pats)
+                    if q:
+                        chosen, quote = d, q
+                        break
+                if not chosen:
+                    continue
                 seen.add(key)
                 candidates.append(ContradictionCandidate(
-                    theme=theme,
-                    institution_id=doc["institution_id"],
-                    doc_label=doc["doc_label"], doc_version=doc["version"],
-                    doc_sha256=doc["sha256"], doc_url=doc["url"],
-                    commitment_quote=best_quote[:400],
+                    theme=theme, institution_id=inst_id,
+                    doc_label=label, doc_version=chosen["version"],
+                    doc_sha256=chosen["sha256"], doc_url=chosen["url"],
+                    commitment_quote=quote[:400],
                     accession=v["accession"], issuer_name=v["issuer_name"],
                     cusip=v["cusip"], meeting_date=v["meeting_date"],
                     vote_description=desc[:300], how_voted=v["how_voted"],
@@ -315,3 +316,19 @@ def find_commitment_vote_contradictions(
                 if n >= limit_per_theme:
                     break
     return candidates
+
+
+def _yyyymmdd(s: str) -> str:
+    """Normalize a date to a sortable YYYYMMDD string. Handles N-PX meeting
+    dates (MM/DD/YYYY), ISO retrieval dates (YYYY-MM-DD), and Wayback
+    timestamps (YYYYMMDDhhmmss). Returns '' if unparseable."""
+    s = (s or "").strip()
+    if "/" in s:
+        parts = s.split("/")
+        if len(parts) == 3 and len(parts[2]) == 4:
+            mm, dd, yy = parts
+            if mm.isdigit() and dd.isdigit():
+                return f"{yy}{int(mm):02d}{int(dd):02d}"
+        return ""
+    digits = s.replace("-", "")
+    return digits[:8] if len(digits) >= 8 and digits[:8].isdigit() else ""

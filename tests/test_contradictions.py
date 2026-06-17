@@ -23,9 +23,10 @@ def _setup(conn, tmp_path, *, vote_desc, how="AGAINST", mgmt="AGAINST"):
     policy = tmp_path / "policy.txt"
     policy.write_text("We are committed to strong anti-corruption practices at investee companies.")
     conn.execute(
+        # Policy in force BEFORE the 2024-11-15 vote (temporal alignment).
         "INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, sha256, "
         "content_path, content_type, size_bytes) VALUES "
-        "('blackrock', 'stewardship', 'https://x/p.pdf', '2026-06-11', 'abc123', ?, 'text/plain', 1)",
+        "('blackrock', 'stewardship', 'https://x/p.pdf', '2024-01-01', 'abc123', ?, 'text/plain', 1)",
         (str(policy),))
     conn.execute(
         "INSERT INTO filings (accession, cik, institution_id, form_type, source_url, retrieval_date) "
@@ -47,7 +48,7 @@ def test_say_do_join_produces_quarantined_candidate_with_citation_chain(conn, tm
     assert r.quarantined is True
     # Full citation chain present on both sides.
     assert "anti-corruption" in r.commitment_quote
-    assert r.doc_version == "2026-06-11" and r.doc_sha256 == "abc123"
+    assert r.doc_version == "2024-01-01" and r.doc_sha256 == "abc123"
     assert r.accession == "ACC-1" and r.issuer_name == "ORACLE CORP"
     assert r.how_voted == "AGAINST" and r.shares_voted == 1_250_000
 
