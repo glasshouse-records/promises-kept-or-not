@@ -62,6 +62,11 @@ beats recall everywhere; every record is self-describing and traceable.
   `workbench.py` (localhost operator desk), `doctor.py` + 
   `.claude/agents/source-medic.md` (maintenance loop)
 - `data/` is gitignored artifact space; the SQLite ledger is the product
+- `metrics.py` (balanced index + trend) + `improve.py` (self-improvement
+  loop) — score the dataset, rank highest-leverage moves, auto-apply only
+  the safe idempotent hygiene tier; coverage/code/source moves go
+  agent→PR→merge-on-green or to a human. Data decisions and publication are
+  NEVER auto-actioned.
 
 ## Design language (site + workbench)
 

@@ -373,6 +373,31 @@ def cmd_workbench(args) -> int:
     return 0
 
 
+def cmd_improve(args) -> int:
+    from . import improve, metrics
+    conn = _conn()
+    if args.apply_safe:
+        res = improve.apply_safe(conn)
+        for name, what in res["ran"].items():
+            print(f"  [auto] {name}: {what}")
+        print(f"  balanced index {res['index_before']} → {res['index_after']} "
+              f"({res['delta']:+})")
+    else:
+        metrics.snapshot(conn)
+    a = improve.assess(conn)
+    d = metrics.delta(conn)
+    print(f"\n  BALANCED INDEX: {a['balanced_index']}/100"
+          + (f" ({d:+} since last run)" if d is not None else ""))
+    print("  components: " + ", ".join(f"{k} {v}" for k, v in a["components"].items()))
+    print("  highest-leverage next moves (tool self-improves; data/publish stay yours):")
+    for x in a["agenda"]:
+        tag = "AUTO" if x["auto_safe"] else x["executor"]
+        print(f"   P{x['priority']} [{tag}] {x['area']}: {x['action']}")
+    path = improve.write_brief(conn)
+    print(f"\n  agenda → {path}")
+    return 0
+
+
 def cmd_doctor(args) -> int:
     from . import doctor
     conn = _conn()
@@ -681,6 +706,13 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("doctor", help="self-diagnosis: source freshness, integrity, "
                    "queues; emits a repair task for the source-medic agent"
                    ).set_defaults(func=cmd_doctor)
+
+    imp = sub.add_parser("improve", help="self-improvement loop: score the balanced "
+                         "index, rank highest-leverage moves, auto-apply safe hygiene")
+    imp.add_argument("--apply-safe", action="store_true",
+                     help="run the safe, idempotent hygiene allowlist (dedupe, purge "
+                          "error pages, reconcile review) — never touches data decisions")
+    imp.set_defaults(func=cmd_improve)
 
     wb = sub.add_parser("workbench", help="local operator desk: review candidates, "
                         "label leads, manage outreach, record signals")

@@ -258,6 +258,16 @@ def _migrate(conn: sqlite3.Connection) -> None:
     # this index many times per site build (found in review).
     conn.execute("CREATE INDEX IF NOT EXISTS idx_votes_accession ON votes(accession)")
     conn.commit()
+    # Self-measurement memory: one row per assessment run, so the
+    # self-improvement loop can see the dataset's trend, not just its state.
+    conn.execute("""CREATE TABLE IF NOT EXISTS metrics (
+        id        INTEGER PRIMARY KEY,
+        ts        TEXT NOT NULL,
+        balanced_index REAL NOT NULL,
+        components TEXT NOT NULL,   -- JSON {coverage, completeness, provenance, freshness}
+        raw        TEXT NOT NULL    -- JSON of the underlying counts
+    )""")
+    conn.commit()
 
 
 def dedupe_votes(conn: sqlite3.Connection) -> int:

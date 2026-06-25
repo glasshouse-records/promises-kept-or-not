@@ -38,6 +38,12 @@ jobs:
           GLASSHOUSE_CONTACT: ${{ vars.GLASSHOUSE_CONTACT }}
       - name: Self-diagnosis (emits repair task for the source-medic agent)
         run: glasshouse doctor || true
+      - name: Self-improvement loop (auto-applies safe hygiene; ranks the rest)
+        run: glasshouse improve --apply-safe || true
+        # SAFE tier (dedupe / purge error pages / reconcile review) self-applies
+        # every run — the auto-merge tier. Bigger moves (coverage, source repair,
+        # code) are written to data/improve/agenda.md for an agent/PR or a human.
+        # Data decisions and publication are never auto-actioned here.
       - name: Build PUBLIC artifacts (site = approved findings only; snapshot = publishable rows only)
         run: |
           glasshouse site
@@ -51,6 +57,7 @@ jobs:
           path: |
             data/_site/
             data/exports/
+            data/improve/
           if-no-files-found: ignore
       # Operator-internal outputs (event-alert leads, the doctor/repair brief,
       # the digest draft) are NOT published — they hold unreviewed name-level
