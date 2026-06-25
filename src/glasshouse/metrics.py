@@ -18,14 +18,22 @@ from datetime import UTC, date, datetime
 
 # Documented weights and targets. Change them here, in the open.
 WEIGHTS = {"coverage": 0.30, "completeness": 0.25, "provenance": 0.25, "freshness": 0.20}
-TARGET_FULL_INSTITUTIONS = 10   # institutions with full say+do for "good" coverage
 FRESHNESS_FULL_DAYS = 90        # data refreshed within this many days = 1.0
 FRESHNESS_ZERO_DAYS = 540       # older than this = 0.0
+
+# Coverage is AUM-WEIGHTED (decided 2026-06-17, skeptic-panel rec): it is the
+# share of tracked assets-under-management that have FULL say+do data, so the
+# index rewards covering the managers that actually move markets (Fidelity,
+# T. Rowe, Pimco) and can't be gamed by adding small, easy fund trusts.
 
 
 def compute(conn: sqlite3.Connection, today: date | None = None) -> dict:
     """Compute the balanced index and its components from the live ledger."""
     today = today or date.today()
+
+    from . import registry
+    aum = {iid: float(v.get("aum_usd_tr") or 0) for iid, v in registry.load().items()}
+    total_aum = sum(aum.values()) or 1.0
 
     n_registered = conn.execute("SELECT COUNT(*) FROM institutions").fetchone()[0] or 1
     n_with_votes = conn.execute(
@@ -33,15 +41,17 @@ def compute(conn: sqlite3.Connection, today: date | None = None) -> dict:
         "ON v.accession=f.accession WHERE v.is_duplicate=0").fetchone()[0]
     n_with_commit = conn.execute(
         "SELECT COUNT(DISTINCT institution_id) FROM commitments").fetchone()[0]
-    n_full = conn.execute(
-        "SELECT COUNT(*) FROM institutions i WHERE "
+    full_ids = [r[0] for r in conn.execute(
+        "SELECT i.id FROM institutions i WHERE "
         "EXISTS(SELECT 1 FROM filings f JOIN votes v ON v.accession=f.accession "
         "  WHERE f.institution_id=i.id AND v.is_duplicate=0) AND "
-        "EXISTS(SELECT 1 FROM commitments c WHERE c.institution_id=i.id)").fetchone()[0]
+        "EXISTS(SELECT 1 FROM commitments c WHERE c.institution_id=i.id)").fetchall()]
+    n_full = len(full_ids)
     n_any = conn.execute(
         "SELECT COUNT(*) FROM institutions i WHERE "
         "EXISTS(SELECT 1 FROM filings f WHERE f.institution_id=i.id) OR "
         "EXISTS(SELECT 1 FROM commitments c WHERE c.institution_id=i.id)").fetchone()[0] or 1
+    covered_aum = sum(aum.get(iid, 0.0) for iid in full_ids)
 
     # provenance: share of public evidence rows carrying source_url+retrieval_date
     prov_ok = conn.execute(
@@ -55,7 +65,7 @@ def compute(conn: sqlite3.Connection, today: date | None = None) -> dict:
         "WHERE source_kind='live' UNION ALL SELECT MAX(retrieval_date) FROM commitments)"
     ).fetchone()[0]
 
-    coverage = min(1.0, n_full / TARGET_FULL_INSTITUTIONS)
+    coverage = min(1.0, covered_aum / total_aum)   # AUM-weighted, not headcount
     completeness = n_full / n_any            # of institutions with any data, share with full say+do
     provenance = prov_ok / prov_tot
     freshness = _freshness(last, today)
@@ -66,7 +76,7 @@ def compute(conn: sqlite3.Connection, today: date | None = None) -> dict:
     raw = {"registered": n_registered, "with_votes": n_with_votes,
            "with_commitments": n_with_commit, "full_say_do": n_full,
            "any_data": n_any, "last_refresh": last,
-           "target_full": TARGET_FULL_INSTITUTIONS}
+           "covered_aum_tr": round(covered_aum, 1), "total_aum_tr": round(total_aum, 1)}
     return {"balanced_index": index, "components": comps, "raw": raw}
 
 

@@ -78,11 +78,14 @@ def assess(conn: sqlite3.Connection) -> dict:
 
     # Coverage / completeness — usually the binding constraint right now.
     if comps["coverage"] < 0.9:
-        item(1, "coverage", "coverage", f"{raw['full_say_do']} full say+do",
-             f"{raw['target_full']} institutions",
-             "Few institutions have BOTH votes and policies — the say×do core is thin.",
-             "Ingest N-PX + commitments for more registered institutions "
-             "(discover their fund-trust CIKs, then `ingest npx` + `ingest commitments`).",
+        big = _biggest_uncovered(conn)
+        finding = (f"Full say+do covers ${raw.get('covered_aum_tr', 0)}T of "
+                   f"${raw.get('total_aum_tr', 0)}T tracked AUM. Biggest UNCOVERED: "
+                   + (", ".join(f"{n} (${a}T)" for n, a in big) if big else "—") + ".")
+        item(1, "coverage", "coverage_aum", comps["coverage"], "0.9",
+             finding,
+             "Prioritize the biggest uncovered managers: discover their N-PX "
+             "trusts (`discover-npx`), ingest votes, and add their policy URLs.",
              "coverage-run", False)
     if comps["completeness"] < 0.6:
         item(2, "completeness", "completeness", comps["completeness"],
@@ -120,6 +123,23 @@ def assess(conn: sqlite3.Connection) -> dict:
 
     agenda.sort(key=lambda a: (a["priority"], not a["auto_safe"]))
     return {"balanced_index": m["balanced_index"], "components": comps, "agenda": agenda}
+
+
+def _biggest_uncovered(conn: sqlite3.Connection, top: int = 3) -> list[tuple[str, float]]:
+    """Registered institutions WITHOUT full say+do, ranked by AUM — the
+    highest-leverage coverage targets the AUM-weighted index points at."""
+    from . import registry
+    reg = registry.load()
+    full = {r[0] for r in conn.execute(
+        "SELECT i.id FROM institutions i WHERE "
+        "EXISTS(SELECT 1 FROM filings f JOIN votes v ON v.accession=f.accession "
+        "  WHERE f.institution_id=i.id AND v.is_duplicate=0) AND "
+        "EXISTS(SELECT 1 FROM commitments c WHERE c.institution_id=i.id)").fetchall()}
+    uncovered = [(v.get("short_name") or v.get("display_name") or k,
+                  float(v.get("aum_usd_tr") or 0))
+                 for k, v in reg.items() if k not in full]
+    uncovered.sort(key=lambda t: -t[1])
+    return [(n, a) for n, a in uncovered if a > 0][:top]
 
 
 def write_brief(conn: sqlite3.Connection) -> str:
