@@ -373,6 +373,22 @@ def cmd_workbench(args) -> int:
     return 0
 
 
+def cmd_discover_npx(args) -> int:
+    from .ingest.discover import discover_npx_filers
+    cands = discover_npx_filers(args.name, max_candidates=args.limit)
+    if not cands:
+        print(f"  no N-PX-filing candidates for {args.name!r}")
+        return 0
+    print(f"  candidate N-PX filers for {args.name!r} "
+          f"(PROPOSALS — verify before adding to the registry; wrong attribution "
+          f"puts another fund's votes in this manager's mouth):")
+    for c in cands:
+        print(f"   CIK {c['cik']:>9}  N-PX={c['npx_filings']:>3}  latest={c['latest']}  {c['name']}")
+    print("  add confirmed trust(s) under the institution's npx_ciks in "
+          "config/institutions.yaml, then `glasshouse ingest npx --institution <id>`.")
+    return 0
+
+
 def cmd_improve(args) -> int:
     from . import improve, metrics
     conn = _conn()
@@ -706,6 +722,12 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("doctor", help="self-diagnosis: source freshness, integrity, "
                    "queues; emits a repair task for the source-medic agent"
                    ).set_defaults(func=cmd_doctor)
+
+    dn = sub.add_parser("discover-npx", help="find a manager's N-PX-filing fund-trust "
+                        "CIKs (proposals to verify, never auto-attributed)")
+    dn.add_argument("name", help="manager name to search, e.g. 'Invesco'")
+    dn.add_argument("--limit", type=int, default=12)
+    dn.set_defaults(func=cmd_discover_npx)
 
     imp = sub.add_parser("improve", help="self-improvement loop: score the balanced "
                          "index, rank highest-leverage moves, auto-apply safe hygiene")

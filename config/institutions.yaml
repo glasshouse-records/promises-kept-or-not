@@ -138,6 +138,13 @@ institutions:
     type: "asset_manager"
     aum_usd_tr: 1.7
     notes: "Asset manager; NYSE-listed (IVZ). 13-F filed by Invesco Ltd. (CIK 0000914208)."
+    npx_ciks:
+      # Discovered + verified 2026-06-17 (glasshouse discover-npx): a clean,
+      # unambiguous Invesco ETF trust. Invesco fans out across many trusts;
+      # this is the ETF vehicle, attribution-safe.
+      - cik: "1418144"
+        name: "Invesco Actively Managed Exchange-Traded Fund Trust"
+        validated: "2026-06-17"
 
   schwab:
     display_name: "Charles Schwab Trust Company"
@@ -147,6 +154,17 @@ institutions:
     type: "broker_custodian"
     aum_usd_tr: 8.5
     notes: "Brokerage and custodian; SCHW-listed. 13-F filed by Charles Schwab Trust Company (CIK 0001789219)."
+    npx_ciks:
+      # Discovered + verified 2026-06-17 (glasshouse discover-npx): Schwab's
+      # two core fund trusts. Excluded the noise match 'Donor Advised
+      # Charitable Giving' and the manager entity 'Charles Schwab Investment
+      # Management Inc' — only the fund trusts attribute cleanly.
+      - cik: "869365"
+        name: "Schwab Investments"
+        validated: "2026-06-17"
+      - cik: "857156"
+        name: "Charles Schwab Family of Funds"
+        validated: "2026-06-17"
 
   ubs:
     display_name: "UBS Group AG"
