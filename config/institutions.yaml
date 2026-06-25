@@ -145,6 +145,10 @@ institutions:
       - cik: "1418144"
         name: "Invesco Actively Managed Exchange-Traded Fund Trust"
         validated: "2026-06-17"
+    commitments:
+      # Canonical, archivable policy doc (verified 2026-06-17: 200, application/pdf).
+      - label: global-corporate-governance-proxy-voting-policy
+        url: "https://www.invesco.com/content/dam/invesco/corporate/en/pdfs/regulatory/global-proxy-voting-policy.pdf"
 
   schwab:
     display_name: "Charles Schwab Trust Company"
@@ -152,8 +156,16 @@ institutions:
     cik: "0001789219"
     country: "USA"
     type: "broker_custodian"
-    aum_usd_tr: 8.5
-    notes: "Brokerage and custodian; SCHW-listed. 13-F filed by Charles Schwab Trust Company (CIK 0001789219)."
+    aum_usd_tr: 1.4
+    # CORRECTED 2026-06-25 (custody→managed AUM): was 8.5, but that is Schwab's
+    # total brokerage/custody client assets — assets it holds, not assets whose
+    # proxies it votes. The registry's aum_usd_tr is *managed* AUM everywhere
+    # else (SSGA 4.1, BNY IM 2.0), and the AUM-weighted coverage index only has
+    # meaning on a managed/voting basis. Schwab Asset Management's discretionary
+    # AUM was ~$1.4T (Mar 2025), which is the footprint the Schwab fund trusts'
+    # N-PX votes actually cover. The 8.5T figure had falsely ranked Schwab the
+    # #1 uncovered manager.
+    notes: "Brokerage/custodian (SCHW). 13-F filed by Charles Schwab Trust Company (CIK 0001789219). aum_usd_tr reflects Schwab Asset Management discretionary AUM (~$1.4T, Mar 2025), not the ~$8.5T total client assets."
     npx_ciks:
       # Discovered + verified 2026-06-17 (glasshouse discover-npx): Schwab's
       # two core fund trusts. Excluded the noise match 'Donor Advised
