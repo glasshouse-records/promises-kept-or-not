@@ -127,8 +127,13 @@ institutions:
     cik: "0000070858"
     country: "USA"
     type: "bank"
-    aum_usd_tr: 1.8
-    notes: "Major US bank; 13-F filed by Bank of America Corp."
+    aum_usd_tr: 0.0
+    # CORRECTED 2026-06-26 (not a proxy voter): was 1.8 (bank/wealth assets).
+    # BofA sold its fund-management arm (Columbia Management) to Ameriprise in
+    # 2010; discover-npx finds only the bank / U.S. Trust entities, no
+    # asset-management fund trusts. Not a proxy-voting manager → removed from the
+    # voting-coverage denominator. Still tracked for holdings + enforcement.
+    notes: "Major US bank; 13-F filed by Bank of America Corp. Exited fund management (sold Columbia Management 2010), so aum_usd_tr (voting basis) is 0; Merrill wealth advisory does not file N-PX as a manager."
 
   citigroup:
     display_name: "Citigroup Inc."
@@ -136,8 +141,13 @@ institutions:
     cik: "0000831001"
     country: "USA"
     type: "bank"
-    aum_usd_tr: 1.1
-    notes: "Global bank; 13-F filed by Citigroup Inc."
+    aum_usd_tr: 0.0
+    # CORRECTED 2026-06-26 (not a proxy voter): was 1.1. Citi sold its asset-
+    # management business to Legg Mason in 2005; discover-npx finds only divested
+    # affiliates (SkyBridge, Western Asset) and Citigroup Global Markets broker-
+    # dealers, no Citi-managed fund trusts. Not a proxy-voting manager → removed
+    # from the voting-coverage denominator. Still tracked for holdings/enforcement.
+    notes: "Global bank; 13-F filed by Citigroup Inc. Exited asset management (sold to Legg Mason 2005), so aum_usd_tr (voting basis) is 0."
 
   wells_fargo:
     display_name: "Wells Fargo & Company"
@@ -193,7 +203,27 @@ institutions:
     country: "USA"
     type: "asset_manager"
     aum_usd_tr: 1.5
-    notes: "Active asset manager; parent is T. Rowe Price Group Inc. (TROW). 13-F filed by T. Rowe Price Investment Management, Inc. (CIK 0001897612), the registered investment adviser entity formed 2021."
+    notes: "Active asset manager; parent is T. Rowe Price Group Inc. (TROW). 13-F filed by T. Rowe Price Investment Management, Inc. (CIK 0001897612), the registered investment adviser entity formed 2021. aum_usd_tr is TRPA managed AUM (~$1.5T)."
+    npx_ciks:
+      # Verified 2026-06-26. T. Rowe files N-PX per fund (dozens of CIKs) — these
+      # are four broad, unambiguous T. Rowe Price equity funds filing through
+      # 2025. All cleanly named "T. Rowe Price ... Fund, Inc." (attribution-safe).
+      - cik: "773485"
+        name: "T. Rowe Price All-Cap Opportunities Fund, Inc."
+        validated: "2026-06-26"
+      - cik: "793347"
+        name: "T. Rowe Price Capital Appreciation Fund, Inc."
+        validated: "2026-06-26"
+      - cik: "902259"
+        name: "T. Rowe Price Blue Chip Growth Fund, Inc."
+        validated: "2026-06-26"
+      - cik: "931151"
+        name: "T. Rowe Price U.S. Equity Research Fund, Inc."
+        validated: "2026-06-26"
+    commitments:
+      # Canonical TRPA Proxy Voting Guidelines, verified 2026-06-26 (200, pdf).
+      - label: proxy-voting-guidelines-trpa
+        url: "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/proxy-voting-guidelines-TRPA.pdf"
 
   invesco:
     display_name: "Invesco Ltd."
@@ -287,7 +317,22 @@ institutions:
     country: "USA"
     type: "asset_manager"
     aum_usd_tr: 1.5
-    notes: "Global asset manager; NYSE-listed (BEN). 13-F filed by Franklin Resources Inc. (CIK 0000038777)."
+    notes: "Global asset manager; NYSE-listed (BEN). 13-F filed by Franklin Resources Inc. (CIK 0000038777). aum_usd_tr is Franklin Templeton managed AUM (~$1.5T)."
+    npx_ciks:
+      # Verified 2026-06-26. Franklin Custodian Funds (38721) is the flagship
+      # Franklin equity complex (Income/Growth/etc.); plus the Franklin ETF Trust.
+      # Both unambiguously Franklin-managed, filing N-PX through 2025.
+      - cik: "38721"
+        name: "Franklin Custodian Funds"
+        validated: "2026-06-26"
+      - cik: "1551895"
+        name: "Franklin ETF Trust"
+        validated: "2026-06-26"
+    commitments:
+      # Franklin Equity Group Proxy Voting Policies & Procedures (franklintempleton.com),
+      # verified 2026-06-26 (200, application/pdf).
+      - label: proxy-voting-policies-procedures
+        url: "https://www.franklintempleton.com/forms-literature/download/FEG_ProxyVotingPolicies"
 
   bny_mellon:
     display_name: "Bank of New York Mellon Corp"
