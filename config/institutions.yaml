@@ -12,7 +12,24 @@ institutions:
     country: "USA"
     type: "bank"
     aum_usd_tr: 3.4
-    notes: "Largest US bank by assets; 13-F filed by JPMorgan Chase & Co."
+    notes: "Largest US bank; 13-F filed by JPMorgan Chase & Co. aum_usd_tr is J.P. Morgan Asset Management's managed AUM (~$3.4T), the voting footprint — not the bank's total assets. N-PX trusts are JPMAM US fund trusts."
+    npx_ciks:
+      # Discovered + verified 2026-06-26. Two clean US JPMAM fund trusts filing
+      # N-PX. Deliberately EXCLUDED the discover noise: the non-US adviser
+      # entities (JPMAM UK/Japan/Canada/Taiwan/Asia-Pacific Ltd), the bank
+      # itself (JPMorgan Chase Bank N.A.), and single closed-end/specialty funds
+      # — only these two attribute cleanly to JPMAM's US fund voting.
+      - cik: "1217286"
+        name: "JPMorgan Trust I"
+        validated: "2026-06-26"
+      - cik: "1303608"
+        name: "JPMorgan Institutional Trust"
+        validated: "2026-06-26"
+    commitments:
+      # Canonical, verified 2026-06-26 (200, application/pdf): JPMAM "Global Proxy
+      # Voting Procedures and Guidelines" from am.jpmorgan.com.
+      - label: global-proxy-voting-procedures-and-guidelines
+        url: "https://am.jpmorgan.com/content/dam/jpm-am-aem/americas/us/en/supplemental/proxy-information/global-procedures-and-guidelines.pdf"
 
   blackrock:
     display_name: "BlackRock Inc."
@@ -119,7 +136,29 @@ institutions:
     country: "USA"
     type: "asset_manager"
     aum_usd_tr: 4.5
-    notes: "Private fund manager; 13-F filed as FMR LLC."
+    notes: "Private fund manager; 13-F filed as FMR LLC. aum_usd_tr is Fidelity's discretionary/managed AUM (~$4.5T), not the larger administered total."
+    npx_ciks:
+      # Discovered + verified 2026-06-26 (discover-npx + submissions API). All are
+      # FMRCo-advised Fidelity fund trusts (the "Boston street" naming convention
+      # — Garrison/Hanover/etc. — and the Advisor/VIP series are all Fidelity's),
+      # filing N-PX through 2025. Attribution-safe: unambiguously Fidelity-managed.
+      - cik: "729218"
+        name: "Fidelity Advisor Series VIII"
+        validated: "2026-06-26"
+      - cik: "803013"
+        name: "Fidelity Garrison Street Trust"
+        validated: "2026-06-26"
+      - cik: "795422"
+        name: "Fidelity Advisor Series II"
+        validated: "2026-06-26"
+      - cik: "927384"
+        name: "Variable Insurance Products Fund III (Fidelity VIP)"
+        validated: "2026-06-26"
+    commitments:
+      # Canonical current policy, verified 2026-06-26 (200, application/pdf):
+      # "Full Proxy Voting Guidelines for Fidelity Funds Advised by FMRCo or FDS".
+      - label: full-proxy-voting-guidelines-fmrco
+        url: "https://www.fidelity.com/bin-public/060_www_fidelity_com/documents/Full-Proxy-Voting-Guidelines-for-Fidelity-Funds-Advised-by-FMRCo-or-FDS.pdf"
 
   t_rowe_price:
     display_name: "T. Rowe Price Investment Management, Inc."
@@ -184,8 +223,27 @@ institutions:
     cik: "0001610520"
     country: "CHE"
     type: "bank"
-    aum_usd_tr: 3.9
-    notes: "Swiss bank; acquired Credit Suisse (2023). 13-F filed through US securities filing subsidiary."
+    aum_usd_tr: 2.0
+    # CORRECTED 2026-06-26 (group→managed AUM): was 3.9. UBS Group oversees
+    # ~$6.1T invested assets, but that is dominated by wealth management — not
+    # the assets whose proxies UBS votes. The voting footprint is UBS Asset
+    # Management (~$2.0T, 2024), and the N-PX here comes from UBS AM Americas.
+    # Registry convention is managed AUM = voting footprint (cf. Schwab fix).
+    notes: "Swiss bank; acquired Credit Suisse (2023). aum_usd_tr is UBS Asset Management managed AUM (~$2.0T), the voting footprint, not UBS Group's ~$6.1T invested assets. N-PX filed by UBS AM Americas."
+    npx_ciks:
+      # Verified 2026-06-26 (discover-npx + test ingest = 21,382 votes). UBS AM
+      # Americas LLC files N-PX directly as an institutional manager. EXCLUDED
+      # the discover noise: stale A&Q/Eucalyptus/Aspen hedge-fund vehicles and
+      # 'UBS Financial Services Inc' (the brokerage, not the asset manager).
+      - cik: "861177"
+        name: "UBS AM (UBS Asset Management Americas LLC)"
+        validated: "2026-06-26"
+    commitments:
+      # UBS AM's formal "Corporate Governance and Proxy Voting Policy &
+      # Procedures" (2024), published via ISS's policy repository (repo 254 = UBS).
+      # Verified 2026-06-26 (200, application/pdf). UBS-authored primary source.
+      - label: corporate-governance-proxy-voting-policy-procedures
+        url: "https://vds.issgovernance.com/repo/254/policies/corporate-governance-and-proxy-voting-policy-procedures-2024.pdf"
 
   bnp_paribas:
     display_name: "BNP Paribas Asset Management Holding S.A."
