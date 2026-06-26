@@ -20,6 +20,10 @@ dependencies = [
 dev = ["pytest>=8.0", "hypothesis>=6.0", "ruff>=0.6", "semgrep>=1.0"]
 mcp = ["mcp>=1.0"]
 llm = ["anthropic>=0.40"]
+# Optional: emit researcher-grade typed/columnar Parquet in `glasshouse release`.
+# The release always emits open CSV without this; Parquet is the analysis-grade
+# upgrade. Kept optional so the core stays lean (CSV is the zero-dep floor).
+release = ["pyarrow>=14.0"]
 
 [project.scripts]
 glasshouse = "glasshouse.cli:main"

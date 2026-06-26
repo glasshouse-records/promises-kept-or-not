@@ -123,6 +123,25 @@ def cmd_export(_args) -> int:
     return 0
 
 
+def cmd_release(args) -> int:
+    from . import release
+    conn = _conn()
+    info = release.build_release(conn, version=args.version,
+                                 with_parquet=not args.no_parquet,
+                                 with_sqlite=args.with_sqlite)
+    print(f"  release v{info['version']} → {info['dir']}")
+    print(f"  {info['file_count']} files · {info['bytes'] / 1e6:.1f} MB · "
+          f"formats: {', '.join(info['formats'])}")
+    for t, meta in info["tables"].items():
+        if meta["rows"]:
+            print(f"    {t:<22} {meta['rows']:>10,} rows")
+    print("  verify:  cd " + info["dir"] + " && sha256sum -c MANIFEST.sha256")
+    print("  publish: upload the vX directory to Zenodo/HF for a citable DOI.")
+    if "parquet" not in info["formats"]:
+        print("  (CSV only — `pip install glasshouse[release]` to also emit Parquet)")
+    return 0
+
+
 def cmd_ingest_commitments(args) -> int:
     from .ingest import commitments
     conn = _conn()
@@ -773,6 +792,17 @@ def main(argv: list[str] | None = None) -> int:
                    "(a human sends it)").set_defaults(func=cmd_digest)
     sub.add_parser("export", help="VACUUM a dated public snapshot of the ledger "
                    "for Datasette/mirrors").set_defaults(func=cmd_export)
+    rel = sub.add_parser("release", help="build a versioned, checksummed, "
+                         "self-describing release bundle (CSV/Parquet + manifest "
+                         "+ datapackage) — the citable artifact for the world")
+    rel.add_argument("--version", default=None,
+                     help="release version label (default: today's date)")
+    rel.add_argument("--no-parquet", action="store_true",
+                     help="emit CSV only (skip Parquet even if pyarrow is installed)")
+    rel.add_argument("--with-sqlite", action="store_true",
+                     help="also bundle a SQLite browse view (≈doubles size; "
+                          "CSV/Parquet are the canonical formats)")
+    rel.set_defaults(func=cmd_release)
 
     out = sub.add_parser("outreach").add_subparsers(dest="action", required=True)
     od = out.add_parser("draft")
