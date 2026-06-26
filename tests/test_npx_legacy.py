@@ -52,6 +52,19 @@ def test_cusip_uppercased_and_clean():
         assert " " not in r.cusip
 
 
+def test_undated_security_emits_nothing():
+    """If a security's meeting date can't be parsed, its votes are dropped
+    (precision): an undated vote can't be time-aligned to a policy version."""
+    html = (b"<html><body><table>"
+            b"<tr><td colspan='5'>SOME ISSUER INC <br/>MEETING DATE:&nbsp;&nbsp;</td></tr>"
+            b"<tr><td colspan='5'>TICKER: X SECURITY ID:&nbsp;&nbsp;123456789</td></tr>"
+            b"<tr><th>Proposal No</th><th>Proposal</th><th>Proposed By</th>"
+            b"<th>Management Recommendation</th><th>Vote Cast</th></tr>"
+            b"<tr><td>1</td><td>Elect Director</td><td>Management</td><td>For</td><td>For</td></tr>"
+            b"</table></body></html>")
+    assert list(iter_legacy_vote_rows(html)) == []
+
+
 def test_each_security_has_multiple_proposals():
     rows = _rows()
     by_issuer = {}

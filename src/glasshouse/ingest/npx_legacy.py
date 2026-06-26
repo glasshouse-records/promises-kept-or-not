@@ -99,7 +99,10 @@ def iter_legacy_vote_rows(html_bytes: bytes) -> Iterator[VoteRow]:
                 continue
 
             # proposal row: 5 cells, only after we've locked issuer+cusip+header
-            if header_ok and issuer and cusip and len(texts) == 5:
+            # AND a parseable meeting date. A dateless vote signals a format the
+            # parser doesn't understand — drop it (precision over recall) rather
+            # than emit an undated, un-time-alignable vote.
+            if header_ok and issuer and cusip and meeting and len(texts) == 5:
                 num, desc, proposed_by, mgmt_rec, vote = texts
                 # precision guards: a real proposal has a description and a vote,
                 # and the first cell looks like a proposal number/id (not prose).
