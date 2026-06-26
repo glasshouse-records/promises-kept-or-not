@@ -308,7 +308,18 @@ institutions:
     country: "FRA"
     type: "asset_manager"
     aum_usd_tr: 0.7
-    notes: "French bank's asset management arm; 13-F filed by BNP Paribas Asset Management Holding S.A. (CIK 0001520354)."
+    notes: "French bank's asset management arm; 13-F filed by BNP Paribas Asset Management Holding S.A. (CIK 0001520354), which also files N-PX directly. aum_usd_tr (~$0.7T) is BNPP AM's US managed/voting footprint."
+    npx_ciks:
+      # Verified 2026-06-27. BNP Paribas AM Holding files N-PX directly as the
+      # institutional manager (same entity as the 13-F filer). Excluded the BNP
+      # Paribas broker-dealer / securities entities.
+      - cik: "1520354"
+        name: "BNP Paribas Asset Management Holding S.A."
+        validated: "2026-06-27"
+    commitments:
+      # BNPP AM Voting Policy 2026, verified 2026-06-27 (200, application/pdf).
+      - label: voting-policy
+        url: "https://docfinder.bnpparibas-am.com/api/files/bc3ebf85-65ee-4a8f-8260-c146fb5960e1"
 
   franklin_templeton:
     display_name: "Franklin Resources Inc. (Franklin Templeton)"
@@ -367,7 +378,24 @@ institutions:
     country: "DEU"
     type: "bank"
     aum_usd_tr: 1.0
-    notes: "German bank; DWS Group is the asset management arm (majority-owned, publicly listed on Frankfurt Stock Exchange). 13-F filed by Deutsche Bank AG (CIK 0000948046)."
+    notes: "German bank; DWS Group is the asset management arm (majority-owned, Frankfurt-listed). 13-F filed by Deutsche Bank AG (CIK 0000948046). aum_usd_tr is DWS managed AUM (~$1.0T), the voting footprint. N-PX filed by DWS fund trusts."
+    npx_ciks:
+      # Verified 2026-06-27. Clean DWS-managed US fund trusts filing N-PX
+      # through 2025 ("DEUTSCHE DWS …" naming). Excluded stale pre-2018 trusts.
+      - cik: "926425"
+        name: "Deutsche DWS Asset Allocation Trust"
+        validated: "2026-06-27"
+      - cik: "888568"
+        name: "Deutsche DWS Equity 500 Index Portfolio"
+        validated: "2026-06-27"
+      - cik: "95603"
+        name: "Deutsche DWS Market Trust"
+        validated: "2026-06-27"
+    commitments:
+      # DWS Corporate Governance & Proxy Voting Policy 2025, verified 2026-06-27
+      # (200, application/pdf) from dws.com.
+      - label: corporate-governance-proxy-voting-policy
+        url: "https://download.dws.com/download?elib-assetguid=0ed2826429c84ae4b87d95bcbe07077d"
 
   northern_trust:
     display_name: "Northern Trust Corporation"
@@ -376,7 +404,21 @@ institutions:
     country: "USA"
     type: "bank"
     aum_usd_tr: 1.2
-    notes: "Custody bank and wealth manager; NASDAQ-listed (NTRS)."
+    notes: "Custody bank and wealth manager (NTRS). aum_usd_tr is Northern Trust Asset Management (NTAM) managed AUM (~$1.2T), the voting footprint, not its ~$17T custody/AUA. N-PX filed by the Northern Funds family."
+    npx_ciks:
+      # Verified 2026-06-27. NORTHERN FUNDS is NTAM's mutual-fund family.
+      # CRITICAL exclusions (discover traps): "Northern Lights Variable Trust"
+      # and "Arrow ETF Trust" are THIRD-PARTY fund families (Ultimus/Gemini
+      # series trusts), NOT Northern Trust; "Bell Bank" and "Northern Capital
+      # Management" are unrelated. Only NORTHERN FUNDS attributes to NTAM.
+      - cik: "916620"
+        name: "Northern Funds"
+        validated: "2026-06-27"
+    commitments:
+      # NTAM Proxy Voting Policies, Procedures & Guidelines, verified 2026-06-27
+      # (200, application/pdf) from ntam.northerntrust.com.
+      - label: proxy-voting-policies-procedures-guidelines
+        url: "https://ntam.northerntrust.com/content/dam/northerntrust/investment-management/global/en/documents/account-resources/proxy/nt-proxy-policies-procedures.pdf"
 
   pimco:
     display_name: "Allianz Asset Management GmbH (PIMCO)"
