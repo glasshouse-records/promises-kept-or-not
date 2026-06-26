@@ -76,7 +76,8 @@ def cmd_ingest_npx(args) -> int:
         return 2
     for cik, inst_id in targets:
         stats = npx.ingest_npx(conn, cik, institution_id=inst_id,
-                               max_filings=args.max_filings, max_tables=args.max_tables)
+                               max_filings=args.max_filings, max_tables=args.max_tables,
+                               legacy=getattr(args, "legacy", False))
         print(f"  CIK {cik}: {stats}")
     return 0
 
@@ -666,6 +667,9 @@ def main(argv: list[str] | None = None) -> int:
     npx_p.add_argument("--max-filings", type=int, default=None)
     npx_p.add_argument("--max-tables", type=int, default=None,
                        help="stop after N proxyTables per exhibit (smoke tests)")
+    npx_p.add_argument("--legacy", action="store_true",
+                       help="parse pre-2024 legacy HTML N-PX (historical depth); "
+                            "votes tagged legacy_html and quarantined from releases")
     npx_p.set_defaults(func=cmd_ingest_npx)
     com = ing.add_parser("commitments")
     com.add_argument("--wayback", action="store_true",

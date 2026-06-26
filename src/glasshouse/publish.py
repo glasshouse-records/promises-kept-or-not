@@ -23,7 +23,10 @@ PUBLIC_TABLES: dict[str, str] = {
     "institutions": "",
     "filings": "",
     "fund_series": "",
-    "votes": "WHERE is_duplicate = 0",
+    # legacy_html votes are pre-2024 HTML-parsed and not yet validated — they
+    # stay out of the public release until promoted (precision over recall).
+    # IFNULL: structured votes may have NULL/'' vote_source and must stay in.
+    "votes": "WHERE is_duplicate = 0 AND IFNULL(vote_source,'') != 'legacy_html'",
     "holdings": "",
     "enforcement_actions": "WHERE is_duplicate = 0",
     "entities": "",

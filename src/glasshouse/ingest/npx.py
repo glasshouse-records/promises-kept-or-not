@@ -186,11 +186,18 @@ def find_vote_table_exhibits(filing: Filing) -> list[str]:
 def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                institution_id: str | None = None,
                max_filings: int | None = None,
-               max_tables: int | None = None) -> dict:
+               max_tables: int | None = None,
+               legacy: bool = False) -> dict:
     """Ingest N-PX filings for a CIK into the evidence ledger.
 
     Idempotent: filings already in the ledger are skipped. Cover-only
     notice filings are recorded as filings (report_type) but yield no votes.
+
+    legacy=True (opt-in): for pre-2024 filings that have no structured cover,
+    parse the legacy HTML vote tables (ISS/Broadridge format) instead of
+    skipping. Those votes are tagged vote_source='legacy_html' and the filing
+    report_type is 'LEGACY_PARSED', so they stay out of the public release
+    until validated. Default (False) preserves the safe skip behavior.
     """
     today = date.today().isoformat()
     stats = {"filings": 0, "skipped": 0, "notices": 0, "votes": 0}
@@ -198,11 +205,18 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
     filings = list_filings(cik, NPX_FORMS, limit=max_filings)
     for filing in filings:
         exists = conn.execute(
-            "SELECT 1 FROM filings WHERE accession = ?", (filing.accession_number,)
+            "SELECT report_type FROM filings WHERE accession = ?", (filing.accession_number,)
         ).fetchone()
         if exists:
-            stats["skipped"] += 1
-            continue
+            # legacy mode may upgrade a filing previously skipped as
+            # LEGACY_NO_COVER (no votes attached) — reprocess it. Otherwise skip.
+            if legacy and exists[0] == "LEGACY_NO_COVER":
+                conn.execute("DELETE FROM filings WHERE accession = ?",
+                             (filing.accession_number,))
+                conn.commit()
+            else:
+                stats["skipped"] += 1
+                continue
 
         try:
             cover_bytes = http.get(f"{filing.directory_url}/primary_doc.xml").content
@@ -220,6 +234,14 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                 logger.warning("transient cover failure for %s (%s) — will retry next run",
                                filing.accession_number, exc)
                 stats["skipped"] += 1
+                continue
+            if legacy:
+                n = _ingest_legacy_filing(conn, filing, institution_id, today, stats)
+                if n:
+                    stats["filings"] += 1
+                    logger.info("ingested LEGACY %s: %d votes", filing.accession_number, n)
+                else:
+                    stats["skipped"] += 1
                 continue
             logger.warning("no cover for %s (404) — recording as legacy, skipping votes",
                            filing.accession_number)
@@ -287,3 +309,54 @@ _VOTE_INSERT = """INSERT INTO votes
      category_type, vote_source, shares_on_loan, vote_series, how_voted,
      shares_voted, management_recommendation)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"""
+
+
+def _ingest_legacy_filing(conn: sqlite3.Connection, filing: Filing,
+                          institution_id: str | None, today: str, stats: dict) -> int:
+    """Parse a pre-2024 legacy HTML N-PX filing. Returns votes inserted.
+
+    Votes are tagged vote_source='legacy_html' (see npx_legacy) and the filing
+    is recorded as LEGACY_PARSED so the public release can quarantine them.
+    """
+    from .npx_legacy import find_legacy_vote_docs, iter_legacy_vote_rows
+
+    conn.execute(
+        """INSERT INTO filings (accession, cik, institution_id, form_type, filing_date,
+                                period_of_report, report_type, source_url, retrieval_date)
+           VALUES (?,?,?,?,?,?,?,?,?)""",
+        (filing.accession_number, filing.cik, institution_id, filing.form_type,
+         filing.filing_date, filing.period_of_report, "LEGACY_PARSED",
+         filing.directory_url, today),
+    )
+    inserted = 0
+    for url in find_legacy_vote_docs(filing):
+        try:
+            content = http.get(url).content
+        except Exception as exc:  # one bad doc must not abort the filing
+            logger.warning("legacy doc fetch failed %s (%s)", url, exc)
+            continue
+        if b"MEETING DATE" not in content.upper():
+            continue  # not a vote document (cover/notes page)
+        rows = []
+        for row in iter_legacy_vote_rows(content):
+            rows.append((
+                filing.accession_number, row.issuer_name, row.cusip, row.isin,
+                row.meeting_date, row.vote_description, row.category_type,
+                row.vote_source, row.shares_on_loan, row.vote_series,
+                row.how_voted, row.shares_voted, row.management_recommendation,
+            ))
+            if len(rows) >= 5000:
+                conn.executemany(_VOTE_INSERT, rows)
+                inserted += len(rows)
+                rows = []
+        if rows:
+            conn.executemany(_VOTE_INSERT, rows)
+            inserted += len(rows)
+    if inserted == 0:
+        # parser couldn't handle this doc's format — leave it retryable rather
+        # than claiming it's parsed, so an improved parser can revisit it.
+        conn.execute("UPDATE filings SET report_type='LEGACY_NO_COVER' WHERE accession=?",
+                     (filing.accession_number,))
+    conn.commit()
+    stats["votes"] += inserted
+    return inserted

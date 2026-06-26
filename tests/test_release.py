@@ -141,6 +141,20 @@ def test_manifest_verifies_every_file(conn, tmp_path):
     assert on_disk - {"MANIFEST.sha256"} == set(listed), "manifest is not complete"
 
 
+def test_release_quarantines_legacy_html_votes(conn, tmp_path):
+    """Pre-2024 legacy-parsed votes (vote_source='legacy_html') are not yet
+    validated and must NOT enter a public release."""
+    conn.execute("INSERT INTO votes (accession, issuer_name, how_voted, shares_voted, "
+                 "is_duplicate, vote_source) VALUES ('ACC-1','LEGACYCO INC','FOR',0,0,'legacy_html')")
+    conn.commit()
+    d = tmp_path / "vt7"
+    release.build_release(conn, root=tmp_path, version="t7", with_parquet=False)
+    rows = _read_csv(d / "facts" / "votes.csv")
+    assert all(r.get("vote_source") != "legacy_html" for r in rows)
+    assert not any(r["issuer_name"] == "LEGACYCO INC" for r in rows)
+    assert len(rows) == 1  # only the structured, deduped vote
+
+
 def test_release_version_cannot_escape_root(conn, tmp_path):
     """version becomes a dir name we rmtree — separators/traversal are rejected."""
     for bad in ("../../etc", "a/b", ".."):
