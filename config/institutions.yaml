@@ -100,7 +100,26 @@ institutions:
     country: "USA"
     type: "bank"
     aum_usd_tr: 2.8
-    notes: "Investment bank; also large 13-F filer through asset management division."
+    notes: "Investment bank; aum_usd_tr is Goldman Sachs Asset Management (GSAM) managed AUM (~$2.8T), the voting footprint. N-PX filed by GSAM L.P."
+    npx_ciks:
+      # Verified 2026-06-26 (test ingest = 6,753 votes). GSAM L.P. files N-PX
+      # directly as an institutional manager — the cleanest Goldman attribution.
+      # Plus the GS ETF Trust. EXCLUDED: GS & Co LLC (broker-dealer), GS Bank
+      # AG/Europe SE (banks), and the stale 2008 hedge-fund "Registered Fund LLC"
+      # vehicles.
+      - cik: "1229262"
+        name: "Goldman Sachs Asset Management, L.P."
+        validated: "2026-06-26"
+      - cik: "1479026"
+        name: "Goldman Sachs ETF Trust"
+        validated: "2026-06-26"
+    commitments:
+      # GSAM Global Proxy Voting Policy. Live host (gsam.com) returns 403 to
+      # non-browser clients and we do NOT spoof UAs (honest access) — so this
+      # degrades to the Wayback archive (capture exists 2022-10-31, 200, pdf).
+      # Ingest with `--wayback`.
+      - label: gsam-global-proxy-voting-policy
+        url: "https://www.gsam.com/content/dam/gsam/pdfs/common/en/public/miscellaneous/GSAM_Global_Proxy_Voting_Policy.pdf"
 
   bank_of_america:
     display_name: "Bank of America Corporation"
@@ -126,8 +145,15 @@ institutions:
     cik: "0000072971"
     country: "USA"
     type: "bank"
-    aum_usd_tr: 2.0
-    notes: "Major US bank; 13-F filed by Wells Fargo & Company. Note: Wells Fargo withdrew from Net Zero Banking Alliance in Jan 2024."
+    aum_usd_tr: 0.0
+    # CORRECTED 2026-06-26 (not a proxy voter): was 2.0 (bank assets). Wells
+    # Fargo SOLD its asset-management arm (WFAM) in 2021 — it became Allspring
+    # Global Investments — so Wells Fargo & Company no longer manages funds or
+    # votes proxies as an asset manager. Its voting-AUM footprint is ~0, so it
+    # is removed from the AUM-weighted coverage denominator (it was never a
+    # coverable manager). Still tracked for holdings (13-F) and the enforcement
+    # record. (If Allspring is later added, it is the manager to weight.)
+    notes: "Major US bank; 13-F filed by Wells Fargo & Company. Exited asset management (WFAM → Allspring, 2021) so aum_usd_tr (voting basis) is 0. Withdrew from Net Zero Banking Alliance Jan 2024."
 
   fidelity:
     display_name: "Fidelity Investments (FMR LLC)"
@@ -270,7 +296,24 @@ institutions:
     country: "USA"
     type: "bank"
     aum_usd_tr: 2.0
-    notes: "Custody bank and asset manager; NYSE-listed (BK). 13-F filed by Bank of New York Mellon Corp (CIK 0001390777)."
+    notes: "Custody bank and asset manager (BK). aum_usd_tr is BNY Investments managed AUM (~$2.0T), the voting footprint — NOT its ~$50T custody assets. N-PX filed by BNY Mellon fund trusts."
+    npx_ciks:
+      # Verified 2026-06-26 (discover-npx, all clean BNY-managed funds filing
+      # N-PX through 2025). EXCLUDED the adviser/custody entities (Mellon
+      # Investments Corp, BNY Mellon Advisors) and single specialty/Alcentra
+      # target-term funds; these two are broad, equity-bearing BNY fund families.
+      - cik: "318478"
+        name: "BNY Mellon Appreciation Fund, Inc."
+        validated: "2026-06-26"
+      - cik: "914775"
+        name: "BNY Mellon Advantage Funds, Inc."
+        validated: "2026-06-26"
+    commitments:
+      # BNY has no standalone policy PDF (like Schwab) — its current proxy-voting
+      # policy is published as an HTML page on bny.com (verified 2026-06-26:
+      # ~25 KB of substantive policy text). The error-page guard validates it.
+      - label: proxy-voting-policy
+        url: "https://www.bny.com/investments/us/en/policies/proxy-voting-policy.html"
 
   deutsche_bank:
     display_name: "Deutsche Bank AG"
