@@ -22,9 +22,11 @@ auto-published claim.
 
 from __future__ import annotations
 
+import json
 import re
 import sqlite3
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from functools import cache
 from pathlib import Path
 
@@ -37,6 +39,9 @@ from .contradictions import (
     proposal_is_oppositional,
     score_commitment_sentence,
 )
+from .http import DATA_DIR
+
+MATRIX_CACHE = DATA_DIR / "investigate" / "matrix.json"
 
 
 @cache
@@ -173,12 +178,100 @@ def institution_record(conn: sqlite3.Connection, inst_id: str) -> dict[str, Them
     return out
 
 
+def _scan_matrix(conn: sqlite3.Connection) -> dict[str, dict[str, dict]]:
+    """ONE pass over the whole vote table (not per institution), bucketed by
+    institution × theme. SQLite LIKE is ASCII-case-insensitive, so no LOWER()
+    per row. Returns {institution_id: {theme: {for, against, abstain, examples}}}."""
+    all_terms = sorted({t for th in THEMES for t in _PREFILTER[th]})
+    like = " OR ".join(["v.vote_description LIKE ?"] * len(all_terms))
+    params = [f"%{t}%" for t in all_terms]
+    regexes = {th: _theme_proposal_re(th) for th in THEMES}
+    out: dict[str, dict[str, dict]] = {}
+    for v in conn.execute(
+        f"""SELECT f.institution_id AS iid, v.accession, v.issuer_name, v.meeting_date,
+                   v.vote_description, v.how_voted, v.shares_voted
+            FROM votes v JOIN filings f ON f.accession = v.accession
+            WHERE v.is_duplicate = 0 AND IFNULL(v.vote_source,'') != 'legacy_html'
+              AND ({like})""", params):
+        desc = v["vote_description"] or ""
+        if proposal_is_oppositional(desc):
+            continue
+        hv = (v["how_voted"] or "").strip().upper()
+        for th, rx in regexes.items():
+            if not rx.search(desc):
+                continue
+            b = out.setdefault(v["iid"], {}).setdefault(
+                th, {"for": 0, "against": 0, "abstain": 0, "examples": []})
+            if hv == "FOR":
+                b["for"] += 1
+            elif hv == "AGAINST":
+                b["against"] += 1
+                b["examples"].append({
+                    "issuer_name": v["issuer_name"], "meeting_date": v["meeting_date"],
+                    "vote_description": desc[:200], "shares_voted": v["shares_voted"] or 0.0,
+                    "accession": v["accession"]})
+            elif hv == "ABSTAIN":
+                b["abstain"] += 1
+    for cells in out.values():
+        for s in cells.values():
+            s["examples"].sort(key=lambda e: -(e["shares_voted"] or 0.0))
+            s["examples"] = s["examples"][:_EXAMPLE_LIMIT]
+    return out
+
+
+def build_matrix(conn: sqlite3.Connection) -> dict:
+    """The full hypocrisy matrix: every institution × theme cell with the
+    against-rate, the cited commitment (SAY), and the top cited AGAINST votes
+    (DO) — everything the interactive heatmap and its drill-downs need, so the
+    UI serves entirely from this one cached payload."""
+    scan = _scan_matrix(conn)
+    institutions = []
+    for inst in conn.execute("SELECT id, display_name FROM institutions ORDER BY id"):
+        isc = scan.get(inst["id"], {})
+        cells = {}
+        for th in THEMES:
+            c = _commitment_for(conn, inst["id"], th)
+            s = isc.get(th, {"for": 0, "against": 0, "abstain": 0, "examples": []})
+            f, a, ab = s["for"], s["against"], s["abstain"]
+            n = f + a + ab
+            if c is None and n == 0:
+                continue  # nothing to show for this cell
+            denom = f + a
+            cells[th] = {
+                "committed": c is not None,
+                "quote": (c[0] if c else None),
+                "doc_label": (c[1]["doc_label"] if c else None),
+                "doc_version": (c[1]["v"] if c else None),
+                "doc_url": (c[1]["url"] if c else None),
+                "for": f, "against": a, "abstain": ab, "n": n,
+                "rate": round(a / denom, 4) if denom else 0.0,
+                "low_confidence": denom < 5,
+                "examples": s["examples"],
+            }
+        if cells:
+            institutions.append({"id": inst["id"], "name": inst["display_name"], "cells": cells})
+    return {"generated": datetime.now(UTC).isoformat(timespec="seconds"),
+            "themes": list(THEMES), "institutions": institutions}
+
+
+def cache_matrix(conn: sqlite3.Connection) -> Path:
+    """Compute and persist the matrix so the workbench loads it instantly."""
+    m = build_matrix(conn)
+    MATRIX_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    MATRIX_CACHE.write_text(json.dumps(m, default=str))
+    return MATRIX_CACHE
+
+
+def load_matrix() -> dict | None:
+    """The cached matrix, or None if it hasn't been built yet."""
+    if MATRIX_CACHE.exists():
+        return json.loads(MATRIX_CACHE.read_text())
+    return None
+
+
 def theme_matrix(conn: sqlite3.Connection) -> dict[str, dict[str, float]]:
-    """{institution_id: {theme: against_rate}} for institutions that have a
-    commitment on at least one theme — the data behind a hypocrisy heatmap."""
-    matrix: dict[str, dict[str, float]] = {}
-    for theme in THEMES:
-        for r in theme_records(conn, theme):
-            if r.committed and r.n_theme:
-                matrix.setdefault(r.institution_id, {})[theme] = r.against_rate
-    return matrix
+    """{institution_id: {theme: against_rate}} for committed cells with votes —
+    derived from the single-pass build_matrix (used by the CLI matrix view)."""
+    return {i["id"]: {t: c["rate"] for t, c in i["cells"].items()
+                      if c["committed"] and c["n"]}
+            for i in build_matrix(conn)["institutions"]}

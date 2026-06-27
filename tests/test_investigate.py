@@ -92,3 +92,25 @@ def test_matrix_has_rates_per_theme(conn):
     assert "blackrock" in m
     assert "climate" in m["blackrock"]
     assert round(m["blackrock"]["climate"], 2) == 0.67
+
+
+def test_build_matrix_cells_carry_say_and_do(conn):
+    m = investigate.build_matrix(conn)
+    assert "climate" in m["themes"]
+    blk = next(i for i in m["institutions"] if i["id"] == "blackrock")
+    cell = blk["cells"]["climate"]
+    assert cell["committed"] is True and cell["quote"]
+    assert cell["against"] == 2 and cell["for"] == 1
+    assert round(cell["rate"], 2) == 0.67
+    assert {e["issuer_name"] for e in cell["examples"]} == {"EXXON", "CHEVRON"}
+    # acme has no climate commitment and no votes ⇒ no climate cell
+    acme = next((i for i in m["institutions"] if i["id"] == "acme"), None)
+    assert acme is None or "climate" not in acme["cells"]
+
+
+def test_cache_matrix_roundtrip(conn, tmp_path, monkeypatch):
+    monkeypatch.setattr(investigate, "MATRIX_CACHE", tmp_path / "investigate" / "matrix.json")
+    assert investigate.load_matrix() is None
+    investigate.cache_matrix(conn)
+    loaded = investigate.load_matrix()
+    assert loaded and loaded["themes"] and loaded["institutions"]

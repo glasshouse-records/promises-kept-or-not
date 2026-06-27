@@ -172,20 +172,29 @@ def cmd_investigate(args) -> int:
         return 0
 
     if args.action == "matrix":
-        m = investigate.theme_matrix(conn)
-        themes = list(investigate.THEMES)
-        names = {i["id"]: i["display_name"] for i in
-                 conn.execute("SELECT id, display_name FROM institutions")}
+        import json as _json
+        m = investigate.build_matrix(conn)
+        if getattr(args, "cache", False):
+            investigate.MATRIX_CACHE.parent.mkdir(parents=True, exist_ok=True)
+            investigate.MATRIX_CACHE.write_text(_json.dumps(m, default=str))
+            print(f"  cached → {investigate.MATRIX_CACHE} (workbench Investigate tab reads this)")
+        themes = m["themes"]
+        rows = []
+        for i in m["institutions"]:
+            committed = {t: c["rate"] for t, c in i["cells"].items() if c["committed"] and c["n"]}
+            if committed:
+                rows.append((i["name"], committed))
+        rows.sort(key=lambda r: -max(r[1].values()))
         print("\nHYPOCRISY MATRIX — against-rate (%) on each theme, for managers that "
-              "publicly commit to it.\nBlank = no commitment / no votes on that theme.\n")
+              "publicly COMMIT to it.\nBlank = no commitment / no votes on that theme.\n")
         print("  " + " " * 22 + "".join(f"{t[:9]:>11}" for t in themes))
-        for iid in sorted(m, key=lambda k: -max(m[k].values())):
-            cells = "".join((f"{m[iid][t]*100:>10.0f}%" if t in m[iid] else f"{'·':>11}")
+        for name, committed in rows:
+            cells = "".join((f"{committed[t]*100:>10.0f}%" if t in committed else f"{'·':>11}")
                             for t in themes)
-            print(f"  {names.get(iid, iid)[:22]:<22}{cells}")
-        print("\n  Read a row left→right for a manager's say-vs-do across themes; "
-              "a column for who's worst on a theme.")
-        print("  Drill any cell: glasshouse investigate theme <theme>")
+            print(f"  {name[:22]:<22}{cells}")
+        print("\n  Read a row for a manager's say-vs-do across themes; a column for who's "
+              "worst on a theme.\n  Drill a cell: glasshouse investigate theme <theme>  "
+              "(or click it in the workbench Investigate tab).")
         return 0
 
     if args.action == "institution":
@@ -876,6 +885,8 @@ def main(argv: list[str] | None = None) -> int:
     it.add_argument("--examples", type=int, default=8)
     it.set_defaults(func=cmd_investigate)
     im = inv_sub.add_parser("matrix", help="themes × managers against-rate grid (the hypocrisy matrix)")
+    im.add_argument("--cache", action="store_true",
+                    help="persist the matrix to data/investigate/matrix.json for the workbench")
     im.set_defaults(func=cmd_investigate)
     ii = inv_sub.add_parser("institution", help="one manager's say-vs-do across all themes")
     ii.add_argument("id")

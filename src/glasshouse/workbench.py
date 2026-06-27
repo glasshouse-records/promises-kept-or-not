@@ -91,7 +91,7 @@ def state(conn: sqlite3.Connection) -> dict:
     signals = [dict(r) for r in conn.execute(
         "SELECT ts, kind, detail FROM signals ORDER BY id DESC LIMIT 10")]
 
-    from . import council, newsroom
+    from . import council, investigate, newsroom
     recs = council.recommendations(conn)
     for f in pending:
         f["council"] = recs.get(f["fingerprint"])
@@ -105,6 +105,7 @@ def state(conn: sqlite3.Connection) -> dict:
         "gold_labels": len(done),
         "newsroom": newsroom.story_queue(conn),
         "pipeline": newsroom.pipeline_status(conn),
+        "investigate": investigate.load_matrix(),   # cached hypocrisy matrix (or None)
     }
 
 
@@ -278,6 +279,17 @@ pre.dossier{font:400 .74rem/1.55 var(--mono);white-space:pre-wrap;background:var
   border:1px solid var(--edge);border-radius:8px;padding:1rem;max-height:24rem;overflow:auto}
 .empty{color:var(--muted);font-family:var(--sans);padding:2rem 0}
 label.chk{display:flex;gap:.5rem;align-items:center;font:400 .85rem var(--sans);color:var(--muted)}
+table.heat{border-collapse:collapse;margin:.6rem 0 1rem}
+table.heat th{font:700 .66rem var(--mono);letter-spacing:.04em;text-transform:uppercase;
+  color:var(--muted);padding:.3rem .45rem;text-align:center;vertical-align:bottom}
+table.heat td{border:1px solid var(--edge);text-align:center;padding:.55rem .65rem;min-width:4.6rem}
+table.heat td.rowname{text-align:left;font:600 .84rem var(--sans);color:var(--ink);
+  white-space:nowrap;border:none;padding-right:.9rem}
+table.heat td.cell{cursor:pointer;font:700 .82rem var(--mono)}
+table.heat td.cell:hover{outline:2px solid var(--accent);outline-offset:-2px}
+table.heat td.nocommit{color:var(--muted);font-family:var(--mono)}
+table.heat td.blank{background:repeating-linear-gradient(45deg,transparent,transparent 5px,var(--bg) 5px,var(--bg) 6px)}
+h4.evh{font:700 .78rem var(--mono);letter-spacing:.04em;text-transform:uppercase;margin:.9rem 0 .3rem;color:var(--muted)}
 </style></head><body>
 <nav><div class=wrap><span class=wordmark>GLASS<em>HOUSE</em></span>
 <a href='#' class=on>Workbench</a><a href='http://localhost:8000' target=_blank>Public site</a></div></nav>
@@ -290,7 +302,7 @@ also grow the eval gold set.</p>
 <div id=main></div>
 </div>
 <script>
-let S=null, tab='newsroom';
+let S=null, tab='investigate';
 const $=s=>document.querySelector(s);
 const e=t=>{const d=document.createElement('div');d.textContent=t??'';return d.innerHTML};
 
@@ -301,7 +313,10 @@ async function post(action,payload,el){
   return r}
 
 function tabs(){
-  const t=[['newsroom','Newsroom',(S.newsroom||[]).length],
+  const invN=S.investigate?S.investigate.institutions.filter(i=>
+    Object.values(i.cells).some(c=>c.committed&&c.n)).length:0;
+  const t=[['investigate','Investigate',invN],
+    ['newsroom','Newsroom',(S.newsroom||[]).length],
     ['review','Review',S.review.length],['leads','Leads',S.leads.length],
     ['outreach','Outreach',S.outreach.filter(o=>o.status!=='declined').length],
     ['signals','Signals',S.signals.length],['doctor','Doctor',
@@ -310,7 +325,63 @@ function tabs(){
   $('#tabs').innerHTML=t.map(([k,l,n])=>
     `<button class='${k===tab?'on':''}' onclick='tab="${k}";render()'>${l} <span class=n>${n}</span></button>`).join('')}
 
-function render(){tabs();({newsroom,review,leads,outreach,signals,doctor,pipeline})[tab]()}
+function render(){tabs();({investigate,newsroom,review,leads,outreach,signals,doctor,pipeline})[tab]()}
+
+const _maxRate=i=>Math.max(0,...Object.values(i.cells).filter(c=>c.committed&&c.n).map(c=>c.rate));
+function investigate(){
+  const M=S.investigate;
+  if(!M){$('#main').innerHTML="<p class=empty>The hypocrisy matrix isn't built yet. Run "+
+    "<code>glasshouse investigate matrix --cache</code>, then reload this page.</p>";return}
+  const themes=M.themes;
+  const insts=M.institutions.filter(i=>Object.values(i.cells).some(c=>c.committed&&c.n))
+    .sort((a,b)=>_maxRate(b)-_maxRate(a));
+  window._inv=insts;
+  if(!insts.length){$('#main').innerHTML="<p class=empty>No committed-vs-voted cells yet.</p>";return}
+  let h=`<p class=secnote>Each cell = a manager's <b>against-rate</b> on shareholder proposals
+   advancing a theme it <b>publicly commits to</b> — what it SAYS × what it DOES. Redder = says one
+   thing, votes the other. Anti-theme proposals and unvalidated legacy votes are excluded.
+   Built ${e(M.generated)}. <b>Click any cell</b> for the commitment quote and the specific cited votes.</p>`;
+  h+="<table class=heat><thead><tr><th></th>"+themes.map(t=>`<th>${e(t)}</th>`).join('')+"</tr></thead><tbody>";
+  insts.forEach((i,ri)=>{
+    h+=`<tr><td class=rowname>${e(i.name)}</td>`+themes.map(t=>{
+      const c=i.cells[t];
+      if(!c) return "<td class=blank></td>";
+      if(!c.committed) return `<td class=nocommit title='${c.against}/${c.n} against — but no commitment on this theme'>·</td>`;
+      const al=(0.12+0.88*c.rate).toFixed(2);
+      const col=c.rate>0.5?'#fff':'var(--ink)';
+      const star=c.low_confidence?' *':'';
+      return `<td class=cell style='background:rgba(176,48,42,${al});color:${col}' `+
+        `onclick='drill(${ri},"${t}")'>${Math.round(c.rate*100)}%${star}</td>`}).join('')+"</tr>";
+  });
+  h+="</tbody></table><div id=drill></div>"+
+   "<p class=meta>· = votes on the theme but no commitment (no say-vs-do tension). "+
+   "blank = nothing. * = small sample (&lt;5 votes) — treat with caution.</p>";
+  $('#main').innerHTML=h;
+}
+
+function drill(ri,t){
+  const i=window._inv[ri], c=i.cells[t], d=$('#drill');
+  const ex=(c.examples||[]).map(x=>`<div class=stat><span>${e(x.meeting_date)} ·
+     <b>${e(x.issuer_name)}</b> · ${Math.round(Number(x.shares_voted)).toLocaleString('en-US')} sh<br>
+     <span class=meta>“${e(x.vote_description)}” — N-PX ${e(x.accession)}</span></span></div>`).join('')
+     ||"<p class=meta>no cited examples</p>";
+  d.innerHTML=`<div class='card claim'><span class=ribbon>lead — verify before publishing</span>
+   <h3>${e(i.name)} · ${e(t)}</h3>
+   <div class=grid2>
+    <div class='saydid say'><div class=tag>What it says</div>
+     <blockquote>“${e(c.quote||'—')}”</blockquote>
+     <div class=cite>${e(c.doc_label||'')} @ ${e(c.doc_version||'')} ·
+      <a href='${e(c.doc_url||'#')}' target=_blank>source</a></div></div>
+    <div class='saydid did'><div class=tag>What it did</div>
+     <blockquote>Voted <b style='color:var(--against)'>AGAINST ${c.against}</b> of ${c.for+c.against}
+      (${Math.round(c.rate*100)}%) proposals advancing ${e(t)}</blockquote>
+     <div class=cite>FOR ${c.for} · AGAINST ${c.against} · ABSTAIN ${c.abstain}${c.low_confidence?' · small sample':''}</div></div>
+   </div>
+   <h4 class=evh>Top AGAINST votes — the evidence</h4>${ex}
+   <p class=meta style='margin-top:.5rem'>Leads with citations: confirm the proposal text and
+    polarity against the primary source before publishing (precision over recall).</p></div>`;
+  d.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
 
 function newsroom(){
   const q=S.newsroom||[];
