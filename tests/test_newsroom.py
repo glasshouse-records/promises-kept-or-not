@@ -55,6 +55,7 @@ def test_story_queue_ranks_findings_above_candidates(conn, monkeypatch):
 def test_higher_share_vote_outranks_lower_within_kind(conn, monkeypatch):
     _seed_candidates(monkeypatch, [_candidate(theme="climate", shares=5_000),
                                    _candidate(theme="human-rights", shares=90_000_000)])
+    review.sync(conn)   # candidates are read from the materialized review queue
     q = [s for s in newsroom.story_queue(conn) if s["kind"] == "candidate"]
     assert q[0]["shares"] > q[1]["shares"]  # ranked by newsworthiness weight
 

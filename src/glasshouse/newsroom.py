@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 import math
 import sqlite3
-from dataclasses import asdict, fields
+from dataclasses import fields
 
 from .http import DATA_DIR
 
@@ -41,8 +41,6 @@ def _candidate_from_payload(payload: dict):
 
 def story_queue(conn: sqlite3.Connection, limit: int = 40) -> list[dict]:
     """Ranked publishable units with the analysis and draft state for each."""
-    from .review import fingerprint
-
     # Drafts already in flight, keyed by finding fingerprint.
     drafted: dict[str, set[str]] = {}
     for r in conn.execute(
@@ -74,24 +72,29 @@ def story_queue(conn: sqlite3.Connection, limit: int = 40) -> list[dict]:
             "next_step": next((s for s in _LADDER if s not in steps), None),
         })
 
-    # 2. Contradiction candidates — publishable AFTER review; ranked by weight.
-    from .contradictions import find_commitment_vote_contradictions
+    # 2. Contradiction candidates — read from the already-materialized review
+    #    queue (pending findings) rather than re-running the contradiction engine
+    #    on every call (that was ~37s of PDF-parsing + vote scans per page load,
+    #    and it duplicated what review.sync already wrote). This is a fast SELECT
+    #    and is consistent by construction with the Review tab.
     approved_fps = {s["key"] for s in stories}
-    for c in find_commitment_vote_contradictions(conn, limit_per_theme=10):
-        fp = fingerprint(c)
+    for r in conn.execute(
+            "SELECT fingerprint, payload FROM findings WHERE status='pending'"):
+        fp = r["fingerprint"]
         if fp in approved_fps:
             continue
-        shares = float(c.shares_voted or 0)
+        c = json.loads(r["payload"])
+        shares = float(c.get("shares_voted") or 0)
         stories.append({
             "key": fp, "kind": "candidate", "draftable": False,
             "status": "candidate — needs review before publish",
-            "headline": f"{c.institution_id} voted {c.how_voted} on {c.theme} "
-                        f"at {c.issuer_name}",
+            "headline": f"{c.get('institution_id')} voted {c.get('how_voted')} on "
+                        f"{c.get('theme')} at {c.get('issuer_name')}",
             "shares": shares,
             "score": round(0.5 + _shares_weight(shares), 3),
-            "why": [f"{c.theme} policy vs. {c.how_voted} vote",
+            "why": [f"{c.get('theme')} policy vs. {c.get('how_voted')} vote",
                     f"{int(shares):,} shares", "lexical match — quarantined"],
-            "payload": asdict(c), "drafted": sorted(drafted.get(fp, set())),
+            "payload": c, "drafted": sorted(drafted.get(fp, set())),
             "next_step": "review",
         })
 
