@@ -1,0 +1,27 @@
+{
+  "title": "Glasshouse — institutional accountability evidence dataset (say vs. do)",
+  "description": "<p>A public-interest dataset recording the gap between what major financial institutions publicly commit to (archived proxy-voting / stewardship policies) and what they actually do (SEC N-PX proxy votes, 13-F / N-PORT holdings), alongside the enforcement record. Built for researchers, journalists, and advocacy organizations to consume, verify, and cite.</p><p>This version covers 14 systemic asset managers with full say+do coverage (~91% of tracked voting AUM): BlackRock, Vanguard, State Street, Fidelity, J.P. Morgan Asset Management, Goldman Sachs Asset Management, BNY, Invesco, UBS Asset Management, T. Rowe Price, Franklin Templeton, DWS, Northern Trust, and BNP Paribas Asset Management. ~3.36M de-duplicated proxy votes span the 2023-2025 meeting years (with earlier years for some filers).</p><p>Every record carries a source URL and retrieval date; votes are de-duplicated (filter is_duplicate = 0); enforcement rows carry a resolution_type from a closed legal enum (a deferred-prosecution agreement is not a conviction; a docket is an allegation, not a finding). Coverage is partial by design and stated honestly in DATASHEET.md / COVERAGE.json. The bundle is independently verifiable via MANIFEST.sha256.</p>",
+  "upload_type": "dataset",
+  "access_right": "open",
+  "license": "cc-by-4.0",
+  "version": "2026-06-27",
+  "language": "eng",
+  "keywords": [
+    "proxy voting",
+    "SEC N-PX",
+    "asset managers",
+    "corporate governance",
+    "stewardship",
+    "shareholder voting",
+    "13-F holdings",
+    "ESG accountability",
+    "financial transparency",
+    "SEC EDGAR"
+  ],
+  "creators": [
+    {
+      "name": "Martin, Emanuel"
+    }
+  ],
+  "notes": "Code: MIT. Data: CC-BY-4.0. Before publishing, set creators.name (Family, Given), add \"orcid\" and \"affiliation\" if available, and confirm the version label matches the release directory (release/v<DATE>)."
+}
