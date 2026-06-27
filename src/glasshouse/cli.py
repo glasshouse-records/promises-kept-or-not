@@ -257,6 +257,24 @@ def cmd_investigate(args) -> int:
     return 2
 
 
+def cmd_agent(args) -> int:
+    from . import agent
+    conn = _conn()
+    briefs = agent.investigate_and_draft(conn, min_rate=args.min_rate,
+                                         min_votes=args.min_votes, top_n=args.top)
+    if not briefs:
+        print("  no say-vs-do gaps met the thresholds "
+              f"(rate ≥ {args.min_rate}, votes ≥ {args.min_votes}). Nothing drafted.")
+        return 0
+    from datetime import date as _d
+    print(f"\n  {len(briefs)} story drafts → data/agent/briefs/{_d.today().isoformat()}/")
+    print("  DRAFTS — unverified leads. A human verifies every source + promotes "
+          "via the review gate. Nothing here is published or sent.\n")
+    for i, b in enumerate(briefs, 1):
+        print(f"  {i:>2}. [score {b['score']}] {b['headline']}")
+    return 0
+
+
 def cmd_ingest_commitments(args) -> int:
     from .ingest import commitments
     conn = _conn()
@@ -947,6 +965,15 @@ def main(argv: list[str] | None = None) -> int:
     itr.add_argument("theme", help="a built-in theme, or any label with --keywords")
     itr.add_argument("--keywords", help="comma-separated keywords for a custom hypothesis")
     itr.set_defaults(func=cmd_investigate)
+
+    ag = sub.add_parser("agent", help="the findings agent: investigates and drafts cited "
+                        "story leads for human review (never publishes/sends)")
+    ag_sub = ag.add_subparsers(dest="action", required=True)
+    agr = ag_sub.add_parser("run", help="scan, rank, and draft the strongest say-vs-do leads")
+    agr.add_argument("--min-rate", type=float, default=0.6, help="min against-rate (default 0.6)")
+    agr.add_argument("--min-votes", type=int, default=10, help="min theme votes for confidence (default 10)")
+    agr.add_argument("--top", type=int, default=12, help="how many drafts to write (default 12)")
+    agr.set_defaults(func=cmd_agent)
 
     out = sub.add_parser("outreach").add_subparsers(dest="action", required=True)
     od = out.add_parser("draft")
