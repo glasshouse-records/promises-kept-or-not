@@ -143,6 +143,66 @@ def cmd_release(args) -> int:
     return 0
 
 
+def cmd_investigate(args) -> int:
+    from . import investigate
+    conn = _conn()
+
+    if args.action == "theme":
+        recs = investigate.theme_records(conn, args.theme)
+        committed = [r for r in recs if r.committed and r.n_theme]
+        print(f"\nTHEME: {args.theme} — managers that COMMIT to it, vs how they VOTE on it")
+        print("against-rate = AGAINST / (FOR+AGAINST) on proposals advancing the theme; "
+              "anti-theme proposals and legacy votes excluded.\n")
+        if not committed:
+            print("  no committed managers with theme votes yet.")
+            return 0
+        print(f"  {'manager':<26}{'against':>8}{'for':>6}{'rate':>7}   commitment (SAY)")
+        for r in committed:
+            print(f"  {r.institution_name[:25]:<26}{r.votes_against:>8}{r.votes_for:>6}"
+                  f"{r.against_rate*100:>6.0f}%   “{(r.commitment_quote or '')[:46]}…”")
+        top = committed[0]
+        print(f"\n  ── drill: {top.institution_name} — top AGAINST votes on {args.theme} ──")
+        print(f"     SAY [{top.doc_label} @ {top.doc_version}]: “{(top.commitment_quote or '')[:150]}”")
+        print(f"     cite: {top.doc_url}")
+        for e in top.examples[:args.examples]:
+            print(f"     • {e['meeting_date']}  AGAINST  {e['issuer_name'][:30]:<30} "
+                  f"{e['shares_voted']:>13,.0f} sh")
+            print(f"         “{e['vote_description'][:78]}”")
+        print(f"     (filing accession {top.examples[0]['accession'] if top.examples else 'n/a'} → EDGAR)")
+        return 0
+
+    if args.action == "matrix":
+        m = investigate.theme_matrix(conn)
+        themes = list(investigate.THEMES)
+        names = {i["id"]: i["display_name"] for i in
+                 conn.execute("SELECT id, display_name FROM institutions")}
+        print("\nHYPOCRISY MATRIX — against-rate (%) on each theme, for managers that "
+              "publicly commit to it.\nBlank = no commitment / no votes on that theme.\n")
+        print("  " + " " * 22 + "".join(f"{t[:9]:>11}" for t in themes))
+        for iid in sorted(m, key=lambda k: -max(m[k].values())):
+            cells = "".join((f"{m[iid][t]*100:>10.0f}%" if t in m[iid] else f"{'·':>11}")
+                            for t in themes)
+            print(f"  {names.get(iid, iid)[:22]:<22}{cells}")
+        print("\n  Read a row left→right for a manager's say-vs-do across themes; "
+              "a column for who's worst on a theme.")
+        print("  Drill any cell: glasshouse investigate theme <theme>")
+        return 0
+
+    if args.action == "institution":
+        recs = investigate.institution_record(conn, args.id)
+        if not recs:
+            print(f"  no record for institution '{args.id}'")
+            return 0
+        name = next(iter(recs.values())).institution_name
+        print(f"\n{name} — say-vs-do across themes\n")
+        for theme, r in recs.items():
+            say = "committed" if r.committed else "no commitment"
+            rate = f"{r.against_rate*100:.0f}% against" if r.n_theme else "no theme votes"
+            print(f"  {theme:<20} {say:<14} {rate:<16} (for {r.votes_for}, against {r.votes_against})")
+        return 0
+    return 2
+
+
 def cmd_ingest_commitments(args) -> int:
     from .ingest import commitments
     conn = _conn()
@@ -807,6 +867,19 @@ def main(argv: list[str] | None = None) -> int:
                      help="also bundle a SQLite browse view (≈doubles size; "
                           "CSV/Parquet are the canonical formats)")
     rel.set_defaults(func=cmd_release)
+
+    inv = sub.add_parser("investigate", help="connect SAY↔DO: find managers that "
+                         "commit to a theme but vote against it (the finding engine)")
+    inv_sub = inv.add_subparsers(dest="action", required=True)
+    it = inv_sub.add_parser("theme", help="one theme: leaderboard of committed managers by against-rate + drill")
+    it.add_argument("theme", help="climate | anti-corruption | human-rights | lobbying-disclosure | board-diversity")
+    it.add_argument("--examples", type=int, default=8)
+    it.set_defaults(func=cmd_investigate)
+    im = inv_sub.add_parser("matrix", help="themes × managers against-rate grid (the hypocrisy matrix)")
+    im.set_defaults(func=cmd_investigate)
+    ii = inv_sub.add_parser("institution", help="one manager's say-vs-do across all themes")
+    ii.add_argument("id")
+    ii.set_defaults(func=cmd_investigate)
 
     out = sub.add_parser("outreach").add_subparsers(dest="action", required=True)
     od = out.add_parser("draft")
