@@ -206,6 +206,16 @@ class _Handler(BaseHTTPRequestHandler):
                            "application/json")
             finally:
                 conn.close()
+        elif self.path.startswith("/api/company"):
+            from urllib.parse import parse_qs, urlparse
+            q = (parse_qs(urlparse(self.path).query).get("q") or [""])[0].strip()
+            conn = _conn()                       # read-only: company-scan never writes
+            try:
+                from . import investigate
+                out = investigate.company_record(conn, q) if q else {"company": "", "holders": []}
+                self._send(200, json.dumps(out, default=str).encode(), "application/json")
+            finally:
+                conn.close()
         else:
             self._send(404, b"not found", "text/plain")
 
@@ -317,6 +327,7 @@ function tabs(){
   const invN=S.investigate?S.investigate.institutions.filter(i=>
     Object.values(i.cells).some(c=>c.committed&&c.n)).length:0;
   const t=[['investigate','Investigate',invN],
+    ['company','Company',''],
     ['drafts','Drafts',((S.agent_drafts||{}).briefs||[]).length],
     ['newsroom','Newsroom',(S.newsroom||[]).length],
     ['review','Review',S.review.length],['leads','Leads',S.leads.length],
@@ -327,7 +338,50 @@ function tabs(){
   $('#tabs').innerHTML=t.map(([k,l,n])=>
     `<button class='${k===tab?'on':''}' onclick='tab="${k}";render()'>${l} <span class=n>${n}</span></button>`).join('')}
 
-function render(){tabs();({investigate,drafts,newsroom,review,leads,outreach,signals,doctor,pipeline})[tab]()}
+function render(){tabs();({investigate,company,drafts,newsroom,review,leads,outreach,signals,doctor,pipeline})[tab]()}
+
+function company(){
+  $('#main').innerHTML=`<p class=secnote>Start from a <b>company</b>: who holds it (13-F value) and how
+   they voted there. Type a name and search — AGAINST votes are theme-tagged; everything is a lead to verify.</p>
+   <div class=actions>
+    <input type=text id=cq placeholder='e.g. Exxon Mobil, Microsoft, Boeing' style='max-width:24rem'
+     onkeydown='if(event.key==="Enter")runCompany()'>
+    <button class=approve onclick='runCompany()'>Search</button><span class=st></span></div>
+   <div id=cres></div>`;
+  const last=$('#cq'); if(last) last.focus();
+}
+async function runCompany(){
+  const q=$('#cq').value.trim(), st=$('.actions .st'), res=$('#cres');
+  if(!q){st.innerHTML="<span class=err>type a company</span>";return}
+  st.innerHTML="<span class=meta>searching…</span>"; res.innerHTML="";
+  const r=await (await fetch('/api/company?q='+encodeURIComponent(q))).json();
+  st.innerHTML="";
+  const rows=(r.holders||[]).filter(h=>h.held_usd||h.votes_against||h.votes_for);
+  if(!rows.length){res.innerHTML="<p class=empty>No holdings or votes found for “"+e(q)+"”.</p>";return}
+  window._co=rows;
+  res.innerHTML=`<h3 style='margin-top:1rem'>${e(r.company)} — who holds it & how they voted there</h3>
+   <table class=heat><thead><tr><th></th><th>held (13-F)</th><th>for</th><th>against</th>
+    <th style='text-align:left'>notable AGAINST vote</th></tr></thead><tbody>`+
+   rows.map((h,i)=>`<tr>
+     <td class=rowname>${e(h.institution_name)}</td>
+     <td style='font-family:var(--mono)'>${h.held_usd?'$'+(h.held_usd/1e9).toFixed(1)+'B':'—'}</td>
+     <td>${h.votes_for}</td>
+     <td>${h.votes_against?`<a href='#' onclick='coDrill(${i});return false' style='color:var(--against);font-weight:700'>${h.votes_against}</a>`:'0'}</td>
+     <td class=meta style='text-align:left'>${h.examples.length?e(h.examples[0].vote_description.slice(0,52)):''}</td></tr>`).join('')+
+   `</tbody></table><p class=meta>Click an AGAINST count for the cited votes.</p><div id=codrill></div>`;
+}
+function coDrill(i){
+  const h=window._co[i], d=$('#codrill');
+  d.innerHTML=`<div class='card claim'><span class=ribbon>lead — verify before publishing</span>
+   <h3>${e(h.institution_name)} — AGAINST votes here</h3>`+
+   (h.examples.map(x=>`<div class=stat><span>${e(x.meeting_date)} ·
+     ${Math.round(Number(x.shares_voted)).toLocaleString('en-US')} sh ·
+     <span class=meta>${(x.themes||[]).map(e).join(', ')}</span><br>
+     <span class=meta>“${e(x.vote_description)}” — N-PX
+     <a href='${e(x.source_url||"#")}' target=_blank>${e(x.accession)}</a></span></span></div>`).join('')
+     ||"<p class=meta>no cited examples</p>")+`</div>`;
+  d.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
 
 function drafts(){
   const D=S.agent_drafts;

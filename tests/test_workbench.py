@@ -64,6 +64,33 @@ def _post(url, payload):
         return e.code, json.loads(e.read())
 
 
+def test_company_endpoint_joins_holdings_and_votes(tmp_path, monkeypatch):
+    monkeypatch.setattr(workbench, "DB_PATH", tmp_path / "co.db")
+    monkeypatch.setattr(outreach, "OUTBOX_DIR", tmp_path / "outbox")
+    conn = ledger.connect(tmp_path / "co.db")
+    conn.execute("INSERT INTO institutions (id, display_name) VALUES ('blackrock','BlackRock Inc.')")
+    conn.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+                 "retrieval_date) VALUES ('NPX','1','blackrock','N-PX','https://e','2025-01-01')")
+    conn.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, vote_description, "
+                 "how_voted, shares_voted, is_duplicate) VALUES ('NPX','EXXON MOBIL CORP','C1',"
+                 "'05/29/2024','Shareholder proposal on greenhouse gas emissions','AGAINST',5000,0)")
+    conn.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+                 "retrieval_date) VALUES ('F13','1','blackrock','13F-HR','https://e','2025-02-01')")
+    conn.execute("INSERT INTO holdings (accession, issuer_name, cusip, value_usd, shares) "
+                 "VALUES ('F13','EXXON MOBIL CORP','C1',9000000000,100)")
+    conn.commit()
+    conn.close()
+    srv = workbench.serve(port=0)
+    try:
+        out = _get(f"http://127.0.0.1:{srv.server_address[1]}/api/company?q=Exxon")
+        assert "EXXON" in out["company"].upper()
+        blk = next(h for h in out["holders"] if h["institution_id"] == "blackrock")
+        assert blk["held_usd"] == 9000000000 and blk["votes_against"] >= 1
+        assert "climate" in blk["examples"][0]["themes"]
+    finally:
+        srv.shutdown()
+
+
 def test_state_exposes_all_desks(server):
     s = _get(server + "/api/state")
     assert len(s["review"]) == 1
