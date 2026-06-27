@@ -91,7 +91,7 @@ def state(conn: sqlite3.Connection) -> dict:
     signals = [dict(r) for r in conn.execute(
         "SELECT ts, kind, detail FROM signals ORDER BY id DESC LIMIT 10")]
 
-    from . import council, investigate, newsroom
+    from . import agent, council, investigate, newsroom
     recs = council.recommendations(conn)
     for f in pending:
         f["council"] = recs.get(f["fingerprint"])
@@ -106,6 +106,7 @@ def state(conn: sqlite3.Connection) -> dict:
         "newsroom": newsroom.story_queue(conn),
         "pipeline": newsroom.pipeline_status(conn),
         "investigate": investigate.load_matrix(),   # cached hypocrisy matrix (or None)
+        "agent_drafts": agent.load_latest_briefs(),  # latest agent-drafted story leads (or None)
     }
 
 
@@ -316,6 +317,7 @@ function tabs(){
   const invN=S.investigate?S.investigate.institutions.filter(i=>
     Object.values(i.cells).some(c=>c.committed&&c.n)).length:0;
   const t=[['investigate','Investigate',invN],
+    ['drafts','Drafts',((S.agent_drafts||{}).briefs||[]).length],
     ['newsroom','Newsroom',(S.newsroom||[]).length],
     ['review','Review',S.review.length],['leads','Leads',S.leads.length],
     ['outreach','Outreach',S.outreach.filter(o=>o.status!=='declined').length],
@@ -325,7 +327,26 @@ function tabs(){
   $('#tabs').innerHTML=t.map(([k,l,n])=>
     `<button class='${k===tab?'on':''}' onclick='tab="${k}";render()'>${l} <span class=n>${n}</span></button>`).join('')}
 
-function render(){tabs();({investigate,newsroom,review,leads,outreach,signals,doctor,pipeline})[tab]()}
+function render(){tabs();({investigate,drafts,newsroom,review,leads,outreach,signals,doctor,pipeline})[tab]()}
+
+function drafts(){
+  const D=S.agent_drafts;
+  if(!D||!(D.briefs||[]).length){$('#main').innerHTML="<p class=empty>No agent drafts yet. Run "+
+    "<code>glasshouse agent run</code> — it investigates the dataset and writes cited story leads here.</p>";return}
+  let h=`<p class=secnote>The findings agent investigated the dataset and drafted these cited story
+   <b>leads</b>, ranked by a transparent score (gap × vote-count × manager AUM). Generated ${e(D.generated)}.
+   Every draft is an <b>unverified lead</b> — verify each primary source and promote via Review before
+   anything is published. Nothing here is sent or published.</p>`;
+  h+=D.briefs.map((b,i)=>`<div class='card claim'>
+     <span class=ribbon>agent draft — unverified lead</span>
+     <div style='display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap'>
+      <span class=meta>#${i+1} · score ${e(b.score)} · ${Math.round(b.against_rate*100)}% against · ${e(b.theme)}</span></div>
+     <h3 style='margin:.2rem 0'>${e(b.headline)}</h3>
+     <p class=meta>${e(b.standfirst)}</p>
+     <details><summary class=meta>full cited draft + evidence</summary>
+      <pre class=dossier>${e(b.body)}</pre></details></div>`).join('');
+  $('#main').innerHTML=h;
+}
 
 const _maxRate=i=>Math.max(0,...Object.values(i.cells).filter(c=>c.committed&&c.n).map(c=>c.rate));
 function investigate(){

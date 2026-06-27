@@ -116,7 +116,25 @@ def investigate_and_draft(conn: sqlite3.Connection, *, min_rate: float = 0.6,
     index = {"generated": datetime.now(UTC).isoformat(timespec="seconds"),
              "params": {"min_rate": min_rate, "min_votes": min_votes, "top_n": top_n},
              "briefs": [{k: b[k] for k in ("institution_id", "institution_name", "theme",
-                         "against_rate", "votes_against", "votes_for", "score", "headline")}
+                         "against_rate", "votes_against", "votes_for", "score", "headline",
+                         "standfirst")}
                         for b in briefs]}
     (out / "index.json").write_text(json.dumps(index, indent=2))
     return briefs
+
+
+def load_latest_briefs() -> dict | None:
+    """The most recent agent run (index + each draft's full Markdown body), or
+    None if the agent hasn't run. The workbench reads this for human review."""
+    if not BRIEFS_DIR.exists():
+        return None
+    dirs = sorted(p for p in BRIEFS_DIR.iterdir() if p.is_dir() and (p / "index.json").exists())
+    if not dirs:
+        return None
+    latest = dirs[-1]
+    idx = json.loads((latest / "index.json").read_text())
+    for b in idx["briefs"]:
+        md = latest / f"{b['institution_id']}--{b['theme']}.md"
+        b["body"] = md.read_text() if md.exists() else ""
+    idx["dir"] = str(latest)
+    return idx
