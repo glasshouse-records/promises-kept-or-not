@@ -209,6 +209,22 @@ def cmd_investigate(args) -> int:
               "(or click it in the workbench Investigate tab).")
         return 0
 
+    if args.action == "trend":
+        kws = [k.strip() for k in args.keywords.split(",")] if getattr(args, "keywords", None) else None
+        tr = investigate.theme_trend(conn, args.theme, keywords=kws)
+        years = sorted({y for v in tr.values() for y in v["years"]})
+        print(f"\nTREND: against-rate (%) by meeting year on '{args.theme}', committed managers\n")
+        if not years:
+            print("  no committed managers with dated theme votes.")
+            return 0
+        print("  " + " " * 24 + "".join(f"{y:>8}" for y in years))
+        for iid in sorted(tr, key=lambda k: -max(d["rate"] for d in tr[k]["years"].values())):
+            row = "".join((f"{tr[iid]['years'][y]['rate']*100:>7.0f}%" if y in tr[iid]["years"]
+                           else f"{'·':>8}") for y in years)
+            print(f"  {tr[iid]['name'][:24]:<24}{row}")
+        print("\n  A rising row = a manager voting against the theme MORE over time.")
+        return 0
+
     if args.action == "company":
         r = investigate.company_record(conn, args.name)
         rows = [h for h in r["holders"] if h["held_usd"] or h["votes_against"] or h["votes_for"]]
@@ -927,6 +943,10 @@ def main(argv: list[str] | None = None) -> int:
     ic = inv_sub.add_parser("company", help="who holds a company (13-F) and how they voted there")
     ic.add_argument("name", help="company name or fragment, e.g. 'Exxon'")
     ic.set_defaults(func=cmd_investigate)
+    itr = inv_sub.add_parser("trend", help="against-rate by meeting year (did a manager shift over time?)")
+    itr.add_argument("theme", help="a built-in theme, or any label with --keywords")
+    itr.add_argument("--keywords", help="comma-separated keywords for a custom hypothesis")
+    itr.set_defaults(func=cmd_investigate)
 
     out = sub.add_parser("outreach").add_subparsers(dest="action", required=True)
     od = out.add_parser("draft")

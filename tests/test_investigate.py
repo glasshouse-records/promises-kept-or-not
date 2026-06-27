@@ -124,6 +124,16 @@ def test_company_record_joins_holdings_and_votes(conn):
     assert ex["accession"] == "ACC" and ex["source_url"] == "https://e"
 
 
+def test_theme_trend_by_year(conn):
+    tr = investigate.theme_trend(conn, "climate")
+    blk = tr.get("blackrock")
+    assert blk and "2024" in blk["years"]          # fixture votes are dated 2024
+    assert blk["years"]["2024"]["against"] == 2 and blk["years"]["2024"]["for"] == 1
+    assert round(blk["years"]["2024"]["rate"], 2) == 0.67
+    # acme has no climate commitment ⇒ excluded from the say-vs-do trend
+    assert "acme" not in tr
+
+
 def test_custom_keyword_hypothesis(conn):
     """A journalist can test their own hypothesis via keywords, not just the
     5 built-in themes. 'greenhouse,emission' should rediscover the climate-ish

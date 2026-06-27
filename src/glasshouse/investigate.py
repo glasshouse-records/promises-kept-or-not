@@ -212,6 +212,51 @@ def institution_record(conn: sqlite3.Connection, inst_id: str) -> dict[str, Them
     return out
 
 
+def theme_trend(conn: sqlite3.Connection, theme: str | None = None, *,
+                keywords: list[str] | None = None) -> dict:
+    """Against-rate per meeting YEAR, per institution, for a theme — so a
+    researcher can see a shift over proxy seasons (e.g. after a manager left a
+    climate alliance). Restricted to committed managers (the say-vs-do story).
+    Returns {institution_id: {name, years: {YYYY: {for, against, rate}}}}."""
+    commitment_pats, proposal_pats, prefilter = _theme_spec(theme, keywords)
+    rx = re.compile("|".join(proposal_pats), re.IGNORECASE)
+    like = " OR ".join(["v.vote_description LIKE ?"] * len(prefilter))
+    params = [f"%{t}%" for t in prefilter]
+    agg: dict[str, dict[str, list]] = {}
+    for v in conn.execute(
+        f"""SELECT f.institution_id AS iid, v.meeting_date, v.vote_description, v.how_voted
+            FROM votes v JOIN filings f ON f.accession=v.accession
+            WHERE v.is_duplicate=0 AND IFNULL(v.vote_source,'')!='legacy_html'
+              AND ({like})""", params):
+        desc = v["vote_description"] or ""
+        if not rx.search(desc) or proposal_is_oppositional(desc):
+            continue
+        md = (v["meeting_date"] or "").strip()
+        year = md[-4:] if len(md) >= 4 and md[-4:].isdigit() else None
+        if not year:
+            continue
+        hv = (v["how_voted"] or "").strip().upper()
+        b = agg.setdefault(v["iid"], {}).setdefault(year, [0, 0])
+        if hv == "FOR":
+            b[0] += 1
+        elif hv == "AGAINST":
+            b[1] += 1
+    names = {i["id"]: i["display_name"] for i in
+             conn.execute("SELECT id, display_name FROM institutions")}
+    out = {}
+    for iid, years in agg.items():
+        if not _commitment_for(conn, iid, commitment_pats):
+            continue  # no SAY ⇒ no say-vs-do trend
+        yd = {}
+        for y, (f, a) in sorted(years.items()):
+            denom = f + a
+            if denom:
+                yd[y] = {"for": f, "against": a, "rate": round(a / denom, 4)}
+        if yd:
+            out[iid] = {"name": names.get(iid, iid), "years": yd}
+    return out
+
+
 def company_record(conn: sqlite3.Connection, query: str) -> dict:
     """Start from a COMPANY: which managers HOLD it (13-F value), and how they
     VOTED at it — the join a journalist wants for 'who held $Xbn and still
