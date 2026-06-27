@@ -1,101 +1,110 @@
 # Glasshouse
 
-**An autonomous institutional-accountability watchdog.**
+**A public-interest accountability dataset: what major financial institutions
+*say* versus what they *do*.**
 
-Glasshouse makes the gap between what major financial institutions **publicly
-commit to** and what they **actually do** — hold, vote, finance, stay silent
-about — permanently visible, machine-verifiable, and hard to ignore.
+Glasshouse is the cleanest, best-documented, most-traceable machine-readable
+record of the gap between what the world's largest asset managers **publicly
+commit to** (archived stewardship/proxy-voting policies) and what they
+**actually do** (SEC N-PX proxy votes, 13-F / N-PORT holdings) — alongside the
+**enforcement record**. Built so researchers, journalists, and advocacy
+organizations can consume, verify, and cite it.
 
-> This repo is public from day 1, before it is good. It ships deltas.
+**The dataset is the product.** Every record traces to a primary source with a
+retrieval date; nothing is summed without de-duplication; coverage is stated
+honestly. Findings, analysis, and outreach are optional layers built on top —
+not the point.
 
-## What it produces
+## What's in it
 
-Not database rows. **Defensible, cited, news-shaped claims.** Example shape:
-
-> BlackRock's stewardship policy (archived 2026-01-12, p.4) commits to
-> anti-corruption. Oracle has two SEC FCPA settlements (Rel. 34-67574,
-> 34-95971). At Oracle's 2024 AGM, BlackRock's flagship funds voted AGAINST
-> the accountability proposal — while holding $7.1B.
-
-Every claim must satisfy three properties:
-
-1. **Every clause traces to a primary source** with a reference number and
-   retrieval date.
-2. **It survives the "passive index" defense** — choices (votes, engagement,
-   silence) are preferred over mere holdings.
-3. **A libel lawyer would shrug at the phrasing.** Acts, dates, amounts,
-   votes, silences. Never motive.
-
-## How it works
-
-| Layer | What |
+| | Coverage |
 |---|---|
-| **SAY** | Versioned snapshots of institutions' own published commitments (stewardship policies, ESG reports, PRI status), incl. Wayback history. *(Phase 2)* |
-| **DO** | SEC EDGAR N-PX proxy votes (the spine — votes are active choices), 13-F / N-PORT holdings. |
-| **DONE** | Enforcement universe: DOJ FCPA, SEC litigation, OFAC SDN, World Bank debarment, NLRB, UNGC expulsions, and more — with **resolution type preserved** (a DPA is not a conviction; a docket is an allegation, not a finding). |
-| **Join** | Entity resolution: CUSIP → LEI → CIK → guarded fuzzy match. Precision over recall; every fuzzy match is logged with its score. |
-| **Findings** | The contradiction engine joins SAY × DO; the diff engine makes every change a publishable delta. *(Phase 3)* |
+| **SAY** | Versioned, content-addressed snapshots of institutions' own proxy-voting / stewardship policies (live + Wayback history). |
+| **DO** | SEC N-PX proxy votes (the spine — votes are active choices), de-duplicated; 13-F / N-PORT holdings. |
+| **DONE** | Enforcement universe (DOJ FCPA, SEC, OFAC, Federal Reserve, World Bank debarment, NLRB, UNGC, …) with **resolution type preserved** — a DPA is not a conviction; a docket is an allegation, not a finding. |
 
-See [METHODOLOGY.md](METHODOLOGY.md) for formulas, source list, legal
-distinctions, and limitations. Ambiguous findings are quarantined in
-[PENDING_VERIFICATION.md](PENDING_VERIFICATION.md) until a human verifies the
-primary source.
+**14 systemic asset managers** have *full say+do* coverage — both archived
+policy and proxy votes — representing **~91% of tracked voting AUM**:
+BlackRock, Vanguard, State Street, Fidelity, J.P. Morgan AM, Goldman Sachs AM,
+BNY, Invesco, UBS AM, T. Rowe Price, Franklin Templeton, DWS, Northern Trust,
+and BNP Paribas AM. Proxy votes span **2020–2025** (machine-readable N-PX
+covers 2023–2025 for most filers; earlier years are recovered from legacy
+filings where the format allows).
 
-## Status
+Coverage is **partial by design and stated as such** — see the generated
+`COVERAGE.json` / `DATASHEET.md` in each release. Absence of a manager means no
+data was collected, not a clean record.
 
-All seven phases have working implementations (live-validated 2026-06-11):
+## The release: download, verify, cite
 
-- **Data:** 2.16M N-PX vote rows, 48k 13-F holdings, 12.7k enforcement
-  actions, versioned commitment snapshots incl. Wayback history.
-- **Findings:** contradiction engine (SAY×DO candidates with full citation
-  chains), vote-divergence report, diff engine, event-triggered alert packs.
-- **Interfaces:** static site + Atom feed (`glasshouse site`), Datasette
-  config ([datasette/metadata.json](datasette/metadata.json)), MCP server
-  (`python -m glasshouse.mcp_server`).
-- **Outreach:** human-gated draft queue (inquiries, posts), non-response
-  ledger, annual awards rankings. Nothing sends itself, ever.
+`glasshouse release` builds a versioned, self-describing, **independently
+verifiable** bundle — the artifact meant for the world:
 
-Publication is currently deferred by the maintainer; everything builds and
-runs locally. Roadmap in [METHODOLOGY.md](METHODOLOGY.md#roadmap).
+```
+release/v<DATE>/
+  facts/<table>.csv[.gz]    open everywhere (pandas, R, DuckDB, spreadsheets)
+  facts/<table>.parquet     typed/columnar for analysis at scale
+  datapackage.json          Frictionless schema + provenance + per-file SHA-256
+  DATASHEET.md              schema, honest coverage, limitations
+  COVERAGE.json             per-institution scope
+  MANIFEST.sha256           checksum of every file
+  README.md                 how to cite, how to verify, license
+```
+
+Verify the bundle without trusting us:
+
+```sh
+cd release/v<DATE> && sha256sum -c MANIFEST.sha256
+```
+
+Every row carries `source_url` + `retrieval_date`. License: data **CC-BY-4.0**
+— cite "Glasshouse" with a link / DOI.
+
+## Provenance guarantees (enforced, not promised)
+
+- Every ledger record carries `source_url` + `retrieval_date`; enforcement rows
+  carry a `resolution_type` from a closed legal enum.
+- **Never sum `shares_voted` without `is_duplicate = 0`** — de-duplication is
+  built into the public views, not left to the consumer.
+- `aum_usd_tr` is **managed / voting AUM**, never bank balance-sheet or custody
+  assets (custody banks and divested fund arms are corrected to their true
+  voting footprint).
+- Name-level joins are **leads, never findings**; the public `findings` table
+  contains only human-approved claims. Unvalidated/legacy-parsed data is
+  quarantined out of releases.
+- Free public primary sources only; no paid APIs, no browser impersonation.
+  Blocked sources degrade to documented Wayback snapshots.
+
+See [METHODOLOGY.md](METHODOLOGY.md) for the full source list, legal
+distinctions, the balanced-index formula, and limitations. Ambiguous items are
+held in [PENDING_VERIFICATION.md](PENDING_VERIFICATION.md).
 
 ## Quick start
 
 ```bash
 python3 -m venv .venv && . .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[dev,release]"      # [release] adds Parquet output (pyarrow)
 
-glasshouse init-db                       # create data/glasshouse.db
-glasshouse seed                          # load curated enforcement snapshots
-glasshouse ingest enforcement --source ofac        # live OFAC SDN bulk
-glasshouse ingest npx --cik 1100663 --max-filings 1  # iShares Trust proxy votes (large download)
-glasshouse ingest commitments --wayback  # versioned policy snapshots + history
-glasshouse report flagged-votes          # votes at enforcement-flagged issuers (leads)
-glasshouse report vote-divergence        # same manager voting both ways (finding-grade)
-glasshouse report policy-edits           # documents with multiple versions
-glasshouse diff --record                 # deltas since last run — the publishable unit
-glasshouse review sync && glasshouse review list   # human gate: candidates → findings
-glasshouse report concern --company "Oracle"       # transparent concern index
-glasshouse report holdings-diff --institution blackrock
-glasshouse digest                        # render weekly digest body (human sends)
-glasshouse export                        # dated public SQLite snapshot for mirrors
-glasshouse integrity                     # ledger integrity checks
+export GLASSHOUSE_CONTACT="you@example.org"   # required by SEC fair-access policy
+
+glasshouse init-db                            # create the ledger
+glasshouse seed                               # curated enforcement snapshots
+glasshouse ingest npx --institution blackrock --max-filings 2   # proxy votes
+glasshouse ingest commitments --wayback       # versioned policy snapshots
+glasshouse integrity                          # ledger integrity checks
+glasshouse release                            # build the citable bundle
 ```
 
-Set a contact email for SEC requests (required by SEC fair-access policy):
+The institution registry lives in [config/institutions.yaml](config/institutions.yaml);
+adding a filer is one entry there.
 
-```bash
-export GLASSHOUSE_CONTACT="you@example.org"
-```
+## Optional layers (built on the dataset, not part of its core)
 
-## Hard rules
-
-- Free public primary sources only. No paid APIs.
-- Resolution type (guilty plea / DPA / NPA / civil settlement) is preserved
-  and disclosed in every output.
-- Court dockets are labeled **allegations**, never findings.
-- Nothing is published autonomously. Every outbound action requires explicit
-  human approval. *(Publicist agent: Phase 6.)*
+A contradiction engine (SAY × DO), a diff engine, a concern index, a localhost
+operator workbench, a static site, and a read-only MCP server all consume the
+dataset. They are **human-gated**: name-join leads never auto-promote to
+findings, and **nothing is published or sent without explicit human action.**
 
 ## License
 
-Code: MIT. Data outputs: CC-BY 4.0 — cite "Glasshouse" with a link.
+Code: **MIT**. Data outputs: **CC-BY-4.0** — cite "Glasshouse" with a link.
