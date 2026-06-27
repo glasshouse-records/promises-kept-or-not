@@ -108,6 +108,35 @@ def test_build_matrix_cells_carry_say_and_do(conn):
     assert acme is None or "climate" not in acme["cells"]
 
 
+def test_custom_keyword_hypothesis(conn):
+    """A journalist can test their own hypothesis via keywords, not just the
+    5 built-in themes. 'greenhouse,emission' should rediscover the climate-ish
+    votes (the policy text also mentions emissions, so BlackRock is committed)."""
+    recs = investigate.theme_records(conn, "my-test", keywords=["greenhouse", "emission"])
+    blk = next(r for r in recs if r.institution_id == "blackrock")
+    assert blk.theme == "my-test"
+    assert blk.committed is True            # policy mentions emissions reduction
+    assert blk.votes_against >= 1
+    assert {"EXXON", "CHEVRON"} & {e["issuer_name"] for e in blk.examples}
+
+
+def test_evidence_pack_is_cited_markdown(conn):
+    blk = next(r for r in investigate.theme_records(conn, "climate") if r.institution_id == "blackrock")
+    pack = investigate.evidence_pack(blk, hypothesis="test hypothesis")
+    assert "# BlackRock Inc. — climate" in pack
+    assert "test hypothesis" in pack
+    assert "What it says" in pack and "What it does" in pack
+    assert blk.commitment_quote[:20] in pack          # SAY cited
+    assert "EXXON" in pack and "N-PX" in pack          # DO cited
+    assert "verify" in pack.lower()                    # framed as a lead
+
+
+def test_examples_carry_source_url(conn):
+    blk = next(r for r in investigate.theme_records(conn, "climate") if r.institution_id == "blackrock")
+    assert all("source_url" in e for e in blk.examples)
+    assert blk.examples[0]["source_url"] == "https://e"
+
+
 def test_cache_matrix_roundtrip(conn, tmp_path, monkeypatch):
     monkeypatch.setattr(investigate, "MATRIX_CACHE", tmp_path / "investigate" / "matrix.json")
     assert investigate.load_matrix() is None

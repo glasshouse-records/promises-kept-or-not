@@ -63,6 +63,22 @@ _PREFILTER: dict[str, list[str]] = {
 _EXAMPLE_LIMIT = 10
 
 
+def _theme_spec(theme: str | None, keywords: list[str] | None):
+    """Resolve a built-in theme name OR custom keywords into
+    (commitment_patterns, proposal_patterns, prefilter_terms). Custom keywords
+    serve as all three — so a journalist can test any hypothesis ('weapons',
+    'tobacco', 'forced labor') without it being hardcoded."""
+    if keywords:
+        pats = [k.strip() for k in keywords if k.strip()]
+        if not pats:
+            raise ValueError("no usable keywords")
+        return pats, pats, pats
+    if theme not in THEMES:
+        raise ValueError(f"unknown theme {theme!r}; known: {', '.join(THEMES)} "
+                         "(or pass keywords= to test your own)")
+    return THEMES[theme]["commitment"], THEMES[theme]["proposal"], _PREFILTER[theme]
+
+
 @dataclass
 class ThemeRecord:
     theme: str
@@ -82,11 +98,11 @@ class ThemeRecord:
     tension: float = 0.0
 
 
-def _commitment_for(conn: sqlite3.Connection, inst_id: str, theme: str):
-    """Strongest binding, non-discretionary commitment sentence for a theme,
-    from the institution's latest policy version that has one. Returns
-    (quote, row) or None."""
-    pats = THEMES[theme]["commitment"]
+def _commitment_for(conn: sqlite3.Connection, inst_id: str, commitment_pats: list[str]):
+    """Strongest binding, non-discretionary commitment sentence matching the
+    given patterns, from the institution's latest policy version that has one.
+    Returns (quote, row) or None."""
+    pats = commitment_pats
     best = None
     best_v = ""
     for r in conn.execute(
@@ -108,54 +124,63 @@ def _commitment_for(conn: sqlite3.Connection, inst_id: str, theme: str):
     return best
 
 
-def _theme_votes(conn: sqlite3.Connection, inst_id: str, theme: str):
-    """For an institution, the for/against/abstain counts and the cited AGAINST
-    examples on proposals that ADVANCE the theme (polarity-guarded)."""
-    terms = _PREFILTER[theme]
-    like = " OR ".join(["LOWER(v.vote_description) LIKE ?"] * len(terms))
-    params = [inst_id] + [f"%{t}%" for t in terms]
-    rx = _theme_proposal_re(theme)
-
-    f = a = ab = 0
-    against: list[dict] = []
+def _scan_one(conn: sqlite3.Connection, proposal_pats: list[str],
+              prefilter_terms: list[str]) -> dict[str, dict]:
+    """ONE pass over the whole vote table for a single theme/hypothesis,
+    bucketed by institution (vs. a per-institution scan). Returns
+    {institution_id: {for, against, abstain, examples}}."""
+    like = " OR ".join(["v.vote_description LIKE ?"] * len(prefilter_terms))  # ASCII-case-insensitive
+    params = [f"%{t}%" for t in prefilter_terms]
+    rx = re.compile("|".join(proposal_pats), re.IGNORECASE)
+    out: dict[str, dict] = {}
     for v in conn.execute(
-        f"""SELECT v.accession, v.issuer_name, v.meeting_date, v.vote_description,
-                   v.how_voted, v.shares_voted
+        f"""SELECT f.institution_id AS iid, v.accession, v.issuer_name, v.meeting_date,
+                   v.vote_description, v.how_voted, v.shares_voted, f.source_url
             FROM votes v JOIN filings f ON f.accession = v.accession
-            WHERE f.institution_id = ? AND v.is_duplicate = 0
-              AND IFNULL(v.vote_source,'') != 'legacy_html'
+            WHERE v.is_duplicate = 0 AND IFNULL(v.vote_source,'') != 'legacy_html'
               AND ({like})""", params):
         desc = v["vote_description"] or ""
         if not rx.search(desc) or proposal_is_oppositional(desc):
             continue
         hv = (v["how_voted"] or "").strip().upper()
+        b = out.setdefault(v["iid"], {"for": 0, "against": 0, "abstain": 0, "examples": []})
         if hv == "FOR":
-            f += 1
+            b["for"] += 1
         elif hv == "AGAINST":
-            a += 1
-            against.append({"issuer_name": v["issuer_name"], "meeting_date": v["meeting_date"],
-                            "vote_description": desc[:200], "how_voted": "AGAINST",
-                            "shares_voted": v["shares_voted"] or 0.0, "accession": v["accession"]})
+            b["against"] += 1
+            b["examples"].append({"issuer_name": v["issuer_name"], "meeting_date": v["meeting_date"],
+                                  "vote_description": desc[:200], "how_voted": "AGAINST",
+                                  "shares_voted": v["shares_voted"] or 0.0,
+                                  "accession": v["accession"], "source_url": v["source_url"] or ""})
         elif hv == "ABSTAIN":
-            ab += 1
-    against.sort(key=lambda e: -(e["shares_voted"] or 0.0))
-    return f, a, ab, against[:_EXAMPLE_LIMIT]
+            b["abstain"] += 1
+    for b in out.values():
+        b["examples"].sort(key=lambda e: -(e["shares_voted"] or 0.0))
+        b["examples"] = b["examples"][:_EXAMPLE_LIMIT]
+    return out
 
 
-def theme_records(conn: sqlite3.Connection, theme: str) -> list[ThemeRecord]:
+def theme_records(conn: sqlite3.Connection, theme: str | None = None, *,
+                  keywords: list[str] | None = None,
+                  label: str | None = None) -> list[ThemeRecord]:
     """One ThemeRecord per institution, ranked so committed-hypocrisy surfaces
-    first (committed → high against-rate → volume)."""
-    if theme not in THEMES:
-        raise ValueError(f"unknown theme {theme!r}; known: {', '.join(THEMES)}")
+    first (committed → high against-rate → volume).
+
+    Pass a built-in `theme`, OR `keywords` to test your own hypothesis (the
+    keywords match both the commitment text and the proposal text)."""
+    commitment_pats, proposal_pats, prefilter = _theme_spec(theme, keywords)
+    name = label or theme or "+".join(keywords or [])[:30] or "custom"
+    scan = _scan_one(conn, proposal_pats, prefilter)
     recs: list[ThemeRecord] = []
     for inst in conn.execute("SELECT id, display_name FROM institutions ORDER BY id"):
-        c = _commitment_for(conn, inst["id"], theme)
-        f, a, ab, examples = _theme_votes(conn, inst["id"], theme)
+        c = _commitment_for(conn, inst["id"], commitment_pats)
+        s = scan.get(inst["id"], {"for": 0, "against": 0, "abstain": 0, "examples": []})
+        f, a, ab, examples = s["for"], s["against"], s["abstain"], s["examples"]
         denom = f + a
         rate = (a / denom) if denom else 0.0
         committed = c is not None
         recs.append(ThemeRecord(
-            theme=theme, institution_id=inst["id"], institution_name=inst["display_name"],
+            theme=name, institution_id=inst["id"], institution_name=inst["display_name"],
             committed=committed,
             commitment_quote=(c[0] if c else None),
             doc_label=(c[1]["doc_label"] if c else None),
@@ -169,12 +194,21 @@ def theme_records(conn: sqlite3.Connection, theme: str) -> list[ThemeRecord]:
 
 
 def institution_record(conn: sqlite3.Connection, inst_id: str) -> dict[str, ThemeRecord]:
-    """All themes for one institution — the per-manager investigation view."""
+    """All themes for one institution — the per-manager investigation view.
+    Derived from the single build_matrix pass (one vote scan, not one per theme)."""
+    bm = build_matrix(conn)
+    inst = next((i for i in bm["institutions"] if i["id"] == inst_id), None)
+    if not inst:
+        return {}
     out = {}
-    for theme in THEMES:
-        rec = next((r for r in theme_records(conn, theme) if r.institution_id == inst_id), None)
-        if rec:
-            out[theme] = rec
+    for theme, c in inst["cells"].items():
+        out[theme] = ThemeRecord(
+            theme=theme, institution_id=inst_id, institution_name=inst["name"],
+            committed=c["committed"], commitment_quote=c["quote"],
+            doc_label=c["doc_label"], doc_version=c["doc_version"], doc_url=c["doc_url"],
+            votes_for=c["for"], votes_against=c["against"], votes_abstain=c["abstain"],
+            n_theme=c["n"], against_rate=c["rate"], examples=c["examples"],
+            tension=c["rate"] if c["committed"] else 0.0)
     return out
 
 
@@ -189,7 +223,7 @@ def _scan_matrix(conn: sqlite3.Connection) -> dict[str, dict[str, dict]]:
     out: dict[str, dict[str, dict]] = {}
     for v in conn.execute(
         f"""SELECT f.institution_id AS iid, v.accession, v.issuer_name, v.meeting_date,
-                   v.vote_description, v.how_voted, v.shares_voted
+                   v.vote_description, v.how_voted, v.shares_voted, f.source_url
             FROM votes v JOIN filings f ON f.accession = v.accession
             WHERE v.is_duplicate = 0 AND IFNULL(v.vote_source,'') != 'legacy_html'
               AND ({like})""", params):
@@ -209,7 +243,7 @@ def _scan_matrix(conn: sqlite3.Connection) -> dict[str, dict[str, dict]]:
                 b["examples"].append({
                     "issuer_name": v["issuer_name"], "meeting_date": v["meeting_date"],
                     "vote_description": desc[:200], "shares_voted": v["shares_voted"] or 0.0,
-                    "accession": v["accession"]})
+                    "accession": v["accession"], "source_url": v["source_url"] or ""})
             elif hv == "ABSTAIN":
                 b["abstain"] += 1
     for cells in out.values():
@@ -230,7 +264,7 @@ def build_matrix(conn: sqlite3.Connection) -> dict:
         isc = scan.get(inst["id"], {})
         cells = {}
         for th in THEMES:
-            c = _commitment_for(conn, inst["id"], th)
+            c = _commitment_for(conn, inst["id"], THEMES[th]["commitment"])
             s = isc.get(th, {"for": 0, "against": 0, "abstain": 0, "examples": []})
             f, a, ab = s["for"], s["against"], s["abstain"]
             n = f + a + ab
@@ -267,6 +301,57 @@ def load_matrix() -> dict | None:
     if MATRIX_CACHE.exists():
         return json.loads(MATRIX_CACHE.read_text())
     return None
+
+
+def evidence_pack(rec: ThemeRecord, *, hypothesis: str = "") -> str:
+    """A tested say-vs-do record → a self-contained, cited Markdown evidence
+    pack a journalist can paste into an article or hand to an editor. Every
+    number traces to a primary source; it is framed as a LEAD to verify, not a
+    published claim."""
+    pct = round(rec.against_rate * 100)
+    lines = [
+        f"# {rec.institution_name} — {rec.theme}: what it says vs. how it votes", "",
+        f"_Generated by Glasshouse · {datetime.now(UTC).date()} · "
+        "CC-BY-4.0 · this is a LEAD — verify each primary source before publishing._", "",
+    ]
+    if hypothesis:
+        lines += [f"**Hypothesis tested:** {hypothesis}", ""]
+    if not rec.committed:
+        lines += [f"> No binding `{rec.theme}` commitment found in this institution's archived "
+                  "policy, so there is no say-vs-do gap to assert here.", ""]
+    else:
+        lines += [
+            "## What it says (SAY)",
+            f"> “{rec.commitment_quote}”", "",
+            f"— {rec.doc_label} (version {rec.doc_version}) · source: {rec.doc_url}", "",
+            "## What it does (DO)",
+            f"Voted **AGAINST {rec.votes_against} of {rec.votes_for + rec.votes_against} "
+            f"({pct}%)** shareholder proposals advancing {rec.theme}."
+            + (f"  \n_FOR {rec.votes_for} · AGAINST {rec.votes_against} · "
+               f"ABSTAIN {rec.votes_abstain}._")
+            + ("  \n⚠️ **Small sample (<5 votes)** — treat with caution."
+               if (rec.votes_for + rec.votes_against) < 5 else ""), "",
+            "### Cited votes (the evidence)", "",
+            "| Meeting date | Company | Shares | Proposal | Source (N-PX) |",
+            "|---|---|--:|---|---|",
+        ]
+        for e in rec.examples:
+            desc = (e["vote_description"] or "").replace("|", "\\|")[:120]
+            src = e.get("source_url") or e["accession"]
+            lines.append(f"| {e['meeting_date']} | {e['issuer_name']} | "
+                         f"{int(e['shares_voted']):,} | {desc} | [{e['accession']}]({src}) |")
+    lines += [
+        "", "## Method & caveats",
+        "- Votes are SEC N-PX, de-duplicated (`is_duplicate = 0`); unvalidated "
+        "legacy-parsed votes are excluded.",
+        "- Proposals working *against* the theme (anti-ESG/anti-DEI) are excluded by a "
+        "polarity guard, so an AGAINST vote here means voting against advancing the theme.",
+        "- Theme matching is lexical — confirm each proposal's text and intent against the "
+        "linked filing before publishing.",
+        "- The commitment is the strongest binding sentence in the institution's own "
+        "archived policy; read it in full at the source link above.", "",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def theme_matrix(conn: sqlite3.Connection) -> dict[str, dict[str, float]]:

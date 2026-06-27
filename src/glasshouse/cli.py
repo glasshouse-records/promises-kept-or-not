@@ -148,9 +148,21 @@ def cmd_investigate(args) -> int:
     conn = _conn()
 
     if args.action == "theme":
-        recs = investigate.theme_records(conn, args.theme)
+        kws = [k.strip() for k in args.keywords.split(",")] if getattr(args, "keywords", None) else None
+        recs = investigate.theme_records(conn, args.theme, keywords=kws, label=args.theme)
         committed = [r for r in recs if r.committed and r.n_theme]
-        print(f"\nTHEME: {args.theme} — managers that COMMIT to it, vs how they VOTE on it")
+        if getattr(args, "export", None):
+            hyp = (f"Managers committing to '{args.theme}'"
+                   + (f" (keywords: {args.keywords})" if kws else "")
+                   + " vote against shareholder proposals advancing it.")
+            packs = "\n\n---\n\n".join(
+                investigate.evidence_pack(r, hypothesis=hyp) for r in committed) or \
+                "# No committed managers with votes on this hypothesis.\n"
+            from pathlib import Path as _P
+            _P(args.export).write_text(packs)
+            print(f"  evidence pack ({len(committed)} managers) → {args.export}")
+        kwnote = f" (keywords: {args.keywords})" if kws else ""
+        print(f"\nTHEME: {args.theme}{kwnote} — managers that COMMIT to it, vs how they VOTE on it")
         print("against-rate = AGAINST / (FOR+AGAINST) on proposals advancing the theme; "
               "anti-theme proposals and legacy votes excluded.\n")
         if not committed:
@@ -881,7 +893,11 @@ def main(argv: list[str] | None = None) -> int:
                          "commit to a theme but vote against it (the finding engine)")
     inv_sub = inv.add_subparsers(dest="action", required=True)
     it = inv_sub.add_parser("theme", help="one theme: leaderboard of committed managers by against-rate + drill")
-    it.add_argument("theme", help="climate | anti-corruption | human-rights | lobbying-disclosure | board-diversity")
+    it.add_argument("theme", help="a built-in theme (climate | anti-corruption | human-rights | "
+                    "lobbying-disclosure | board-diversity) OR any label when using --keywords")
+    it.add_argument("--keywords", help="comma-separated keywords to test your OWN hypothesis "
+                    "(e.g. 'weapon,firearm,defense'); matches commitment + proposal text")
+    it.add_argument("--export", help="write a cited Markdown evidence pack to this file")
     it.add_argument("--examples", type=int, default=8)
     it.set_defaults(func=cmd_investigate)
     im = inv_sub.add_parser("matrix", help="themes × managers against-rate grid (the hypocrisy matrix)")
