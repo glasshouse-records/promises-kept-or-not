@@ -41,6 +41,11 @@ def conn(tmp_path):
     vote("META", "Shareholder proposal to cease climate-related disclosures", "AGAINST", 9000)
     # Off-theme — ignored entirely:
     vote("IBM", "Elect Director Jane Smith", "AGAINST", 200)
+    # A 13-F holding so company-scan can join holdings × votes:
+    c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+              "retrieval_date) VALUES ('ACC13F','1','blackrock','13F-HR','https://e13','2025-02-01')")
+    c.execute("INSERT INTO holdings (accession, issuer_name, cusip, value_usd, shares) "
+              "VALUES ('ACC13F','EXXON MOBIL CORP','CEXXON',5000000000,1000)")
     c.commit()
     return c
 
@@ -106,6 +111,17 @@ def test_build_matrix_cells_carry_say_and_do(conn):
     # acme has no climate commitment and no votes ⇒ no climate cell
     acme = next((i for i in m["institutions"] if i["id"] == "acme"), None)
     assert acme is None or "climate" not in acme["cells"]
+
+
+def test_company_record_joins_holdings_and_votes(conn):
+    r = investigate.company_record(conn, "EXXON")
+    assert "EXXON" in r["company"].upper()
+    blk = next(h for h in r["holders"] if h["institution_id"] == "blackrock")
+    assert blk["held_usd"] == 5000000000           # from the 13-F holding
+    assert blk["votes_against"] >= 1               # voted AGAINST at Exxon
+    ex = blk["examples"][0]
+    assert "climate" in ex["themes"]               # the AGAINST vote is theme-tagged
+    assert ex["accession"] == "ACC" and ex["source_url"] == "https://e"
 
 
 def test_custom_keyword_hypothesis(conn):

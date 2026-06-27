@@ -209,6 +209,23 @@ def cmd_investigate(args) -> int:
               "(or click it in the workbench Investigate tab).")
         return 0
 
+    if args.action == "company":
+        r = investigate.company_record(conn, args.name)
+        rows = [h for h in r["holders"] if h["held_usd"] or h["votes_against"] or h["votes_for"]]
+        print(f"\nCOMPANY: {r['company']} — who holds it and how they voted there\n")
+        if not rows:
+            print(f"  no holdings or votes found matching '{args.name}'.")
+            return 0
+        print(f"  {'manager':<26}{'held':>12}{'for':>6}{'against':>8}   notable AGAINST vote")
+        for h in rows:
+            held = f"${h['held_usd']/1e9:.1f}B" if h["held_usd"] else "—"
+            ex = h["examples"][0]["vote_description"][:42] if h["examples"] else ""
+            print(f"  {h['institution_name'][:25]:<26}{held:>12}{h['votes_for']:>6}"
+                  f"{h['votes_against']:>8}   {ex}")
+        print("\n  Drill a manager's votes at this company: it's in the row's examples "
+              "(date · proposal · shares · N-PX). Leads — verify before publishing.")
+        return 0
+
     if args.action == "institution":
         recs = investigate.institution_record(conn, args.id)
         if not recs:
@@ -907,6 +924,9 @@ def main(argv: list[str] | None = None) -> int:
     ii = inv_sub.add_parser("institution", help="one manager's say-vs-do across all themes")
     ii.add_argument("id")
     ii.set_defaults(func=cmd_investigate)
+    ic = inv_sub.add_parser("company", help="who holds a company (13-F) and how they voted there")
+    ic.add_argument("name", help="company name or fragment, e.g. 'Exxon'")
+    ic.set_defaults(func=cmd_investigate)
 
     out = sub.add_parser("outreach").add_subparsers(dest="action", required=True)
     od = out.add_parser("draft")

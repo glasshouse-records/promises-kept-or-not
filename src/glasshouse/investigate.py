@@ -212,6 +212,63 @@ def institution_record(conn: sqlite3.Connection, inst_id: str) -> dict[str, Them
     return out
 
 
+def company_record(conn: sqlite3.Connection, query: str) -> dict:
+    """Start from a COMPANY: which managers HOLD it (13-F value), and how they
+    VOTED at it — the join a journalist wants for 'who held $Xbn and still
+    voted against the climate proposal here?'. Matches the issuer by name; the
+    per-manager AGAINST votes are theme-tagged. Leads, not findings."""
+    like = f"%{query}%"
+    vrows = conn.execute(
+        "SELECT issuer_name FROM votes WHERE issuer_name LIKE ? AND is_duplicate=0 "
+        "AND IFNULL(vote_source,'')!='legacy_html'", (like,)).fetchall()
+    from collections import Counter
+    names = Counter(r["issuer_name"] for r in vrows)
+    canonical = names.most_common(1)[0][0] if names else query
+
+    holders: dict[str, float] = {}
+    for r in conn.execute(
+        "SELECT f.institution_id AS iid, MAX(h.value_usd) AS v FROM holdings h "
+        "JOIN filings f ON f.accession=h.accession WHERE h.issuer_name LIKE ? "
+        "GROUP BY f.institution_id", (like,)):
+        holders[r["iid"]] = r["v"] or 0.0
+
+    regexes = {th: _theme_proposal_re(th) for th in THEMES}
+    per: dict[str, dict] = {}
+    for v in conn.execute(
+        """SELECT f.institution_id AS iid, v.meeting_date, v.vote_description,
+                  v.how_voted, v.shares_voted, v.accession, f.source_url
+           FROM votes v JOIN filings f ON f.accession=v.accession
+           WHERE v.issuer_name LIKE ? AND v.is_duplicate=0
+             AND IFNULL(v.vote_source,'')!='legacy_html'""", (like,)):
+        d = per.setdefault(v["iid"], {"for": 0, "against": 0, "examples": []})
+        hv = (v["how_voted"] or "").strip().upper()
+        if hv == "FOR":
+            d["for"] += 1
+        elif hv == "AGAINST":
+            d["against"] += 1
+            desc = v["vote_description"] or ""
+            if not proposal_is_oppositional(desc):
+                themes = [th for th, rx in regexes.items() if rx.search(desc)]
+                d["examples"].append({
+                    "meeting_date": v["meeting_date"], "vote_description": desc[:200],
+                    "shares_voted": v["shares_voted"] or 0.0, "accession": v["accession"],
+                    "source_url": v["source_url"] or "", "themes": themes})
+
+    names_map = {i["id"]: i["display_name"] for i in
+                 conn.execute("SELECT id, display_name FROM institutions")}
+    rows = []
+    for iid in set(holders) | set(per):
+        p = per.get(iid, {"for": 0, "against": 0, "examples": []})
+        p["examples"].sort(key=lambda e: -(e["shares_voted"] or 0.0))
+        rows.append({
+            "institution_id": iid, "institution_name": names_map.get(iid, iid),
+            "held_usd": holders.get(iid, 0.0),
+            "votes_for": p["for"], "votes_against": p["against"],
+            "examples": p["examples"][:_EXAMPLE_LIMIT]})
+    rows.sort(key=lambda r: (-r["held_usd"], -r["votes_against"]))
+    return {"company": canonical, "query": query, "holders": rows}
+
+
 def _scan_matrix(conn: sqlite3.Connection) -> dict[str, dict[str, dict]]:
     """ONE pass over the whole vote table (not per institution), bucketed by
     institution × theme. SQLite LIKE is ASCII-case-insensitive, so no LOWER()
