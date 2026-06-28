@@ -238,7 +238,8 @@ class ContradictionCandidate:
 # don't trip it.
 _ANTI_THEME = re.compile(
     r"\b(cease|stop|end|eliminate|abolish|repeal|reverse|terminate|rescind|"
-    r"reconsider|scale\s*back|wind\s*down|phase\s*out|roll\s*back)\b[^.]{0,30}?"
+    r"reconsider|revisit|revis\w*|reevaluat\w*|reassess\w*|scale\s*back|"
+    r"wind\s*down|phase\s*out|roll\s*back)\b[^.]{0,30}?"
     r"\b(dei|d\.e\.i|diversity|equity|inclusion|esg|climate|net[\s-]?zero|"
     r"sustainability|emissions[\s-]?reduction|affirmative\s+action)\b",
     re.IGNORECASE)
@@ -251,6 +252,14 @@ _ANTI_GENRE = re.compile(
     r"alternative\s+\w*\s*report|"
     r"\b(risks?|costs?|harms?|burden|impact)\b[^.]{0,40}\b(retirement|pension|"
     r"beneficiar|shareholder\s+returns?|fiduciary)\b|"
+    # The anti-ESG "risks OF the program" genre: "risks of (maintaining) DEI",
+    # "DEI and related risks". The PROGRAM is framed as the risk (anti) — vs
+    # "risks related to biodiversity/climate LOSS" (the harm), which is pro and
+    # must keep counting, so this is scoped to DEI/diversity-equity/affirmative
+    # action only, never to environmental nouns.
+    r"\brisks?\b[^.]{0,30}\b(?:d\.?e\.?i\.?|diversity[,\s]+equity|affirmative\s+action|"
+    r"maintaining\s+(?:dei|diversity))\b|"
+    r"\b(?:d\.?e\.?i\.?|diversity[,\s]+equity)\b[^.]{0,20}\brelated\s+risks?\b|"
     r"\bmerit[\s-]?based\b|\bviewpoint\s+discrimination\b|"
     r"\breverse\s+discrimination\b|\bracial\s+discrimination\b",
     re.IGNORECASE)

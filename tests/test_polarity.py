@@ -27,6 +27,24 @@ def test_binding_commitment_rejects_non_commitments():
     assert not is_binding_commitment("We vote proxies.")
 
 
+def test_anti_dei_revisit_genre_is_oppositional():
+    # The anti-ESG "revisit/revising DEI" genre — voting AGAINST DEFENDS diversity,
+    # so it must NOT count as diversity-hypocrisy (found in audit 2026-06-28).
+    assert proposal_is_oppositional("Report on Delays in Revising Diversity, Equity, and Inclusion (DEI) Initiatives")
+    assert proposal_is_oppositional("Advisory Vote to Revisit DEI in Executive Compensation")
+    assert proposal_is_oppositional("Proposal to reevaluate the company's diversity programs")
+    # The "risks OF DEI" anti-ESG genre — DEI framed as the risk (anti).
+    assert proposal_is_oppositional("Report on the Risks of the Company's DEI Program")
+    assert proposal_is_oppositional("Report on DEI and Related Risks")
+    assert proposal_is_oppositional("Shareholder proposal requesting report on the risks of maintaining DEI efforts")
+    # …but a proposal to ADD diversity goals is pro-theme (must still count).
+    assert not proposal_is_oppositional("Shareholder proposal on DEI goals in executive pay incentives")
+    assert not proposal_is_oppositional("Report on board diversity")
+    # …and environmental risk-disclosure stays pro (the harm is the risk, not the program).
+    assert not proposal_is_oppositional("Report on Risks Related to Biodiversity and Nature Loss")
+    assert not proposal_is_oppositional("Report on financial risks related to climate change")
+
+
 def test_anti_theme_proposals_are_oppositional():
     # The Apple #1 case: voting AGAINST "cease DEI" DEFENDS diversity.
     assert proposal_is_oppositional("A shareholder proposal entitled 'Request to Cease DEI Efforts'")
