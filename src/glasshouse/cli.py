@@ -287,7 +287,8 @@ def cmd_agent(args) -> int:
     from . import agent
     conn = _conn()
     briefs = agent.investigate_and_draft(conn, min_rate=args.min_rate,
-                                         min_votes=args.min_votes, top_n=args.top)
+                                         min_votes=args.min_votes, top_n=args.top,
+                                         llm=getattr(args, "llm", False))
     if not briefs:
         print("  no say-vs-do gaps met the thresholds "
               f"(rate ≥ {args.min_rate}, votes ≥ {args.min_votes}). Nothing drafted.")
@@ -1008,6 +1009,9 @@ def main(argv: list[str] | None = None) -> int:
     agr.add_argument("--min-rate", type=float, default=0.6, help="min against-rate (default 0.6)")
     agr.add_argument("--min-votes", type=int, default=10, help="min theme votes for confidence (default 10)")
     agr.add_argument("--top", type=int, default=12, help="how many drafts to write (default 12)")
+    agr.add_argument("--llm", action="store_true", help="advisory LLM prose-polish of "
+                     "headline/standfirst (needs ANTHROPIC_API_KEY; cited evidence stays "
+                     "deterministic; falls back if unconfigured)")
     agr.set_defaults(func=cmd_agent)
 
     out = sub.add_parser("outreach").add_subparsers(dest="action", required=True)

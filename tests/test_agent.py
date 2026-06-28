@@ -57,6 +57,15 @@ def test_agent_writes_drafts_to_disk_not_ledger(conn):
     assert md and "DRAFT" in md[0].read_text()
 
 
+def test_llm_polish_falls_back_when_unconfigured(conn, monkeypatch):
+    """llm=True must not break without an API key — it falls back to the
+    deterministic draft, and never silently drops the lead."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    briefs = agent.investigate_and_draft(conn, min_rate=0.5, min_votes=3, top_n=5, llm=True)
+    assert briefs and "commits to climate" in briefs[0]["headline"].lower()
+    assert "N-PX" in briefs[0]["body"]              # cited evidence still deterministic
+
+
 def test_thresholds_gate_weak_leads(conn):
     # require more votes than exist ⇒ nothing drafted (no over-claiming)
     assert agent.investigate_and_draft(conn, min_rate=0.5, min_votes=999, top_n=5) == []

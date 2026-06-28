@@ -57,9 +57,37 @@ def _score(rate: float, n: int, aum: float) -> float:
     return round(rate * (n ** 0.25) * ((aum + 0.1) ** 0.3), 4)
 
 
-def _draft(rec: investigate.ThemeRecord, score: float) -> dict:
+def _llm_polish(conn, rec, headline: str, standfirst: str) -> tuple[str, str]:
+    """OPTIONAL, advisory: ask the LLM tier to sharpen the headline/standfirst
+    prose from the SAME facts. It may not add/alter any number, name, date, or
+    quote; the cited evidence pack is untouched. Logged to llm_log. Falls back
+    to the deterministic text if the LLM tier isn't configured (no API key)."""
+    from . import llm
+    try:
+        out = llm.call(
+            conn, purpose="agent_draft_polish",
+            input_key=f"{rec.institution_id}:{rec.theme}",
+            system=("You sharpen a factual financial-accountability lead for a newsroom. "
+                    "Use ONLY the facts in the input — never add, drop, or alter any number, "
+                    "name, date, quote, or citation. Stay sober and libel-safe: acts, dates, "
+                    "amounts, votes; never motive or intent. Return exactly two lines:\n"
+                    "HEADLINE: <one line>\nSTANDFIRST: <2-3 sentences>"),
+            user=f"HEADLINE: {headline}\nSTANDFIRST: {standfirst}", max_tokens=400)
+        h, sf = headline, standfirst
+        for line in out.splitlines():
+            if line.upper().startswith("HEADLINE:"):
+                h = line.split(":", 1)[1].strip() or h
+            elif line.upper().startswith("STANDFIRST:"):
+                sf = line.split(":", 1)[1].strip() or sf
+        return h, sf
+    except llm.NotConfigured:
+        return headline, standfirst   # deterministic draft stands — nothing degrades silently
+
+
+def _draft(rec: investigate.ThemeRecord, score: float, conn=None, llm: bool = False) -> dict:
     """A templated, fully-cited story draft. Headline + standfirst are composed
-    from the data only — no generated facts."""
+    from the data only — no generated facts (an optional LLM pass may only
+    rephrase them, advisorily; the cited evidence pack is always deterministic)."""
     label = _label(rec.theme)
     pct = round(rec.against_rate * 100)
     years = sorted({e["meeting_date"][-4:] for e in rec.examples
@@ -76,6 +104,8 @@ def _draft(rec: investigate.ThemeRecord, score: float) -> dict:
     if top:
         standfirst += (f" The largest: {top['issuer_name']}, where it voted against "
                        f"“{top['vote_description']}” with {int(top['shares_voted']):,} shares.")
+    if llm and conn is not None:                 # optional, advisory; falls back if unconfigured
+        headline, standfirst = _llm_polish(conn, rec, headline, standfirst)
     body = (f"# {headline}\n\n"
             f"> **DRAFT — automated lead, not a finding.** A human must verify every cited "
             f"source and the polarity/intent of each proposal before publication. "
@@ -92,10 +122,13 @@ def _draft(rec: investigate.ThemeRecord, score: float) -> dict:
 
 
 def investigate_and_draft(conn: sqlite3.Connection, *, min_rate: float = 0.6,
-                          min_votes: int = 10, top_n: int = 12) -> list[dict]:
+                          min_votes: int = 10, top_n: int = 12, llm: bool = False) -> list[dict]:
     """Scan the matrix, rank the strongest committed say-vs-do gaps, draft a
     cited story for each, and write them to data/agent/briefs/<date>/. Returns
-    the briefs (also written to disk). Writes NOTHING to the ledger facts."""
+    the briefs (also written to disk). Writes NOTHING to the ledger facts.
+
+    llm=True adds an advisory prose-polish pass (logged; falls back to the
+    deterministic draft if no API key) — the cited evidence stays deterministic."""
     reg = registry.load()
     bm = investigate.build_matrix(conn)
     scored = []
@@ -107,7 +140,8 @@ def investigate_and_draft(conn: sqlite3.Connection, *, min_rate: float = 0.6,
                 scored.append((_score(c["rate"], n, aum), inst, theme, c))
     scored.sort(key=lambda x: -x[0])
 
-    briefs = [_draft(_cell_record(inst, theme, c), s) for s, inst, theme, c in scored[:top_n]]
+    briefs = [_draft(_cell_record(inst, theme, c), s, conn, llm)
+              for s, inst, theme, c in scored[:top_n]]
 
     out = BRIEFS_DIR / date.today().isoformat()
     out.mkdir(parents=True, exist_ok=True)
