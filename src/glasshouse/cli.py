@@ -209,6 +209,15 @@ def cmd_investigate(args) -> int:
               "(or click it in the workbench Investigate tab).")
         return 0
 
+    if args.action == "refresh":
+        from . import agent
+        p = investigate.cache_matrix(conn)
+        print(f"  matrix cache → {p}")
+        briefs = agent.investigate_and_draft(conn)
+        print(f"  agent drafts → {len(briefs)} leads in data/agent/briefs/ (unverified)")
+        print("  workbench Investigate + Drafts tabs now reflect the current ledger.")
+        return 0
+
     if args.action == "holdings":
         kws = [k.strip() for k in args.keywords.split(",")] if getattr(args, "keywords", None) else None
         rows = investigate.holdings_weighted(conn, args.theme, keywords=kws, min_held=args.min_held)
@@ -988,6 +997,9 @@ def main(argv: list[str] | None = None) -> int:
     ih.add_argument("--keywords", help="comma-separated keywords for a custom hypothesis")
     ih.add_argument("--min-held", type=int, default=8, help="min held theme votes per manager")
     ih.set_defaults(func=cmd_investigate)
+    inv_sub.add_parser("refresh", help="rebuild the matrix cache + agent drafts so the "
+                       "workbench reflects the current ledger (run after ingests)"
+                       ).set_defaults(func=cmd_investigate)
 
     ag = sub.add_parser("agent", help="the findings agent: investigates and drafts cited "
                         "story leads for human review (never publishes/sends)")

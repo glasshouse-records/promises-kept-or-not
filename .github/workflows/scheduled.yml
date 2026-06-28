@@ -44,6 +44,12 @@ jobs:
         # every run — the auto-merge tier. Bigger moves (coverage, source repair,
         # code) are written to data/improve/agenda.md for an agent/PR or a human.
         # Data decisions and publication are never auto-actioned here.
+      - name: Refresh investigation caches (matrix + agent drafts)
+        run: glasshouse investigate refresh || true
+        # Rebuilds data/investigate/matrix.json and the agent's drafted leads so
+        # the workbench Investigate/Drafts tabs reflect the current ledger. These
+        # are OPERATOR artifacts (the matrix is analysis; the drafts are unverified
+        # leads) — NOT uploaded to the public artifact below.
       - name: Build PUBLIC artifacts (site = approved findings only; snapshot = publishable rows only)
         run: |
           glasshouse site
