@@ -126,6 +126,34 @@ def test_company_record_joins_holdings_and_votes(conn):
     assert ex["accession"] == "ACC" and ex["source_url"] == "https://e"
 
 
+def test_holdings_weighted_skin_in_the_game(tmp_path):
+    """Votes AGAINST climate at the biggest positions, FOR at the small ones ⇒
+    a positive delta (votes worse where it holds more)."""
+    c = ledger.connect(tmp_path / "hw.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('blackrock','BlackRock Inc.')")
+    c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+              "retrieval_date) VALUES ('NPX','1','blackrock','N-PX','u','d')")
+    c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+              "retrieval_date) VALUES ('F13','1','blackrock','13F-HR','u','d')")
+
+    def setup(cusip, value, how):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, vote_description, "
+                  "how_voted, shares_voted, is_duplicate) VALUES ('NPX',?,?, '05/21/2024', "
+                  "'Shareholder proposal on greenhouse gas emissions', ?, 1, 0)", (cusip, cusip, how))
+        c.execute("INSERT INTO holdings (accession, issuer_name, cusip, value_usd, shares) "
+                  "VALUES ('F13',?,?,?,1)", (cusip, cusip, value))
+    for i, val in enumerate([10e9, 9e9, 8e9]):   # big positions → voted AGAINST
+        setup(f"BIG{i}", val, "AGAINST")
+    for i, val in enumerate([1e9, 5e8, 2e8]):    # small positions → voted FOR
+        setup(f"SML{i}", val, "FOR")
+    c.commit()
+
+    rows = investigate.holdings_weighted(c, "climate", min_held=2)
+    blk = next(r for r in rows if r["institution_id"] == "blackrock")
+    assert blk["large_rate"] == 1.0 and blk["small_rate"] == 0.0
+    assert blk["delta"] == 1.0                    # votes against MORE where it holds more
+
+
 def test_theme_trend_by_year(conn):
     tr = investigate.theme_trend(conn, "climate")
     blk = tr.get("blackrock")

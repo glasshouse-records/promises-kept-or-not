@@ -209,6 +209,23 @@ def cmd_investigate(args) -> int:
               "(or click it in the workbench Investigate tab).")
         return 0
 
+    if args.action == "holdings":
+        kws = [k.strip() for k in args.keywords.split(",")] if getattr(args, "keywords", None) else None
+        rows = investigate.holdings_weighted(conn, args.theme, keywords=kws, min_held=args.min_held)
+        print(f"\nHOLDINGS-WEIGHTED: do managers vote against '{args.theme}' MORE at their "
+              "BIGGEST positions?\n(against-rate at large vs small holdings, split at the "
+              "manager's median position size)\n")
+        if not rows:
+            print(f"  no managers with ≥{args.min_held} held theme votes.")
+            return 0
+        print(f"  {'manager':<26}{'big pos':>9}{'small pos':>11}{'gap':>8}")
+        for r in rows:
+            print(f"  {r['institution_name'][:25]:<26}{r['large_rate']*100:>8.0f}%"
+                  f"{r['small_rate']*100:>10.0f}%{r['delta']*100:>+7.0f}")
+        print("\n  gap > 0 = votes against the theme MORE where it holds the most "
+              "(skin-in-the-game). Leads — verify before publishing.")
+        return 0
+
     if args.action == "trend":
         kws = [k.strip() for k in args.keywords.split(",")] if getattr(args, "keywords", None) else None
         tr = investigate.theme_trend(conn, args.theme, keywords=kws)
@@ -965,6 +982,12 @@ def main(argv: list[str] | None = None) -> int:
     itr.add_argument("theme", help="a built-in theme, or any label with --keywords")
     itr.add_argument("--keywords", help="comma-separated keywords for a custom hypothesis")
     itr.set_defaults(func=cmd_investigate)
+    ih = inv_sub.add_parser("holdings", help="does a manager vote against a theme more at its "
+                            "biggest positions? (skin-in-the-game test)")
+    ih.add_argument("theme", help="a built-in theme, or any label with --keywords")
+    ih.add_argument("--keywords", help="comma-separated keywords for a custom hypothesis")
+    ih.add_argument("--min-held", type=int, default=8, help="min held theme votes per manager")
+    ih.set_defaults(func=cmd_investigate)
 
     ag = sub.add_parser("agent", help="the findings agent: investigates and drafts cited "
                         "story leads for human review (never publishes/sends)")

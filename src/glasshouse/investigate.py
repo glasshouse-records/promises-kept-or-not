@@ -257,6 +257,58 @@ def theme_trend(conn: sqlite3.Connection, theme: str | None = None, *,
     return out
 
 
+def holdings_weighted(conn: sqlite3.Connection, theme: str | None = None, *,
+                      keywords: list[str] | None = None, min_held: int = 8) -> list[dict]:
+    """Does a manager vote against a theme MORE at the companies where it holds
+    the biggest stake? For each manager, rank its theme votes by the manager's
+    own 13-F position size in that company, split at the median, and compare the
+    against-rate of its LARGE positions vs its SMALL ones. delta > 0 = votes
+    against the theme more where it has the most skin in the game."""
+    _commitment_pats, proposal_pats, prefilter = _theme_spec(theme, keywords)
+    rx = re.compile("|".join(proposal_pats), re.IGNORECASE)
+    like = " OR ".join(["v.vote_description LIKE ?"] * len(prefilter))
+    params = [f"%{t}%" for t in prefilter]
+
+    votes_by_inst: dict[str, list[tuple[str, str]]] = {}
+    for v in conn.execute(
+        f"""SELECT f.institution_id AS iid, v.cusip, v.how_voted, v.vote_description
+            FROM votes v JOIN filings f ON f.accession=v.accession
+            WHERE v.is_duplicate=0 AND IFNULL(v.vote_source,'')!='legacy_html'
+              AND v.cusip != '' AND ({like})""", params):
+        desc = v["vote_description"] or ""
+        if not rx.search(desc) or proposal_is_oppositional(desc):
+            continue
+        hv = (v["how_voted"] or "").strip().upper()
+        if hv in ("FOR", "AGAINST"):
+            votes_by_inst.setdefault(v["iid"], []).append((v["cusip"], hv))
+
+    names = {i["id"]: i["display_name"] for i in
+             conn.execute("SELECT id, display_name FROM institutions")}
+    out = []
+    for iid, vts in votes_by_inst.items():
+        hold = {r["cusip"]: (r["val"] or 0.0) for r in conn.execute(
+            "SELECT h.cusip, MAX(h.value_usd) AS val FROM holdings h "
+            "JOIN filings f ON f.accession=h.accession WHERE f.institution_id=? "
+            "GROUP BY h.cusip", (iid,))}
+        held = [(hold[c], hv) for c, hv in vts if hold.get(c, 0) > 0]
+        if len(held) < min_held:
+            continue
+        held.sort(key=lambda x: -x[0])
+        half = len(held) // 2
+        large, small = held[:half], held[half:]
+
+        def _rate(rows):
+            a = sum(1 for _, hv in rows if hv == "AGAINST")
+            return (round(a / len(rows), 4) if rows else 0.0, len(rows))
+        lr, ln = _rate(large)
+        sr, sn = _rate(small)
+        out.append({"institution_id": iid, "institution_name": names.get(iid, iid),
+                    "large_rate": lr, "large_n": ln, "small_rate": sr, "small_n": sn,
+                    "delta": round(lr - sr, 4), "held_votes": len(held)})
+    out.sort(key=lambda r: -r["delta"])
+    return out
+
+
 def company_record(conn: sqlite3.Connection, query: str) -> dict:
     """Start from a COMPANY: which managers HOLD it (13-F value), and how they
     VOTED at it — the join a journalist wants for 'who held $Xbn and still
