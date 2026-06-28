@@ -184,12 +184,12 @@ def cmd_investigate(args) -> int:
         return 0
 
     if args.action == "matrix":
-        import json as _json
-        m = investigate.build_matrix(conn)
         if getattr(args, "cache", False):
-            investigate.MATRIX_CACHE.parent.mkdir(parents=True, exist_ok=True)
-            investigate.MATRIX_CACHE.write_text(_json.dumps(m, default=str))
+            investigate.cache_matrix(conn)   # builds + folds in holdings-weighted + writes
+            m = investigate.load_matrix()
             print(f"  cached → {investigate.MATRIX_CACHE} (workbench Investigate tab reads this)")
+        else:
+            m = investigate.build_matrix(conn)
         themes = m["themes"]
         rows = []
         for i in m["institutions"]:

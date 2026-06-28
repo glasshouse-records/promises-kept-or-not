@@ -443,6 +443,10 @@ function drill(ri,t){
   const yrs=Object.keys(c.trend||{}).sort();
   const trend=yrs.length>1?`<div class=cite style='margin-top:.4rem'><b>trend</b> (against-rate by year): `+
      yrs.map(y=>`${y} <b style='color:var(--against)'>${Math.round(c.trend[y].rate*100)}%</b>`).join(' · ')+`</div>`:'';
+  const hw=c.hw?`<div class=cite style='margin-top:.3rem'><b>skin-in-the-game</b>: votes against
+     <b style='color:var(--against)'>${Math.round(c.hw.large_rate*100)}%</b> at its LARGEST positions
+     vs ${Math.round(c.hw.small_rate*100)}% at its smallest
+     (${c.hw.delta>0?'+':''}${Math.round(c.hw.delta*100)} pts${c.hw.delta>0?' worse where it holds more':''})</div>`:'';
   d.innerHTML=`<div class='card claim'><span class=ribbon>lead — verify before publishing</span>
    <h3>${e(i.name)} · ${e(t)}</h3>
    <div class=grid2>
@@ -454,7 +458,7 @@ function drill(ri,t){
      <blockquote>Voted <b style='color:var(--against)'>AGAINST ${c.against}</b> of ${c.for+c.against}
       (${Math.round(c.rate*100)}%) proposals advancing ${e(t)}</blockquote>
      <div class=cite>FOR ${c.for} · AGAINST ${c.against} · ABSTAIN ${c.abstain}${c.low_confidence?' · small sample':''}</div>
-     ${trend}</div>
+     ${trend}${hw}</div>
    </div>
    <h4 class=evh>Top AGAINST votes — the evidence</h4>${ex}
    <p class=meta style='margin-top:.5rem'>Leads with citations: confirm the proposal text and

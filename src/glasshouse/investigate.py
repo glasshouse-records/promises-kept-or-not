@@ -450,8 +450,18 @@ def build_matrix(conn: sqlite3.Connection) -> dict:
 
 
 def cache_matrix(conn: sqlite3.Connection) -> Path:
-    """Compute and persist the matrix so the workbench loads it instantly."""
+    """Compute and persist the full matrix (incl. per-cell holdings-weighted
+    'skin-in-the-game' split) so the workbench loads everything instantly."""
     m = build_matrix(conn)
+    # Attach holdings-weighted big-vs-small against-rates per cell (offline cost).
+    for theme in m["themes"]:
+        hw = {r["institution_id"]: r for r in holdings_weighted(conn, theme, min_held=8)}
+        for inst in m["institutions"]:
+            r = hw.get(inst["id"])
+            if r and theme in inst["cells"]:
+                inst["cells"][theme]["hw"] = {
+                    "large_rate": r["large_rate"], "small_rate": r["small_rate"],
+                    "delta": r["delta"], "held_votes": r["held_votes"]}
     MATRIX_CACHE.parent.mkdir(parents=True, exist_ok=True)
     MATRIX_CACHE.write_text(json.dumps(m, default=str))
     return MATRIX_CACHE
