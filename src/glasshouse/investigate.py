@@ -36,6 +36,7 @@ from .contradictions import (
     commitment_is_discretionary,
     commitment_sentences,
     extract_text,
+    is_binding_commitment,
     proposal_is_oppositional,
     score_commitment_sentence,
 )
@@ -119,7 +120,8 @@ def _commitment_for(conn: sqlite3.Connection, inst_id: str, commitment_pats: lis
         if not text:
             continue
         qs = [q for q in commitment_sentences(text, pats)
-              if not commitment_is_discretionary(q) and score_commitment_sentence(q) >= 1.0]
+              if is_binding_commitment(q) and not commitment_is_discretionary(q)
+              and score_commitment_sentence(q) >= 1.0]
         if qs:
             v = _yyyymmdd(r["v"])
             if best is None or v > best_v:

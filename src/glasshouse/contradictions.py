@@ -71,7 +71,11 @@ THEMES: dict[str, dict[str, list[str]]] = {
     },
 }
 
-_SENTENCE_SPLIT = re.compile(r"(?<=[.;])\s+")
+# Split on sentence-ending punctuation, tolerating a trailing footnote marker
+# ("…value creation.16 As a long-term…" → two sentences). Without this, PDF
+# footnote superscripts merge a descriptive sentence into the next, so a
+# heading/description leads the quote instead of the actual commitment.
+_SENTENCE_SPLIT = re.compile(r"(?<=[.;])\d{0,3}\s+")
 
 
 def extract_text(pdf_path: Path) -> str:
@@ -141,6 +145,39 @@ def score_commitment_sentence(s: str) -> float:
     if len(s) > 450:
         score -= 1.0
     return score
+
+
+# The manager binding ITSELF — first-person/fund agent.
+_AGENT_RE = re.compile(r"\b(?:we|our|us|(?:a|the|each|our|its) funds?)\b", re.IGNORECASE)
+# A genuine commitment/expectation VERB (not just any "we …"). Without this, a
+# sentence that merely mentions a topic near a stray "our" passes as a promise.
+_COMMIT_VERB_RE = re.compile(
+    r"\b(?:committ\w*|pledg\w*|will|shall|expect\w*|requir\w*|ask\w*|encourag\w*|urg\w*|"
+    r"engag\w*|vot\w*|advocat\w*|support\w*|oppos\w*|seek\w*|believ\w*|consider\w*|"
+    r"assess\w*|evaluat\w*|incorporat\w*|find[^.]{0,12}helpful|hold[^.]{0,20}accountable)\b",
+    re.IGNORECASE)
+
+
+def is_binding_commitment(s: str) -> bool:
+    """A quote may anchor a say-vs-do claim ONLY if it is (1) real prose — not a
+    table-of-contents / title-case list fragment (a PDF-extraction artifact),
+    (2) the manager binding ITSELF (first-person/fund agent), and (3) actually
+    promising/expecting something (a commitment verb), not merely describing a
+    topic. Precision over recall: better to drop a borderline quote than to
+    accuse a manager of breaking a 'commitment' it never made."""
+    s = s.strip()
+    toks = [t for t in s.split() if t]
+    if len(toks) < 5:
+        return False
+    if sum(1 for t in toks if t[:1].isupper()) / len(toks) > 0.5:
+        return False                    # mostly Title-Case → a list/heading
+    run = mx = 0                          # a run of ≥6 consecutive Title-Case tokens = a heading/TOC
+    for t in toks:
+        run = run + 1 if t[:1].isupper() else 0
+        mx = max(mx, run)
+    if mx >= 6:
+        return False
+    return bool(_AGENT_RE.search(s) and _COMMIT_VERB_RE.search(s))
 
 
 def _repair_extraction(flat: str) -> str:
@@ -274,7 +311,8 @@ def find_commitment_vote_contradictions(
         if ck not in quote_cache:
             text = extract_text(Path(doc_row["content_path"]))
             qs = commitment_sentences(text, pats["commitment"]) if text else []
-            qs = [q for q in qs if not commitment_is_discretionary(q)
+            qs = [q for q in qs if is_binding_commitment(q)
+                  and not commitment_is_discretionary(q)
                   and score_commitment_sentence(q) >= 1.0]
             quote_cache[ck] = qs[0] if qs else None
         return quote_cache[ck]

@@ -4,7 +4,27 @@ in an interactive council review: ~half of one live batch were false positives
 (anti-DEI proposals, anti-ESG counter-reports, case-by-case policies), one of
 which would have been a backwards, defamatory accusation."""
 
-from glasshouse.contradictions import commitment_is_discretionary, proposal_is_oppositional
+from glasshouse.contradictions import (
+    commitment_is_discretionary,
+    is_binding_commitment,
+    proposal_is_oppositional,
+)
+
+
+def test_binding_commitment_rejects_non_commitments():
+    # Real manager commitments (first-person / fund agent, prose): accepted.
+    assert is_binding_commitment("We are committed to supporting inclusive organisations.")
+    assert is_binding_commitment("The fund will vote against directors for insufficient progress.")
+    assert is_binding_commitment("We expect companies to report material climate risks.")
+    # TOC / title-case list fragment from a PDF — NOT a commitment.
+    assert not is_binding_commitment(
+        "Americas EMEA Asia-Pacific Impact Net Zero Executive Compensation Environmental Social Political")
+    # Describes an issue / states an expectation OF companies, manager binds nothing.
+    assert not is_binding_commitment("The board should reflect the diversity of the workforce.")
+    assert not is_binding_commitment(
+        "This is particularly relevant to a company's workforce, central to long-term value.")
+    # Too short to be a quotable commitment.
+    assert not is_binding_commitment("We vote proxies.")
 
 
 def test_anti_theme_proposals_are_oppositional():
