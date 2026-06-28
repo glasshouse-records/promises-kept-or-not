@@ -50,6 +50,25 @@ THEMES: dict[str, dict[str, list[str]]] = {
         "commitment": [r"board diversity", r"diverse board", r"diversity.{0,40}board"],
         "proposal": [r"board diversity", r"diversity report", r"\bDEI\b", r"civil rights audit"],
     },
+    # Environmental beyond climate. Patterns are specific (no bare "water"/"nature"
+    # that would match unrelated text) so an AGAINST vote is a real say-vs-do gap.
+    "nature": {
+        "commitment": [r"deforestation", r"biodiversity", r"natural capital",
+                       r"nature[\s-]related", r"water (?:risk|stewardship|security)"],
+        "proposal": [r"deforestation", r"biodiversity", r"natural capital",
+                     r"nature[\s-]related", r"water (?:risk|stewardship|security)",
+                     r"single[\s-]use plastic", r"plastic pollution"],
+    },
+    # Worker treatment (distinct from human-rights' forced/child-labour focus).
+    # Commitment side is broadened to how managers actually phrase it in
+    # stewardship policy ("human capital", "workforce"), not just union terms.
+    "labor-rights": {
+        "commitment": [r"labou?r rights", r"freedom of association", r"collective bargaining",
+                       r"living wage", r"worker (?:safety|health)", r"human capital",
+                       r"workforce", r"fair (?:labou?r|treatment)"],
+        "proposal": [r"freedom of association", r"collective bargaining", r"living wage",
+                     r"paid sick leave", r"worker (?:safety|health)", r"workplace safety"],
+    },
 }
 
 _SENTENCE_SPLIT = re.compile(r"(?<=[.;])\s+")

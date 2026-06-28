@@ -50,6 +50,14 @@ def conn(tmp_path):
     return c
 
 
+def test_every_theme_has_a_prefilter():
+    """Invariant: _scan_matrix uses _PREFILTER[theme] for every THEME, so each
+    must have one (a missing entry would KeyError the whole matrix)."""
+    from glasshouse.contradictions import THEMES
+    for th in THEMES:
+        assert th in investigate._PREFILTER, f"theme {th!r} has no _PREFILTER entry"
+
+
 def test_theme_record_connects_say_and_do(conn):
     recs = {r.institution_id: r for r in investigate.theme_records(conn, "climate")}
     blk = recs["blackrock"]

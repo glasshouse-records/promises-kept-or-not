@@ -58,6 +58,9 @@ _PREFILTER: dict[str, list[str]] = {
     "climate": ["climate", "emission", "greenhouse", "ghg", "carbon", "paris", "net zero", "net-zero"],
     "lobbying-disclosure": ["lobby", "political"],
     "board-diversity": ["diversity", "dei", "civil rights", "inclusion"],
+    "nature": ["deforestation", "biodiversity", "natural capital", "nature", "water", "plastic"],
+    "labor-rights": ["freedom of association", "collective bargaining", "living wage",
+                     "sick leave", "worker safety", "worker health", "workplace safety"],
 }
 
 _EXAMPLE_LIMIT = 10
