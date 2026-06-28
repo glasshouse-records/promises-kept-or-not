@@ -108,6 +108,8 @@ def test_build_matrix_cells_carry_say_and_do(conn):
     assert cell["against"] == 2 and cell["for"] == 1
     assert round(cell["rate"], 2) == 0.67
     assert {e["issuer_name"] for e in cell["examples"]} == {"EXXON", "CHEVRON"}
+    # the cell carries a per-year trend (fixture votes are dated 2024)
+    assert "2024" in cell["trend"] and round(cell["trend"]["2024"]["rate"], 2) == 0.67
     # acme has no climate commitment and no votes ⇒ no climate cell
     acme = next((i for i in m["institutions"] if i["id"] == "acme"), None)
     assert acme is None or "climate" not in acme["cells"]

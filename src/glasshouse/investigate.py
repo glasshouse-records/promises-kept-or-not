@@ -337,7 +337,7 @@ def _scan_matrix(conn: sqlite3.Connection) -> dict[str, dict[str, dict]]:
             if not rx.search(desc):
                 continue
             b = out.setdefault(v["iid"], {}).setdefault(
-                th, {"for": 0, "against": 0, "abstain": 0, "examples": []})
+                th, {"for": 0, "against": 0, "abstain": 0, "examples": [], "years": {}})
             if hv == "FOR":
                 b["for"] += 1
             elif hv == "AGAINST":
@@ -348,6 +348,11 @@ def _scan_matrix(conn: sqlite3.Connection) -> dict[str, dict[str, dict]]:
                     "accession": v["accession"], "source_url": v["source_url"] or ""})
             elif hv == "ABSTAIN":
                 b["abstain"] += 1
+            md = (v["meeting_date"] or "").strip()
+            yr = md[-4:] if len(md) >= 4 and md[-4:].isdigit() else None
+            if yr and hv in ("FOR", "AGAINST"):       # per-year trend, for/against only
+                yb = b["years"].setdefault(yr, [0, 0])
+                yb[0 if hv == "FOR" else 1] += 1
     for cells in out.values():
         for s in cells.values():
             s["examples"].sort(key=lambda e: -(e["shares_voted"] or 0.0))
@@ -367,12 +372,14 @@ def build_matrix(conn: sqlite3.Connection) -> dict:
         cells = {}
         for th in THEMES:
             c = _commitment_for(conn, inst["id"], THEMES[th]["commitment"])
-            s = isc.get(th, {"for": 0, "against": 0, "abstain": 0, "examples": []})
+            s = isc.get(th, {"for": 0, "against": 0, "abstain": 0, "examples": [], "years": {}})
             f, a, ab = s["for"], s["against"], s["abstain"]
             n = f + a + ab
             if c is None and n == 0:
                 continue  # nothing to show for this cell
             denom = f + a
+            trend = {y: {"for": yf, "against": ya, "rate": round(ya / (yf + ya), 4)}
+                     for y, (yf, ya) in sorted(s.get("years", {}).items()) if yf + ya}
             cells[th] = {
                 "committed": c is not None,
                 "quote": (c[0] if c else None),
@@ -382,7 +389,7 @@ def build_matrix(conn: sqlite3.Connection) -> dict:
                 "for": f, "against": a, "abstain": ab, "n": n,
                 "rate": round(a / denom, 4) if denom else 0.0,
                 "low_confidence": denom < 5,
-                "examples": s["examples"],
+                "examples": s["examples"], "trend": trend,
             }
         if cells:
             institutions.append({"id": inst["id"], "name": inst["display_name"], "cells": cells})
