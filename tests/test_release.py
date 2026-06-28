@@ -155,6 +155,26 @@ def test_release_quarantines_legacy_html_votes(conn, tmp_path):
     assert len(rows) == 1  # only the structured, deduped vote
 
 
+def test_release_drops_operator_columns_and_non_votes(conn, tmp_path):
+    """The public release must not ship content_path (a local operator path),
+    and must exclude administrative N-PX rows with no cast vote."""
+    conn.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
+                 "sha256, content_path, content_type, size_bytes) VALUES "
+                 "('blackrock','principles','https://x/p.pdf','2025-01-01',?,?, 'application/pdf',9)",
+                 ("b" * 64, "/Users/op/glasshouse/data/commitments/x.pdf"))
+    conn.execute("INSERT INTO votes (accession, issuer_name, how_voted, shares_voted, is_duplicate) "
+                 "VALUES ('ACC-1','POSTAL NOTICE CO','',0,0)")   # non-vote (empty how_voted)
+    conn.commit()
+    d = tmp_path / "vt8"
+    release.build_release(conn, root=tmp_path, version="t8", with_parquet=False)
+    com_cols = next(csv.reader(open(d / "facts" / "commitments.csv")))
+    assert "content_path" not in com_cols          # local path not leaked
+    assert "url" in com_cols and "sha256" in com_cols   # real provenance kept
+    votes = _read_csv(d / "facts" / "votes.csv")
+    assert all(r["issuer_name"] != "POSTAL NOTICE CO" for r in votes)  # non-vote excluded
+    assert all(r["how_voted"] for r in votes)      # every public vote is a cast vote
+
+
 def test_release_version_cannot_escape_root(conn, tmp_path):
     """version becomes a dir name we rmtree — separators/traversal are rejected."""
     for bad in ("../../etc", "a/b", ".."):

@@ -57,8 +57,8 @@ def _emit_csv(conn: sqlite3.Connection, table: str, where: str, facts: Path) -> 
     gz = n > GZIP_THRESHOLD_ROWS
     name = f"{table}.csv.gz" if gz else f"{table}.csv"
     path = facts / name
-    cur = conn.execute(f"SELECT * FROM {table} {where}")
-    cols = [d[0] for d in cur.description]
+    cols = publish.public_columns(conn, table)     # drops operator-only cols (e.g. content_path)
+    cur = conn.execute(f"SELECT {','.join(cols)} FROM {table} {where}")
     opener = (lambda p: gzip.open(p, "wt", newline="", encoding="utf-8")) if gz \
         else (lambda p: open(p, "w", newline="", encoding="utf-8"))
     with opener(path) as fh:
@@ -75,8 +75,8 @@ def _emit_parquet(conn: sqlite3.Connection, table: str, where: str, facts: Path)
         import pyarrow.parquet as pq
     except ImportError:
         return None
-    cur = conn.execute(f"SELECT * FROM {table} {where}")
-    cols = [d[0] for d in cur.description]
+    cols = publish.public_columns(conn, table)
+    cur = conn.execute(f"SELECT {','.join(cols)} FROM {table} {where}")
     data: dict[str, list] = {c: [] for c in cols}
     for row in cur:
         for c in cols:

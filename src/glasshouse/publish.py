@@ -14,6 +14,7 @@ status='approved' ONLY. Operator-internal tables are never copied.
 
 from __future__ import annotations
 
+import contextlib
 import sqlite3
 from pathlib import Path
 
@@ -26,7 +27,11 @@ PUBLIC_TABLES: dict[str, str] = {
     # legacy_html votes are pre-2024 HTML-parsed and not yet validated — they
     # stay out of the public release until promoted (precision over recall).
     # IFNULL: structured votes may have NULL/'' vote_source and must stay in.
-    "votes": "WHERE is_duplicate = 0 AND IFNULL(vote_source,'') != 'legacy_html'",
+    # how_voted != '' drops administrative N-PX rows (postal-meeting notices,
+    # no-vote records) that aren't actual votes — a "proxy votes" table should
+    # only contain cast votes.
+    "votes": "WHERE is_duplicate = 0 AND IFNULL(vote_source,'') != 'legacy_html' "
+             "AND IFNULL(how_voted,'') != ''",
     "holdings": "",
     "enforcement_actions": "WHERE is_duplicate = 0",
     "entities": "",
@@ -37,6 +42,17 @@ PUBLIC_TABLES: dict[str, str] = {
 
 # Explicitly never published (here for the test that asserts the boundary).
 OPERATOR_ONLY = ("triage", "llm_log", "outreach", "signals", "match_log", "runs")
+
+# Columns dropped from otherwise-public tables: operator-internal artifacts that
+# are useless to consumers and leak local structure (content_path is the
+# maintainer's local cache path for a commitment doc).
+PUBLIC_DROP_COLS: dict[str, set[str]] = {"commitments": {"content_path"}}
+
+
+def public_columns(conn: sqlite3.Connection, table: str) -> list[str]:
+    """Public column list for a table — its columns minus PUBLIC_DROP_COLS."""
+    drop = PUBLIC_DROP_COLS.get(table, set())
+    return [r[1] for r in conn.execute(f"PRAGMA table_info({table})") if r[1] not in drop]
 
 
 def build_public_snapshot(conn: sqlite3.Connection, dest: Path | str) -> Path:
@@ -53,10 +69,15 @@ def build_public_snapshot(conn: sqlite3.Connection, dest: Path | str) -> Path:
             if not ddl or not ddl[0]:
                 continue
             out.execute(ddl[0])
-            rows = conn.execute(f"SELECT * FROM {table} {where}").fetchall()
+            for col in PUBLIC_DROP_COLS.get(table, ()):   # drop operator-only columns
+                with contextlib.suppress(sqlite3.OperationalError):
+                    out.execute(f"ALTER TABLE {table} DROP COLUMN {col}")
+            cols = public_columns(conn, table)
+            collist = ",".join(cols)
+            rows = conn.execute(f"SELECT {collist} FROM {table} {where}").fetchall()
             if rows:
-                placeholders = ",".join("?" * len(rows[0]))
-                out.executemany(f"INSERT INTO {table} VALUES ({placeholders})",
+                placeholders = ",".join("?" * len(cols))
+                out.executemany(f"INSERT INTO {table} ({collist}) VALUES ({placeholders})",
                                 [tuple(r) for r in rows])
             # carry the table's indexes for query performance on the mirror
             for (idx_sql,) in conn.execute(
