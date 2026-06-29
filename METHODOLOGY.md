@@ -71,6 +71,37 @@ published output until a human verifies the primary source (see
 5. **Commitment ⟷ holding** — weakest (index alibi exists); still reported,
    labeled as such.
 
+## Say-vs-do analysis (the investigation engine)
+
+The engine connects each institution's **commitment (SAY)** to its **voting
+record (DO)** on a theme, as a quantified, cited result. It is an
+investigative *assist*, not an oracle — every output is a quarantined **lead**.
+Precision rules, each enforced in code and tested:
+
+- **Themes** (currently 7: climate, nature, board-diversity, labor-rights,
+  lobbying-disclosure, anti-corruption, human-rights) are matched **lexically**
+  against proposal text and policy text. Lexical matching means cross-theme
+  overlap is possible (a "lobbying alignment with climate goals" proposal hits
+  both) — the proposal text is always shown so a human judges. Researchers can
+  also test **custom keyword** hypotheses.
+- **Binding-commitment guard.** A policy sentence may anchor a claim only if it
+  is real prose (not a PDF table-of-contents / title-case list), the manager is
+  binding *itself* (first-person / fund agent), and it contains an actual
+  commitment verb — not a description of an issue or an expectation of
+  *companies*.
+- **Polarity guard.** Voting AGAINST a proposal is a gap only if the proposal
+  *advances* the theme. Anti-ESG / anti-DEI proposals ("cease/revisit/reconsider
+  DEI", "report on the risks **of** DEI", counter-reports, "risks to
+  beneficiaries" framings) are excluded — voting them down is consistent, not
+  hypocritical.
+- **Temporal alignment.** A vote is compared only to the policy version in force
+  **at or before** the vote date — never a later commitment.
+- **AUM = managed / voting AUM.** Coverage weighting uses the assets a manager
+  actually votes, never balance-sheet, custody, or divested-arm assets.
+- **OFAC SDN name-joins are excluded** from enforcement leads: a sanctions
+  *designation* names who is sanctioned; matching a tracked manager or a held
+  issuer to one by name alone is the documented [Aldar] false-positive class.
+
 ## Entity resolution
 
 Join keys in strict priority order:

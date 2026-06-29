@@ -190,6 +190,15 @@ def _readme(pkg: dict, tables: dict, version: str, with_sqlite: bool = False) ->
         *(["- `derived/glasshouse.db` — SQLite; browse with "
            "`datasette derived/glasshouse.db`."] if with_sqlite else []), "",
         "## Cite it", "```", cite, "```", "",
+        "## Leads, not findings (read before publishing)",
+        "This is a factual compilation — acts, dates, amounts, votes; never motive. "
+        "Any say-vs-do gap you derive is a **lead**: theme matching is lexical, so "
+        "confirm each proposal's text/intent and the in-force policy version against "
+        "the linked primary source before publishing a claim.",
+        "",
+        "## Corrections",
+        "Spotted an error? Open an issue at the project repository (or email the "
+        "maintainer) with the table, the row, and the primary-source link.", "",
         "## Provenance guarantees",
         *[f"- {g}" for g in pkg["provenance_guarantees"]], "",
         "## What is NOT here (by construction)",

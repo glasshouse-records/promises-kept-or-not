@@ -105,6 +105,19 @@ operator workbench, a static site, and a read-only MCP server all consume the
 dataset. They are **human-gated**: name-join leads never auto-promote to
 findings, and **nothing is published or sent without explicit human action.**
 
+## Leads, not findings — and corrections
+
+This dataset records **acts, dates, amounts, and votes** — never motive. Any
+say-vs-do gap you derive from it is a **lead**: theme matching is lexical, so
+confirm each proposal's text and intent, and the policy version in force at the
+vote, against the linked primary source before publishing a claim. The
+`findings` table contains only human-approved claims (currently none — the data
+ships as facts, not accusations).
+
+**Found an error?** Open an issue with the table, the row, and the
+primary-source link. Provenance is the core value; corrections are welcomed and
+versioned. See [CHANGELOG.md](CHANGELOG.md) and [CITATION.cff](CITATION.cff).
+
 ## License
 
-Code: **MIT**. Data outputs: **CC-BY-4.0** — cite "Glasshouse" with a link.
+Code: **MIT**. Data outputs: **CC-BY-4.0** — cite "Glasshouse" with a link / DOI.

@@ -168,7 +168,31 @@ def build_datasheet(conn: sqlite3.Connection) -> str:
         for f in res["schema"]["fields"]:
             lines.append(f"- **{f['name']}** — {f['description']}")
         lines.append("")
-    lines += ["## Limitations", "See METHODOLOGY.md for the full source list, the "
-              "resolution-type table, and known-blocked sources. This is a partial, "
-              "growing snapshot; coverage above states the current boundary."]
+    lines += [
+        "## How to read this dataset (please read before citing)",
+        "- This is a **factual compilation** from primary sources (SEC N-PX / 13-F / "
+        "N-PORT, archived policies, public enforcement records). It records acts, "
+        "dates, amounts, and votes — it makes **no claims about motive or intent**.",
+        "- Any say-vs-do gap derived from it is a **LEAD, not a finding**: theme "
+        "matching is lexical, so confirm each proposal's text and intent, and the "
+        "in-force policy version, against the linked primary source before publishing.",
+        "- The `findings` table contains only claims a human reviewer approved "
+        f"(currently {next((r['rowCount'] for r in pkg['resources'] if r['name'] == 'findings'), 0)}). "
+        "Everything unreviewed stays out of this dataset.",
+        "- `aum_usd_tr` (in any derived analysis) is **managed / voting AUM**, never "
+        "balance-sheet or custody assets.",
+        "",
+        "## Corrections",
+        "Found an error? Please open an issue at the project repository (or contact the "
+        "maintainer) with the table, the row, and the primary-source link. Provenance "
+        "is the core value — corrections are welcomed and versioned.",
+        "",
+        "## Limitations", "See METHODOLOGY.md for the full source list, the "
+        "resolution-type table, the say-vs-do precision rules, and known-blocked "
+        "sources. This is a partial, growing snapshot; the coverage table above states "
+        "the current boundary — absence means uncollected, not clean.",
+        "",
+        f"_License: data CC-BY-4.0. Cite as: Glasshouse evidence dataset, v{pkg['version']} "
+        f"(commit {pkg['git_commit']}), {pkg['created']}._",
+    ]
     return "\n".join(lines) + "\n"
