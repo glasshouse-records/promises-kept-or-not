@@ -19,19 +19,19 @@ from datetime import UTC, datetime
 FINDING_THRESHOLD = 0.85
 
 # Legal suffixes stripped entirely so "BP plc" / "BP p.l.c." normalise to "bp".
+# ONLY true legal-form suffixes. Descriptive words (energy, technologies,
+# solutions, international, brands, industries…) were removed 2026-06-28: they
+# are part of a company's actual name, and stripping them collapses DISTINCT
+# companies ("Pineapple Energy" → "pineapple"), causing false name-joins.
+# fuzzy_match's token-subsequence logic still handles legitimate abbreviations.
 _LEGAL_SUFFIX_TOKENS: frozenset[str] = frozenset({
     "inc", "incorporated", "corp", "corporation", "co", "company",
     "ltd", "limited", "llc", "lp", "llp", "plc",
     "holdings", "holding", "hldgs", "hldg",
     "group", "grp",
-    "international", "intl", "intrnl",
-    "technologies", "technology", "technol",
-    "solutions", "systems", "enterprises", "services",
-    "resources", "energy",
     "ag", "sa", "spa", "nv", "bv", "ab", "oy", "se",
     "pjsc", "ojsc", "zao", "oao",
     "gmbh", "kg", "ky",
-    "brands", "industries",
 })
 
 _STOP_TOKENS: frozenset[str] = frozenset({

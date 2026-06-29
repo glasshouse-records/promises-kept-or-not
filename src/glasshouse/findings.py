@@ -74,6 +74,11 @@ def own_record(conn: sqlite3.Connection) -> list[OwnRecordRow]:
            JOIN enforcement_actions e
              ON gh_norm(e.company_name) = gh_norm(i.display_name)
            WHERE e.is_duplicate = 0
+             -- OFAC SDN designations name WHO is sanctioned (adversaries,
+             -- vessels, aliases). A tracked mainstream manager appearing there
+             -- by normalized name is a collision (the Aldar lesson), not its
+             -- own record — exclude. Real OFAC penalties use other types.
+             AND e.resolution_type != 'sanction_designation'
            ORDER BY i.display_name, e.action_date DESC""").fetchall()
     return [OwnRecordRow(**dict(r), quarantined=True) for r in rows]
 

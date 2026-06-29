@@ -7,6 +7,16 @@ def test_normalize_strips_legal_suffixes():
     assert normalize_name("3M Co") == "3m"
 
 
+def test_normalize_keeps_descriptive_words_to_avoid_collisions():
+    # Descriptive words are part of the name — stripping them collapsed DISTINCT
+    # companies and caused false joins (audit 2026-06-28). They must be kept.
+    assert normalize_name("Pineapple Energy Inc.") == "pineapple energy"   # not "pineapple"
+    assert normalize_name("Acme Technologies Inc.") == "acme technologies"
+    assert normalize_name("Acme Solutions LLC") == "acme solutions"
+    # …so distinct companies don't normalize to the same key:
+    assert normalize_name("Acme Energy Inc.") != normalize_name("Acme Inc.")
+
+
 def test_exact_normalized_match():
     matched, score = fuzzy_match("Goldman Sachs Group Inc.", "goldman sachs")
     assert matched and score == 1.0

@@ -58,6 +58,19 @@ def test_own_record_finds_institutions_in_enforcement(conn):
     assert rows[0].quarantined  # subsidiary-vs-parent must be human-confirmed
 
 
+def test_own_record_excludes_ofac_sdn_name_collisions(conn):
+    """A tracked manager appearing on the OFAC SDN list by normalized-name
+    collision (e.g. Vanguard Group == a sanctioned 'VANGUARD') is NOT its own
+    record — sanction designations must be excluded (the Aldar lesson)."""
+    conn.execute("INSERT INTO institutions (id, display_name) "
+                 "VALUES ('vanguard', 'The Vanguard Group, Inc.')")
+    ledger.insert_enforcement(conn, [EnforcementAction(
+        agency="OFAC (SDN)", company_name="VANGUARD", action_date="2019-01-01",
+        resolution_type="sanction_designation", primary_ref="OFAC-1",
+        source_url="https://ofac.gov/x")])
+    assert own_record(conn) == []   # the collision is suppressed, not surfaced
+
+
 def test_holdings_diff_opened_closed_changed(conn):
     conn.execute("INSERT INTO institutions (id, display_name) VALUES ('blackrock', 'BlackRock Inc.')")
     for acc, period in (("H1", "2025-09-30"), ("H2", "2025-12-31")):
