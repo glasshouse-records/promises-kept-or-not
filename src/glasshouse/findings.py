@@ -175,6 +175,11 @@ def flagged_votes(conn: sqlite3.Connection, *, shareholder_proposals_only: bool 
           ON gh_norm(e.company_name) = gh_norm(v.issuer_name)
          AND gh_norm(v.issuer_name) != ''
         WHERE v.how_voted != '' AND v.is_duplicate = 0
+          -- OFAC SDN designations name WHO is sanctioned; matching a voted
+          -- portfolio issuer to one by name alone is the documented Aldar
+          -- false-positive class ("ALDAR PROPERTIES" SDN ≠ Aldar PJSC). Drop
+          -- them from this name-join (43 pure collisions in the live data).
+          AND e.resolution_type != 'sanction_designation'
         ORDER BY e.resolution_type != 'unverified' DESC, v.meeting_date DESC
         LIMIT ?
     """

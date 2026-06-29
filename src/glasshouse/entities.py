@@ -52,7 +52,12 @@ def normalize_name(name: str) -> str:
     stripped = name.strip()
     if _CUSIP_RE.match(stripped.upper()):
         return stripped.lower()
-    lower = _PUNCT_RE.sub(" ", stripped.lower())
+    lower = stripped.lower()
+    # Delete intra-word punctuation so acronyms JOIN ("s&p"→"sp", "p.l.c."→"plc",
+    # "a.c.s."→"acs") instead of splitting into single chars that get dropped —
+    # which collapsed "S&P Global" and "A.C.S. Global" both to "global".
+    lower = re.sub(r"[.&'’]", "", lower)
+    lower = _PUNCT_RE.sub(" ", lower)
     tokens = [
         t for t in lower.split()
         if t and t not in _STOP_TOKENS and (len(t) > 1 or t.isdigit())

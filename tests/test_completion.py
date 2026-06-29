@@ -58,6 +58,26 @@ def test_own_record_finds_institutions_in_enforcement(conn):
     assert rows[0].quarantined  # subsidiary-vs-parent must be human-confirmed
 
 
+def test_flagged_votes_excludes_ofac_sdn_collisions(conn):
+    """Votes at a portfolio issuer must not be flagged because the issuer's
+    name collides with an OFAC SDN designation (the Aldar case) — but a real
+    enforcement match still surfaces."""
+    from glasshouse.findings import flagged_votes
+    conn.execute("INSERT INTO institutions (id, display_name) VALUES ('blackrock','BlackRock Inc.')")
+    conn.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+                 "retrieval_date) VALUES ('F','1','blackrock','N-PX','u','d')")
+    conn.execute("INSERT INTO votes (accession, issuer_name, how_voted, shares_voted, is_duplicate) "
+                 "VALUES ('F','ALDAR PROPERTIES PJSC','FOR',1,0)")
+    ledger.insert_enforcement(conn, [EnforcementAction(
+        agency="OFAC (SDN)", company_name="ALDAR PROPERTIES", action_date="2019-01-01",
+        resolution_type="sanction_designation", primary_ref="O-1", source_url="https://o")])
+    assert flagged_votes(conn) == []   # SDN name-collision suppressed
+    ledger.insert_enforcement(conn, [EnforcementAction(
+        agency="SEC", company_name="ALDAR PROPERTIES PJSC", action_date="2020-01-01",
+        resolution_type="civil_settlement", primary_ref="S-1", source_url="https://s")])
+    assert any(r.issuer_name == "ALDAR PROPERTIES PJSC" for r in flagged_votes(conn))
+
+
 def test_own_record_excludes_ofac_sdn_name_collisions(conn):
     """A tracked manager appearing on the OFAC SDN list by normalized-name
     collision (e.g. Vanguard Group == a sanctioned 'VANGUARD') is NOT its own

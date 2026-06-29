@@ -17,6 +17,15 @@ def test_normalize_keeps_descriptive_words_to_avoid_collisions():
     assert normalize_name("Acme Energy Inc.") != normalize_name("Acme Inc.")
 
 
+def test_normalize_joins_acronyms_instead_of_dropping_them():
+    # Single-letter tokens were dropped, collapsing "S&P Global" and "A.C.S.
+    # Global" both to "global" (audit 2026-06-28). Acronyms must JOIN, not vanish.
+    assert normalize_name("S&P Global Inc.") == "sp global"
+    assert normalize_name("A.C.S. Global BV") == "acs global"
+    assert normalize_name("S&P Global Inc.") != normalize_name("A.C.S. Global BV")
+    assert normalize_name("BP p.l.c.") == "bp"   # legal suffix still stripped
+
+
 def test_exact_normalized_match():
     matched, score = fuzzy_match("Goldman Sachs Group Inc.", "goldman sachs")
     assert matched and score == 1.0
