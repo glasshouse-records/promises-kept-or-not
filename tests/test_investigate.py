@@ -172,6 +172,32 @@ def test_theme_trend_by_year(conn):
     assert "acme" not in tr
 
 
+def test_company_scan_does_not_conflate_distinct_companies(tmp_path):
+    """'apple' must resolve to Apple Inc. only — never merge Pineapple Energy /
+    Maui Land & Pineapple (substring) or Apple Hospitality REIT (distinct)."""
+    c = ledger.connect(tmp_path / "cc.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('blackrock','BlackRock Inc.')")
+    c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+              "retrieval_date) VALUES ('A','1','blackrock','N-PX','u','d')")
+
+    def vote(iss, cus):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, vote_description, "
+                  "how_voted, shares_voted, is_duplicate) VALUES ('A',?,?, '05/21/2024',"
+                  "'Elect a director','AGAINST',1,0)", (iss, cus))
+    vote("APPLE INC.", "AAPL")
+    vote("Apple Inc.", "AAPL")                                      # same company, 2 spellings
+    vote("PINEAPPLE ENERGY INC.", "PNPL")                          # substring only
+    vote("MAUI LAND & PINEAPPLE COMPANY, INC.", "MLP")             # substring only
+    vote("APPLE HOSPITALITY REIT, INC.", "APLE")                   # distinct 'Apple' company
+    c.commit()
+    r = investigate.company_record(c, "apple")
+    assert "APPLE INC" in r["company"].upper()
+    assert "PINEAPPLE" not in r["company"].upper()
+    total = sum(h["votes_for"] + h["votes_against"] for h in r["holders"])
+    assert total == 2, f"expected only Apple Inc.'s 2 votes, got {total}"   # no conflation
+    assert any("HOSPITALITY" in o.upper() for o in r["other_matches"])      # surfaced, not merged
+
+
 def test_custom_keyword_hypothesis(conn):
     """A journalist can test their own hypothesis via keywords, not just the
     5 built-in themes. 'greenhouse,emission' should rediscover the climate-ish

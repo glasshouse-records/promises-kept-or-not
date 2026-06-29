@@ -25,6 +25,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from functools import cache
@@ -314,34 +315,78 @@ def holdings_weighted(conn: sqlite3.Connection, theme: str | None = None, *,
     return out
 
 
+# Strip legal-form suffixes / share-class noise so name VARIANTS of the SAME
+# company collapse, but DISTINCT companies do not.
+_COMPANY_SUFFIX = re.compile(
+    r"\b(?:INC|CORP|CORPORATION|CO|COMPANY|LTD|LIMITED|PLC|LLC|LP|SA|AG|NV|SE|ASA|AB|"
+    r"SPA|GROUP|HOLDING|HOLDINGS|THE|COM|ORD|ADR|ADS|REIT|CLASS|SERIES)\b", re.IGNORECASE)
+
+
+def _norm_company(name: str) -> str:
+    n = re.sub(r"[^A-Za-z0-9 ]", " ", (name or "").upper())
+    n = _COMPANY_SUFFIX.sub(" ", n)
+    return re.sub(r"\s+", " ", n).strip()
+
+
+def _resolve_company(conn: sqlite3.Connection, query: str):
+    """Resolve a name query to ONE company — NEVER merge distinct companies.
+    Matches the query as a WHOLE WORD (so 'ford' ≠ 'Ashford', 'apple' ≠
+    'Pineapple'), groups issuer_name spellings by normalized name, and picks the
+    exact-normalized group else the one with the most votes. Returns
+    (canonical_display, variants, cusips, other_matches)."""
+    qn = _norm_company(query)
+    qword = re.compile(r"\b" + re.escape(query.strip()) + r"\b", re.IGNORECASE)
+    groups: dict[str, dict] = {}
+    for r in conn.execute(
+        "SELECT issuer_name, cusip FROM votes WHERE issuer_name LIKE ? AND is_duplicate=0 "
+        "AND IFNULL(vote_source,'')!='legacy_html'", (f"%{query}%",)):
+        nm = r["issuer_name"] or ""
+        if not qword.search(nm):
+            continue                       # substring-only match (Pineapple, Ashford) → reject
+        g = groups.setdefault(_norm_company(nm), {"variants": Counter(), "cusips": set()})
+        g["variants"][nm] += 1
+        if r["cusip"]:
+            g["cusips"].add(r["cusip"])
+    if not groups:
+        return query, set(), set(), []
+    ordered = sorted(groups.items(),
+                     key=lambda kv: (kv[0] != qn, -sum(kv[1]["variants"].values())))
+    _, top = ordered[0]
+    canonical = top["variants"].most_common(1)[0][0]
+    others = [g["variants"].most_common(1)[0][0] for _, g in ordered[1:]]
+    return canonical, set(top["variants"]), top["cusips"], others
+
+
 def company_record(conn: sqlite3.Connection, query: str) -> dict:
     """Start from a COMPANY: which managers HOLD it (13-F value), and how they
     VOTED at it — the join a journalist wants for 'who held $Xbn and still
-    voted against the climate proposal here?'. Matches the issuer by name; the
-    per-manager AGAINST votes are theme-tagged. Leads, not findings."""
-    like = f"%{query}%"
-    vrows = conn.execute(
-        "SELECT issuer_name FROM votes WHERE issuer_name LIKE ? AND is_duplicate=0 "
-        "AND IFNULL(vote_source,'')!='legacy_html'", (like,)).fetchall()
-    from collections import Counter
-    names = Counter(r["issuer_name"] for r in vrows)
-    canonical = names.most_common(1)[0][0] if names else query
+    voted against the climate proposal here?'. Resolves the query to ONE company
+    (never conflates distinct issuers); per-manager AGAINST votes are
+    theme-tagged. Leads, not findings."""
+    canonical, variants, cusips, others = _resolve_company(conn, query)
+    if not variants:
+        return {"company": query, "query": query, "holders": [], "other_matches": []}
+    vph = ",".join("?" * len(variants))
 
     holders: dict[str, float] = {}
-    for r in conn.execute(
-        "SELECT f.institution_id AS iid, MAX(h.value_usd) AS v FROM holdings h "
-        "JOIN filings f ON f.accession=h.accession WHERE h.issuer_name LIKE ? "
-        "GROUP BY f.institution_id", (like,)):
+    hq = ("SELECT f.institution_id AS iid, MAX(h.value_usd) AS v FROM holdings h "
+          f"JOIN filings f ON f.accession=h.accession WHERE h.issuer_name IN ({vph})")
+    hp = list(variants)
+    if cusips:
+        hq += f" OR h.cusip IN ({','.join('?' * len(cusips))})"
+        hp += list(cusips)
+    hq += " GROUP BY f.institution_id"
+    for r in conn.execute(hq, hp):
         holders[r["iid"]] = r["v"] or 0.0
 
     regexes = {th: _theme_proposal_re(th) for th in THEMES}
     per: dict[str, dict] = {}
     for v in conn.execute(
-        """SELECT f.institution_id AS iid, v.meeting_date, v.vote_description,
+        f"""SELECT f.institution_id AS iid, v.meeting_date, v.vote_description,
                   v.how_voted, v.shares_voted, v.accession, f.source_url
            FROM votes v JOIN filings f ON f.accession=v.accession
-           WHERE v.issuer_name LIKE ? AND v.is_duplicate=0
-             AND IFNULL(v.vote_source,'')!='legacy_html'""", (like,)):
+           WHERE v.issuer_name IN ({vph}) AND v.is_duplicate=0
+             AND IFNULL(v.vote_source,'')!='legacy_html'""", (*variants,)):
         d = per.setdefault(v["iid"], {"for": 0, "against": 0, "examples": []})
         hv = (v["how_voted"] or "").strip().upper()
         if hv == "FOR":
@@ -368,7 +413,8 @@ def company_record(conn: sqlite3.Connection, query: str) -> dict:
             "votes_for": p["for"], "votes_against": p["against"],
             "examples": p["examples"][:_EXAMPLE_LIMIT]})
     rows.sort(key=lambda r: (-r["held_usd"], -r["votes_against"]))
-    return {"company": canonical, "query": query, "holders": rows}
+    return {"company": canonical, "query": query, "holders": rows,
+            "other_matches": others[:5]}
 
 
 def _scan_matrix(conn: sqlite3.Connection) -> dict[str, dict[str, dict]]:
