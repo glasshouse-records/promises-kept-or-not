@@ -1,0 +1,109 @@
+"""The detector framework: every accountability pattern is a pluggable
+'tool/feature' with the same shape — one sharp question over the primary
+record, out come cited LEADS, plus a self-describing scorecard.
+
+Invariants under test:
+  • Every registered detector declares an id, a technique (taxonomy), and the
+    plain-English question it asks.
+  • The flagship 'broken-promise' detector (the preserved say-vs-do engine)
+    produces cited leads: the commitment quote AND at least one vote with an
+    accession/source.
+  • Leads are FOOTPRINTS, not verdicts — no motive/intent language leaks into
+    a headline.
+  • Detectors run over the shared ledger and write NOTHING to it (leads only).
+"""
+
+import pytest
+
+from glasshouse import detectors, ledger
+
+
+@pytest.fixture
+def conn(tmp_path):
+    c = ledger.connect(tmp_path / "work.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('blackrock','BlackRock Inc.')")
+    pol = tmp_path / "blk.txt"
+    pol.write_text("Our stewardship approach. We are committed to robust climate "
+                   "risk oversight and we will support emissions reduction at the "
+                   "companies our funds hold.")
+    c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
+              "sha256, content_path, content_type, size_bytes) VALUES "
+              "('blackrock','stewardship','https://x/p.pdf','2023-01-01',?,?,'text/plain',10)",
+              ("a" * 64, str(pol)))
+    c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+              "retrieval_date) VALUES ('ACC','1','blackrock','N-PX','https://sec.gov/x','2025-01-01')")
+
+    def vote(issuer, desc, how, shares):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, "
+                  "vote_description, how_voted, shares_voted, is_duplicate) VALUES "
+                  "('ACC',?,?, '05/21/2024', ?, ?, ?, 0)", (issuer, "C" + issuer[:6], desc, how, shares))
+    vote("EXXON", "Shareholder proposal on greenhouse gas emissions reduction targets", "AGAINST", 5000)
+    vote("CHEVRON", "Report on climate transition plan and emissions", "AGAINST", 3000)
+    vote("SHELL", "Adopt medium-term GHG emissions reduction targets", "AGAINST", 2000)
+    vote("APPLE", "Proposal to report on climate risk", "FOR", 1000)
+    c.commit()
+    return c
+
+
+def test_registry_is_populated_and_self_describing():
+    reg = detectors.registry()
+    assert reg, "no detectors registered"
+    for d in reg.values():
+        assert d.id and d.name and d.technique and d.question
+        assert d.technique in detectors.TECHNIQUES, f"{d.id} cites unknown technique {d.technique}"
+
+
+def test_broken_promise_detector_is_registered():
+    """The say-vs-do 'intentions' engine is preserved as the flagship
+    detector, not retired."""
+    reg = detectors.registry()
+    assert "broken-promise" in reg
+    d = reg["broken-promise"]
+    assert d.technique == "say-vs-do"
+    assert "commit" in d.question.lower() or "promise" in d.question.lower()
+
+
+def test_broken_promise_produces_cited_leads(conn):
+    leads = detectors.registry()["broken-promise"].run(conn, min_rate=0.5, min_votes=1)
+    assert leads, "flagship detector produced no leads on a clear say-vs-do gap"
+    lead = next(x for x in leads if x.institution_id == "blackrock")
+    assert lead.detector_id == "broken-promise"
+    assert lead.technique == "say-vs-do"
+    assert "climate" in lead.subject
+    # Cited: the commitment quote AND at least one vote with its accession/source.
+    assert "climate risk oversight" in lead.evidence["commitment_quote"]
+    votes = lead.evidence["votes"]
+    assert votes and votes[0]["accession"] == "ACC"
+    assert votes[0].get("source_url")
+    assert 0 < lead.strength <= 1
+
+
+def test_leads_are_footprints_not_verdicts(conn):
+    for d in detectors.registry().values():
+        for lead in d.run(conn, min_rate=0.5, min_votes=1):
+            low = (lead.headline + " " + lead.subject).lower()
+            for banned in ("hypocri", "lying", "lied", "malicious", "intent to", "greenwash"):
+                assert banned not in low, f"{d.id} leaked motive language: {lead.headline!r}"
+
+
+def test_detector_scorecard_is_self_describing(conn):
+    """Each detector reports how it was validated — the tool held accountable
+    for its own method."""
+    d = detectors.registry()["broken-promise"]
+    sc = d.scorecard(conn, min_rate=0.5, min_votes=1)
+    assert sc["detector_id"] == "broken-promise"
+    assert "leads" in sc and sc["leads"] >= 1
+    assert sc["validation"]            # a non-empty description of how it's validated
+
+
+def test_running_a_detector_does_not_write_the_ledger(conn):
+    before = conn.execute("SELECT COUNT(*) FROM votes").fetchone()[0]
+    detectors.run_all(conn, min_rate=0.5, min_votes=1)
+    after = conn.execute("SELECT COUNT(*) FROM votes").fetchone()[0]
+    assert before == after
+
+
+def test_run_all_returns_leads_grouped_by_detector(conn):
+    out = detectors.run_all(conn, min_rate=0.5, min_votes=1)
+    assert "broken-promise" in out
+    assert all(lead.detector_id == "broken-promise" for lead in out["broken-promise"])

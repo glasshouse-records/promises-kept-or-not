@@ -306,6 +306,34 @@ def cmd_agent(args) -> int:
     return 0
 
 
+def cmd_detectors(args) -> int:
+    from . import detectors
+    conn = _conn()
+    if args.action == "list":
+        print("\n  THE DETECTOR LIBRARY — each is a tool that asks one question of the record:\n")
+        for d in detectors.registry().values():
+            t = detectors.TECHNIQUES[d.technique]
+            print(f"  ● {d.id}  [{t['family']}]")
+            print(f"      {d.question}")
+            print(f"      reads: {t['reads']}")
+            print(f"      trust: {d.validation}\n")
+        return 0
+    if args.action == "run":
+        reg = detectors.registry()
+        chosen = [reg[args.detector]] if args.detector else list(reg.values())
+        if args.detector and args.detector not in reg:
+            print(f"  no detector {args.detector!r}. See: glasshouse detectors list")
+            return 2
+        for d in chosen:
+            leads = d.run(conn, min_rate=args.min_rate, min_votes=args.min_votes)
+            print(f"\n  {d.id} — {len(leads)} cited leads (unverified; a human confirms before publication):\n")
+            for ld in leads[:20]:
+                flag = " ⚠ small sample" if ld.evidence.get("low_confidence") else ""
+                print(f"   [{ld.strength:.0%}] {ld.headline}{flag}")
+        return 0
+    return 2
+
+
 def cmd_firststone(args) -> int:
     from . import firststone
     if args.action == "run":
@@ -1058,6 +1086,17 @@ def main(argv: list[str] | None = None) -> int:
                      "headline/standfirst (needs ANTHROPIC_API_KEY; cited evidence stays "
                      "deterministic; falls back if unconfigured)")
     agr.set_defaults(func=cmd_agent)
+
+    dt = sub.add_parser("detectors", help="the detector library: each accountability pattern "
+                        "is a tool that emits cited leads (say-vs-do is the first)")
+    dt_sub = dt.add_subparsers(dest="action", required=True)
+    dtl = dt_sub.add_parser("list", help="the catalogue: every detector, its technique, and how it's validated")
+    dtl.set_defaults(func=cmd_detectors)
+    dtr = dt_sub.add_parser("run", help="run one detector (or all) and print cited leads")
+    dtr.add_argument("detector", nargs="?", help="detector id (omit for all); see 'detectors list'")
+    dtr.add_argument("--min-rate", type=float, default=0.6)
+    dtr.add_argument("--min-votes", type=int, default=10)
+    dtr.set_defaults(func=cmd_detectors)
 
     fs = sub.add_parser("firststone", help="First Stone — the AI newsroom on the registrar: "
                         "desks draft, fact-check and edit; only a HUMAN publishes")
