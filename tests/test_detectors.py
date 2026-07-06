@@ -405,3 +405,55 @@ def test_vote_divergence_is_footprints_not_verdict(diverged):
     low = (ld.headline + " " + str(ld.evidence)).lower()
     for banned in ("hypocri", "lying", "two-faced", "deceit"):
         assert banned not in low
+
+
+# ── Detector #6: skin-in-the-game (votes worse where it holds most) ─────────
+
+@pytest.fixture
+def skin(tmp_path):
+    c = ledger.connect(tmp_path / "sk.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('blk','BlackRock Inc.')")
+    pol = tmp_path / "p.txt"
+    pol.write_text("We are committed to robust climate risk oversight and we will "
+                   "support emissions reduction at the companies our funds hold.")
+    c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
+              "sha256, content_path, content_type, size_bytes) VALUES "
+              "('blk','stewardship','https://x/p.pdf','2023-01-01',?,?,'text/plain',10)",
+              ("a" * 64, str(pol)))
+    c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+              "retrieval_date) VALUES ('NPX','1','blk','N-PX','https://s','2025-01-01')")
+    c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+              "retrieval_date) VALUES ('F13','1','blk','13F-HR','https://s','2025-02-01')")
+    # Climate votes: AGAINST at big holdings, FOR at small holdings.
+    data = [("C1", "AGAINST", 1_000_000_000), ("C2", "AGAINST", 900_000_000),
+            ("C3", "FOR", 1_000_000), ("C4", "FOR", 500_000)]
+    for cusip, how, val in data:
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, "
+                  "vote_description, how_voted, shares_voted, is_duplicate) VALUES "
+                  "('NPX',?,?, '05/21/2024', 'Shareholder proposal on greenhouse gas "
+                  "emissions reduction targets', ?, 100, 0)", (cusip, cusip, how))
+        c.execute("INSERT INTO holdings (accession, issuer_name, cusip, value_usd, shares) "
+                  "VALUES ('F13',?,?,?,100)", (cusip, cusip, val))
+    c.commit()
+    return c
+
+
+def test_skin_in_the_game_is_registered():
+    d = detectors.registry().get("skin-in-the-game")
+    assert d and d.technique == "skin-in-the-game"
+
+
+def test_skin_in_the_game_flags_worse_at_big_positions(skin):
+    leads = detectors.registry()["skin-in-the-game"].run(skin, min_held=4, min_delta=0.1)
+    assert leads, "did not flag votes-worse-at-big-holdings"
+    ld = leads[0]
+    assert ld.institution_id == "blk" and "climate" in ld.subject
+    assert ld.evidence["large_rate"] > ld.evidence["small_rate"]
+    assert ld.evidence["delta"] > 0
+
+
+def test_skin_in_the_game_is_footprints_not_verdict(skin):
+    ld = detectors.registry()["skin-in-the-game"].run(skin, min_held=4, min_delta=0.1)[0]
+    low = (ld.headline + " " + str(ld.evidence)).lower()
+    for banned in ("hypocri", "lying", "deliberate", "cynical"):
+        assert banned not in low

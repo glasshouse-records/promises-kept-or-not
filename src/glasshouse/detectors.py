@@ -66,6 +66,13 @@ TECHNIQUES: dict[str, dict] = {
                     "shareholder proposal?",
         "reads": "the manager's own N-PX votes (one filer, one meeting, one proposal)",
     },
+    "skin-in-the-game": {
+        "name": "Skin in the game",
+        "family": "Influence",
+        "question": "Does the manager vote against a theme it commits to MORE at the "
+                    "companies where it holds the biggest stake (most influence)?",
+        "reads": "13-F holdings × N-PX votes on committed themes (position-weighted)",
+    },
     # Reserved — earned in later loops (kept here so the catalogue is legible):
     # "selective-silence"   — loud where exposure is low, silent where it is high
     # DEFERRED: the HELD-COMPANY claims-vs-enforcement ("backs companies later fined
@@ -551,10 +558,69 @@ class VoteDivergence(Detector):
     # the count of splits is the story. universe() stays None.
 
 
+# ── Detector #6: skin in the game (votes worse where it holds most) ─────────
+
+class SkinInTheGame(Detector):
+    """Where a manager commits to a theme but votes AGAINST that theme's
+    proposals MORE at the companies where it holds its biggest stake — i.e.
+    worse exactly where it has the most power to change things. Reuses the
+    audited holdings_weighted (13-F position size × N-PX votes, split at the
+    manager's median position). States the position-weighted rates, never
+    motive."""
+    id = "skin-in-the-game"
+    name = "Skin in the game (worse where it holds most)"
+    technique = "skin-in-the-game"
+    question = ("Does the manager vote against a theme it commits to more at the companies "
+                "where it holds the biggest stake?")
+    validation = ("Position-weighted: for each committed theme, the manager's theme votes are "
+                  "ranked by its own 13-F stake and split at the median; a lead needs the "
+                  "LARGE-position against-rate to exceed the small-position rate by a margin, "
+                  "on enough held votes. States the split rates, never motive.")
+
+    def run(self, conn: sqlite3.Connection, *, matrix: dict | None = None,
+            min_delta: float = 0.1, min_held: int = 30, **kw) -> list[Lead]:
+        m = matrix if matrix is not None else investigate.build_matrix(conn)
+        # Prefer the cached holdings-weighted split (fast); else compute per theme.
+        has_hw = any("hw" in c for inst in m["institutions"] for c in inst["cells"].values())
+        hw_by_theme: dict[str, dict] = {}
+        if not has_hw:
+            for theme in m["themes"]:
+                hw_by_theme[theme] = {r["institution_id"]: r
+                                      for r in investigate.holdings_weighted(conn, theme, min_held=min_held)}
+        leads: list[Lead] = []
+        for inst in m["institutions"]:
+            for theme, c in inst["cells"].items():
+                if not c["committed"]:
+                    continue
+                hw = c.get("hw") or hw_by_theme.get(theme, {}).get(inst["id"])
+                if not hw:
+                    continue
+                held = hw.get("held_votes", 0)
+                if held < min_held or hw["delta"] < min_delta:
+                    continue
+                label = theme.replace("-", " ")
+                leads.append(Lead(
+                    detector_id=self.id, technique=self.technique,
+                    institution_id=inst["id"], institution_name=inst["name"], subject=theme,
+                    headline=(f"{inst['name']} commits to {label}, yet votes against {label} "
+                              f"proposals more at its LARGEST holdings "
+                              f"({round(hw['large_rate'] * 100)}%) than its smallest "
+                              f"({round(hw['small_rate'] * 100)}%) — worse where it holds the most"),
+                    strength=round(min(1.0, hw["delta"]), 4),
+                    evidence={"large_rate": hw["large_rate"], "small_rate": hw["small_rate"],
+                              "delta": hw["delta"], "held_votes": held,
+                              "commitment_quote": c["quote"], "doc_url": c["doc_url"],
+                              "low_confidence": held < 60},
+                    provenance={"technique": self.technique,
+                                "source": "investigate.holdings_weighted (13-F × N-PX)"}))
+        leads.sort(key=lambda x: -x.strength)
+        return leads
+
+
 # ── registry ────────────────────────────────────────────────────────────────
 
 _DETECTORS: list[Detector] = [BrokenPromise(), CommitmentStrength(), OwnRecord(),
-                              CommitmentDecay(), VoteDivergence()]
+                              CommitmentDecay(), VoteDivergence(), SkinInTheGame()]
 
 
 def registry() -> dict[str, Detector]:
