@@ -588,21 +588,45 @@ _FS_CSS = """
 .deskrow.human b{color:var(--accent)}
 article.story{max-width:46rem}
 article.story blockquote{border-left:3px solid var(--accent);padding-left:1rem;margin-left:0}
+/* the staff — correspondents by beat */
+.staff{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:1rem;margin:1rem 0}
+.corr{border:1px solid var(--edge);border-radius:10px;padding:1rem 1.1rem;background:var(--panel)}
+.corr .nm{font:600 1.05rem var(--serif);color:var(--ink)}
+.corr .bt{font:700 .66rem var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);margin:.15rem 0 .4rem}
+.corr .bi{color:var(--muted);font-size:.9rem;line-height:1.5}
+.eic{border:1px solid var(--edge);border-left:4px solid var(--accent);border-radius:10px;
+  padding:1rem 1.2rem;background:var(--panel);margin:1rem 0}
+.eic .nm{font:600 1.2rem var(--serif)} .eic .rl{font:700 .68rem var(--mono);
+  letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.ethic{padding:.6rem 0;border-bottom:1px solid var(--line)}
+.ethic b{font:600 1rem var(--sans)} .ethic span{display:block;color:var(--muted);
+  font-size:.92rem;margin-top:.15rem}
+.disclose{border:1.5px dashed var(--accent);border-radius:8px;padding:.9rem 1.1rem;
+  background:var(--accent-soft);color:var(--ink);font-size:.92rem;margin:1.2rem 0}
+/* story furniture */
+article.story .kicker-line{font:700 .72rem var(--mono);letter-spacing:.2em;
+  text-transform:uppercase;color:var(--accent);margin:0}
+article.story .byline{font:600 1rem var(--sans);margin:.3rem 0 0}
 """
 
 
-def _fs_page(title: str, body: str) -> str:
+def _fs_page(title: str, body: str, active: str = "stories") -> str:
     from .firststone import MASTHEAD
+    links = [("firststone.html", "Stories", "stories"),
+             ("firststone-masthead.html", "Masthead & standards", "masthead")]
+    nav = "".join(f"<a href='{h}'{' class=on' if k == active else ''}>{t}</a>"
+                  for h, t, k in links)
     return (f"<!doctype html><html lang=en><head><meta charset=utf-8>"
             f"<meta name=viewport content='width=device-width,initial-scale=1'>"
             f"<title>{_e(title)} — First Stone</title>"
             f"<style>{_CSS}{_FS_CSS}</style></head><body>"
-            f"<nav><div class=wrap><span class=fsword>FIRST<b>STONE</b></span>"
-            f"<a href='firststone.html' class=on>Stories</a>"
-            f"<a href='index.html'>Glasshouse — the registrar ↗</a></div></nav>"
-            f"<div class=wrap>{body}<footer>{_e(MASTHEAD['tagline'])} Built on the "
-            f"Glasshouse registrar; every number can be recomputed from the public "
-            f"ledger.</footer></div>{_JS}</body></html>")
+            f"<nav><div class=wrap><span class=fsword>FIRST<b>STONE</b></span>{nav}"
+            f"<a href='index.html'>Glasshouse — the registry ↗</a></div></nav>"
+            f"<div class=wrap>{body}<footer>{_e(MASTHEAD['tagline'])} "
+            f"{_e(MASTHEAD['disclosure'])} Built on the Glasshouse registry; every "
+            f"number can be recomputed from the public ledger.</footer></div>"
+            f"{_JS}</body></html>")
 
 
 def _md_html(md: str) -> str:
@@ -655,15 +679,14 @@ def _md_html(md: str) -> str:
 def _build_firststone(out_dir) -> int:
     from .firststone import MASTHEAD, load_published
     pub = load_published()
-    desks = "".join(
-        f"<div class='deskrow{' human' if key == 'publisher' else ''}'>"
-        f"<b>{_e(name)}</b><span>{_e(charge)}</span></div>"
-        for key, name, charge in MASTHEAD["desks"])
+
+    # ── the front page: the edition ──
     if pub:
         cards = "".join(
             f"<div class='card claim r'><span class='ribbon ok'>● published "
             f"{_e(p['published'][:10])}</span>"
-            f"<h3><a href='firststone-{_e(p['slug'])}.html'>{_e(p['headline'])}</a></h3>"
+            f"<p class=meta>{_e(p.get('beat', ''))}{' · by ' + _e(p['byline']) if p.get('byline') else ''}</p>"
+            f"<h3><a href='firststone-story-{_e(p['slug'])}.html'>{_e(p['headline'])}</a></h3>"
             f"<p>{_e(p['standfirst'])}</p>"
             f"<p class=cite>Publisher's note: {_e(p['publisher_note'])}</p></div>"
             for p in pub)
@@ -673,19 +696,56 @@ def _build_firststone(out_dir) -> int:
                  "point.</p></div>")
     body = f"""<h1>{_e(MASTHEAD['name'])}</h1>
 <p class=lede>{_e(MASTHEAD['tagline'])}</p>
-<p class=secnote>{_e(MASTHEAD['about'])}</p>
-<p class=kicker>Masthead</p><h2>The desks</h2>
+<div class=disclose><b>How to read First Stone.</b> {_e(MASTHEAD['disclosure'])}</div>
+<p class=kicker>The edition</p><h2>Published stories</h2>
+{cards}
+<p class=secnote style='margin-top:1.4rem'>See the
+<a href='firststone-masthead.html'>masthead, correspondents and standards ↗</a>.</p>"""
+    (out_dir / "firststone.html").write_text(_fs_page("First Stone", body, "stories"))
+
+    # ── the masthead & standards page: who we are, how we work ──
+    eic = MASTHEAD["editor"]
+    se = MASTHEAD["standards_editor"]
+    corrs = "".join(
+        f"<div class=corr><div class=nm>{_e(c['name'])}</div>"
+        f"<div class=bt>{_e(c['beat'])}</div>"
+        f"<div class=bi>An automated correspondent who {_e(c['bio'])}</div></div>"
+        for c in MASTHEAD["correspondents"])
+    ethics = "".join(
+        f"<div class=ethic><b>{_e(t)}</b><span>{_e(d)}</span></div>"
+        for t, d in MASTHEAD["ethics"])
+    desks = "".join(
+        f"<div class='deskrow{' human' if key == 'publisher' else ''}'>"
+        f"<b>{_e(name)}</b><span>{_e(charge)}</span></div>"
+        for key, name, charge in MASTHEAD["desks"])
+    mast = f"""<h1>Masthead &amp; standards</h1>
+<p class=lede>{_e(MASTHEAD['about'])}</p>
+<div class=disclose>{_e(MASTHEAD['disclosure'])}</div>
+<p class=kicker>Editor</p><h2>Who runs the edition</h2>
+<div class=eic><div class=rl>{_e(eic['role'])}</div><div class=nm>{_e(eic['name'])}</div>
+<p class=bi>{_e(eic['name'])} {_e(eic['note'])}</p></div>
+<div class=eic><div class=rl>{_e(se['role'])}</div><div class=nm>{_e(se['name'])}</div>
+<p class=bi>{_e(se['note'])}</p></div>
+<p class=kicker>Correspondents</p><h2>The beats</h2>
+<div class=staff>{corrs}</div>
+<p class=kicker>How a story is made</p><h2>From the record to the page</h2>
+<p class=secnote>Every story passes these desks in order. A story spikes the moment
+any desk's check fails — and no story is published until the human publisher signs it.</p>
 <div class='card flat'>{desks}</div>
-<p class=kicker>Stories</p><h2>Published</h2>
-{cards}"""
-    (out_dir / "firststone.html").write_text(_fs_page("First Stone", body))
+<p class=kicker>Ethics</p><h2>The code we hold</h2>
+<div class='card flat'>{ethics}</div>
+<p class=kicker>Corrections</p><h2>When we get it wrong</h2>
+<div class=card><p>{_e(MASTHEAD['corrections'])}</p></div>"""
+    (out_dir / "firststone-masthead.html").write_text(
+        _fs_page("Masthead & standards", mast, "masthead"))
+
     for p in pub:
         story = (f"<article class=story>{_md_html(p['body'])}"
                  f"<p class=cite>Publisher's note: {_e(p['publisher_note'])} · "
                  f"published {_e(p['published'][:10])}</p></article>")
-        (out_dir / f"firststone-{p['slug']}.html").write_text(
-            _fs_page(p["headline"], story))
-    return 1 + len(pub)
+        (out_dir / f"firststone-story-{p['slug']}.html").write_text(
+            _fs_page(p["headline"], story, "stories"))
+    return 2 + len(pub)
 
 
 def _build_findings(conn, out_dir) -> None:

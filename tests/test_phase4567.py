@@ -26,8 +26,12 @@ FIXTURE_13F = """<?xml version="1.0"?>
 
 @pytest.fixture
 def conn(tmp_path, monkeypatch):
+    from glasshouse import firststone
     monkeypatch.setattr(outreach, "OUTBOX_DIR", tmp_path / "outbox")
     monkeypatch.setattr(events, "ALERTS_DIR", tmp_path / "alerts")
+    # First Stone writes stories to disk; keep tests OUT of the real data dir
+    # (a test that calls firststone.run must never clobber the live edition).
+    monkeypatch.setattr(firststone, "NEWSROOM_DIR", tmp_path / "newsroom")
     return ledger.connect(tmp_path / "test.db")
 
 
@@ -116,8 +120,9 @@ def test_site_build(conn, tmp_path):
     assert (out / "how-to-read.html").exists()
     assert (out / "record.html").exists()
     assert (out / "firststone.html").exists()
+    assert (out / "firststone-masthead.html").exists()
     assert (out / "feed.xml").read_text().startswith("<?xml")
-    assert stats["pages"] == 7
+    assert stats["pages"] == 8
     assert (out / "findings.html").exists()
     # The public site must NOT publish a candidates page — unreviewed leads
     # are operator-only (workbench). The publish boundary, on the most public
@@ -182,3 +187,35 @@ def test_site_institution_page_has_language_changelog(conn, tmp_path):
     assert "climate risk oversight" in page            # the quote itself
     # The old overclaim is retired; changes are documented, not characterized.
     assert "findings in themselves" not in page
+
+
+def test_site_firststone_masthead_is_staffed(conn, tmp_path):
+    """The public First Stone page reads like a staffed newsroom: editor-in-
+    chief, correspondents with beats, an ethics statement and corrections
+    policy — and the standing AI disclosure."""
+    from glasshouse import firststone
+    conn.execute("INSERT INTO institutions (id, display_name) VALUES ('blackrock','BlackRock Inc.')")
+    _policy_version(conn, tmp_path, "a" * 64, _POLICY_FILLER + " " + _POLICY_CLIMATE,
+                    wayback="20230101000000")
+    conn.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+                 "retrieval_date) VALUES ('ACC','1','blackrock','N-PX','https://e','2025-01-01')")
+    conn.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, "
+                 "vote_description, how_voted, shares_voted, is_duplicate) VALUES "
+                 "('ACC','EXXON','C1','05/21/2024',"
+                 "'Report on greenhouse gas emissions reduction targets','AGAINST',5000,0)")
+    conn.commit()
+    firststone.run(conn, min_votes=1, top_n=2)
+    out = tmp_path / "_site"
+    site.build(conn, out)
+    # The front page carries the standing disclosure and links to the masthead.
+    front = (out / "firststone.html").read_text()
+    assert "automated" in front.lower()
+    # The masthead page is the staffed org chart.
+    mast = (out / "firststone-masthead.html").read_text()
+    assert firststone.EDITOR["name"] in mast
+    # beats contain "&" → html-escaped; match the leading word to stay robust.
+    assert any(c["name"] in mast and c["beat"].split()[0] in mast
+               for c in firststone.CORRESPONDENTS)
+    assert "thics" in mast                                # Ethics section
+    assert "orrection" in mast                            # Corrections policy
+    assert "automated" in mast.lower()                    # the honesty line ships

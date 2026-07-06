@@ -42,17 +42,98 @@ from .http import DATA_DIR
 
 NEWSROOM_DIR = DATA_DIR / "newsroom"
 
+# ── the staff ────────────────────────────────────────────────────────────────
+# First Stone reads like a real masthead — a named editor-in-chief, a standards
+# editor, and correspondents with beats — because that structure is the
+# discipline. But the staff are software agents, and the newsroom SAYS SO on
+# every surface (DISCLOSURE below). Honesty is the whole product: we never let
+# a reader believe a person wrote what a program assembled from the ledger.
+
+DISCLOSURE = (
+    "First Stone's editors and correspondents are automated agents, not people. "
+    "They read the public Glasshouse registry, assemble stories from cited "
+    "primary sources, and check each other's numbers — but they do not publish. "
+    "Every story is a documented lead until a human publisher verifies the "
+    "primary sources and signs it. Bylines name the automated correspondent "
+    "responsible for the beat, never a human author.")
+
+EDITOR = {
+    "name": "Margaret Aldous",
+    "role": "Editor-in-Chief (automated)",
+    "note": ("runs the edition, keeps the wall between the desks and the human "
+             "publisher, and answers for every word First Stone files."),
+}
+
+STANDARDS_EDITOR = {
+    "name": "The Standards Editor",
+    "role": "Standards & Practices (automated)",
+    "note": ("holds the written code — facts and dates, never motive; right of "
+             "reply for every subject; a citation behind every claim."),
+}
+
+# Correspondents by beat. Each theme maps to exactly one correspondent so a
+# story's byline is deterministic. Bios are static persona copy (no facts).
+CORRESPONDENTS = [
+    {"id": "climate", "name": "Iris Calder", "beat": "Climate & Environment",
+     "themes": ("climate", "nature"),
+     "bio": "covers how the largest asset managers vote the climate, emissions "
+            "and nature commitments they publish."},
+    {"id": "governance", "name": "Theo Marsh", "beat": "Boards & Governance",
+     "themes": ("board-diversity",),
+     "bio": "tracks board composition, diversity and director-accountability votes."},
+    {"id": "labor", "name": "Nadia Okonkwo", "beat": "Labor & Human Rights",
+     "themes": ("labor-rights", "human-rights"),
+     "bio": "reports on workforce, human-capital and human-rights proposals."},
+    {"id": "influence", "name": "Ellis Vance", "beat": "Money & Influence",
+     "themes": ("lobbying-disclosure", "anti-corruption"),
+     "bio": "follows political-spending, lobbying-disclosure and anti-corruption votes."},
+]
+
+_THEME_CORRESPONDENT = {th: c for c in CORRESPONDENTS for th in c["themes"]}
+
+
+def correspondent_for(theme: str) -> dict:
+    """The correspondent whose beat covers this theme (deterministic)."""
+    return _THEME_CORRESPONDENT.get(
+        theme, {"id": "desk", "name": "The News Desk", "beat": "General",
+                "themes": (), "bio": "covers the say-vs-do record across beats."})
+
+
 MASTHEAD = {
     "name": "First Stone",
     "tagline": "Stories from the public record, checked twice, published by a human.",
     "about": (
-        "First Stone is an AI-staffed newsroom working over the Glasshouse "
-        "registrar — the neutral public record of what financial institutions "
-        "say and how they vote. Its desks are software agents: they select, "
-        "document, fact-check and edit. They do not publish. Every story is a "
-        "documented lead until a human publisher verifies both primary sources "
-        "and signs a publication note, and every subject is offered the right "
-        "of reply. Every number can be recomputed from the public ledger."),
+        "First Stone is an automated newsroom working over the Glasshouse "
+        "registry — the neutral public record of what financial institutions "
+        "say and how they vote. Its editors and correspondents are software "
+        "agents: they select, document, fact-check and edit. They do not "
+        "publish. Every story is a documented lead until a human publisher "
+        "verifies both primary sources and signs a publication note, and every "
+        "subject is offered the right of reply. Every number can be recomputed "
+        "from the public ledger."),
+    "disclosure": DISCLOSURE,
+    "editor": EDITOR,
+    "standards_editor": STANDARDS_EDITOR,
+    "correspondents": CORRESPONDENTS,
+    "ethics": [
+        ("Facts, not motive", "We report acts, dates, amounts and votes — never "
+         "what an institution 'really' intended. The record speaks; the reader judges."),
+        ("A citation behind every claim", "Every number is recomputed from the "
+         "public Glasshouse ledger and every policy quote links its archived, "
+         "content-hashed source. If you can't verify it, we don't print it."),
+        ("Leads, not verdicts", "A First Stone story is a documented lead until a "
+         "human publisher verifies the primary sources. Theme matching is lexical; "
+         "a person confirms intent before publication."),
+        ("Right of reply", "Every institution named is offered the chance to "
+         "respond before publication, and any response is published in full."),
+        ("We correct openly", "Errors are fixed on the record, dated, with the "
+         "correction shown — provenance is the point."),
+    ],
+    "corrections": (
+        "Found an error? Every First Stone claim traces to a primary source you "
+        "can open. Report it with the story, the figure, and the source link; "
+        "corrections are made on the record and dated."),
+    # The pipeline the desks run — shown so readers see how a story is made.
     "desks": [
         ("assignment", "The Assignment Desk", "ranks the field; decides what is worth chasing"),
         ("records", "The Records Desk", "builds the evidence file, citation by citation"),
@@ -122,6 +203,7 @@ def _desk_assignment(conn: sqlite3.Connection, *, min_rate: float, min_votes: in
             if not _STRONG_SAY_RE.search(c["quote"] or ""):
                 continue  # weak say (consider/helpful/rely): registrar yes, story no
             score = round(c["rate"] * (n ** 0.25) * ((aum + 0.1) ** 0.3), 4)
+            corr = correspondent_for(theme)
             pitches.append({
                 "slug": f"{inst['id']}-{theme}",
                 "state": "assigned", "trail": [],
@@ -132,13 +214,15 @@ def _desk_assignment(conn: sqlite3.Connection, *, min_rate: float, min_votes: in
                 "quote": c["quote"], "doc_label": c["doc_label"],
                 "doc_version": c["doc_version"], "doc_url": c["doc_url"],
                 "examples": c["examples"], "trend": c.get("trend") or {},
+                "byline": corr["name"], "beat": corr["beat"],
+                "correspondent_id": corr["id"],
             })
     pitches.sort(key=lambda p: -p["score"])
     chosen = pitches[:top_n]
     for p in chosen:
         _stamp(p, "assignment", "pass",
-               f"assigned at score {p['score']} — gap {round(p['against_rate']*100)}% "
-               f"on {p['n_votes']} votes")
+               f"assigned to {p['byline']} ({p['beat']}) at score {p['score']} — "
+               f"gap {round(p['against_rate']*100)}% on {p['n_votes']} votes")
     return chosen
 
 
@@ -243,12 +327,17 @@ def _desk_copy(conn: sqlite3.Connection | None, s: dict, llm: bool = False) -> d
 
 def _compose_body(s: dict) -> str:
     """The Records Desk's file, in print order. Called by the editor; the
-    Standards Desk reviews this exact text."""
+    Standards Desk reviews this exact text. Composed like a broadsheet: kicker,
+    headline, byline block, dateline, then the reported piece."""
     label = _label(s["theme"])
-    byline = ("By The Records Desk · fact-checked by The Ledger Desk · "
-              "standards by The Standards Desk · edited by The Editor")
-    lines = [f"# {s['headline']}", "",
-             f"**FIRST STONE** · {date.today().isoformat()} · {byline}", "",
+    corr = correspondent_for(s["theme"])
+    credit = ("reported by the Records Desk · fact-checked by the Ledger Desk · "
+              f"standards by {STANDARDS_EDITOR['name']} · edited by {EDITOR['name']}")
+    lines = [f"**{corr['beat'].upper()}**", "",   # kicker
+             f"# {s['headline']}", "",
+             f"**By {s.get('byline', corr['name'])}**, First Stone {corr['beat']} Desk "
+             f"— an automated correspondent", "",
+             f"FIRST STONE · {date.today().isoformat()} · {credit}", "",
              "> **DRAFT — awaiting the publisher.** A First Stone story is a documented "
              "lead, not a finding, until the human publisher verifies both primary "
              "sources and signs the publication note.", "",
@@ -289,15 +378,25 @@ def _compose_body(s: dict) -> str:
               f"- {ledger_stamp['note'] if ledger_stamp else 'recount pending'}",
               "- Every vote above carries its SEC N-PX accession number; every policy "
               "quote links its archived, content-hashed source.", "",
+              "## Editor's note", "",
+              f"This piece was assembled by {s.get('byline', corr['name'])}, First "
+              f"Stone's automated {corr['beat']} correspondent, from the public "
+              f"Glasshouse registry, and its figures were re-computed independently "
+              f"by the Ledger Desk. It is a documented lead: theme matching is "
+              f"lexical, so {EDITOR['name']} holds it for a human publisher to "
+              f"confirm the proposals' intent and the policy version in force before "
+              "publication. " + DISCLOSURE, "",
               "## Right of reply", "",
               f"{s['institution_name']} will be offered the opportunity to respond "
               "before publication. Any response will be published in full alongside "
               "this story.", "",
+              "## Corrections", "",
+              MASTHEAD["corrections"], "",
               "## Sources", "",
               f"- Policy: {s['doc_url']} (version {s['doc_version']})"]
     lines += [f"- N-PX `{e['accession']}`" + (f": {e['source_url']}" if e.get("source_url") else "")
               for e in s["examples"][:6]]
-    lines += ["", "*Data: the Glasshouse registrar — every claim independently "
+    lines += ["", "*Data: the Glasshouse registry — every claim independently "
               "verifiable against the public ledger.*"]
     return "\n".join(lines)
 

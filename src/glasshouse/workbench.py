@@ -410,13 +410,22 @@ function coDrill(i){
 
 const _FS_STATE_INK={awaiting_publisher:'var(--hold)',published:'var(--for)',spiked:'var(--against)'};
 function firststone(){
-  const F=S.firststone||{}, R=F.run;
-  let h=`<p class=secnote><b>First Stone</b> — the newsroom on top of the registrar. Software desks
-   assign, document, fact-check (by recomputing from the ledger), and edit; <b>only you publish</b>,
-   with a written note. Published stories appear on the public site under First Stone's own masthead.</p>
-   <div class=actions><button class=approve onclick='fsRun(this)'>Run edition cycle</button>
-   <span class=meta>${F.published.length} published · ${R?R.stories.length+' stories in the '+e((R.generated||'').slice(0,10))+' run':'no run yet'}</span><span class=st></span></div>`;
-  if(!R||!R.stories.length){$('#main').innerHTML=h+"<p class=empty>No edition on file. Run a cycle — the desks will pitch, check and file stories for your chair.</p>";return}
+  const F=S.firststone||{}, R=F.run, M=F.masthead||{};
+  const eic=M.editor||{}, corrs=M.correspondents||[];
+  const cnt=st=>R?R.stories.filter(s=>s.state===st).length:0;
+  let h=`<p class=secnote><b>First Stone</b> — the automated newsroom on top of the registrar.
+   Named correspondents work the beats; the desks assign, document, fact-check (by recomputing from
+   the ledger) and edit; <b>only you publish</b>, with a written note. Published stories appear on
+   the public site under First Stone's own masthead. The staff are software agents — the byline names
+   the automated correspondent, never a person.</p>`;
+  // the newsroom floor: editor-in-chief + correspondents on the beats
+  h+=`<div class='card flat' style='display:flex;gap:1.2rem;flex-wrap:wrap;align-items:center'>
+     <span class=meta><b style='color:var(--accent)'>${e(eic.name||'')}</b> — ${e(eic.role||'editor')}</span>`
+    +corrs.map(c=>`<span class=meta title='${e(c.bio||"")}'>${e(c.name)} · <b>${e(c.beat)}</b></span>`).join('')
+    +`</div>`;
+  h+=`<div class=actions><button class=approve onclick='fsRun(this)'>Run edition cycle</button>
+     <span class=meta>${F.published.length} published · ${cnt('awaiting_publisher')} awaiting you · ${cnt('spiked')} spiked${R?' · edition '+e((R.generated||'').slice(0,10)):''}</span><span class=st></span></div>`;
+  if(!R||!R.stories.length){$('#main').innerHTML=h+"<p class=empty>No edition on file. Run a cycle — the correspondents will pitch, the desks will check, and stories will come to your chair.</p>";return}
   h+=R.stories.map((s,i)=>{
     const trail=(s.trail||[]).map(t=>
       `<span title='${e(t.note)}' style='font:700 .68rem var(--mono);letter-spacing:.04em;padding:.18rem .5rem;
@@ -435,8 +444,9 @@ function firststone(){
       </div>`;
     return `<div class='card claim'>
      <span class=ribbon style='color:${ink}'>${e(s.state.replace('_',' '))}</span>
-     <span class=meta>#${i+1} · score ${e(s.score)} · ${Math.round(s.against_rate*100)}% against on ${s.n_votes} votes · ${e(s.theme)}</span>
-     <h3 style='margin:.2rem 0'>${e(s.headline||s.slug)}</h3>
+     <p class=meta style='font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0'>${e(s.beat||s.theme)}</p>
+     <h3 style='margin:.15rem 0'>${e(s.headline||s.slug)}</h3>
+     <p class=meta>By <b>${e(s.byline||'the News Desk')}</b>, automated correspondent · #${i+1} · score ${e(s.score)} · ${Math.round(s.against_rate*100)}% against on ${s.n_votes} votes</p>
      <p class=meta>${e(s.standfirst||'')}</p>
      <div style='display:flex;gap:.35rem;flex-wrap:wrap;margin:.4rem 0'>${trail}</div>
      <details><summary class=meta>read the full story as filed (with citations)</summary>

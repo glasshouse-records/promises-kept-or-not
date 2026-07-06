@@ -49,6 +49,51 @@ def conn(tmp_path, monkeypatch):
     return c
 
 
+def test_every_theme_has_a_correspondent():
+    """A big paper covers every beat — no theme should file without a named
+    correspondent."""
+    from glasshouse.contradictions import THEMES
+    for th in THEMES:
+        c = firststone.correspondent_for(th)
+        assert c and c["name"] and c["beat"], f"theme {th} has no correspondent"
+
+
+def test_byline_is_deterministic_and_beat_specific(conn):
+    """Same beat → same correspondent every run; different beats → different
+    correspondents. The byline is real furniture, printed in the body."""
+    s = firststone.run(conn, min_votes=1, top_n=1)[0]
+    assert s["beat"] and s["byline"]
+    assert s["byline"] == firststone.correspondent_for("climate")["name"]
+    assert (firststone.correspondent_for("climate")["name"]
+            != firststone.correspondent_for("board-diversity")["name"])
+    assert s["byline"] in s["body"]
+    assert s["beat"] in s["body"]
+
+
+def test_masthead_is_staffed(conn):
+    """The masthead names an editor-in-chief and correspondents covering the
+    beats — it reads like an organization, not a script."""
+    from glasshouse.contradictions import THEMES
+    m = firststone.MASTHEAD
+    assert m["editor"]["name"] and m["editor"]["role"]
+    assert len(m["correspondents"]) >= 3
+    covered = {th for c in m["correspondents"] for th in c["themes"]}
+    assert set(THEMES) <= covered, f"beats not covered: {set(THEMES) - covered}"
+    assert m["ethics"] and m["corrections"]
+
+
+def test_ai_disclosure_present_on_every_surface(conn):
+    """Honesty invariant (never mislead a reader that the staff are human):
+    the AI disclosure appears in the masthead AND in every story body."""
+    assert "automated" in firststone.DISCLOSURE.lower()
+    assert "automated" in (firststone.MASTHEAD["about"] + " "
+                           + firststone.DISCLOSURE).lower()
+    s = firststone.run(conn, min_votes=1, top_n=1)[0]
+    assert "automated" in s["body"].lower()
+    # The byline itself flags the correspondent as automated, not a person.
+    assert "automated correspondent" in s["body"].lower()
+
+
 def test_run_produces_stamped_stories(conn):
     stories = firststone.run(conn, min_votes=1, top_n=3)
     assert stories, "the newsroom produced no stories from a clear gap"
@@ -212,9 +257,9 @@ def test_site_ships_masthead_but_never_unpublished_stories(conn, tmp_path):
     fs = (out / "firststone.html").read_text()
     assert "First Stone" in fs
     assert "human" in fs.lower()              # the transparency line
-    assert not list(out.glob("firststone-*.html")), "unpublished story leaked to the site"
+    assert not list(out.glob("firststone-story-*.html")), "unpublished story leaked to the site"
     # After the human publishes, the story page ships.
     slug = firststone.load_run()["stories"][0]["slug"]
     firststone.publish(slug, note="verified", human_confirmed=True)
     site.build(conn, out)
-    assert (out / f"firststone-{slug}.html").exists()
+    assert (out / f"firststone-story-{slug}.html").exists()
