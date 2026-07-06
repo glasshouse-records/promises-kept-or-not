@@ -59,6 +59,13 @@ TECHNIQUES: dict[str, dict] = {
                     "across archived policy versions (e.g. 'expect' → 'ask'), or drop out?",
         "reads": "archived policy versions (walk-back timeline) × commitment-strength",
     },
+    "internal-divergence": {
+        "name": "Vote divergence",
+        "family": "Internal consistency",
+        "question": "Did the same manager's fund families vote BOTH ways on one identical "
+                    "shareholder proposal?",
+        "reads": "the manager's own N-PX votes (one filer, one meeting, one proposal)",
+    },
     # Reserved — earned in later loops (kept here so the catalogue is legible):
     # "selective-silence"   — loud where exposure is low, silent where it is high
     # DEFERRED: the HELD-COMPANY claims-vs-enforcement ("backs companies later fined
@@ -492,10 +499,62 @@ class CommitmentDecay(Detector):
         return n
 
 
+# ── Detector #5: vote divergence (same manager, both ways, one proposal) ────
+
+class VoteDivergence(Detector):
+    """The same manager's fund families casting shares BOTH ways on one
+    identical shareholder proposal (same filer, meeting, and text) — an ESG-
+    branded fund voting FOR while a flagship index fund votes AGAINST.
+
+    The cleanest finding class in the whole tool: the contradiction is internal
+    to one filer's own N-PX report, so there is NO entity-resolution risk (no
+    Aldar trap). One precision guard: rows where equal shares appear FOR and
+    AGAINST are the as-filed DUPLICATION signature (METHODOLOGY.md), not a real
+    split, and are excluded. States the split, never motive."""
+    id = "vote-divergence"
+    name = "Vote divergence (same manager, both ways)"
+    technique = "internal-divergence"
+    question = ("Did the same manager's fund families vote both ways on one identical "
+                "shareholder proposal?")
+    validation = ("Finding-grade by structure: the split is internal to a single filer's "
+                  "own N-PX report — no external join, no entity resolution, no name-match "
+                  "risk. Equal-shares-both-ways rows (as-filed duplication) are excluded. "
+                  "States the documented split, never motive.")
+
+    def run(self, conn: sqlite3.Connection, *, limit: int = 300, **kw) -> list[Lead]:
+        from . import findings
+        leads: list[Lead] = []
+        for d in findings.vote_divergence(conn, shareholder_proposals_only=True, limit=limit):
+            for_sh = float(d.ways.get("FOR", 0) or 0)
+            against_sh = float(d.ways.get("AGAINST", 0) or 0)
+            if for_sh <= 0 or against_sh <= 0:
+                continue                       # need a real two-sided split
+            if for_sh == against_sh:
+                continue                       # equal shares = as-filed duplication (excluded)
+            total = for_sh + against_sh
+            leads.append(Lead(
+                detector_id=self.id, technique=self.technique,
+                institution_id="", institution_name=d.institution, subject="internal split",
+                headline=(f"{d.institution}'s funds voted BOTH ways on one proposal at "
+                          f"{d.issuer_name}: {for_sh:,.0f} shares FOR, {against_sh:,.0f} AGAINST"),
+                strength=round(2 * min(for_sh, against_sh) / total, 4),   # 1.0 at a 50/50 split
+                evidence={"issuer_name": d.issuer_name, "cusip": d.cusip,
+                          "meeting_date": d.meeting_date, "vote_description": d.vote_description,
+                          "ways": {k: float(v) for k, v in d.ways.items()},
+                          "n_records": d.n_records},
+                provenance={"technique": self.technique, "risk": "none — internal to one filer",
+                            "excludes": "equal-shares-both-ways (as-filed duplication)"}))
+        leads.sort(key=lambda x: -x.strength)
+        return leads
+
+    # Selectivity is not the useful frame here (divergence is inherently rare);
+    # the count of splits is the story. universe() stays None.
+
+
 # ── registry ────────────────────────────────────────────────────────────────
 
 _DETECTORS: list[Detector] = [BrokenPromise(), CommitmentStrength(), OwnRecord(),
-                              CommitmentDecay()]
+                              CommitmentDecay(), VoteDivergence()]
 
 
 def registry() -> dict[str, Detector]:

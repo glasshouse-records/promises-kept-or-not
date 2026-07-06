@@ -353,3 +353,55 @@ def test_commitment_decay_ignores_strengthening(tmp_path):
         "its operations.")
     c.commit()
     assert detectors.registry()["commitment-decay"].run(c) == []
+
+
+# ── Detector #5: vote-divergence (same manager, both ways on one proposal) ───
+
+@pytest.fixture
+def diverged(tmp_path):
+    c = ledger.connect(tmp_path / "v.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('blk','BlackRock Inc.')")
+    for acc in ("F1", "F2"):
+        c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+                  "retrieval_date) VALUES (?,?, 'blk','N-PX','https://sec.gov/x','2025-01-01')",
+                  (acc, acc))
+
+    def vote(acc, cusip, desc, how, shares):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, "
+                  "vote_description, how_voted, shares_voted, is_duplicate) VALUES "
+                  "(?, 'EXXON', ?, '05/21/2024', ?, ?, ?, 0)", (acc, cusip, desc, how, shares))
+    # Real divergence: one fund FOR (1000), another AGAINST (500), same proposal.
+    vote("F1", "CX", "Shareholder proposal on climate emissions targets", "FOR", 1000)
+    vote("F2", "CX", "Shareholder proposal on climate emissions targets", "AGAINST", 500)
+    # Equal shares FOR and AGAINST = as-filed DUPLICATION signature → excluded.
+    vote("F1", "CY", "Shareholder proposal on lobbying disclosure", "FOR", 100)
+    vote("F2", "CY", "Shareholder proposal on lobbying disclosure", "AGAINST", 100)
+    # One-sided (both FOR) → not a divergence at all.
+    vote("F1", "CZ", "Shareholder proposal on board diversity", "FOR", 300)
+    vote("F2", "CZ", "Shareholder proposal on board diversity", "FOR", 200)
+    c.commit()
+    return c
+
+
+def test_vote_divergence_is_registered():
+    d = detectors.registry().get("vote-divergence")
+    assert d and d.technique == "internal-divergence"
+
+
+def test_vote_divergence_flags_real_split_only(diverged):
+    leads = detectors.registry()["vote-divergence"].run(diverged)
+    cusips = {ld.evidence["cusip"] for ld in leads}
+    assert "CX" in cusips          # real 1000/500 split flagged
+    assert "CY" not in cusips      # equal shares (duplication) excluded
+    assert "CZ" not in cusips      # one-sided, no divergence
+    ld = next(ld for ld in leads if ld.evidence["cusip"] == "CX")
+    assert ld.evidence["ways"]["FOR"] == 1000 and ld.evidence["ways"]["AGAINST"] == 500
+    assert ld.evidence["issuer_name"] == "EXXON"
+    assert 0 < ld.strength <= 1
+
+
+def test_vote_divergence_is_footprints_not_verdict(diverged):
+    ld = detectors.registry()["vote-divergence"].run(diverged)[0]
+    low = (ld.headline + " " + str(ld.evidence)).lower()
+    for banned in ("hypocri", "lying", "two-faced", "deceit"):
+        assert banned not in low
