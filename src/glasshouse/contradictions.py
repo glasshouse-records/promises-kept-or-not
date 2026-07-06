@@ -274,6 +274,10 @@ _DISCRETIONARY = re.compile(
     r"\bmay\s+vote\s+(either|for\s+or\s+against)\b|"
     r"\bfactors?\b[^.]{0,30}\bconsider(ation)?s?\b|"      # "factors ... to consider"
     r"\bconsiderations?\s+include\b|\bfactors?\s+include\b|"
+    # "may support / may vote for" reserves discretion (live false positive
+    # 2026-07-06: T. Rowe's "we may support shareholder resolutions asking
+    # for more transparency").
+    r"\bmay\s+(?:support|vote\s+for|vote\s+in\s+favor)\b|"
     # Deference to the company's own management/board is the OPPOSITE of a
     # commitment (live false positive 2026-07-06: Goldman's "it is the role of
     # boards and management to determine the appropriate level of disclosure"
@@ -294,6 +298,29 @@ def proposal_is_oppositional(text: str) -> bool:
 def commitment_is_discretionary(quote: str) -> bool:
     """True if the policy sentence explicitly reserves case-by-case discretion."""
     return bool(_DISCRETIONARY.search(quote))
+
+
+# A SAY-side sentence whose object is voting down PROPOSALS/RESOLUTIONS is an
+# anti-commitment: voting against such proposals is consistent with it, so it
+# can never anchor a say-vs-do gap. (Live false positive 2026-07-06: Goldman's
+# "We generally will vote AGAINST proposals asking for detailed disclosure of
+# … lobbying expenditures" was quoted as a lobbying-disclosure commitment.)
+# The object matters: "vote against DIRECTORS who fail climate oversight" is a
+# PRO-theme commitment and must not match.
+_OPPOSITIONAL_SAY = re.compile(
+    r"\b(?:(?:generally|typically|usually|normally)\s+)?"
+    r"(?:will\s+)?(?:vote|votes|voting)\s+against\s+(?:such\s+|these\s+|shareholder\s+)?"
+    r"(?:proposals?|resolutions?)\b|"
+    r"\b(?:do\s+not|does\s+not|will\s+not|won'?t|not\s+(?:generally\s+)?)\s*support\s+"
+    r"(?:such\s+|these\s+|shareholder\s+)?(?:proposals?|resolutions?)\b|"
+    r"\boppose[sd]?\s+(?:such\s+|these\s+|shareholder\s+)?(?:proposals?|resolutions?)\b",
+    re.IGNORECASE)
+
+
+def commitment_is_oppositional(quote: str) -> bool:
+    """True if the sentence commits AGAINST theme proposals (an honest
+    anti-commitment), so a vote against them cannot contradict it."""
+    return bool(_OPPOSITIONAL_SAY.search(quote))
 
 
 def find_commitment_vote_contradictions(
@@ -330,6 +357,7 @@ def find_commitment_vote_contradictions(
             qs = commitment_sentences(text, pats["commitment"]) if text else []
             qs = [q for q in qs if is_binding_commitment(q)
                   and not commitment_is_discretionary(q)
+                  and not commitment_is_oppositional(q)
                   and score_commitment_sentence(q) >= 1.0]
             quote_cache[ck] = qs[0] if qs else None
         return quote_cache[ck]

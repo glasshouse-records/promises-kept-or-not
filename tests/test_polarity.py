@@ -79,6 +79,45 @@ def test_discretionary_policy_language_detected():
         "We expect companies to disclose climate-related risks to investors.")
 
 
+def test_commitment_to_vote_against_proposals_is_not_a_theme_commitment():
+    """Live false positive (2026-07-06, second First Stone run): Goldman's
+    'We generally will vote AGAINST proposals asking for detailed disclosure
+    of political contributions or trade association or lobbying expenditures'
+    was quoted as a lobbying-disclosure COMMITMENT. It is the opposite — an
+    explicit commitment to oppose such proposals; voting against them is
+    consistent. A SAY-side sentence whose object is voting down PROPOSALS is
+    an anti-commitment, never a theme commitment."""
+    from glasshouse.contradictions import commitment_is_oppositional
+    assert commitment_is_oppositional(
+        "We generally will vote AGAINST proposals asking for detailed disclosure "
+        "of political contributions or trade association or lobbying expenditures.")
+    assert commitment_is_oppositional(
+        "We will not support shareholder resolutions seeking additional "
+        "climate reporting.")
+    assert commitment_is_oppositional(
+        "The funds typically oppose proposals requesting lobbying reports.")
+    # Voting against DIRECTORS for failing on the theme is a PRO-theme
+    # commitment — the object matters:
+    assert not commitment_is_oppositional(
+        "We will vote against directors who fail to provide adequate climate "
+        "risk oversight.")
+    assert not commitment_is_oppositional(
+        "We are committed to robust climate risk oversight in our voting.")
+
+
+def test_may_support_is_discretionary():
+    """Live false positive (same run): T. Rowe's 'To the extent that we find
+    generally poor disclosure…, we may support shareholder resolutions asking
+    for more transparency' — 'may support' reserves discretion."""
+    assert commitment_is_discretionary(
+        "To the extent that we find generally poor disclosure regarding the "
+        "board's oversight of political activity, we may support shareholder "
+        "resolutions asking for more transparency.")
+    assert commitment_is_discretionary("The fund may vote for such proposals.")
+    assert not commitment_is_discretionary(
+        "We support shareholder resolutions asking for lobbying transparency.")
+
+
 def test_deference_to_management_is_not_a_commitment():
     """Live false positive (first First Stone run, 2026-07-06): Goldman's
     policy sentence 'We generally believe that it is the role of boards and

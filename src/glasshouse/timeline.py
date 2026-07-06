@@ -31,6 +31,7 @@ from pathlib import Path
 from .contradictions import (
     THEMES,
     commitment_is_discretionary,
+    commitment_is_oppositional,
     commitment_sentences,
     extract_text,
     is_binding_commitment,
@@ -83,6 +84,7 @@ def theme_sentences(text: str, theme: str) -> list[str]:
     pats = THEMES[theme]["commitment"]
     return [q for q in commitment_sentences(text, pats)
             if is_binding_commitment(q) and not commitment_is_discretionary(q)
+            and not commitment_is_oppositional(q)
             and score_commitment_sentence(q) >= 1.0]
 
 
