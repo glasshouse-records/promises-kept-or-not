@@ -226,14 +226,15 @@ def act(conn: sqlite3.Connection, action: str, payload: dict) -> dict:
     if action == "detectors_run":
         from dataclasses import asdict
 
-        from . import detectors, investigate
+        from . import detectors, investigate, timeline
         d = detectors.registry().get(payload.get("detector", ""))
         if d is None:
             raise ValueError(f"unknown detector {payload.get('detector')!r}")
-        # Reuse the warm matrix cache so a click is instant, not a 3M-row rescan.
+        # Reuse the warm caches so a click is instant, not a full rescan.
         kw = {"min_rate": float(payload.get("min_rate", 0.6)),
               "min_votes": int(payload.get("min_votes", 10)),
-              "matrix": investigate.load_matrix()}
+              "matrix": investigate.load_matrix(),
+              "timelines": timeline.load_timelines()}
         leads = d.run(conn, **kw)
         return {"ok": True, "leads": [asdict(x) for x in leads[:50]],
                 "scorecard": d.scorecard(conn, **kw)}

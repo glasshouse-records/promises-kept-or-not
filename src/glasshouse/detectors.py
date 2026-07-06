@@ -52,8 +52,14 @@ TECHNIQUES: dict[str, dict] = {
                     "documented enforcement record (resolutions, not allegations)?",
         "reads": "the manager's own enforcement record × its published commitments",
     },
+    "commitment-decay": {
+        "name": "Commitment decay",
+        "family": "Commitment integrity",
+        "question": "Did the manager's commitment language on a theme quietly WEAKEN "
+                    "across archived policy versions (e.g. 'expect' → 'ask'), or drop out?",
+        "reads": "archived policy versions (walk-back timeline) × commitment-strength",
+    },
     # Reserved — earned in later loops (kept here so the catalogue is legible):
-    # "commitment-decay"    — commitment language quietly weakening across versions
     # "selective-silence"   — loud where exposure is low, silent where it is high
     # DEFERRED: the HELD-COMPANY claims-vs-enforcement ("backs companies later fined
     #   in a theme it champions") is NOT built — our enforcement data is name-only
@@ -385,9 +391,111 @@ class OwnRecord(Detector):
         return len(self._stewards(conn))
 
 
+# ── Detector #4: commitment decay (the walk-back, quantified) ───────────────
+
+class CommitmentDecay(Detector):
+    """Where a manager's commitment language on a theme quietly WEAKENED across
+    archived policy versions — a firm term softened ('expect' → 'ask',
+    'will' → 'may', 'require' → 'encourage') or a commitment dropped out
+    entirely. Reuses the walk-back timeline (whose diff guards already prevent
+    extraction-artifact false removals) and the commitment-strength measure to
+    judge the DIRECTION of each change.
+
+    Footprints only: it states that dated version A carried firmer language than
+    dated version B, quoting both — never why. It reports softenings/removals,
+    not rewordings that keep or raise strength."""
+    id = "commitment-decay"
+    name = "Commitment decay (language weakened over time)"
+    technique = "commitment-decay"
+    question = ("Did the manager's commitment language on a theme quietly weaken across "
+                "archived policy versions, or drop out?")
+    validation = ("Descriptive and verbatim-cited: compares the commitment-strength of "
+                  "matched sentences between consecutive archived versions (same walk-back "
+                  "timeline used on the public site). A change counts only when strength "
+                  "DROPS or a commitment is removed; both versions are linked. States "
+                  "dated facts, never motive.")
+
+    def _timelines(self, conn: sqlite3.Connection, timelines: dict | None = None):
+        if timelines is not None:
+            return list(timelines.get("institutions", {}).values())
+        from . import timeline
+        return [timeline.institution_timeline(conn, r["id"])
+                for r in conn.execute("SELECT id FROM institutions ORDER BY id")]
+
+    def _decay(self, data: dict) -> tuple[list[dict], dict | None]:
+        """Two honest signals: (1) SOFTENINGS — a tracked sentence whose
+        commitment-strength dropped (expect→ask); (2) net SHRINKAGE — the count
+        of binding commitment sentences for the theme fell within one document
+        lineage (first vs last version that carries any). Raw removals are NOT
+        counted, because a reworded commitment shows up as removed+added and
+        would overstate abandonment."""
+        strength = CommitmentStrength.strength
+        softenings = []
+        for ev in data["events"]:
+            for old, new in ev["revised"]:
+                if strength(new)[0] < strength(old)[0]:
+                    softenings.append({"from": old, "to": new,
+                                       "from_version": ev["from"]["version"],
+                                       "to_version": ev["to"]["version"],
+                                       "from_url": ev["from"]["url"], "to_url": ev["to"]["url"]})
+        by_doc: dict[str, list] = {}
+        for p in data.get("presence", []):
+            by_doc.setdefault(p["doc_label"], []).append(p)   # already version-ordered per lineage
+        shrink = None
+        for pres in by_doc.values():
+            if len(pres) >= 2 and pres[-1]["n"] < pres[0]["n"]:
+                drop = pres[0]["n"] - pres[-1]["n"]
+                if shrink is None or drop > shrink["drop"]:
+                    shrink = {"drop": drop, "from_n": pres[0]["n"], "to_n": pres[-1]["n"],
+                              "from_version": pres[0]["version"], "to_version": pres[-1]["version"],
+                              "from_url": pres[0]["url"], "to_url": pres[-1]["url"],
+                              "from_sample": pres[0]["sample"]}
+        return softenings, shrink
+
+    def run(self, conn: sqlite3.Connection, *, timelines: dict | None = None, **kw) -> list[Lead]:
+        leads: list[Lead] = []
+        for tl in self._timelines(conn, timelines):
+            for theme, data in tl["themes"].items():
+                softenings, shrink = self._decay(data)
+                if not softenings and not shrink:
+                    continue
+                label = theme.replace("-", " ")
+                bits = []
+                if shrink:
+                    bits.append(f"binding commitments fell from {shrink['from_n']} to "
+                                f"{shrink['to_n']} (versions {shrink['from_version']}→"
+                                f"{shrink['to_version']})")
+                if softenings:
+                    bits.append(f"{len(softenings)} firm term(s) softened")
+                mag = (shrink["drop"] if shrink else 0) + len(softenings)
+                leads.append(Lead(
+                    detector_id=self.id, technique=self.technique,
+                    institution_id=tl["institution_id"], institution_name=tl["name"],
+                    subject=theme,
+                    headline=(f"{tl['name']}'s {label} commitment language weakened across "
+                              f"archived versions — {'; '.join(bits)}"),
+                    strength=round(min(1.0, mag / 4), 4),
+                    evidence={"softenings": softenings, "shrink": shrink},
+                    provenance={"technique": self.technique,
+                                "source": "walk-back timeline × commitment-strength"}))
+        leads.sort(key=lambda x: -x.strength)
+        return leads
+
+    def universe(self, conn: sqlite3.Connection, *, timelines: dict | None = None, **kw) -> int:
+        # (manager, theme) pairs that changed at all — the honest denominator for
+        # "when the language changed, how often did it weaken?"
+        n = 0
+        for tl in self._timelines(conn, timelines):
+            for data in tl["themes"].values():
+                if data["events"]:
+                    n += 1
+        return n
+
+
 # ── registry ────────────────────────────────────────────────────────────────
 
-_DETECTORS: list[Detector] = [BrokenPromise(), CommitmentStrength(), OwnRecord()]
+_DETECTORS: list[Detector] = [BrokenPromise(), CommitmentStrength(), OwnRecord(),
+                              CommitmentDecay()]
 
 
 def registry() -> dict[str, Detector]:

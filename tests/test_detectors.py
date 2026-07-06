@@ -260,3 +260,96 @@ def test_own_record_scorecard_reports_selectivity(own_conn):
     sc = detectors.registry()["own-record"].scorecard(own_conn)
     assert sc["universe"] == 2 and sc["flagged"] == 1   # 2 managers market stewardship; 1 has a record
     assert sc["selectivity"] == 0.5
+
+
+# ── Detector #4: commitment-decay (walk-back quantified) ────────────────────
+
+_DFILLER = ("General provisions on proxy operations, ballot processing and "
+            "record-keeping apply across all funds and accounts. " * 8)
+
+
+@pytest.fixture
+def decayed(tmp_path):
+    c = ledger.connect(tmp_path / "d.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('blackrock','BlackRock Inc.')")
+
+    def ver(sha, text, wayback="", retrieval="2026-06-01"):
+        p = tmp_path / f"{sha[:6]}.txt"
+        p.write_text(text)
+        c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
+                  "sha256, content_path, content_type, size_bytes, wayback_timestamp) VALUES "
+                  "('blackrock','stewardship','https://x/p.pdf',?,?,?,'text/plain',?,?)",
+                  (retrieval, sha, str(p), len(text), wayback))
+    # v1 (2022): HARD climate commitment ("we expect every company to …").
+    ver("a" * 64, _DFILLER + " We expect every company to disclose how it manages "
+        "climate risk in its operations.", wayback="20220101000000")
+    # v2 (2026): SOFTER — expect → ask (the real BlackRock walk-back shape).
+    ver("b" * 64, _DFILLER + " We ask every company to disclose how it manages "
+        "climate risk in its operations.")
+    c.commit()
+    return c
+
+
+def test_commitment_decay_is_registered():
+    d = detectors.registry().get("commitment-decay")
+    assert d and d.technique == "commitment-decay"
+
+
+def test_commitment_decay_flags_softening(decayed):
+    leads = detectors.registry()["commitment-decay"].run(decayed)
+    assert leads, "did not flag a real expect→ask softening"
+    ld = leads[0]
+    assert ld.institution_id == "blackrock" and "climate" in ld.subject
+    soft = ld.evidence["softenings"]
+    assert any("expect" in s["from"] and "ask" in s["to"] for s in soft)
+    assert soft[0]["from_url"] and soft[0]["to_url"]   # both versions cited
+
+
+def test_commitment_decay_flags_shrinkage(tmp_path):
+    """The main real-world signal: the COUNT of binding commitment sentences
+    for a theme falls between versions (BlackRock: many → few)."""
+    c = ledger.connect(tmp_path / "sh.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('blk','BlackRock Inc.')")
+
+    def ver(sha, text, wayback="", retrieval="2026-06-01"):
+        p = tmp_path / f"{sha[:6]}.txt"
+        p.write_text(text)
+        c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
+                  "sha256, content_path, content_type, size_bytes, wayback_timestamp) VALUES "
+                  "('blk','stewardship','https://x/p.pdf',?,?,?,'text/plain',?,?)",
+                  (retrieval, sha, str(p), len(text), wayback))
+    # v1: TWO binding climate commitments; v2: only ONE remains.
+    ver("a" * 64, _DFILLER + " We expect every company to disclose its climate risk. "
+        "We will vote against directors who fail on climate risk oversight.",
+        wayback="20200101000000")
+    ver("b" * 64, _DFILLER + " We expect every company to disclose its climate risk.")
+    c.commit()
+    ld = detectors.registry()["commitment-decay"].run(c)[0]
+    assert ld.evidence["shrink"] and ld.evidence["shrink"]["from_n"] > ld.evidence["shrink"]["to_n"]
+
+
+def test_commitment_decay_is_footprints_not_verdict(decayed):
+    ld = detectors.registry()["commitment-decay"].run(decayed)[0]
+    low = (ld.headline + " " + str(ld.evidence)).lower()
+    for banned in ("hypocri", "lying", "backtrack", "betray", "broke its promise"):
+        assert banned not in low
+
+
+def test_commitment_decay_ignores_strengthening(tmp_path):
+    """A commitment that gets STRONGER (ask→expect) is not a decay lead."""
+    c = ledger.connect(tmp_path / "s.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('x','X AM')")
+
+    def ver(sha, text, wayback="", retrieval="2026-06-01"):
+        p = tmp_path / f"{sha[:6]}.txt"
+        p.write_text(text)
+        c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
+                  "sha256, content_path, content_type, size_bytes, wayback_timestamp) VALUES "
+                  "('x','stewardship','https://x/p.pdf',?,?,?,'text/plain',?,?)",
+                  (retrieval, sha, str(p), len(text), wayback))
+    ver("a" * 64, _DFILLER + " We ask every company to disclose climate risk in "
+        "its operations.", wayback="20220101000000")
+    ver("b" * 64, _DFILLER + " We expect every company to disclose climate risk in "
+        "its operations.")
+    c.commit()
+    assert detectors.registry()["commitment-decay"].run(c) == []
