@@ -244,6 +244,7 @@ def _e(s) -> str:
 
 def _page(title: str, body: str, active: str = "") -> str:
     links = [("index.html", "Overview", "home"), ("record.html", "The record", "record"),
+             ("detectors.html", "What we check", "detect"),
              ("institutions.html", "Institutions", "inst"),
              ("findings.html", "Findings", "find"),
              ("how-to-read.html", "How to read", "how"),
@@ -509,6 +510,7 @@ def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
 
     _build_index(conn, out_dir, stats, insts, findings)
     _build_record(conn, out_dir)
+    _build_detectors(conn, out_dir)
     _build_institutions_index(conn, out_dir, insts)
     n_inst = sum(_build_institution(conn, out_dir, r, findings) for r in insts)
     _build_findings(conn, out_dir)
@@ -516,7 +518,41 @@ def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
     n_fs = _build_firststone(out_dir)
     _write_feed(conn, out_dir)
     _write_institution_feeds(conn, out_dir, insts, findings)
-    return {"pages": 5 + n_inst + n_fs, "findings": len(findings)}
+    return {"pages": 6 + n_inst + n_fs, "findings": len(findings)}
+
+
+def _build_detectors(conn, out_dir) -> None:
+    """The public 'what we check — and how each check is validated' page. The
+    catalogue of detectors, in registrar voice, each with its live scorecard.
+    Publishing the validation is the novel part: the tool accountable for its
+    own method."""
+    from . import detectors
+    cards = ""
+    for d in detectors.registry().values():
+        t = detectors.TECHNIQUES[d.technique]
+        sc = d.scorecard(conn)
+        note = _e(sc.get("note", "")) or _e(d.validation)
+        leads = sc.get("leads")
+        badge = (f"<span class=cite>{leads} current leads · "
+                 f"{'validated' if sc.get('discriminates') else 'descriptive'}</span>"
+                 if leads is not None else "")
+        cards += f"""<div class='card'>
+<p class=kicker style='margin:0 0 .2rem'>{_e(t['family'])}</p>
+<h3 style='margin:.1rem 0'>{_e(d.name)}</h3>
+<p><b>The question:</b> {_e(d.question)}</p>
+<p class=meta><b>Reads:</b> {_e(t['reads'])}</p>
+<p class=secnote style='margin:.4rem 0 0'><b>How it's validated:</b> {note}</p>
+{badge}</div>"""
+    body = f"""<h1>What we check</h1>
+<p class=lede>Glasshouse is a library of <b>detectors</b> — each a single, sharp
+question asked of the primary record. Every detector states cited acts, dates and
+votes; none asserts motive. Each is quarantined as a <b>lead</b> until a human
+verifies it.</p>
+<p class=secnote>Every detector below carries its own validation — including, honestly,
+when a check does <i>not</i> discriminate on the current record. The method is held
+to the same standard as the institutions it examines.</p>
+{cards}"""
+    (out_dir / "detectors.html").write_text(_page("What we check", body, "detect"))
 
 
 def _pretty_stamp(v: str) -> str:

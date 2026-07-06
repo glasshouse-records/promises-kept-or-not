@@ -99,6 +99,27 @@ def test_state_exposes_all_desks(server):
     assert s["gold_labels"] == 0
 
 
+def test_state_exposes_detector_catalogue(server):
+    """The detector library is a visible feature: the operator sees every
+    tool, what it asks, and how it's validated."""
+    cat = _get(server + "/api/state")["detectors"]
+    ids = {d["id"] for d in cat}
+    assert {"broken-promise", "soft-commitment"} <= ids
+    bp = next(d for d in cat if d["id"] == "broken-promise")
+    assert bp["question"] and bp["validation"] and bp["family"]
+
+
+def test_detectors_run_action_returns_leads_and_scorecard(server):
+    code, out = _post(server + "/api/act/detectors_run",
+                      {"detector": "broken-promise", "min_rate": 0.5, "min_votes": 1})
+    assert code == 200 and out["ok"]
+    assert isinstance(out["leads"], list)
+    assert out["scorecard"]["detector_id"] == "broken-promise"
+    # Unknown detector fails cleanly.
+    code, out = _post(server + "/api/act/detectors_run", {"detector": "nope"})
+    assert code == 400
+
+
 def test_review_decision_requires_note_and_persists(server):
     s = _get(server + "/api/state")
     fid = s["review"][0]["id"]

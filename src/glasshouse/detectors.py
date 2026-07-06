@@ -105,12 +105,14 @@ class BrokenPromise(Detector):
     validation = ("Validated by construction, not by prediction: SAY (a verbatim, "
                   "dated policy sentence) and DO (the de-duplicated N-PX voting "
                   "record) are both primary sources. Polarity guards exclude "
-                  "anti-theme proposals; every lead is a quarantined candidate a "
-                  "human confirms before publication.")
+                  "anti-theme proposals; every lead is quarantined until a human "
+                  "verifies it before publication.")
 
     def run(self, conn: sqlite3.Connection, *, min_rate: float = 0.6,
-            min_votes: int = 10) -> list[Lead]:
-        matrix = investigate.build_matrix(conn)
+            min_votes: int = 10, matrix: dict | None = None, **kw) -> list[Lead]:
+        # Callers with a warm cache (the workbench) pass matrix= for speed;
+        # everyone else (tests, CLI) builds fresh from this conn.
+        matrix = matrix if matrix is not None else investigate.build_matrix(conn)
         leads: list[Lead] = []
         for inst in matrix["institutions"]:
             for theme, c in inst["cells"].items():
@@ -188,16 +190,17 @@ class CommitmentStrength(Detector):
             return 0.5, 0, 0
         return round(hard / (hard + soft), 4), hard, soft
 
-    def _committed_cells(self, conn: sqlite3.Connection):
-        matrix = investigate.build_matrix(conn)
+    def _committed_cells(self, conn: sqlite3.Connection, matrix: dict | None = None):
+        matrix = matrix if matrix is not None else investigate.build_matrix(conn)
         for inst in matrix["institutions"]:
             for theme, c in inst["cells"].items():
                 if c["committed"] and c["quote"]:
                     yield inst, theme, c
 
-    def run(self, conn: sqlite3.Connection, *, max_strength: float = 0.5, **kw) -> list[Lead]:
+    def run(self, conn: sqlite3.Connection, *, max_strength: float = 0.5,
+            matrix: dict | None = None, **kw) -> list[Lead]:
         leads: list[Lead] = []
-        for inst, theme, c in self._committed_cells(conn):
+        for inst, theme, c in self._committed_cells(conn, matrix):
             s, nh, ns = self.strength(c["quote"])
             # Require enough modal signal to judge — a lone stray word is noise,
             # not a hedged promise (learned on the first real run, 2026-07-06).
@@ -220,9 +223,10 @@ class CommitmentStrength(Detector):
         leads.sort(key=lambda x: -x.strength)
         return leads
 
-    def scorecard(self, conn: sqlite3.Connection, **kw) -> dict:
+    def scorecard(self, conn: sqlite3.Connection, *, matrix: dict | None = None, **kw) -> dict:
+        matrix = matrix if matrix is not None else investigate.build_matrix(conn)
         soft, hard = [], []
-        for _inst, _theme, c in self._committed_cells(conn):
+        for _inst, _theme, c in self._committed_cells(conn, matrix):
             n = c["for"] + c["against"]
             if n == 0:
                 continue
@@ -248,7 +252,7 @@ class CommitmentStrength(Detector):
             note = (f"predictive self-validation not established (soft {sr}, hard {hr}, "
                     f"n_soft={len(soft)}, n_hard={len(hard)}). Descriptive lead only.")
         return {"detector_id": self.id, "technique": self.technique,
-                "leads": len(self.run(conn, **kw)), "validation": self.validation,
+                "leads": len(self.run(conn, matrix=matrix, **kw)), "validation": self.validation,
                 "n_soft": len(soft), "n_hard": len(hard),
                 "soft_against_rate": sr, "hard_against_rate": hr,
                 "discriminates": discriminates, "note": note}

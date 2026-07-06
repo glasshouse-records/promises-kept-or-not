@@ -116,7 +116,21 @@ def state(conn: sqlite3.Connection) -> dict:
                        "published": [{k: v for k, v in p.items() if k != "body"}
                                      for p in firststone.load_published()],
                        "masthead": firststone.MASTHEAD},
+        "detectors": _detector_catalogue(),
     }
+
+
+def _detector_catalogue() -> list[dict]:
+    """The catalogue — cheap, static: every detector as a visible tool. Running
+    them (which scans the ledger) is on-demand via the detectors_run action."""
+    from . import detectors
+    out = []
+    for d in detectors.registry().values():
+        t = detectors.TECHNIQUES[d.technique]
+        out.append({"id": d.id, "name": d.name, "technique": d.technique,
+                    "question": d.question, "validation": d.validation,
+                    "family": t["family"], "reads": t["reads"]})
+    return out
 
 
 # ── actions (write side — all through existing gated functions) ─────────────
@@ -208,6 +222,21 @@ def act(conn: sqlite3.Connection, action: str, payload: dict) -> dict:
         from . import firststone
         firststone.spike(payload["slug"], note=payload.get("note", ""))
         return {"ok": True}
+
+    if action == "detectors_run":
+        from dataclasses import asdict
+
+        from . import detectors, investigate
+        d = detectors.registry().get(payload.get("detector", ""))
+        if d is None:
+            raise ValueError(f"unknown detector {payload.get('detector')!r}")
+        # Reuse the warm matrix cache so a click is instant, not a 3M-row rescan.
+        kw = {"min_rate": float(payload.get("min_rate", 0.6)),
+              "min_votes": int(payload.get("min_votes", 10)),
+              "matrix": investigate.load_matrix()}
+        leads = d.run(conn, **kw)
+        return {"ok": True, "leads": [asdict(x) for x in leads[:50]],
+                "scorecard": d.scorecard(conn, **kw)}
 
     raise ValueError(f"unknown action {action}")
 
@@ -425,6 +454,7 @@ function tabs(){
   const invN=S.investigate?S.investigate.institutions.filter(i=>
     Object.values(i.cells).some(c=>c.committed&&c.n)).length:0;
   const t=[['investigate','Investigate',invN],
+    ['detectors','Detectors',(S.detectors||[]).length],
     ['company','Company',''],
     ['firststone','First Stone',(((S.firststone||{}).run||{}).stories||[]).filter(s=>s.state==='awaiting_publisher').length],
     ['drafts','Drafts',((S.agent_drafts||{}).briefs||[]).length],
@@ -437,7 +467,37 @@ function tabs(){
   $('#tabs').innerHTML=t.map(([k,l,n])=>
     `<button class='${k===tab?'on':''}' onclick='tab="${k}";render()'>${l} <span class=n>${n}</span></button>`).join('')}
 
-function render(){tabs();({investigate,company,firststone,drafts,newsroom,review,leads,outreach,signals,doctor,pipeline})[tab]()}
+function render(){tabs();({investigate,detectors,company,firststone,drafts,newsroom,review,leads,outreach,signals,doctor,pipeline})[tab]()}
+
+function detectors(){
+  const cat=S.detectors||[];
+  let h=`<p class=secnote>The <b>detector library</b> — each is a tool that asks one sharp question
+   of the primary record and returns cited <b>leads</b> (never verdicts). Every detector carries its
+   own validation, including — honestly — when a check does not discriminate on the current data.</p>`;
+  h+=cat.map(d=>`<div class='card' style='border-left:4px solid var(--accent)'>
+     <p class=meta style='font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0'>${e(d.family)}</p>
+     <h3 style='margin:.15rem 0'>${e(d.name)} <span class=meta style='font-family:var(--mono);font-weight:400'>${e(d.id)}</span></h3>
+     <p><b>Asks:</b> ${e(d.question)}</p>
+     <p class=meta><b>Reads:</b> ${e(d.reads)}</p>
+     <details><summary class=meta>how it's validated</summary><p class=meta>${e(d.validation)}</p></details>
+     <div class=actions><button class=approve onclick='runDetector("${e(d.id)}",this)'>Run detector</button><span class=st></span></div>
+     <div id='det-${e(d.id)}'></div></div>`).join('');
+  $('#main').innerHTML=h;
+}
+async function runDetector(id,btn){
+  const st=btn.parentElement.querySelector('.st'); st.innerHTML="<span class=meta>scanning the record…</span>";
+  const r=await post('detectors_run',{detector:id,min_rate:0.6,min_votes:10},st);
+  if(!r)return; st.innerHTML="";
+  const sc=r.scorecard||{}, out=$('#det-'+id);
+  const scline = sc.note ? `<p class=meta><b>Scorecard:</b> ${e(sc.note)}</p>` :
+    (sc.validation?`<p class=meta><b>Validation:</b> ${e(sc.validation)}</p>`:'');
+  const leads=(r.leads||[]).map(l=>{
+    const v=(l.evidence&&l.evidence.votes)||[];
+    const ex=v[0]?`<br><span class=meta>e.g. AGAINST “${e((v[0].vote_description||'').slice(0,64))}” at ${e(v[0].issuer_name)} — N-PX <a href='${e(v[0].source_url||"#")}' target=_blank>${e(v[0].accession)}</a></span>`:'';
+    return `<div class=stat style='display:block'><b style='font-family:var(--mono)'>${Math.round((l.strength||0)*100)}%</b>
+       <span>${e(l.headline)}${ex}</span></div>`;}).join('');
+  out.innerHTML=`${scline}<p class=meta>${(r.leads||[]).length} cited leads (unverified — a human confirms before publication):</p>${leads||"<p class=meta>no leads at these thresholds</p>"}`;
+}
 
 function company(){
   $('#main').innerHTML=`<p class=secnote>Start from a <b>company</b>: who holds it (13-F value) and how

@@ -121,8 +121,9 @@ def test_site_build(conn, tmp_path):
     assert (out / "record.html").exists()
     assert (out / "firststone.html").exists()
     assert (out / "firststone-masthead.html").exists()
+    assert (out / "detectors.html").exists()
     assert (out / "feed.xml").read_text().startswith("<?xml")
-    assert stats["pages"] == 8
+    assert stats["pages"] == 9
     assert (out / "findings.html").exists()
     # The public site must NOT publish a candidates page — unreviewed leads
     # are operator-only (workbench). The publish boundary, on the most public
@@ -187,6 +188,22 @@ def test_site_institution_page_has_language_changelog(conn, tmp_path):
     assert "climate risk oversight" in page            # the quote itself
     # The old overclaim is retired; changes are documented, not characterized.
     assert "findings in themselves" not in page
+
+
+def test_site_detectors_page_shows_catalogue_and_validation(conn, tmp_path):
+    """The public 'what we check' page lists every detector and — the novel
+    part — how each is validated (the tool held accountable for its method)."""
+    conn.execute("INSERT INTO institutions (id, display_name) VALUES ('blackrock','BlackRock Inc.')")
+    conn.commit()
+    out = tmp_path / "_site"
+    site.build(conn, out)
+    page = (out / "detectors.html").read_text()
+    assert "Broken promise" in page or "broken-promise" in page
+    assert "Soft commitment" in page or "soft-commitment" in page
+    assert "validat" in page.lower()          # how each check is validated ships publicly
+    # Registrar voice — the catalogue documents method, never accuses.
+    for banned in ("hypocri", "liar", "lying"):
+        assert banned not in page.lower()
 
 
 def test_site_firststone_masthead_is_staffed(conn, tmp_path):
