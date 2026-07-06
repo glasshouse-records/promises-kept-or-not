@@ -489,8 +489,9 @@ async function runDetector(id,btn){
   const r=await post('detectors_run',{detector:id,min_rate:0.6,min_votes:10},st);
   if(!r)return; st.innerHTML="";
   const sc=r.scorecard||{}, out=$('#det-'+id);
-  const scline = sc.note ? `<p class=meta><b>Scorecard:</b> ${e(sc.note)}</p>` :
-    (sc.validation?`<p class=meta><b>Validation:</b> ${e(sc.validation)}</p>`:'');
+  const scline = (sc.note ? `<p class=meta><b>Scorecard:</b> ${e(sc.note)}</p>` :
+    (sc.validation?`<p class=meta><b>Validation:</b> ${e(sc.validation)}</p>`:''))
+    + (sc.selectivity_note?`<p class=meta><b>Selectivity:</b> ${e(sc.selectivity_note)}</p>`:'');
   const leads=(r.leads||[]).map(l=>{
     const v=(l.evidence&&l.evidence.votes)||[];
     const ex=v[0]?`<br><span class=meta>e.g. AGAINST “${e((v[0].vote_description||'').slice(0,64))}” at ${e(v[0].issuer_name)} — N-PX <a href='${e(v[0].source_url||"#")}' target=_blank>${e(v[0].accession)}</a></span>`:'';

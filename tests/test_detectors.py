@@ -162,6 +162,24 @@ def test_soft_commitment_flags_the_hedged_manager(two_managers):
     assert lead.evidence["strength"] < 0.5
 
 
+def test_broken_promise_reports_selectivity(two_managers):
+    """Selectivity = of all the units it could flag, what fraction it does. A
+    detector that flags everyone isn't finding a rare few; one that flags a
+    subset is. This is the 'stayed quiet on M% of the universe' metric."""
+    d = detectors.registry()["broken-promise"]
+    sc = d.scorecard(two_managers, min_rate=0.6, min_votes=1)
+    # two committed climate cells; one breaks it (flagged), one keeps it (not).
+    assert sc["universe"] == 2 and sc["flagged"] == 1
+    assert sc["selectivity"] == 0.5
+    assert sc["selectivity_note"]
+
+
+def test_soft_commitment_scorecard_has_selectivity(two_managers):
+    sc = detectors.registry()["soft-commitment"].scorecard(two_managers)
+    assert "universe" in sc and "selectivity" in sc
+    assert sc["flagged"] == sc["leads"]
+
+
 def test_soft_commitment_scorecard_self_validates(two_managers):
     """The scorecard reports whether softer commitments actually predict worse
     follow-through in OUR OWN data — the detector proving itself, no external

@@ -532,17 +532,17 @@ def _build_detectors(conn, out_dir) -> None:
         t = detectors.TECHNIQUES[d.technique]
         sc = d.scorecard(conn)
         note = _e(sc.get("note", "")) or _e(d.validation)
+        sel = _e(sc.get("selectivity_note", ""))
+        sel_html = f"<p class=meta><b>Selectivity:</b> {sel}</p>" if sel else ""
         leads = sc.get("leads")
-        badge = (f"<span class=cite>{leads} current leads · "
-                 f"{'validated' if sc.get('discriminates') else 'descriptive'}</span>"
-                 if leads is not None else "")
+        badge = f"<span class=cite>{leads} current leads</span>" if leads is not None else ""
         cards += f"""<div class='card'>
 <p class=kicker style='margin:0 0 .2rem'>{_e(t['family'])}</p>
 <h3 style='margin:.1rem 0'>{_e(d.name)}</h3>
 <p><b>The question:</b> {_e(d.question)}</p>
 <p class=meta><b>Reads:</b> {_e(t['reads'])}</p>
 <p class=secnote style='margin:.4rem 0 0'><b>How it's validated:</b> {note}</p>
-{badge}</div>"""
+{sel_html}{badge}</div>"""
     body = f"""<h1>What we check</h1>
 <p class=lede>Glasshouse is a library of <b>detectors</b> — each a single, sharp
 question asked of the primary record. Every detector states cited acts, dates and

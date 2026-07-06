@@ -77,14 +77,40 @@ class Detector:
     def run(self, conn: sqlite3.Connection, **kw) -> list[Lead]:  # pragma: no cover
         raise NotImplementedError
 
+    def universe(self, conn: sqlite3.Connection, **kw) -> int | None:
+        """The count of eligible units this detector examines (the denominator
+        for selectivity). Override to enable selectivity; None disables it."""
+        return None
+
     def scorecard(self, conn: sqlite3.Connection, **kw) -> dict:
         """How this detector is validated + what it currently finds. Every
         detector must be able to answer 'why should anyone trust you?'."""
         leads = self.run(conn, **kw)
-        return {"detector_id": self.id, "technique": self.technique,
-                "leads": len(leads), "validation": self.validation}
+        sc = {"detector_id": self.id, "technique": self.technique,
+              "leads": len(leads), "validation": self.validation}
+        sc.update(_selectivity(self, conn, len(leads), **kw))
+        return sc
 
     validation: str = "unvalidated"
+
+
+def _selectivity(det: Detector, conn: sqlite3.Connection, flagged: int, **kw) -> dict:
+    """Shared: of all eligible units, what fraction did the detector flag? A
+    high fraction means the pattern is WIDESPREAD (the finding is the industry,
+    not a rare few); a low fraction means the detector is picking out a subset."""
+    uni = det.universe(conn, **kw)
+    if not uni:
+        return {}
+    frac = round(flagged / uni, 4)
+    if frac >= 0.66:
+        note = (f"flags {frac:.0%} of the {uni} eligible units — a WIDESPREAD "
+                "pattern; the finding is the industry norm, not a rare outlier")
+    elif frac <= 0.33:
+        note = f"flags a selective {frac:.0%} of the {uni} eligible units"
+    else:
+        note = f"flags {frac:.0%} of the {uni} eligible units"
+    return {"universe": uni, "flagged": flagged, "selectivity": frac,
+            "selectivity_note": note}
 
 
 # ── Detector #1: the preserved say-vs-do "intentions" engine ────────────────
@@ -143,6 +169,12 @@ class BrokenPromise(Detector):
                                 "source": "investigate.build_matrix"}))
         leads.sort(key=lambda x: (-x.strength, -x.evidence["votes_against"]))
         return leads
+
+    def universe(self, conn: sqlite3.Connection, *, min_votes: int = 10,
+                 matrix: dict | None = None, **kw) -> int:
+        matrix = matrix if matrix is not None else investigate.build_matrix(conn)
+        return sum(1 for inst in matrix["institutions"] for c in inst["cells"].values()
+                   if c["committed"] and (c["for"] + c["against"]) >= min_votes)
 
 
 # ── Detector #2: commitment strength (how hedged is the promise itself) ─────
@@ -223,6 +255,15 @@ class CommitmentStrength(Detector):
         leads.sort(key=lambda x: -x.strength)
         return leads
 
+    def universe(self, conn: sqlite3.Connection, *, matrix: dict | None = None, **kw) -> int:
+        # Eligible = committed cells whose quote carries enough modal signal to score.
+        n = 0
+        for _inst, _theme, c in self._committed_cells(conn, matrix):
+            _, nh, ns = self.strength(c["quote"])
+            if nh + ns >= 2:
+                n += 1
+        return n
+
     def scorecard(self, conn: sqlite3.Connection, *, matrix: dict | None = None, **kw) -> dict:
         matrix = matrix if matrix is not None else investigate.build_matrix(conn)
         soft, hard = [], []
@@ -251,11 +292,14 @@ class CommitmentStrength(Detector):
         else:
             note = (f"predictive self-validation not established (soft {sr}, hard {hr}, "
                     f"n_soft={len(soft)}, n_hard={len(hard)}). Descriptive lead only.")
-        return {"detector_id": self.id, "technique": self.technique,
-                "leads": len(self.run(conn, matrix=matrix, **kw)), "validation": self.validation,
-                "n_soft": len(soft), "n_hard": len(hard),
-                "soft_against_rate": sr, "hard_against_rate": hr,
-                "discriminates": discriminates, "note": note}
+        flagged = len(self.run(conn, matrix=matrix, **kw))
+        sc = {"detector_id": self.id, "technique": self.technique,
+              "leads": flagged, "validation": self.validation,
+              "n_soft": len(soft), "n_hard": len(hard),
+              "soft_against_rate": sr, "hard_against_rate": hr,
+              "discriminates": discriminates, "note": note}
+        sc.update(_selectivity(self, conn, flagged, matrix=matrix, **kw))
+        return sc
 
 
 # ── registry ────────────────────────────────────────────────────────────────
