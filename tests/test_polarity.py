@@ -37,8 +37,12 @@ def test_anti_dei_revisit_genre_is_oppositional():
     assert proposal_is_oppositional("Report on the Risks of the Company's DEI Program")
     assert proposal_is_oppositional("Report on DEI and Related Risks")
     assert proposal_is_oppositional("Shareholder proposal requesting report on the risks of maintaining DEI efforts")
-    # …but a proposal to ADD diversity goals is pro-theme (must still count).
-    assert not proposal_is_oppositional("Shareholder proposal on DEI goals in executive pay incentives")
+    # CORRECTED 2026-07-06: "DEI goals in executive pay" was previously assumed
+    # to mean "ADD DEI goals" (pro). Web-verified reality — the National Legal
+    # and Policy Center's version asks to ELIMINATE DEI goals from executive
+    # pay — makes the title polarity-ambiguous, so it is excluded, not counted.
+    assert proposal_is_oppositional("Shareholder proposal on DEI goals in executive pay incentives")
+    # A clearly pro-diversity proposal still counts.
     assert not proposal_is_oppositional("Report on board diversity")
     # …and environmental risk-disclosure stays pro (the harm is the risk, not the program).
     assert not proposal_is_oppositional("Report on Risks Related to Biodiversity and Nature Loss")
@@ -77,6 +81,35 @@ def test_discretionary_policy_language_detected():
         "We are committed to robust climate risk oversight in our voting.")
     assert not commitment_is_discretionary(
         "We expect companies to disclose climate-related risks to investors.")
+
+
+def test_anti_dei_executive_pay_proposals_excluded():
+    """Fatal live bug (2026-07-06): the 2024-25 anti-DEI campaign flooded
+    ballots with "DEI goals in executive pay" proposals. The National Legal
+    and Policy Center's version asks companies to ELIMINATE DEI goals from
+    executive pay — voting AGAINST it is consistent with a diversity
+    commitment, not a gap. The title alone can't distinguish 'eliminate DEI
+    pay goals' (anti) from 'link pay to DEI' (pro), so these are excluded from
+    gap-scoring. 445 such votes had leaked into the board-diversity rate."""
+    for d in [
+        "Shareholder Proposal Regarding DEI Goals in Executive Pay Incentives",
+        "Shareholder proposal relating to DEI goals in executive pay incentives",
+        "Vote on shareowner proposal regarding DEI goals in executive pay",
+        "Advisory Vote to Revisit DEI in Executive Compensation.",
+        "Shareholder Proposal: Regarding Report on Effectiveness of DEI Efforts",
+    ]:
+        assert proposal_is_oppositional(d), f"leaked anti/ambiguous DEI proposal: {d!r}"
+
+
+def test_genuine_pro_diversity_proposals_still_count():
+    """The fix must NOT gut real pro-diversity gaps: a plain civil-rights
+    audit or a board-diversity report is pro-theme; voting it down is a real
+    gap and must keep counting."""
+    for d in ["Shareholder Proposal - Civil Rights Audit",
+              "Shareholder proposal on a civil rights audit",
+              "Report on board diversity and inclusion metrics",
+              "Shareholder proposal requesting a report on board diversity"]:
+        assert not proposal_is_oppositional(d), f"real pro-diversity gap dropped: {d!r}"
 
 
 def test_commitment_to_vote_against_proposals_is_not_a_theme_commitment():

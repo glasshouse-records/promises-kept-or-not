@@ -261,7 +261,19 @@ _ANTI_GENRE = re.compile(
     r"maintaining\s+(?:dei|diversity))\b|"
     r"\b(?:d\.?e\.?i\.?|diversity[,\s]+equity)\b[^.]{0,20}\brelated\s+risks?\b|"
     r"\bmerit[\s-]?based\b|\bviewpoint\s+discrimination\b|"
-    r"\breverse\s+discrimination\b|\bracial\s+discrimination\b",
+    r"\breverse\s+discrimination\b|\bracial\s+discrimination\b|"
+    # The 2024-25 anti-DEI "executive pay" campaign (e.g. the National Legal
+    # and Policy Center's proposals to ELIMINATE DEI goals from executive pay).
+    # The N-PX title can't distinguish 'eliminate DEI pay goals' (anti) from
+    # 'link pay to DEI' (pro), so this whole class is polarity-AMBIGUOUS and is
+    # excluded from gap-scoring — voting it down is not evidence of a gap.
+    r"\b(?:d\.?e\.?i\.?|diversity[,\s]+equity[,\s]+(?:and\s+)?inclusion)\b[^.]{0,40}"
+    r"\bexecutive\s+(?:pay|compensation|comp\b|incentive)|"
+    r"\bexecutive\s+(?:pay|compensation|comp\b|incentive)[^.]{0,40}"
+    r"\b(?:d\.?e\.?i\.?|diversity[,\s]+equity)\b|"
+    # "report on the effectiveness of DEI" — ambiguous (accountability vs. a
+    # skeptic's framing that DEI is ineffective); excluded for the same reason.
+    r"\beffectiveness\s+of\s+(?:its\s+|the\s+)?(?:d\.?e\.?i\.?|diversity[,\s]+equity)",
     re.IGNORECASE)
 
 # Policy language that reserves discretion or merely lists "factors we
