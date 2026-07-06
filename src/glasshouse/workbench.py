@@ -92,9 +92,14 @@ def state(conn: sqlite3.Connection) -> dict:
         "SELECT ts, kind, detail FROM signals ORDER BY id DESC LIMIT 10")]
 
     from . import agent, council, firststone, investigate, newsroom
+    from .site import _md_html
     recs = council.recommendations(conn)
     for f in pending:
         f["council"] = recs.get(f["fingerprint"])
+    fs_run = firststone.load_run()
+    if fs_run:  # pre-render each story to HTML so the reading pane is real, not a text dump
+        for s in fs_run["stories"]:
+            s["body_html"] = _md_html(s.get("body", ""))
     return {
         "review": pending,
         "review_stats": review.stats(conn),
@@ -107,7 +112,7 @@ def state(conn: sqlite3.Connection) -> dict:
         "pipeline": newsroom.pipeline_status(conn),
         "investigate": investigate.load_matrix(),   # cached hypocrisy matrix (or None)
         "agent_drafts": agent.load_latest_briefs(),  # latest agent-drafted story leads (or None)
-        "firststone": {"run": firststone.load_run(),
+        "firststone": {"run": fs_run,
                        "published": [{k: v for k, v in p.items() if k != "body"}
                                      for p in firststone.load_published()],
                        "masthead": firststone.MASTHEAD},
@@ -325,6 +330,75 @@ table.heat td.cell:hover{outline:2px solid var(--accent);outline-offset:-2px}
 table.heat td.nocommit{color:var(--muted);font-family:var(--mono)}
 table.heat td.blank{background:repeating-linear-gradient(45deg,transparent,transparent 5px,var(--bg) 5px,var(--bg) 6px)}
 h4.evh{font:700 .78rem var(--mono);letter-spacing:.04em;text-transform:uppercase;margin:.9rem 0 .3rem;color:var(--muted)}
+
+/* ── First Stone: the newsroom has its own world (amber ink) ─────────────── */
+.fsroom{--fs:#a5670b;--fsbg:#fbf4e6;--fsedge:#e6d3ab}
+@media (prefers-color-scheme:dark){.fsroom{--fs:#e0a021;--fsbg:#2a2008;--fsedge:#4a3a12}}
+.fs-mast{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;border:1px solid var(--fsedge);
+  border-left:5px solid var(--fs);border-radius:12px;background:var(--fsbg);padding:1rem 1.3rem;margin:.4rem 0 1rem}
+.fs-mast .brand{font:700 1.1rem var(--display);letter-spacing:.28em;text-transform:uppercase;color:var(--ink)}
+.fs-mast .brand b{color:var(--fs)}
+.fs-mast .ed{font:400 .86rem var(--sans);color:var(--muted)}
+.fs-mast .ed b{color:var(--fs);font-weight:700}
+.fs-mast .grow{flex:1}
+.fs-run{font:700 .74rem var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:.55rem 1rem;
+  border-radius:8px;border:1px solid var(--fs);background:var(--fs);color:#fff;cursor:pointer}
+.fs-run:hover{filter:brightness(1.08)} .fs-run:disabled{opacity:.6;cursor:progress}
+.fs-tag{font:700 .68rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:1.3rem 0 .5rem}
+/* correspondents — the floor */
+.fs-floor{display:grid;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:.7rem}
+.fs-corr{display:flex;gap:.7rem;align-items:center;border:1px solid var(--edge);border-radius:10px;
+  padding:.6rem .8rem;background:var(--panel)}
+.fs-corr .av{width:2.2rem;height:2.2rem;border-radius:50%;background:var(--fsbg);color:var(--fs);
+  border:1.5px solid var(--fs);display:grid;place-items:center;font:700 .82rem var(--mono);flex-shrink:0}
+.fs-corr .nm{font:600 .92rem var(--sans);color:var(--ink);line-height:1.2}
+.fs-corr .be{font:700 .62rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--fs)}
+.fs-corr .ct{margin-left:auto;font:700 .9rem var(--mono);color:var(--muted)}
+/* the production line */
+.fs-pipe{display:flex;align-items:center;gap:.2rem;flex-wrap:wrap;border:1px dashed var(--fsedge);
+  border-radius:10px;padding:.7rem .9rem;background:var(--fsbg)}
+.fs-pipe .step{font:700 .64rem var(--mono);letter-spacing:.04em;text-transform:uppercase;
+  padding:.3rem .55rem;border-radius:6px;color:var(--muted);background:var(--panel);border:1px solid var(--edge)}
+.fs-pipe .step.hum{color:var(--fs);border-color:var(--fs);font-weight:800}
+.fs-pipe .arw{color:var(--fsedge);font-size:.9rem}
+/* story cards */
+.fs-story{border:1px solid var(--edge);border-radius:12px;background:var(--panel);
+  padding:1.1rem 1.3rem;margin:.8rem 0;box-shadow:var(--shadow)}
+.fs-story .kick{font:700 .68rem var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--fs);margin:0}
+.fs-story h3{font:600 1.28rem/1.15 var(--serif);margin:.25rem 0 .3rem;color:var(--ink)}
+.fs-story .byl{font:400 .84rem var(--sans);color:var(--muted);margin:0 0 .5rem}
+.fs-story .byl b{color:var(--ink)}
+.fs-story .sf{font:400 .95rem/1.5 var(--serif);color:var(--ink);margin:.2rem 0 .7rem}
+/* the desk-stamp trail — the agentic workflow made visible */
+.fs-trail{display:flex;gap:.3rem;flex-wrap:wrap;align-items:center;margin:.5rem 0}
+.fs-stamp{font:700 .62rem var(--mono);letter-spacing:.03em;text-transform:uppercase;padding:.2rem .45rem;
+  border-radius:4px;border:1.5px solid var(--fsedge);color:var(--muted);transform:rotate(-1.5deg)}
+.fs-stamp.ok{border-color:var(--for);color:var(--for)}
+.fs-stamp.spike{border-color:var(--against);color:var(--against)}
+.fs-stamp.pub{border-color:var(--fs);color:var(--fs);background:var(--fsbg)}
+.fs-pill{display:inline-block;font:700 .64rem var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  padding:.25rem .6rem;border-radius:999px}
+.fs-pill.await{background:var(--fsbg);color:var(--fs);border:1px solid var(--fs)}
+.fs-pill.pubd{background:color-mix(in srgb,var(--for) 15%,transparent);color:var(--for);border:1px solid var(--for)}
+.fs-pill.spkd{background:color-mix(in srgb,var(--against) 15%,transparent);color:var(--against);border:1px solid var(--against)}
+.fs-open{font:700 .72rem var(--mono);letter-spacing:.04em;padding:.5rem .9rem;border-radius:8px;
+  border:1px solid var(--fs);background:none;color:var(--fs);cursor:pointer;margin-top:.3rem}
+.fs-open:hover{background:var(--fsbg)}
+/* reading view */
+.fs-read{border:1px solid var(--fsedge);border-radius:12px;background:var(--panel);padding:0 0 1.5rem;overflow:hidden}
+.fs-read .top{display:flex;align-items:center;gap:1rem;padding:.8rem 1.3rem;background:var(--fsbg);
+  border-bottom:1px solid var(--fsedge);position:sticky;top:0}
+.fs-back{font:700 .72rem var(--mono);border:1px solid var(--fsedge);background:var(--panel);color:var(--ink);
+  border-radius:8px;padding:.4rem .8rem;cursor:pointer}
+.fs-art{max-width:44rem;margin:1.4rem auto 0;padding:0 1.6rem;font:400 1.02rem/1.65 var(--serif);color:var(--ink)}
+.fs-art h1{font:600 2rem/1.15 var(--serif);text-transform:none;letter-spacing:0;margin:.4rem 0 .8rem}
+.fs-art h2{font:700 .8rem var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--fs);
+  margin:1.6rem 0 .5rem;border:none}
+.fs-art blockquote{border-left:3px solid var(--fs);margin:.8rem 0;padding:.2rem 0 .2rem 1.1rem;
+  font-style:italic;color:var(--ink)}
+.fs-art ul{padding-left:1.1rem} .fs-art li{margin:.35rem 0}
+.fs-art a{color:var(--accent)} .fs-art code{font:400 .82rem var(--mono);color:var(--muted)}
+.fs-decide{max-width:44rem;margin:1.4rem auto 0;padding:1.1rem 1.6rem;border-top:2px solid var(--fs)}
 </style></head><body>
 <nav><div class=wrap><span class=wordmark>GLASS<em>HOUSE</em></span>
 <a href='#' class=on>Workbench</a><a href='http://localhost:8000' target=_blank>Public site</a></div></nav>
@@ -408,68 +482,107 @@ function coDrill(i){
   d.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-const _FS_STATE_INK={awaiting_publisher:'var(--hold)',published:'var(--for)',spiked:'var(--against)'};
+// The newsroom has two views: the FLOOR (list) and the READING room (one story).
+let fsReading=null;   // slug being read, or null for the floor
+const _FS_DESKS=[['assignment','Assignment'],['records','Records'],['ledger','Ledger'],
+  ['copy','Copy'],['standards','Standards'],['editor','Editor'],['publisher','You']];
+const _FS_PILL={awaiting_publisher:['await','awaiting you'],published:['pubd','published'],
+  spiked:['spkd','spiked'],assigned:['await','in production']};
+
 function firststone(){
+  const F=S.firststone||{}, R=F.run;
+  if(fsReading && R){ const s=R.stories.find(x=>x.slug===fsReading); if(s){fsRead(s);return} fsReading=null; }
+  fsFloor();
+}
+
+function fsFloor(){
   const F=S.firststone||{}, R=F.run, M=F.masthead||{};
   const eic=M.editor||{}, corrs=M.correspondents||[];
   const cnt=st=>R?R.stories.filter(s=>s.state===st).length:0;
-  let h=`<p class=secnote><b>First Stone</b> — the automated newsroom on top of the registrar.
-   Named correspondents work the beats; the desks assign, document, fact-check (by recomputing from
-   the ledger) and edit; <b>only you publish</b>, with a written note. Published stories appear on
-   the public site under First Stone's own masthead. The staff are software agents — the byline names
-   the automated correspondent, never a person.</p>`;
-  // the newsroom floor: editor-in-chief + correspondents on the beats
-  h+=`<div class='card flat' style='display:flex;gap:1.2rem;flex-wrap:wrap;align-items:center'>
-     <span class=meta><b style='color:var(--accent)'>${e(eic.name||'')}</b> — ${e(eic.role||'editor')}</span>`
-    +corrs.map(c=>`<span class=meta title='${e(c.bio||"")}'>${e(c.name)} · <b>${e(c.beat)}</b></span>`).join('')
-    +`</div>`;
-  h+=`<div class=actions><button class=approve onclick='fsRun(this)'>Run edition cycle</button>
-     <span class=meta>${F.published.length} published · ${cnt('awaiting_publisher')} awaiting you · ${cnt('spiked')} spiked${R?' · edition '+e((R.generated||'').slice(0,10)):''}</span><span class=st></span></div>`;
-  if(!R||!R.stories.length){$('#main').innerHTML=h+"<p class=empty>No edition on file. Run a cycle — the correspondents will pitch, the desks will check, and stories will come to your chair.</p>";return}
-  h+=R.stories.map((s,i)=>{
-    const trail=(s.trail||[]).map(t=>
-      `<span title='${e(t.note)}' style='font:700 .68rem var(--mono);letter-spacing:.04em;padding:.18rem .5rem;
-        border:1.5px solid ${t.verdict==='spike'?'var(--against)':t.verdict==='publish'?'var(--for)':'var(--edge)'};
-        border-radius:4px;color:${t.verdict==='spike'?'var(--against)':'var(--muted)'}'>${e(t.desk)} ✓</span>`).join(' ');
-    const ink=_FS_STATE_INK[s.state]||'var(--muted)';
-    let act='';
-    if(s.state==='awaiting_publisher') act=`
-      <textarea id='fsn${i}' rows=2 placeholder="Publisher's note — what you verified in both primary sources (required)"></textarea>
-      <div class=actions>
-       <label class=chk><input type=checkbox id='fsc${i}'> I verified the policy quote and the cited votes myself — publish under the First Stone masthead</label>
-      </div>
-      <div class=actions>
-       <button class=approve onclick='fsPublish(${i},this)'>Publish</button>
-       <button class=reject onclick='fsSpike(${i},this)'>Spike</button><span class=st></span>
-      </div>`;
-    return `<div class='card claim'>
-     <span class=ribbon style='color:${ink}'>${e(s.state.replace('_',' '))}</span>
-     <p class=meta style='font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0'>${e(s.beat||s.theme)}</p>
-     <h3 style='margin:.15rem 0'>${e(s.headline||s.slug)}</h3>
-     <p class=meta>By <b>${e(s.byline||'the News Desk')}</b>, automated correspondent · #${i+1} · score ${e(s.score)} · ${Math.round(s.against_rate*100)}% against on ${s.n_votes} votes</p>
-     <p class=meta>${e(s.standfirst||'')}</p>
-     <div style='display:flex;gap:.35rem;flex-wrap:wrap;margin:.4rem 0'>${trail}</div>
-     <details><summary class=meta>read the full story as filed (with citations)</summary>
-      <pre class=dossier>${e(s.body)}</pre></details>${act}</div>`}).join('');
-  $('#main').innerHTML=h;
+  const load=corrs.map(c=>[c, R?R.stories.filter(s=>s.correspondent_id===c.id).length:0]);
+  const initials=n=>n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  let h=`<div class=fsroom>
+   <div class=fs-mast>
+     <span class=brand>FIRST<b>·</b>STONE</span>
+     <span class=ed>Editor-in-Chief <b>${e(eic.name||'')}</b> · automated newsroom on the registry</span>
+     <span class=grow></span>
+     <button class=fs-run onclick='fsRun(this)'>▷ Run edition cycle</button>
+   </div>
+   <p class=meta style='margin:-.4rem 0 .2rem'>${F.published.length} published · ${cnt('awaiting_publisher')} awaiting your desk · ${cnt('spiked')} spiked${R?' · edition '+e((R.generated||'').slice(0,10)):''} <span class=st></span></p>
+   <p class=fs-tag>The floor — correspondents on the beats</p>
+   <div class=fs-floor>`
+   +load.map(([c,n])=>`<div class=fs-corr title='${e(c.bio||"")}'>
+       <span class=av>${e(initials(c.name))}</span>
+       <span><span class=nm>${e(c.name)}</span><br><span class=be>${e(c.beat)}</span></span>
+       <span class=ct>${n}</span></div>`).join('')
+   +`</div>
+   <p class=fs-tag>The production line — every story passes these desks; you are the last chair</p>
+   <div class=fs-pipe>`
+   +_FS_DESKS.map(([k,l],i)=>`<span class='step${k==='publisher'?' hum':''}'>${e(l)}</span>`
+       +(i<_FS_DESKS.length-1?`<span class=arw>→</span>`:``)).join('')
+   +`</div>`;
+  if(!R||!R.stories.length){$('#main').innerHTML=h+"<p class=empty style='padding:1.5rem 0'>No edition on file. Press <b>Run edition cycle</b> — the correspondents pitch, the desks check, and stories come to your chair.</p></div>";return}
+  h+=`<p class=fs-tag>The edition — ${R.stories.length} stories filed</p>`;
+  h+=R.stories.map(s=>{
+    const [pk,pl]=_FS_PILL[s.state]||['await',s.state];
+    const trail=_FS_DESKS.slice(0,6).map(([k,l])=>{
+      const st=(s.trail||[]).find(t=>t.desk===k);
+      const cls=!st?'':st.verdict==='spike'?'spike':'ok';
+      return `<span class='fs-stamp ${cls}' title='${st?e(st.note):"pending"}'>${e(l)}${st?(st.verdict==='spike'?' ✗':' ✓'):''}</span>`;
+    }).join('');
+    return `<div class=fs-story>
+       <span class='fs-pill ${pk}'>${e(pl)}</span>
+       <p class=kick style='margin-top:.5rem'>${e(s.beat||s.theme)}</p>
+       <h3>${e(s.headline||s.slug)}</h3>
+       <p class=byl>By <b>${e(s.byline||'the News Desk')}</b>, automated correspondent · ${Math.round(s.against_rate*100)}% against on ${s.n_votes} votes · newsworthiness ${e(s.score)}</p>
+       <p class=sf>${e(s.standfirst||'')}</p>
+       <div class=fs-trail>${trail}</div>
+       <button class=fs-open onclick='fsReading="${e(s.slug)}";render()'>${s.state==='awaiting_publisher'?'Read &amp; decide →':'Read the file →'}</button>
+     </div>`;}).join('');
+  $('#main').innerHTML=h+`</div>`;
 }
+
+function fsRead(s){
+  const decide = s.state==='awaiting_publisher' ? `
+     <div class=fs-decide>
+       <h4 class=evh>Your desk — the publisher's chair</h4>
+       <p class=meta>Publishing is your act, not the desks'. Verify the policy quote and the cited votes against the primary sources, then sign a note.</p>
+       <textarea id=fsnote rows=2 placeholder="Publisher's note — what you verified (required)"></textarea>
+       <label class=chk style='margin:.5rem 0'><input type=checkbox id=fsok> I verified the policy quote and the cited votes myself — publish under the First Stone masthead</label>
+       <div class=actions>
+         <button class=fs-run onclick='fsPublish(this)'>Publish</button>
+         <button class=reject onclick='fsSpike(this)'>Spike</button><span class=st></span>
+       </div>
+     </div>` :
+     `<div class=fs-decide><p class=meta>This story is <b>${e(s.state.replace('_',' '))}</b>. ${(s.trail||[]).filter(t=>t.desk==='publisher').map(t=>e(t.note)).join(' ')}</p></div>`;
+  $('#main').innerHTML=`<div class=fsroom><div class=fs-read>
+     <div class=top><button class=fs-back onclick='fsReading=null;render()'>← The floor</button>
+       <span class='fs-pill ${(_FS_PILL[s.state]||["await"])[0]}'>${e((_FS_PILL[s.state]||["","in production"])[1])}</span>
+       <span class=meta>${e(s.beat||"")} · by ${e(s.byline||"")}</span></div>
+     <div class=fs-art>${s.body_html||('<pre>'+e(s.body||'')+'</pre>')}</div>
+     ${decide}
+   </div></div>`;
+  window.scrollTo(0,0);
+}
+
 async function fsRun(btn){
   btn.disabled=true;btn.textContent='Desks working…';
-  const r=await post('fs_run',{},btn.parentElement.querySelector('.st'));
-  if(r)await load(); }
-async function fsPublish(i,btn){
-  const s=S.firststone.run.stories[i], note=$('#fsn'+i).value.trim(), ok=$('#fsc'+i).checked;
-  const st=btn.parentElement.querySelector('.st');
+  const st=document.querySelector('.st');
+  const r=await post('fs_run',{},st);
+  if(r){fsReading=null;await load();} else {btn.disabled=false;btn.textContent='▷ Run edition cycle';} }
+async function fsPublish(btn){
+  const s=S.firststone.run.stories.find(x=>x.slug===fsReading);
+  const note=$('#fsnote').value.trim(), ok=$('#fsok').checked, st=btn.parentElement.querySelector('.st');
   if(!note){st.innerHTML="<span class=err>the publisher's note is required</span>";return}
-  if(!ok){st.innerHTML="<span class=err>tick the confirmation — publishing is your act, not the desks'</span>";return}
+  if(!ok){st.innerHTML="<span class=err>tick the confirmation — publishing is your act</span>";return}
   const r=await post('fs_publish',{slug:s.slug,note,i_publish_this:ok,body_sha256:s.body_sha256},st);
-  if(r)await load(); }
-async function fsSpike(i,btn){
-  const s=S.firststone.run.stories[i], note=$('#fsn'+i).value.trim();
-  const st=btn.parentElement.querySelector('.st');
+  if(r){fsReading=null;await load();} }
+async function fsSpike(btn){
+  const s=S.firststone.run.stories.find(x=>x.slug===fsReading);
+  const note=$('#fsnote').value.trim(), st=btn.parentElement.querySelector('.st');
   if(!note){st.innerHTML="<span class=err>a kill needs a written reason too</span>";return}
   const r=await post('fs_spike',{slug:s.slug,note},st);
-  if(r)await load(); }
+  if(r){fsReading=null;await load();} }
 
 function drafts(){
   const D=S.agent_drafts;
