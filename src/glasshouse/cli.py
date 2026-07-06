@@ -210,9 +210,13 @@ def cmd_investigate(args) -> int:
         return 0
 
     if args.action == "refresh":
-        from . import agent
+        from . import agent, timeline
         p = investigate.cache_matrix(conn)
         print(f"  matrix cache → {p}")
+        tp = timeline.cache_timelines(conn)
+        n_ev = sum(len(d["events"]) for t in timeline.load_timelines()["institutions"].values()
+                   for d in t["themes"].values())
+        print(f"  timelines cache → {tp} ({n_ev} policy-change events)")
         briefs = agent.investigate_and_draft(conn)
         print(f"  agent drafts → {len(briefs)} leads in data/agent/briefs/ (unverified)")
         print("  workbench Investigate + Drafts tabs now reflect the current ledger.")
@@ -300,6 +304,47 @@ def cmd_agent(args) -> int:
     for i, b in enumerate(briefs, 1):
         print(f"  {i:>2}. [score {b['score']}] {b['headline']}")
     return 0
+
+
+def cmd_firststone(args) -> int:
+    from . import firststone
+    if args.action == "run":
+        conn = _conn()
+        stories = firststone.run(conn, min_rate=args.min_rate, min_votes=args.min_votes,
+                                 top_n=args.top, llm=getattr(args, "llm", False))
+        filed = [s for s in stories if s["state"] == "awaiting_publisher"]
+        spiked = [s for s in stories if s["state"] == "spiked"]
+        print(f"\n  FIRST STONE — edition cycle complete: {len(filed)} filed, "
+              f"{len(spiked)} spiked by the desks → data/newsroom/runs/")
+        for s in filed:
+            print(f"   ⏳ {s['slug']}: {s['headline']}")
+        for s in spiked:
+            print(f"   ✗ {s['slug']}: spiked — {s['trail'][-1]['note'][:80]}")
+        print("\n  Stories await the PUBLISHER — that chair is human. Review in the "
+              "workbench (First Stone tab)\n  or: glasshouse firststone publish <slug> "
+              "--note '<what you verified>'")
+        return 0
+    if args.action == "list":
+        run = firststone.load_run()
+        if not run:
+            print("  no newsroom run on file — run: glasshouse firststone run")
+            return 0
+        print(f"\n  run of {run['generated'][:10]}:")
+        for s in run["stories"]:
+            print(f"   {s['state']:<20} {s['slug']}")
+        for p in firststone.load_published():
+            print(f"   published {p['published'][:10]}    {p['slug']} — note: {p['publisher_note'][:60]}")
+        return 0
+    if args.action == "publish":
+        rec = firststone.publish(args.slug, note=args.note or "", human_confirmed=True)
+        print(f"  published under the First Stone masthead: {rec['slug']}\n"
+              f"  rebuild the site to ship it: glasshouse site")
+        return 0
+    if args.action == "spike":
+        firststone.spike(args.slug, note=args.note or "")
+        print(f"  spiked: {args.slug}")
+        return 0
+    return 2
 
 
 def cmd_ingest_commitments(args) -> int:
@@ -1013,6 +1058,28 @@ def main(argv: list[str] | None = None) -> int:
                      "headline/standfirst (needs ANTHROPIC_API_KEY; cited evidence stays "
                      "deterministic; falls back if unconfigured)")
     agr.set_defaults(func=cmd_agent)
+
+    fs = sub.add_parser("firststone", help="First Stone — the AI newsroom on the registrar: "
+                        "desks draft, fact-check and edit; only a HUMAN publishes")
+    fs_sub = fs.add_subparsers(dest="action", required=True)
+    fsr = fs_sub.add_parser("run", help="one edition cycle: assignment → records → ledger "
+                            "(recount) → copy → standards → editor")
+    fsr.add_argument("--min-rate", type=float, default=0.5)
+    fsr.add_argument("--min-votes", type=int, default=10)
+    fsr.add_argument("--top", type=int, default=8)
+    fsr.add_argument("--llm", action="store_true", help="advisory copy-desk polish (logged; "
+                     "falls back if unconfigured)")
+    fsr.set_defaults(func=cmd_firststone)
+    fsl = fs_sub.add_parser("list", help="stories in the latest run + published")
+    fsl.set_defaults(func=cmd_firststone)
+    fsp = fs_sub.add_parser("publish", help="the publisher's act (yours): requires a written note")
+    fsp.add_argument("slug")
+    fsp.add_argument("--note", required=True, help="what you verified in both primary sources")
+    fsp.set_defaults(func=cmd_firststone)
+    fsk = fs_sub.add_parser("spike", help="kill a story, with the reason on the record")
+    fsk.add_argument("slug")
+    fsk.add_argument("--note", required=True)
+    fsk.set_defaults(func=cmd_firststone)
 
     out = sub.add_parser("outreach").add_subparsers(dest="action", required=True)
     od = out.add_parser("draft")

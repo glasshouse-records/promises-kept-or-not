@@ -273,7 +273,15 @@ _DISCRETIONARY = re.compile(
     r"\bcase\s+basis\b|\bat\s+(the|our|its)\b[^.]{0,20}\bdiscretion\b|"
     r"\bmay\s+vote\s+(either|for\s+or\s+against)\b|"
     r"\bfactors?\b[^.]{0,30}\bconsider(ation)?s?\b|"      # "factors ... to consider"
-    r"\bconsiderations?\s+include\b|\bfactors?\s+include\b",
+    r"\bconsiderations?\s+include\b|\bfactors?\s+include\b|"
+    # Deference to the company's own management/board is the OPPOSITE of a
+    # commitment (live false positive 2026-07-06: Goldman's "it is the role of
+    # boards and management to determine the appropriate level of disclosure"
+    # was quoted as a lobbying-disclosure commitment).
+    r"\b(?:it\s+is|remains?|rests?\s+with)\s+the\s+(?:role|responsibility|purview|"
+    r"prerogative)\s+of\s+(?:the\s+)?(?:boards?|management|companies|issuers?)\b|"
+    r"\bpurview\s+of\s+the\s+board\b|"
+    r"\b(?:boards?|management)\s+(?:is|are)\s+best\s+(?:placed|positioned)\s+to\b",
     re.IGNORECASE)
 
 

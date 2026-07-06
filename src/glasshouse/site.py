@@ -21,6 +21,7 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
+from . import timeline
 from .http import DATA_DIR
 
 SITE_DIR = DATA_DIR / "_site"
@@ -111,6 +112,19 @@ h3{font:600 1.02rem var(--sans);margin:1rem 0 .4rem}
 .r.in .ribbon{animation:stamp .38s cubic-bezier(.2,1.6,.4,1) backwards}
 @keyframes stamp{from{transform:rotate(-9deg) scale(1.7);opacity:0}
   to{transform:rotate(-3deg) scale(1);opacity:1}}
+/* the record: say-vs-do matrix */
+table.rc{border-collapse:collapse;width:100%;font:400 .9rem var(--sans)}
+.rc th,.rc td{border:1px solid var(--line);padding:.45rem .5rem;text-align:center}
+.rc thead th{font:700 .66rem var(--mono);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted)}
+.rc tbody th{text-align:left;font:600 .92rem var(--sans)}
+.rc td b{font:700 .95rem var(--mono);font-variant-numeric:tabular-nums}
+.rc td span{display:block;font:400 .66rem var(--mono);color:var(--muted)}
+.rc td.dot{color:var(--muted);font-size:1.1rem}
+/* change log: verbatim language differences between archived versions */
+ul.chg{margin:.4rem 0 1rem;padding-left:1.1rem}
+.chg li{margin:.5rem 0}
+.chg q{font:italic 500 1.02rem/1.5 var(--serif);quotes:'“' '”'}
 .saydid .tag{font:700 .7rem var(--mono);letter-spacing:.2em;text-transform:uppercase}
 .saydid.say .tag{color:var(--accent)} .saydid.did .tag{color:var(--against)}
 blockquote{margin:.5rem 0;font:italic 500 1.22rem/1.45 var(--serif)}
@@ -229,9 +243,11 @@ def _e(s) -> str:
 
 
 def _page(title: str, body: str, active: str = "") -> str:
-    links = [("index.html", "Overview", "home"), ("institutions.html", "Institutions", "inst"),
+    links = [("index.html", "Overview", "home"), ("record.html", "The record", "record"),
+             ("institutions.html", "Institutions", "inst"),
              ("findings.html", "Findings", "find"),
-             ("how-to-read.html", "How to read", "how"), ("feed.xml", "Feed", "feed")]
+             ("how-to-read.html", "How to read", "how"),
+             ("firststone.html", "First Stone", "fs"), ("feed.xml", "Feed", "feed")]
     nav = "".join(f"<a href='{h}'{' class=on' if k == active else ''}>{t}</a>"
                   for h, t, k in links)
     return (f"<!doctype html><html lang=en><head><meta charset=utf-8>"
@@ -492,13 +508,184 @@ def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
            FROM institutions i ORDER BY n_votes DESC, i.display_name""").fetchall()
 
     _build_index(conn, out_dir, stats, insts, findings)
+    _build_record(conn, out_dir)
     _build_institutions_index(conn, out_dir, insts)
     n_inst = sum(_build_institution(conn, out_dir, r, findings) for r in insts)
     _build_findings(conn, out_dir)
     _build_how_to_read(out_dir)
+    n_fs = _build_firststone(out_dir)
     _write_feed(conn, out_dir)
     _write_institution_feeds(conn, out_dir, insts, findings)
-    return {"pages": 4 + n_inst, "findings": len(findings)}
+    return {"pages": 5 + n_inst + n_fs, "findings": len(findings)}
+
+
+def _pretty_stamp(v: str) -> str:
+    return f"{v[:4]}-{v[4:6]}-{v[6:8]}" if len(v) >= 8 and v[:8].isdigit() else v
+
+
+def _build_record(conn, out_dir) -> None:
+    """The record — the public say-vs-do matrix, in registrar voice: rates and
+    counts from the ledger, framed as leads for the reader to verify, never as
+    conclusions."""
+    from .investigate import build_matrix
+    m = build_matrix(conn)
+    used = [t for t in m["themes"] if any(t in i["cells"] for i in m["institutions"])]
+    head = "".join(f"<th>{_e(t.replace('-', ' '))}</th>" for t in used)
+    rows = ""
+    for inst in sorted(m["institutions"], key=lambda i: i["name"].lower()):
+        tds = ""
+        for th in used:
+            c = inst["cells"].get(th)
+            if not c:
+                tds += "<td></td>"
+            elif not c["committed"]:
+                tds += ("<td class=dot title='votes on this theme; no binding commitment "
+                        "sentence found in its archived policy'>·</td>")
+            elif not (c["for"] + c["against"]):
+                tds += ("<td class=dot title='commitment on record; no cast FOR/AGAINST "
+                        "votes matched this theme'>–</td>")
+            else:
+                denom = c["for"] + c["against"]
+                mark = "*" if c.get("low_confidence") else ""
+                heat = int(c["rate"] * 52)
+                tds += (f"<td style='background:color-mix(in srgb,var(--against) {heat}%,"
+                        f"transparent)'><b>{round(c['rate'] * 100)}%{mark}</b>"
+                        f"<span>{c['against']:,}/{denom:,} against</span></td>")
+        rows += (f"<tr><th scope=row><a href='institution-{_e(inst['id'])}.html'>"
+                 f"{_e(inst['name'])}</a></th>{tds}</tr>")
+    body = f"""<h1>The record</h1>
+<p class=lede>Each committed cell: how often a manager's funds voted <b>against</b>
+shareholder proposals advancing a theme its own archived policy commits to. SAY is a
+verbatim, dated policy sentence; DO is the de-duplicated SEC N-PX voting record.</p>
+<div class='card flat' style='overflow-x:auto'><table class=rc>
+<thead><tr><th></th>{head}</tr></thead><tbody>{rows}</tbody></table></div>
+<p class=secnote>A high rate is a <b>lead, not a finding</b>: theme matching is
+lexical, so confirm each proposal's text and intent — and the policy version in force
+at the vote — against the linked sources before drawing a conclusion. Proposals that
+oppose a theme are excluded from its rate; “·” = votes on the theme with no binding
+commitment sentence on record (no say-vs-do tension); “*” = fewer than 5 committed
+votes, treat with caution. <a href='how-to-read.html'>How to read Glasshouse</a>.</p>
+<p class=meta>Data as of {_e(m['generated'][:10])}. Every underlying vote carries its
+SEC accession number; every policy sentence its archived, content-hashed source.</p>"""
+    (out_dir / "record.html").write_text(_page("The record", body, "record"))
+
+
+# ── First Stone: the newsroom's own identity, built on the registrar ─────────
+# The two-layer rule (decided 2026-07-06): Glasshouse the registrar accuses no
+# one; First Stone the newsroom argues from its record — under its own
+# masthead, in its own ink, and only after a human publishes.
+
+_FS_CSS = """
+:root{--accent:#8a5a00;--accent-soft:#f6ecd4}
+@media (prefers-color-scheme:dark){:root{--accent:#e3b855;--accent-soft:#33290f}}
+.fsword{font:600 1.05rem/1 var(--display);letter-spacing:.3em;text-transform:uppercase}
+.fsword b{color:var(--accent);border-left:2px solid var(--accent);
+  padding-left:.3em;margin-left:.1em}
+.deskrow{display:flex;gap:.8rem;padding:.5rem 0;border-bottom:1px solid var(--line);
+  align-items:baseline}
+.deskrow b{font:700 .78rem var(--mono);letter-spacing:.08em;min-width:14rem}
+.deskrow span{color:var(--muted);font-size:.92rem}
+.deskrow.human b{color:var(--accent)}
+article.story{max-width:46rem}
+article.story blockquote{border-left:3px solid var(--accent);padding-left:1rem;margin-left:0}
+"""
+
+
+def _fs_page(title: str, body: str) -> str:
+    from .firststone import MASTHEAD
+    return (f"<!doctype html><html lang=en><head><meta charset=utf-8>"
+            f"<meta name=viewport content='width=device-width,initial-scale=1'>"
+            f"<title>{_e(title)} — First Stone</title>"
+            f"<style>{_CSS}{_FS_CSS}</style></head><body>"
+            f"<nav><div class=wrap><span class=fsword>FIRST<b>STONE</b></span>"
+            f"<a href='firststone.html' class=on>Stories</a>"
+            f"<a href='index.html'>Glasshouse — the registrar ↗</a></div></nav>"
+            f"<div class=wrap>{body}<footer>{_e(MASTHEAD['tagline'])} Built on the "
+            f"Glasshouse registrar; every number can be recomputed from the public "
+            f"ledger.</footer></div>{_JS}</body></html>")
+
+
+def _md_html(md: str) -> str:
+    """Minimal renderer for First Stone's own templated Markdown (headings,
+    blockquotes, lists, bold, links, inline code) — not general-purpose."""
+    def inline(t: str) -> str:
+        t = re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", r"<a href='\2'>\1</a>", t)
+        t = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", t)
+        return re.sub(r"`([^`]+)`", r"<code>\1</code>", t)
+    out, para, lst = [], [], []
+
+    def flush_para():
+        if para:
+            out.append(f"<p>{inline(' '.join(para))}</p>")
+            para.clear()
+
+    def flush_list():
+        if lst:
+            out.append("<ul>" + "".join(f"<li>{inline(x)}</li>" for x in lst) + "</ul>")
+            lst.clear()
+
+    for raw in md.splitlines():
+        line = _e(raw.rstrip())
+        if line.startswith("## "):
+            flush_para()
+            flush_list()
+            out.append(f"<h2>{inline(line[3:])}</h2>")
+        elif line.startswith("# "):
+            flush_para()
+            flush_list()
+            out.append(f"<h1>{inline(line[2:])}</h1>")
+        elif line.startswith("&gt; "):
+            flush_para()
+            flush_list()
+            out.append(f"<blockquote>{inline(line[5:])}</blockquote>")
+        elif line.startswith("- "):
+            flush_para()
+            lst.append(line[2:])
+        elif not line.strip():
+            flush_para()
+            flush_list()
+        else:
+            flush_list()
+            para.append(line)
+    flush_para()
+    flush_list()
+    return "".join(out)
+
+
+def _build_firststone(out_dir) -> int:
+    from .firststone import MASTHEAD, load_published
+    pub = load_published()
+    desks = "".join(
+        f"<div class='deskrow{' human' if key == 'publisher' else ''}'>"
+        f"<b>{_e(name)}</b><span>{_e(charge)}</span></div>"
+        for key, name, charge in MASTHEAD["desks"])
+    if pub:
+        cards = "".join(
+            f"<div class='card claim r'><span class='ribbon ok'>● published "
+            f"{_e(p['published'][:10])}</span>"
+            f"<h3><a href='firststone-{_e(p['slug'])}.html'>{_e(p['headline'])}</a></h3>"
+            f"<p>{_e(p['standfirst'])}</p>"
+            f"<p class=cite>Publisher's note: {_e(p['publisher_note'])}</p></div>"
+            for p in pub)
+    else:
+        cards = ("<div class=card><p>No story has cleared the publisher's chair yet. "
+                 "The desks draft and check; a human decides — that order is the "
+                 "point.</p></div>")
+    body = f"""<h1>{_e(MASTHEAD['name'])}</h1>
+<p class=lede>{_e(MASTHEAD['tagline'])}</p>
+<p class=secnote>{_e(MASTHEAD['about'])}</p>
+<p class=kicker>Masthead</p><h2>The desks</h2>
+<div class='card flat'>{desks}</div>
+<p class=kicker>Stories</p><h2>Published</h2>
+{cards}"""
+    (out_dir / "firststone.html").write_text(_fs_page("First Stone", body))
+    for p in pub:
+        story = (f"<article class=story>{_md_html(p['body'])}"
+                 f"<p class=cite>Publisher's note: {_e(p['publisher_note'])} · "
+                 f"published {_e(p['published'][:10])}</p></article>")
+        (out_dir / f"firststone-{p['slug']}.html").write_text(
+            _fs_page(p["headline"], story))
+    return 1 + len(pub)
 
 
 def _build_findings(conn, out_dir) -> None:
@@ -691,9 +878,36 @@ def _build_institution(conn, out_dir, r, findings) -> int:
                              "sha": d["sha256"][:10], "live": not d["wayback_timestamp"]})
         body += (f"<p class=kicker>Paper trail</p><h2>Every version of its own words</h2>"
                  f"<p class=secnote>Each node is a distinct archived version of the "
-                 f"institution's policy (teal = Wayback Machine, red = live fetch). The "
-                 f"differences between nodes are silent edits — findings in themselves.</p>"
+                 f"institution's policy (teal = Wayback Machine, red = live fetch). "
+                 f"Sentence-level differences are documented in the change log below.</p>"
                  f"<div class='card r'>{_timeline_svg(versions)}</div>")
+
+    tl = timeline.institution_timeline(conn, inst_id)
+    ev_themes = {th: d for th, d in tl["themes"].items() if d["events"]}
+    if ev_themes:
+        blocks = ""
+        for th, d in sorted(ev_themes.items()):
+            items = ""
+            for ev in d["events"]:
+                frm, to = _pretty_stamp(ev["from"]["version"]), _pretty_stamp(ev["to"]["version"])
+                cite = (f"<span class=cite><a href='{_e(ev['from']['url'])}'>version {frm}</a>"
+                        f" → <a href='{_e(ev['to']['url'])}'>version {to}</a>"
+                        f" · {_e(ev['doc_label'])}</span>")
+                for s in ev["removed"]:
+                    items += (f"<li>present in {frm}, <b>not present in {to}</b>: "
+                              f"<q>{_e(s)}</q>{cite}</li>")
+                for s in ev["added"]:
+                    items += (f"<li><b>added in {to}</b> (not present in {frm}): "
+                              f"<q>{_e(s)}</q>{cite}</li>")
+                for old, new in ev["revised"]:
+                    items += (f"<li>revised between {frm} and {to}: <q>{_e(old)}</q> → "
+                              f"<q>{_e(new)}</q>{cite}</li>")
+            blocks += f"<h3>{_e(th.replace('-', ' '))}</h3><ul class=chg>{items}</ul>"
+        body += (f"<p class=kicker>Change log</p><h2>What changed in its own words</h2>"
+                 f"<p class=secnote>Sentence-level differences between consecutive archived "
+                 f"versions of the same document, quoted verbatim with both versions linked. "
+                 f"The record documents the change; interpretation is the reader's.</p>"
+                 f"<div class='card flat'>{blocks}</div>")
 
     mine = [p for p in findings if p["institution_id"] == inst_id]
     if mine:

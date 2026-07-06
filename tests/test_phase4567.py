@@ -114,8 +114,10 @@ def test_site_build(conn, tmp_path):
     assert (out / "institutions.html").exists()
     assert (out / "institution-blackrock.html").exists()
     assert (out / "how-to-read.html").exists()
+    assert (out / "record.html").exists()
+    assert (out / "firststone.html").exists()
     assert (out / "feed.xml").read_text().startswith("<?xml")
-    assert stats["pages"] == 5
+    assert stats["pages"] == 7
     assert (out / "findings.html").exists()
     # The public site must NOT publish a candidates page — unreviewed leads
     # are operator-only (workbench). The publish boundary, on the most public
@@ -124,3 +126,59 @@ def test_site_build(conn, tmp_path):
     # Reader guidance must ship with the data, not live only in the repo.
     how = (out / "how-to-read.html").read_text()
     assert "Guilty plea" in how and "Allegation only" in how
+
+
+_POLICY_FILLER = ("General provisions on proxy operations, ballot processing "
+                  "and record-keeping apply across all funds and accounts. " * 10)
+_POLICY_CLIMATE = ("We are committed to robust climate risk oversight and support "
+                   "emissions reduction at the companies our funds hold.")
+
+
+def _policy_version(conn, tmp_path, sha, text, wayback="", retrieval="2026-06-01"):
+    p = tmp_path / f"{sha[:6]}.txt"
+    p.write_text(text)
+    conn.execute(
+        "INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
+        "sha256, content_path, content_type, size_bytes, wayback_timestamp) "
+        "VALUES ('blackrock','stewardship','https://x/p.pdf',?,?,?,'text/plain',1,?)",
+        (retrieval, sha, str(p), wayback))
+
+
+def test_site_record_page_is_registrar_voice(conn, tmp_path):
+    """The public matrix page: rates from the ledger, leads-not-findings
+    framing, and never campaign language."""
+    conn.execute("INSERT INTO institutions (id, display_name) VALUES ('blackrock','BlackRock Inc.')")
+    _policy_version(conn, tmp_path, "a" * 64, _POLICY_FILLER + " " + _POLICY_CLIMATE,
+                    wayback="20230101000000")
+    conn.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+                 "retrieval_date) VALUES ('ACC','1','blackrock','N-PX','https://e','2025-01-01')")
+    conn.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, "
+                 "vote_description, how_voted, shares_voted, is_duplicate) VALUES "
+                 "('ACC','EXXON','C1','05/21/2024',"
+                 "'Report on greenhouse gas emissions reduction targets','AGAINST',5000,0)")
+    conn.commit()
+    out = tmp_path / "_site"
+    site.build(conn, out)
+    rec = (out / "record.html").read_text()
+    assert "BlackRock Inc." in rec and "100%" in rec
+    assert "lead" in rec.lower()                       # the framing ships with the page
+    for banned in ("hypocri", "greenwash", "betray"):
+        assert banned not in rec.lower()
+
+
+def test_site_institution_page_has_language_changelog(conn, tmp_path):
+    """When archived versions differ, the institution page documents the
+    change in registrar voice — dated, linked, uncharacterized."""
+    conn.execute("INSERT INTO institutions (id, display_name) VALUES ('blackrock','BlackRock Inc.')")
+    _policy_version(conn, tmp_path, "a" * 64, _POLICY_FILLER + " " + _POLICY_CLIMATE,
+                    wayback="20230101000000")
+    _policy_version(conn, tmp_path, "b" * 64, _POLICY_FILLER)
+    conn.commit()
+    out = tmp_path / "_site"
+    site.build(conn, out)
+    page = (out / "institution-blackrock.html").read_text()
+    assert "not present in" in page
+    assert "2023-01-01" in page and "2026-06-01" in page
+    assert "climate risk oversight" in page            # the quote itself
+    # The old overclaim is retired; changes are documented, not characterized.
+    assert "findings in themselves" not in page

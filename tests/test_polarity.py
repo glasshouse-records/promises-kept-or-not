@@ -77,3 +77,24 @@ def test_discretionary_policy_language_detected():
         "We are committed to robust climate risk oversight in our voting.")
     assert not commitment_is_discretionary(
         "We expect companies to disclose climate-related risks to investors.")
+
+
+def test_deference_to_management_is_not_a_commitment():
+    """Live false positive (first First Stone run, 2026-07-06): Goldman's
+    policy sentence 'We generally believe that it is the role of boards and
+    management to determine the appropriate level of disclosure of all types
+    of corporate political activity' was quoted as a lobbying-disclosure
+    COMMITMENT — but it is the opposite: an explicit deference to management.
+    Voting against disclosure proposals is CONSISTENT with that sentence."""
+    assert commitment_is_discretionary(
+        "We generally believe that it is the role of boards and management to "
+        "determine the appropriate level of disclosure of all types of "
+        "corporate political activity.")
+    assert commitment_is_discretionary(
+        "It is the responsibility of management to determine what lobbying "
+        "activity is disclosed.")
+    assert commitment_is_discretionary(
+        "These decisions remain the purview of the board.")
+    # Deference language about OUR OWN duties must not trip the guard:
+    assert not commitment_is_discretionary(
+        "It is our role as stewards to press companies for climate disclosure.")

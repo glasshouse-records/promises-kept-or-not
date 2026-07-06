@@ -91,7 +91,7 @@ def state(conn: sqlite3.Connection) -> dict:
     signals = [dict(r) for r in conn.execute(
         "SELECT ts, kind, detail FROM signals ORDER BY id DESC LIMIT 10")]
 
-    from . import agent, council, investigate, newsroom
+    from . import agent, council, firststone, investigate, newsroom
     recs = council.recommendations(conn)
     for f in pending:
         f["council"] = recs.get(f["fingerprint"])
@@ -107,6 +107,10 @@ def state(conn: sqlite3.Connection) -> dict:
         "pipeline": newsroom.pipeline_status(conn),
         "investigate": investigate.load_matrix(),   # cached hypocrisy matrix (or None)
         "agent_drafts": agent.load_latest_briefs(),  # latest agent-drafted story leads (or None)
+        "firststone": {"run": firststone.load_run(),
+                       "published": [{k: v for k, v in p.items() if k != "body"}
+                                     for p in firststone.load_published()],
+                       "masthead": firststone.MASTHEAD},
     }
 
 
@@ -179,6 +183,26 @@ def act(conn: sqlite3.Connection, action: str, payload: dict) -> dict:
     if action == "dossier":
         path = review.dossier(conn, int(payload["id"]))
         return {"ok": True, "path": path, "body": open(path).read()}
+
+    if action == "fs_run":
+        from . import firststone
+        stories = firststone.run(conn, llm=bool(payload.get("llm")))
+        return {"ok": True, "stories": len(stories)}
+
+    if action == "fs_publish":
+        # The publisher's chair: this POST is the human's explicit click in the
+        # operator desk; the written note is mandatory (enforced downstream too),
+        # and the body hash binds the approval to the text the human read.
+        from . import firststone
+        rec = firststone.publish(payload["slug"], note=payload.get("note", ""),
+                                 human_confirmed=bool(payload.get("i_publish_this")),
+                                 body_sha256=payload.get("body_sha256"))
+        return {"ok": True, "published": rec["slug"]}
+
+    if action == "fs_spike":
+        from . import firststone
+        firststone.spike(payload["slug"], note=payload.get("note", ""))
+        return {"ok": True}
 
     raise ValueError(f"unknown action {action}")
 
@@ -328,6 +352,7 @@ function tabs(){
     Object.values(i.cells).some(c=>c.committed&&c.n)).length:0;
   const t=[['investigate','Investigate',invN],
     ['company','Company',''],
+    ['firststone','First Stone',(((S.firststone||{}).run||{}).stories||[]).filter(s=>s.state==='awaiting_publisher').length],
     ['drafts','Drafts',((S.agent_drafts||{}).briefs||[]).length],
     ['newsroom','Newsroom',(S.newsroom||[]).length],
     ['review','Review',S.review.length],['leads','Leads',S.leads.length],
@@ -338,7 +363,7 @@ function tabs(){
   $('#tabs').innerHTML=t.map(([k,l,n])=>
     `<button class='${k===tab?'on':''}' onclick='tab="${k}";render()'>${l} <span class=n>${n}</span></button>`).join('')}
 
-function render(){tabs();({investigate,company,drafts,newsroom,review,leads,outreach,signals,doctor,pipeline})[tab]()}
+function render(){tabs();({investigate,company,firststone,drafts,newsroom,review,leads,outreach,signals,doctor,pipeline})[tab]()}
 
 function company(){
   $('#main').innerHTML=`<p class=secnote>Start from a <b>company</b>: who holds it (13-F value) and how
@@ -382,6 +407,59 @@ function coDrill(i){
      ||"<p class=meta>no cited examples</p>")+`</div>`;
   d.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
+
+const _FS_STATE_INK={awaiting_publisher:'var(--hold)',published:'var(--for)',spiked:'var(--against)'};
+function firststone(){
+  const F=S.firststone||{}, R=F.run;
+  let h=`<p class=secnote><b>First Stone</b> — the newsroom on top of the registrar. Software desks
+   assign, document, fact-check (by recomputing from the ledger), and edit; <b>only you publish</b>,
+   with a written note. Published stories appear on the public site under First Stone's own masthead.</p>
+   <div class=actions><button class=approve onclick='fsRun(this)'>Run edition cycle</button>
+   <span class=meta>${F.published.length} published · ${R?R.stories.length+' stories in the '+e((R.generated||'').slice(0,10))+' run':'no run yet'}</span><span class=st></span></div>`;
+  if(!R||!R.stories.length){$('#main').innerHTML=h+"<p class=empty>No edition on file. Run a cycle — the desks will pitch, check and file stories for your chair.</p>";return}
+  h+=R.stories.map((s,i)=>{
+    const trail=(s.trail||[]).map(t=>
+      `<span title='${e(t.note)}' style='font:700 .68rem var(--mono);letter-spacing:.04em;padding:.18rem .5rem;
+        border:1.5px solid ${t.verdict==='spike'?'var(--against)':t.verdict==='publish'?'var(--for)':'var(--edge)'};
+        border-radius:4px;color:${t.verdict==='spike'?'var(--against)':'var(--muted)'}'>${e(t.desk)} ✓</span>`).join(' ');
+    const ink=_FS_STATE_INK[s.state]||'var(--muted)';
+    let act='';
+    if(s.state==='awaiting_publisher') act=`
+      <textarea id='fsn${i}' rows=2 placeholder="Publisher's note — what you verified in both primary sources (required)"></textarea>
+      <div class=actions>
+       <label class=chk><input type=checkbox id='fsc${i}'> I verified the policy quote and the cited votes myself — publish under the First Stone masthead</label>
+      </div>
+      <div class=actions>
+       <button class=approve onclick='fsPublish(${i},this)'>Publish</button>
+       <button class=reject onclick='fsSpike(${i},this)'>Spike</button><span class=st></span>
+      </div>`;
+    return `<div class='card claim'>
+     <span class=ribbon style='color:${ink}'>${e(s.state.replace('_',' '))}</span>
+     <span class=meta>#${i+1} · score ${e(s.score)} · ${Math.round(s.against_rate*100)}% against on ${s.n_votes} votes · ${e(s.theme)}</span>
+     <h3 style='margin:.2rem 0'>${e(s.headline||s.slug)}</h3>
+     <p class=meta>${e(s.standfirst||'')}</p>
+     <div style='display:flex;gap:.35rem;flex-wrap:wrap;margin:.4rem 0'>${trail}</div>
+     <details><summary class=meta>read the full story as filed (with citations)</summary>
+      <pre class=dossier>${e(s.body)}</pre></details>${act}</div>`}).join('');
+  $('#main').innerHTML=h;
+}
+async function fsRun(btn){
+  btn.disabled=true;btn.textContent='Desks working…';
+  const r=await post('fs_run',{},btn.parentElement.querySelector('.st'));
+  if(r)await load(); }
+async function fsPublish(i,btn){
+  const s=S.firststone.run.stories[i], note=$('#fsn'+i).value.trim(), ok=$('#fsc'+i).checked;
+  const st=btn.parentElement.querySelector('.st');
+  if(!note){st.innerHTML="<span class=err>the publisher's note is required</span>";return}
+  if(!ok){st.innerHTML="<span class=err>tick the confirmation — publishing is your act, not the desks'</span>";return}
+  const r=await post('fs_publish',{slug:s.slug,note,i_publish_this:ok,body_sha256:s.body_sha256},st);
+  if(r)await load(); }
+async function fsSpike(i,btn){
+  const s=S.firststone.run.stories[i], note=$('#fsn'+i).value.trim();
+  const st=btn.parentElement.querySelector('.st');
+  if(!note){st.innerHTML="<span class=err>a kill needs a written reason too</span>";return}
+  const r=await post('fs_spike',{slug:s.slug,note},st);
+  if(r)await load(); }
 
 function drafts(){
   const D=S.agent_drafts;
