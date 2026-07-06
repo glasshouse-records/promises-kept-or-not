@@ -16,6 +16,7 @@ Invariants under test:
 import pytest
 
 from glasshouse import detectors, ledger
+from glasshouse.ledger import EnforcementAction
 
 
 @pytest.fixture
@@ -192,3 +193,70 @@ def test_soft_commitment_scorecard_self_validates(two_managers):
     # The scorecard must be HONEST about whether it discriminates, with a note.
     assert "discriminates" in sc and isinstance(sc["discriminates"], bool)
     assert sc["note"]
+
+
+# ── Detector #3: own enforcement record (claims-vs-enforcement, own side) ────
+
+@pytest.fixture
+def own_conn(tmp_path):
+    c = ledger.connect(tmp_path / "o.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('goldman_sachs','Goldman Sachs Group Inc.')")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('clean','Clean AM')")
+    for mid in ("goldman_sachs", "clean"):
+        p = tmp_path / f"{mid}.txt"
+        p.write_text("We are committed to business ethics and anti-corruption.")
+        c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
+                  "sha256, content_path, content_type, size_bytes) VALUES "
+                  "(?, 'stewardship','https://x/p.pdf','2023-01-01',?,?,'text/plain',10)",
+                  (mid, mid * 20, str(p)))
+    ledger.insert_enforcement(c, [
+        EnforcementAction(agency="SEC", company_name="Goldman Sachs Group Inc.",
+                          action_date="2020-10-22", resolution_type="civil_settlement",
+                          primary_ref="SEC-1MDB", source_url="https://sec/1",
+                          description="1MDB FCPA $2.9B settlement"),
+        # An allegation (docket) — NEVER a finding, must be excluded:
+        EnforcementAction(agency="Federal docket", company_name="Goldman Sachs Group Inc.",
+                          action_date="2026-01-01", resolution_type="allegation",
+                          primary_ref="Docket-1", source_url="https://c/1",
+                          description="pending", is_allegation=True),
+        # OFAC SDN name-collision (the Aldar class) — must be excluded:
+        EnforcementAction(agency="OFAC (SDN)", company_name="Goldman Sachs Group Inc.",
+                          action_date="2020-01-01", resolution_type="sanction_designation",
+                          primary_ref="SDN-1", source_url="https://o/1", description="collision"),
+    ])
+    c.commit()
+    return c
+
+
+def test_own_record_detector_is_registered():
+    reg = detectors.registry()
+    assert "own-record" in reg
+    assert reg["own-record"].technique == "own-enforcement"
+
+
+def test_own_record_surfaces_real_resolutions_only(own_conn):
+    leads = detectors.registry()["own-record"].run(own_conn)
+    ids = {ld.institution_id for ld in leads}
+    assert "goldman_sachs" in ids       # has a real resolution
+    assert "clean" not in ids           # commitment but no enforcement
+    lead = next(ld for ld in leads if ld.institution_id == "goldman_sachs")
+    types = [r["resolution_type"] for r in lead.evidence["resolutions"]]
+    assert "civil_settlement" in types            # the real resolution is surfaced
+    assert "allegation" not in types              # allegations excluded (never a finding)
+    assert "sanction_designation" not in types    # OFAC collision excluded (Aldar class)
+    assert lead.evidence["quarantined"] is True   # name-join → lead, not finding
+    # resolution_type preserved verbatim (legal distinctions never collapsed).
+    assert lead.evidence["resolutions"][0]["primary_ref"] == "SEC-1MDB"
+
+
+def test_own_record_is_footprints_not_verdict(own_conn):
+    lead = detectors.registry()["own-record"].run(own_conn)[0]
+    low = (lead.headline + " " + str(lead.evidence)).lower()
+    for banned in ("hypocri", "lying", "criminal mastermind", "corrupt "):
+        assert banned not in low
+
+
+def test_own_record_scorecard_reports_selectivity(own_conn):
+    sc = detectors.registry()["own-record"].scorecard(own_conn)
+    assert sc["universe"] == 2 and sc["flagged"] == 1   # 2 managers market stewardship; 1 has a record
+    assert sc["selectivity"] == 0.5

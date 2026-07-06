@@ -45,10 +45,22 @@ TECHNIQUES: dict[str, dict] = {
                     "language rather than a hard pledge?",
         "reads": "archived policy commitment text (Loughran-McDonald strong/weak modal basis)",
     },
+    "own-enforcement": {
+        "name": "Own enforcement record",
+        "family": "Own conduct",
+        "question": "Does a manager that publishes stewardship commitments have its own "
+                    "documented enforcement record (resolutions, not allegations)?",
+        "reads": "the manager's own enforcement record × its published commitments",
+    },
     # Reserved — earned in later loops (kept here so the catalogue is legible):
     # "commitment-decay"    — commitment language quietly weakening across versions
     # "selective-silence"   — loud where exposure is low, silent where it is high
-    # "claims-vs-enforcement" — champions a theme, backs companies later fined in it
+    # DEFERRED: the HELD-COMPANY claims-vs-enforcement ("backs companies later fined
+    #   in a theme it champions") is NOT built — our enforcement data is name-only
+    #   (no identifiers → Aldar-class joins), OFAC-dominated, and index managers hold
+    #   nearly every fined company (base rate ≈ everyone, so it can't be selective).
+    #   It needs identifier-linked, theme-tagged enforcement data (EEOC/EPA + CUSIPs,
+    #   or OpenCorporates entity resolution) before it can be precise. Learned cheaply.
 }
 
 
@@ -302,9 +314,80 @@ class CommitmentStrength(Detector):
         return sc
 
 
+# ── Detector #3: the manager's OWN enforcement record vs its stewardship claim
+
+class OwnRecord(Detector):
+    """A manager that publishes stewardship commitments — holding itself out as
+    a responsible steward — set against its OWN documented enforcement record.
+    The 'rap sheet vs. the marketing' (the DWS-greenwashing shape).
+
+    Precision, non-negotiable: name-join → every lead is quarantined (the record
+    often names a subsidiary — verify the corporate relationship); ALLEGATIONS
+    (open dockets) are excluded — they are never findings; OFAC name-collisions
+    are excluded (the Aldar class); every resolution_type is preserved verbatim
+    (a guilty plea is not a DPA is not a civil settlement). It states the
+    conjunction of documented facts, never motive."""
+    id = "own-record"
+    name = "Own enforcement record (stewardship claim vs. own record)"
+    technique = "own-enforcement"
+    question = ("Does a manager that publishes stewardship commitments have its own "
+                "documented enforcement record?")
+    validation = ("Small, fast, name-join over the manager's own record (not portfolio "
+                  "exposure, so no base-rate blow-up). Allegations and OFAC collisions "
+                  "excluded; resolution types preserved; every lead quarantined for the "
+                  "subsidiary check. States documented facts, never motive or knowledge.")
+    # Legal-weight anchors from METHODOLOGY.md (for footprint prominence only).
+    _SEVERITY = {"guilty_plea": 10, "dpa": 7, "npa": 6, "debarment": 6,
+                 "civil_settlement": 5, "civil_violation": 4, "board_order": 4,
+                 "administrative_action": 3, "expulsion": 2}
+
+    def _stewards(self, conn: sqlite3.Connection) -> set[str]:
+        return {r["institution_id"] for r in
+                conn.execute("SELECT DISTINCT institution_id FROM commitments")}
+
+    def run(self, conn: sqlite3.Connection, **kw) -> list[Lead]:
+        from . import findings
+        stewards = self._stewards(conn)
+        by_mgr: dict[str, list] = {}
+        for o in findings.own_record(conn):          # already OFAC-excluded + quarantined
+            if o.resolution_type in ("allegation", "unverified"):
+                continue                              # allegations are never findings
+            if o.institution_id not in stewards:
+                continue                              # no published commitment = no claim side
+            by_mgr.setdefault(o.institution_id, []).append(o)
+        leads: list[Lead] = []
+        for mid, recs in by_mgr.items():
+            name = recs[0].institution
+            sev = max(self._SEVERITY.get(r.resolution_type, 3) for r in recs)
+            types = ", ".join(sorted({r.resolution_type.replace("_", " ") for r in recs}))
+            leads.append(Lead(
+                detector_id=self.id, technique=self.technique,
+                institution_id=mid, institution_name=name, subject="own record",
+                headline=(f"{name} publishes stewardship commitments; its own enforcement "
+                          f"record includes {len(recs)} resolution(s): {types}"),
+                strength=round(sev / 10, 4),
+                evidence={"quarantined": True,
+                          "note": ("name-join — the record may name a subsidiary; verify the "
+                                   "corporate relationship. Allegations and OFAC collisions "
+                                   "excluded; resolution types are legally distinct."),
+                          "resolutions": [
+                              {"agency": r.agency, "resolution_type": r.resolution_type,
+                               "primary_ref": r.primary_ref, "action_date": r.action_date,
+                               "penalty_usd": r.penalty_usd,
+                               "description": (r.description or "")[:200],
+                               "source_url": r.source_url} for r in recs]},
+                provenance={"technique": self.technique, "join": "name_exact",
+                            "excludes": "allegations, OFAC sanction_designation, duplicates"}))
+        leads.sort(key=lambda x: -x.strength)
+        return leads
+
+    def universe(self, conn: sqlite3.Connection, **kw) -> int:
+        return len(self._stewards(conn))
+
+
 # ── registry ────────────────────────────────────────────────────────────────
 
-_DETECTORS: list[Detector] = [BrokenPromise(), CommitmentStrength()]
+_DETECTORS: list[Detector] = [BrokenPromise(), CommitmentStrength(), OwnRecord()]
 
 
 def registry() -> dict[str, Detector]:
