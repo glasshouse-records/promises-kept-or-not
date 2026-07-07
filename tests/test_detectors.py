@@ -457,3 +457,54 @@ def test_skin_in_the_game_is_footprints_not_verdict(skin):
     low = (ld.headline + " " + str(ld.evidence)).lower()
     for banned in ("hypocri", "lying", "deliberate", "cynical"):
         assert banned not in low
+
+
+# ── Detector #7: fossil-exposure (climate commitment vs oil & gas holdings) ──
+
+@pytest.fixture
+def fossilconn(tmp_path):
+    c = ledger.connect(tmp_path / "fo.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('blk','BlackRock Inc.')")
+    pol = tmp_path / "p.txt"
+    pol.write_text("We are committed to robust climate risk oversight and we will "
+                   "support emissions reduction at the companies our funds hold.")
+    c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
+              "sha256, content_path, content_type, size_bytes) VALUES "
+              "('blk','stewardship','https://x/p.pdf','2023-01-01',?,?,'text/plain',10)",
+              ("a" * 64, str(pol)))
+    c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+              "retrieval_date) VALUES ('F13','1','blk','13F-HR','https://s','2025-02-01')")
+    c.execute("INSERT INTO holdings (accession, issuer_name, cusip, value_usd, shares) "
+              "VALUES ('F13','EXXON MOBIL CORP','30231G102',1000000000,100)")
+    c.execute("INSERT INTO holdings (accession, issuer_name, cusip, value_usd, shares) "
+              "VALUES ('F13','MICROSOFT CORP','594918104',1000000000,100)")
+    c.commit()
+    return c
+
+
+def test_fossil_exposure_is_registered():
+    d = detectors.registry().get("fossil-exposure")
+    assert d and d.technique == "portfolio-exposure"
+
+
+def test_fossil_exposure_reports_exact_cusip_holdings(fossilconn):
+    ld = detectors.registry()["fossil-exposure"].run(fossilconn)[0]
+    assert ld.institution_id == "blk"
+    assert abs(ld.evidence["fossil_pct"] - 0.5) < 1e-6
+    top = ld.evidence["top"]
+    assert top[0]["cusip"] == "30231G102" and "exxon" in top[0]["issuer_name"].lower()
+    assert ld.evidence["index_alibi"] is True
+    assert "GOGEL" in ld.evidence["coverage"] or "seed" in ld.evidence["coverage"]
+
+
+def test_fossil_exposure_excludes_the_bitcoin_miner():
+    from glasshouse import fossil
+    assert "565788106" not in fossil.FOSSIL_FUEL_CUSIPS   # Marathon Digital (crypto)
+    assert "565849106" in fossil.FOSSIL_FUEL_CUSIPS       # Marathon Oil (real)
+
+
+def test_fossil_exposure_is_footprints_not_verdict(fossilconn):
+    ld = detectors.registry()["fossil-exposure"].run(fossilconn)[0]
+    low = (ld.headline + " " + str(ld.evidence)).lower()
+    for banned in ("hypocri", "lying", "complicit", "dirty"):
+        assert banned not in low

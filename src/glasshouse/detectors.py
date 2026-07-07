@@ -73,6 +73,13 @@ TECHNIQUES: dict[str, dict] = {
                     "companies where it holds the biggest stake (most influence)?",
         "reads": "13-F holdings × N-PX votes on committed themes (position-weighted)",
     },
+    "portfolio-exposure": {
+        "name": "Fossil-fuel exposure",
+        "family": "Portfolio",
+        "question": "Does a manager that commits to climate hold major oil & gas companies "
+                    "in its own 13-F portfolio, and how much?",
+        "reads": "13-F holdings × a curated oil & gas CUSIP list (exact-CUSIP, no name match)",
+    },
     # Reserved — earned in later loops (kept here so the catalogue is legible):
     # "selective-silence"   — loud where exposure is low, silent where it is high
     # DEFERRED: the HELD-COMPANY claims-vs-enforcement ("backs companies later fined
@@ -617,10 +624,87 @@ class SkinInTheGame(Detector):
         return leads
 
 
+# ── Detector #7: fossil-fuel exposure (climate claim vs oil & gas holdings) ─
+
+class FossilExposure(Detector):
+    """A manager that commits to climate, set against the oil & gas in its OWN
+    latest 13-F portfolio — the documented exposure, by exact CUSIP (no name
+    match, so no Aldar risk), against a hand-verified curated list.
+
+    Honesty is load-bearing here: this is the WEAKEST finding class
+    (METHODOLOGY.md) — holdings carry an index-fund alibi that VOTES do not, so
+    it is context for the vote-based detectors, not a standalone accusation. It
+    also states its partial coverage (a 22-company seed; full GOGEL ingest
+    pending). States dollars and percentages, never motive."""
+    id = "fossil-exposure"
+    name = "Fossil-fuel exposure (climate claim vs oil & gas held)"
+    technique = "portfolio-exposure"
+    question = ("Does a manager that commits to climate hold major oil & gas companies "
+                "in its own 13-F portfolio, and how much?")
+    validation = ("Weakest finding class: holdings carry an index-fund alibi that votes do "
+                  "not, so this is CONTEXT beside the vote detectors, not an accusation. "
+                  "Exact-CUSIP join (no name-match / no Aldar risk) against a hand-verified "
+                  "curated oil & gas list — partial coverage (22-company seed; full GOGEL "
+                  "ingest pending). States dollars and percentages, never motive.")
+
+    def run(self, conn: sqlite3.Connection, *, matrix: dict | None = None,
+            min_pct: float = 0.005, **kw) -> list[Lead]:
+        from . import fossil
+        m = matrix if matrix is not None else investigate.build_matrix(conn)
+        climate = [inst for inst in m["institutions"]
+                   if inst["cells"].get("climate", {}).get("committed")]
+        leads: list[Lead] = []
+        for inst in climate:
+            row = conn.execute(
+                "SELECT accession FROM filings WHERE institution_id=? AND form_type LIKE '13F%' "
+                "ORDER BY retrieval_date DESC, accession DESC LIMIT 1", (inst["id"],)).fetchone()
+            if not row:
+                continue
+            holds = conn.execute(
+                "SELECT cusip, issuer_name, value_usd FROM holdings WHERE accession=?",
+                (row["accession"],)).fetchall()
+            total = sum(float(h["value_usd"] or 0) for h in holds)
+            if total <= 0:
+                continue
+            # A 13-F may list one security across sub-accounts — aggregate by CUSIP
+            # so a position appears once (its full size), not as duplicate rows.
+            by_cusip: dict[str, tuple[str, float]] = {}
+            for h in holds:
+                if h["cusip"] in fossil.FOSSIL_FUEL_CUSIPS:
+                    name, val = by_cusip.get(h["cusip"], (h["issuer_name"], 0.0))
+                    by_cusip[h["cusip"]] = (name, val + float(h["value_usd"] or 0))
+            fos = [(name, c, val) for c, (name, val) in by_cusip.items()]
+            fos_val = sum(v for _, _, v in fos)
+            pct = fos_val / total
+            if pct < min_pct or not fos:
+                continue
+            fos.sort(key=lambda x: -x[2])
+            leads.append(Lead(
+                detector_id=self.id, technique=self.technique,
+                institution_id=inst["id"], institution_name=inst["name"], subject="climate",
+                headline=(f"{inst['name']} commits to climate; its latest 13-F portfolio holds "
+                          f"${fos_val / 1e9:,.1f}B ({pct:.1%}) in major oil & gas "
+                          f"({len(fos)} companies)"),
+                strength=round(min(1.0, pct * 10), 4),
+                evidence={"fossil_usd": fos_val, "portfolio_usd": total,
+                          "fossil_pct": round(pct, 6), "n_companies": len(fos),
+                          "top": [{"issuer_name": n, "cusip": c, "value_usd": v}
+                                  for n, c, v in fos[:6]],
+                          "index_alibi": True, "coverage": fossil.COVERAGE},
+                provenance={"technique": self.technique, "join": "exact_cusip",
+                            "source": fossil.SOURCE}))
+        leads.sort(key=lambda x: -x.evidence["fossil_pct"])
+        return leads
+
+    # Selectivity is not the useful frame (a diversified manager holds SOME oil
+    # & gas); the exposure LEVEL is the story. universe() stays None.
+
+
 # ── registry ────────────────────────────────────────────────────────────────
 
 _DETECTORS: list[Detector] = [BrokenPromise(), CommitmentStrength(), OwnRecord(),
-                              CommitmentDecay(), VoteDivergence(), SkinInTheGame()]
+                              CommitmentDecay(), VoteDivergence(), SkinInTheGame(),
+                              FossilExposure()]
 
 
 def registry() -> dict[str, Detector]:
