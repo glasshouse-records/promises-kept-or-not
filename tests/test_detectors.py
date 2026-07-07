@@ -508,3 +508,47 @@ def test_fossil_exposure_is_footprints_not_verdict(fossilconn):
     low = (ld.headline + " " + str(ld.evidence)).lower()
     for banned in ("hypocri", "lying", "complicit", "dirty"):
         assert banned not in low
+
+
+def test_fossil_coverage_string_matches_list_length():
+    """Audit fix: the public-facing coverage/validation strings must not drift
+    from the actual curated list (they said '22' after it grew to 40)."""
+    from glasshouse import fossil
+    n = len(fossil.FOSSIL_FUEL_CUSIPS)
+    assert f"{n} companies" in fossil.COVERAGE
+    assert f"{n} companies" in detectors.registry()["fossil-exposure"].validation
+    # No stale hardcoded count leaks into the public validation string.
+    assert "22-company" not in detectors.registry()["fossil-exposure"].validation
+
+
+def test_fossil_uses_fullest_filing_and_cites_it(tmp_path):
+    """Audit fix: on retrieval-date ties / partial amendments, pick the FULLEST
+    13-F (not lexical accession), and CITE the filing so the number is traceable."""
+    c = ledger.connect(tmp_path / "ff.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('blk','BlackRock Inc.')")
+    pol = tmp_path / "p.txt"
+    pol.write_text("We are committed to robust climate risk oversight and we will "
+                   "support emissions reduction at the companies our funds hold.")
+    c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
+              "sha256, content_path, content_type, size_bytes) VALUES "
+              "('blk','stewardship','https://x/p.pdf','2023-01-01',?,?,'text/plain',10)",
+              ("a" * 64, str(pol)))
+    # Two 13-Fs, SAME retrieval_date. 'Z' is a tiny amendment; 'A' is the full
+    # portfolio. Lexical 'ORDER BY accession DESC' would wrongly pick 'Z'.
+    c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+              "retrieval_date) VALUES ('A-full','1','blk','13F-HR','https://s','2026-06-11')")
+    c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+              "retrieval_date) VALUES ('Z-amend','1','blk','13F-HR/A','https://s','2026-06-11')")
+    # full: Exxon $2B + Microsoft $2B  → fossil 50%
+    c.execute("INSERT INTO holdings (accession, issuer_name, cusip, value_usd, shares) "
+              "VALUES ('A-full','EXXON MOBIL CORP','30231G102',2000000000,1)")
+    c.execute("INSERT INTO holdings (accession, issuer_name, cusip, value_usd, shares) "
+              "VALUES ('A-full','MICROSOFT CORP','594918104',2000000000,1)")
+    # amendment: only a tiny Exxon line → would read as 100% fossil if mis-picked
+    c.execute("INSERT INTO holdings (accession, issuer_name, cusip, value_usd, shares) "
+              "VALUES ('Z-amend','EXXON MOBIL CORP','30231G102',1000000,1)")
+    c.commit()
+    ld = detectors.registry()["fossil-exposure"].run(c)[0]
+    assert ld.evidence["filing_accession"] == "A-full"        # fullest, not lexical 'Z'
+    assert abs(ld.evidence["fossil_pct"] - 0.5) < 1e-6        # 50%, not the amendment's 100%
+    assert ld.evidence["filing_retrieved"] == "2026-06-11"    # cited for traceability

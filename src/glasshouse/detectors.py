@@ -26,6 +26,7 @@ import re
 import sqlite3
 from dataclasses import dataclass, field
 
+from . import fossil as _fossil
 from . import investigate
 
 # ── the taxonomy: accountability-evasion techniques ─────────────────────────
@@ -628,42 +629,50 @@ class SkinInTheGame(Detector):
 
 class FossilExposure(Detector):
     """A manager that commits to climate, set against the oil & gas in its OWN
-    latest 13-F portfolio — the documented exposure, by exact CUSIP (no name
-    match, so no Aldar risk), against a hand-verified curated list.
+    13-F portfolio — the documented exposure, by exact CUSIP (no name match, so
+    no Aldar risk), against a hand-verified curated list (see fossil.py).
 
     Honesty is load-bearing here: this is the WEAKEST finding class
     (METHODOLOGY.md) — holdings carry an index-fund alibi that VOTES do not, so
     it is context for the vote-based detectors, not a standalone accusation. It
-    also states its partial coverage (a 22-company seed; full GOGEL ingest
-    pending). States dollars and percentages, never motive."""
+    also states its partial coverage and CITES the exact 13-F filing used.
+    States dollars and percentages, never motive."""
     id = "fossil-exposure"
     name = "Fossil-fuel exposure (climate claim vs oil & gas held)"
     technique = "portfolio-exposure"
     question = ("Does a manager that commits to climate hold major oil & gas companies "
                 "in its own 13-F portfolio, and how much?")
+    # Count is derived from the list so this public-facing string can't drift.
     validation = ("Weakest finding class: holdings carry an index-fund alibi that votes do "
                   "not, so this is CONTEXT beside the vote detectors, not an accusation. "
                   "Exact-CUSIP join (no name-match / no Aldar risk) against a hand-verified "
-                  "curated oil & gas list — partial coverage (22-company seed; full GOGEL "
-                  "ingest pending). States dollars and percentages, never motive.")
+                  f"curated oil & gas list of {len(_fossil.FOSSIL_FUEL_CUSIPS)} companies "
+                  "(partial; full GOGEL ingest pending); cites the exact 13-F filing used. "
+                  "States dollars and percentages, never motive.")
 
     def run(self, conn: sqlite3.Connection, *, matrix: dict | None = None,
             min_pct: float = 0.005, **kw) -> list[Lead]:
-        from . import fossil
+        fossil = _fossil
         m = matrix if matrix is not None else investigate.build_matrix(conn)
         climate = [inst for inst in m["institutions"]
                    if inst["cells"].get("climate", {}).get("committed")]
         leads: list[Lead] = []
         for inst in climate:
+            # Pick the FULLEST 13-F on record (max total value): robust to
+            # retrieval-date ties (bulk backfills) and to partial amendments,
+            # which the plain "latest" ordering mis-selected. The chosen filing
+            # is cited (accession + retrieval date) so the number is traceable.
             row = conn.execute(
-                "SELECT accession FROM filings WHERE institution_id=? AND form_type LIKE '13F%' "
-                "ORDER BY retrieval_date DESC, accession DESC LIMIT 1", (inst["id"],)).fetchone()
-            if not row:
+                "SELECT f.accession, f.retrieval_date, SUM(h.value_usd) AS total "
+                "FROM filings f JOIN holdings h ON h.accession = f.accession "
+                "WHERE f.institution_id=? AND f.form_type LIKE '13F%' "
+                "GROUP BY f.accession ORDER BY total DESC LIMIT 1", (inst["id"],)).fetchone()
+            if not row or not row["total"]:
                 continue
             holds = conn.execute(
                 "SELECT cusip, issuer_name, value_usd FROM holdings WHERE accession=?",
                 (row["accession"],)).fetchall()
-            total = sum(float(h["value_usd"] or 0) for h in holds)
+            total = float(row["total"])
             if total <= 0:
                 continue
             # A 13-F may list one security across sub-accounts — aggregate by CUSIP
@@ -682,12 +691,14 @@ class FossilExposure(Detector):
             leads.append(Lead(
                 detector_id=self.id, technique=self.technique,
                 institution_id=inst["id"], institution_name=inst["name"], subject="climate",
-                headline=(f"{inst['name']} commits to climate; its latest 13-F portfolio holds "
+                headline=(f"{inst['name']} commits to climate; its 13-F portfolio holds "
                           f"${fos_val / 1e9:,.1f}B ({pct:.1%}) in major oil & gas "
                           f"({len(fos)} companies)"),
                 strength=round(min(1.0, pct * 10), 4),
                 evidence={"fossil_usd": fos_val, "portfolio_usd": total,
                           "fossil_pct": round(pct, 6), "n_companies": len(fos),
+                          "filing_accession": row["accession"],
+                          "filing_retrieved": row["retrieval_date"],
                           "top": [{"issuer_name": n, "cusip": c, "value_usd": v}
                                   for n, c, v in fos[:6]],
                           "index_alibi": True, "coverage": fossil.COVERAGE},

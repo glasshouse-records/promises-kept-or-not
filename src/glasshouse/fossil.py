@@ -70,7 +70,9 @@ FOSSIL_FUEL_CUSIPS: dict[str, str] = {
 #   136375102 "Canadian National Railway"  — a RAILROAD (vs Canadian Natural Resources)
 #   88262P102 "Texas Pacific Land"         — land/royalty, not a producer (conservative)
 
+# Count is derived from the list so the public-facing string can never drift.
 COVERAGE = ("major oil & gas (integrated, E&P, refining), oilfield services, midstream, "
             "international majors' US-listed shares, and coal producers — a curated seed "
-            "of 40 companies; the full GOGEL universe (~1,800) is not yet included")
+            f"of {len(FOSSIL_FUEL_CUSIPS)} companies; the full GOGEL universe (~1,800) is "
+            "not yet included")
 SOURCE = "curated_snapshot (hand-verified CUSIPs; full GOGEL ingest pending)"
