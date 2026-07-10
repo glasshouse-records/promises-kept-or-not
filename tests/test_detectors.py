@@ -552,3 +552,36 @@ def test_fossil_uses_fullest_filing_and_cites_it(tmp_path):
     assert ld.evidence["filing_accession"] == "A-full"        # fullest, not lexical 'Z'
     assert abs(ld.evidence["fossil_pct"] - 0.5) < 1e-6        # 50%, not the amendment's 100%
     assert ld.evidence["filing_retrieved"] == "2026-06-11"    # cited for traceability
+
+
+def test_commitment_strength_ignores_nouns_that_are_not_commitments():
+    """Precision bug found while building case files (2026-07-07): 'committee'
+    matched commit\\w* and 'regulatory requirements' matched requir\\w*, so a
+    sentence merely MENTIONING them scored as a hard commitment. Removing such a
+    clause then read as a 'softening' — manufacturing a false STRONG footprint."""
+    d = detectors.registry()["soft-commitment"]
+    _, hard, _ = d.strength("The nominating committee reviews board composition.")
+    assert hard == 0, "'committee' must not count as a commitment"
+    _, hard, _ = d.strength("consistent with local regulatory requirements and best practices")
+    assert hard == 0, "external 'requirements' must not count as the manager's commitment"
+    # Real, first-person commitments must still count.
+    _, hard, _ = d.strength("We are committed to board diversity.")
+    assert hard == 1
+    _, hard, _ = d.strength("We require companies to disclose their emissions.")
+    assert hard == 1
+    _, hard, _ = d.strength("Our commitment to climate risk oversight is firm.")
+    assert hard == 1
+
+
+def test_no_false_softening_from_a_dropped_requirements_clause():
+    """The BlackRock board-diversity case: 'We believe boards should aspire …
+    consistent with local regulatory requirements' → 'We encourage boards to
+    aspire …'. Both are equally hedged; only the noun 'requirements' made the
+    old sentence look firmer. It must NOT be flagged as a softening."""
+    from glasshouse.detectors import CommitmentStrength as CS
+    old = ("We believe boards should aspire to meaningful diversity of membership, at "
+           "least consistent with local regulatory requirements and best practices, "
+           "while recognizing that building a strong, diverse board can take time.")
+    new = ("We encourage boards to aspire to meaningful diversity of membership, while "
+           "recognizing that building a strong, diverse board can take time.")
+    assert CS.strength(new)[0] >= CS.strength(old)[0], "false softening resurfaced"

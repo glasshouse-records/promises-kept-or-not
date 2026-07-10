@@ -113,6 +113,18 @@ class Detector:
     name: str = ""
     technique: str = ""
     question: str = ""
+    # How much evidentiary weight this detector's footprint can carry. Declared
+    # by the detector itself so a case file never has to guess:
+    #   strong      — an active choice or a documented act (a vote, a change in
+    #                 their own words, a resolution). No passive-index defence.
+    #   supporting  — real and cited, but a weaker class (e.g. holdings, which
+    #                 carry an index alibi). Context, not accusation.
+    #   descriptive — a signal whose discriminating power is unproven on our
+    #                 record (it says so in its own scorecard).
+    evidence_class: str = "descriptive"
+    # A theme-scoped footprint corroborates a specific claim; a manager-scoped
+    # one (own rap sheet, internal split) is CONTEXT about the manager.
+    scope: str = "theme"          # theme | manager
 
     def run(self, conn: sqlite3.Connection, **kw) -> list[Lead]:  # pragma: no cover
         raise NotImplementedError
@@ -164,6 +176,8 @@ class BrokenPromise(Detector):
     This is 'big banks promise climate protection, then vote against it' —
     stated as cited fact, which is exactly why it holds up."""
     id = "broken-promise"
+    evidence_class = "strong"      # an active vote choice; no passive-index defence
+    scope = "theme"
     name = "Broken promise (say vs. do)"
     technique = "say-vs-do"
     question = ("Where a manager's own policy commits to a theme, how often do "
@@ -223,8 +237,16 @@ class BrokenPromise(Detector):
 # categories (the standard financial-text dictionaries, sraf.nd.edu) plus
 # explicit commitment verbs. This is our operationalization, not L-M verbatim.
 _HARD_RE = re.compile(
-    r"\b(?:will|shall|must|commit\w*|requir\w*|ensur\w*|guarantee\w*|pledg\w*|"
-    r"mandat\w*|always|expect\w*)\b", re.IGNORECASE)
+    r"\b(?:will|shall|must|"
+    # "commit / commits / committed / commitment(s)" — but NOT "committee",
+    # which saturates governance policy text and is not a commitment at all.
+    r"commit(?:s|ted|ment|ments)?|"
+    # the VERB "require/requires/required" — but NOT the noun "requirement(s)",
+    # which usually names EXTERNAL rules ("local regulatory requirements"), not
+    # anything the manager binds itself to.
+    r"require[sd]?|"
+    r"ensur\w*|guarantee\w*|pledg\w*|mandat\w*|always|expect\w*)\b",
+    re.IGNORECASE)
 _SOFT_RE = re.compile(
     r"\b(?:may|might|could|would|encourag\w*|consider\w*|seek\w*|aim\w*|aspir\w*|"
     r"endeavou?r\w*|striv\w*|intend\w*|believ\w*|generally|typically|possibl\w*|"
@@ -242,6 +264,8 @@ class CommitmentStrength(Detector):
     softer commitments actually go with worse voting follow-through (a higher
     against-rate). No external labels required."""
     id = "soft-commitment"
+    evidence_class = "descriptive"  # its own scorecard says it does not discriminate
+    scope = "theme"
     name = "Soft commitment (hedged promise)"
     technique = "soft-commitment"
     question = ("Is the manager's stated commitment itself hedged — weak-modal, "
@@ -356,6 +380,8 @@ class OwnRecord(Detector):
     (a guilty plea is not a DPA is not a civil settlement). It states the
     conjunction of documented facts, never motive."""
     id = "own-record"
+    evidence_class = "strong"      # documented resolutions (allegations excluded)
+    scope = "manager"
     name = "Own enforcement record (stewardship claim vs. own record)"
     technique = "own-enforcement"
     question = ("Does a manager that publishes stewardship commitments have its own "
@@ -427,6 +453,8 @@ class CommitmentDecay(Detector):
     dated version B, quoting both — never why. It reports softenings/removals,
     not rewordings that keep or raise strength."""
     id = "commitment-decay"
+    evidence_class = "strong"      # a documented change in their own words
+    scope = "theme"
     name = "Commitment decay (language weakened over time)"
     technique = "commitment-decay"
     question = ("Did the manager's commitment language on a theme quietly weaken across "
@@ -527,6 +555,8 @@ class VoteDivergence(Detector):
     AGAINST are the as-filed DUPLICATION signature (METHODOLOGY.md), not a real
     split, and are excluded. States the split, never motive."""
     id = "vote-divergence"
+    evidence_class = "strong"      # internal to one filer; zero entity-resolution risk
+    scope = "manager"
     name = "Vote divergence (same manager, both ways)"
     technique = "internal-divergence"
     question = ("Did the same manager's fund families vote both ways on one identical "
@@ -576,6 +606,8 @@ class SkinInTheGame(Detector):
     manager's median position). States the position-weighted rates, never
     motive."""
     id = "skin-in-the-game"
+    evidence_class = "strong"      # position-weighted active vote choices
+    scope = "theme"
     name = "Skin in the game (worse where it holds most)"
     technique = "skin-in-the-game"
     question = ("Does the manager vote against a theme it commits to more at the companies "
@@ -638,6 +670,8 @@ class FossilExposure(Detector):
     also states its partial coverage and CITES the exact 13-F filing used.
     States dollars and percentages, never motive."""
     id = "fossil-exposure"
+    evidence_class = "supporting"  # holdings carry an index alibi — context, not accusation
+    scope = "theme"
     name = "Fossil-fuel exposure (climate claim vs oil & gas held)"
     technique = "portfolio-exposure"
     question = ("Does a manager that commits to climate hold major oil & gas companies "

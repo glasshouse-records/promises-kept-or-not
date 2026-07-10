@@ -334,6 +334,36 @@ def cmd_detectors(args) -> int:
     return 2
 
 
+def cmd_cases(args) -> int:
+    """Case files: every independent footprint converging on one manager × theme,
+    ranked by strong corroboration. What a human publisher reads before signing."""
+    from . import casefile, investigate, timeline
+    conn = _conn()
+    kw = {"matrix": investigate.load_matrix(), "timelines": timeline.load_timelines()}
+    cases = casefile.build_cases(conn, **kw)
+    if args.action == "show":
+        match = [c for c in cases if c.institution_id == args.institution
+                 and c.subject == args.theme]
+        if not match:
+            print(f"  no case for {args.institution} × {args.theme}. Try: glasshouse cases list")
+            return 2
+        print(casefile.case_markdown(match[0]))
+        return 0
+    print(f"\n  {len(cases)} corroborated cases — each needs at least one STRONG footprint.")
+    print("  Ranked by INDEPENDENT strong corroboration. All are leads; a human "
+          "verifies before publication.\n")
+    for c in cases:
+        bits = f"{c.n_strong} strong"
+        if c.n_supporting:
+            bits += f" + {c.n_supporting} supporting"
+        if c.n_descriptive:
+            bits += f" + {c.n_descriptive} descriptive"
+        print(f"   [{bits:36s}] {c.institution_name} × {c.subject}")
+        print(f"       {' · '.join(f.detector_id for f in c.footprints)}")
+    print("\n  Read one: glasshouse cases show <institution_id> <theme>")
+    return 0
+
+
 def cmd_firststone(args) -> int:
     from . import firststone
     if args.action == "run":
@@ -1086,6 +1116,16 @@ def main(argv: list[str] | None = None) -> int:
                      "headline/standfirst (needs ANTHROPIC_API_KEY; cited evidence stays "
                      "deterministic; falls back if unconfigured)")
     agr.set_defaults(func=cmd_agent)
+
+    cs = sub.add_parser("cases", help="case files: independent footprints converging on one "
+                        "manager × theme, ranked by strong corroboration")
+    cs_sub = cs.add_subparsers(dest="action", required=True)
+    csl = cs_sub.add_parser("list", help="ranked corroborated cases")
+    csl.set_defaults(func=cmd_cases)
+    css = cs_sub.add_parser("show", help="the full cited case file")
+    css.add_argument("institution")
+    css.add_argument("theme")
+    css.set_defaults(func=cmd_cases)
 
     dt = sub.add_parser("detectors", help="the detector library: each accountability pattern "
                         "is a tool that emits cited leads (say-vs-do is the first)")
