@@ -223,6 +223,28 @@ def act(conn: sqlite3.Connection, action: str, payload: dict) -> dict:
         firststone.spike(payload["slug"], note=payload.get("note", ""))
         return {"ok": True}
 
+    if action == "cases_build":
+        # The forensic synthesis: independent footprints converging on one
+        # manager × theme. Built on demand (runs every detector); reads only.
+        from . import casefile, detectors, investigate, timeline
+        from .site import _md_html
+        reg = detectors.registry()
+        kw = {"matrix": investigate.load_matrix(), "timelines": timeline.load_timelines()}
+        out = []
+        for c in casefile.build_cases(conn, **kw):
+            out.append({
+                "institution_id": c.institution_id, "institution_name": c.institution_name,
+                "subject": c.subject, "n_strong": c.n_strong,
+                "n_supporting": c.n_supporting, "n_descriptive": c.n_descriptive,
+                "footprints": [{"detector_id": f.detector_id,
+                                "name": reg[f.detector_id].name,
+                                "evidence_class": reg[f.detector_id].evidence_class,
+                                "headline": f.headline, "strength": f.strength}
+                               for f in sorted(c.footprints, key=lambda x: -x.strength)],
+                "n_context": len(c.manager_context),
+                "body_html": _md_html(casefile.case_markdown(c))})
+        return {"ok": True, "cases": out}
+
     if action == "detectors_run":
         from dataclasses import asdict
 
@@ -455,6 +477,7 @@ function tabs(){
   const invN=S.investigate?S.investigate.institutions.filter(i=>
     Object.values(i.cells).some(c=>c.committed&&c.n)).length:0;
   const t=[['investigate','Investigate',invN],
+    ['cases','Cases',_cases?_cases.length:''],
     ['detectors','Detectors',(S.detectors||[]).length],
     ['company','Company',''],
     ['firststone','First Stone',(((S.firststone||{}).run||{}).stories||[]).filter(s=>s.state==='awaiting_publisher').length],
@@ -468,7 +491,45 @@ function tabs(){
   $('#tabs').innerHTML=t.map(([k,l,n])=>
     `<button class='${k===tab?'on':''}' onclick='tab="${k}";render()'>${l} <span class=n>${n}</span></button>`).join('')}
 
-function render(){tabs();({investigate,detectors,company,firststone,drafts,newsroom,review,leads,outreach,signals,doctor,pipeline})[tab]()}
+function render(){tabs();({investigate,cases,detectors,company,firststone,drafts,newsroom,review,leads,outreach,signals,doctor,pipeline})[tab]()}
+
+// ── Case files: independent footprints converging on one manager × theme ──
+let _cases=null, _caseOpen=null;
+const _CLS={strong:'var(--against)',supporting:'var(--hold)',descriptive:'var(--muted)'};
+function cases(){
+  if(_caseOpen!==null && _cases){ return caseRead(_cases[_caseOpen]); }
+  let h=`<p class=secnote>A detector finds one <b>footprint</b>. A <b>case</b> is what a publisher needs:
+   every independent footprint converging on one manager × theme, each cited, each labelled by the
+   evidentiary weight it can carry. Ranked by <b>independent strong corroboration</b> — footprints are
+   counted and classed, never blended into an invented score. A case needs at least one
+   <span style='color:var(--against);font-weight:700'>strong</span> footprint. All are leads; you verify before publishing.</p>
+   <div class=actions><button class=approve onclick='buildCases(this)'>Build case files</button><span class=st></span></div>`;
+  if(!_cases){$('#main').innerHTML=h+"<p class=empty>Not built yet — press <b>Build case files</b> to run every detector and synthesise.</p>";return}
+  h+=`<p class=meta>${_cases.length} corroborated cases.</p>`;
+  h+=_cases.map((c,i)=>{
+    const fps=c.footprints.map(f=>`<span style="font:700 .64rem var(--mono);letter-spacing:.04em;padding:.2rem .5rem;
+      border:1.5px solid ${_CLS[f.evidence_class]};color:${_CLS[f.evidence_class]};border-radius:4px"
+      title="${e(f.headline)}">${e(f.detector_id)} · ${e(f.evidence_class)}</span>`).join(' ');
+    return `<div class='card claim'>
+      <span class=ribbon style='color:var(--against)'>${c.n_strong} strong</span>
+      <span class=meta>${c.n_supporting} supporting · ${c.n_descriptive} descriptive${c.n_context?' · '+c.n_context+' manager-level context':''}</span>
+      <h3 style='margin:.2rem 0'>${e(c.institution_name)} × ${e(c.subject)}</h3>
+      <div style='display:flex;gap:.35rem;flex-wrap:wrap;margin:.5rem 0'>${fps}</div>
+      <button class=fs-open onclick='_caseOpen=${i};render()'>Read the case file →</button></div>`;}).join('');
+  $('#main').innerHTML=h;
+}
+function caseRead(c){
+  $('#main').innerHTML=`<div class=fsroom><div class=fs-read>
+     <div class=top><button class=fs-back onclick='_caseOpen=null;render()'>← All cases</button>
+       <span class=meta><b>${c.n_strong} strong</b> · ${c.n_supporting} supporting · ${c.n_descriptive} descriptive</span></div>
+     <div class=fs-art>${c.body_html}</div></div></div>`;
+  window.scrollTo(0,0);
+}
+async function buildCases(btn){
+  btn.disabled=true;btn.textContent='Running every detector…';
+  const r=await post('cases_build',{},btn.parentElement.querySelector('.st'));
+  if(r){_cases=r.cases;_caseOpen=null;render();} else {btn.disabled=false;btn.textContent='Build case files';}
+}
 
 function detectors(){
   const cat=S.detectors||[];
