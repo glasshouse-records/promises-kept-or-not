@@ -44,7 +44,7 @@ def cmd_seed(_args) -> int:
 
 
 def cmd_ingest_enforcement(args) -> int:
-    from .ingest import courtlistener, doj_fcpa, fed, ofac, ungc, worldbank
+    from .ingest import courtlistener, doj_fcpa, epa_echo, fed, ofac, ungc, worldbank
     conn = _conn()
     sources = {
         "doj_fcpa": doj_fcpa.fetch,
@@ -52,6 +52,7 @@ def cmd_ingest_enforcement(args) -> int:
         "worldbank": worldbank.fetch,
         "ungc": ungc.fetch,
         "fed": fed.fetch,
+        "epa_echo": epa_echo.fetch,
         "dockets": lambda: courtlistener.fetch_for(courtlistener.tracked_names(conn)),
     }
     names = list(sources) if args.source == "all" else [args.source]
@@ -332,6 +333,21 @@ def cmd_detectors(args) -> int:
                 print(f"   [{ld.strength:.0%}] {ld.headline}{flag}")
         return 0
     return 2
+
+
+def cmd_ftm(args) -> int:
+    """Export the unique Glasshouse record as FollowTheMoney entities, ready to
+    import into OCCRP Aleph / OpenAleph next to OpenSanctions et al."""
+    from pathlib import Path
+
+    from . import ftm
+    conn = _conn()
+    out = Path(args.out) if args.out else (ledger.DATA_DIR / "export" / "glasshouse.ftm.json")
+    stats = ftm.export_ftm(conn, out)
+    print(f"  {stats['companies']} Company + {stats['events']} Event entities → {stats['path']}")
+    print("  Quarantine held: allegations/unverified/OFAC excluded from this public artifact.")
+    print("  Import into Aleph/OpenAleph alongside OpenSanctions (same FtM format).")
+    return 0
 
 
 def cmd_cases(args) -> int:
@@ -916,7 +932,7 @@ def main(argv: list[str] | None = None) -> int:
     enf = ing.add_parser("enforcement")
     enf.add_argument("--source", default="all",
                      choices=["all", "doj_fcpa", "ofac", "worldbank", "ungc",
-                              "fed", "dockets"])
+                              "fed", "epa_echo", "dockets"])
     enf.set_defaults(func=cmd_ingest_enforcement)
     np = ing.add_parser("nport")
     np.add_argument("--cik", required=True)
@@ -1116,6 +1132,11 @@ def main(argv: list[str] | None = None) -> int:
                      "headline/standfirst (needs ANTHROPIC_API_KEY; cited evidence stays "
                      "deterministic; falls back if unconfigured)")
     agr.set_defaults(func=cmd_agent)
+
+    fm = sub.add_parser("ftm", help="export the unique record as FollowTheMoney entities "
+                        "(imports into OCCRP Aleph / OpenAleph)")
+    fm.add_argument("--out", help="output path (default data/export/glasshouse.ftm.json)")
+    fm.set_defaults(func=cmd_ftm)
 
     cs = sub.add_parser("cases", help="case files: independent footprints converging on one "
                         "manager × theme, ranked by strong corroboration")

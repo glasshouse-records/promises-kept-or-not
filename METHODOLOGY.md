@@ -129,6 +129,7 @@ a missed match is acceptable.
 | UN Global Compact | Expelled participants | Free API |
 | SEC EDGAR N-PORT | Monthly mutual-fund portfolios (extends beyond 13-F filers) | Free API |
 | Federal Reserve enforcement actions | The banks' own records (administrative actions, bulk CSV) | Free CSV |
+| EPA ECHO (`case_downloads.zip`) | Environmental enforcement cases (weekly bulk CSV dump) | Free bulk zip |
 | CourtListener / RECAP | Federal dockets — **allegations only, never findings; score zero** | Free API |
 | Curated snapshots (predecessor project, extracted 2026-05-26) | FCPA, SEC fraud, DOJ antitrust, World Bank, NLRB, UNGC | Hand-verified; re-verification required |
 
@@ -140,6 +141,25 @@ participants JSON endpoint and the SEC litigation-release RSS URL both moved
 or now serve HTML. Glasshouse does not impersonate browsers to evade CDN
 rules — blocked sources stay on curated snapshots until a sanctioned access
 path (bulk download, official API) is found.
+
+### EPA ECHO parsing notes (added 2026-07-16)
+
+Scope is deliberately narrow, precision-first:
+
+- Only defendants whose **normalized name exactly equals** a company on the
+  hand-verified fossil-fuel list (`fossil.py`). Subsidiaries (e.g. "BP
+  Products North America") do **not** match parents ("BP plc") — parent
+  attribution is a human judgment, so the ingest undercounts rather than
+  guesses.
+- Only **concluded** cases: assessed penalty > 0, a case-status date, and the
+  defendant named in the settlement. This excludes open matters and multi-PRP
+  Superfund pileups where a major appears among dozens of parties with no
+  penalty of its own.
+- Judicial → `civil_violation`; administrative → `administrative_action`;
+  criminal cases are **skipped** (outcome semantics are ambiguous in bulk).
+- `company_name` is the defendant **as filed**; every row carries the ECHO
+  case-report URL and case number. The bulk file is EPA's own weekly dump —
+  no scraping, no keys.
 
 ### N-PX parsing notes (validated 2026-06-10)
 
