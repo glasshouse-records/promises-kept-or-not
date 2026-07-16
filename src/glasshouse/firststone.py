@@ -188,11 +188,11 @@ def _stamp(story: dict, desk: str, verdict: str, note: str) -> dict:
 # ── the desks ────────────────────────────────────────────────────────────────
 
 def _desk_assignment(conn: sqlite3.Connection, *, min_rate: float, min_votes: int,
-                     top_n: int) -> list[dict]:
+                     top_n: int, matrix: dict | None = None) -> list[dict]:
     """Pitch list: committed say-vs-do cells with enough votes to matter,
     scored transparently (gap × evidence volume × manager size)."""
     reg = registry.load()
-    bm = investigate.build_matrix(conn)
+    bm = matrix if matrix is not None else investigate.build_matrix(conn)
     pitches = []
     for inst in bm["institutions"]:
         aum = float(reg.get(inst["id"], {}).get("aum_usd_tr") or 0)
@@ -373,6 +373,20 @@ def _compose_body(s: dict) -> str:
             for old, new in ev["revised"]:
                 lines.append(f"- revised between `{frm['version']}` and `{to['version']}`: "
                              f"“{old}” → “{new}”")
+    fps = s.get("case_footprints") or []
+    lines += ["", "## What converges on this case", ""]
+    if fps:
+        lines.append(f"Beyond this story's core gap, {len(fps)} other detector "
+                     f"footprint(s) independently converge on {s['institution_name']} × "
+                     f"{label} ({s.get('n_strong', 1)} strong in total):")
+        lines += [f"- **{f['name']}** (_{f['evidence_class']}_): {f['headline']}"
+                  for f in fps]
+        lines += ["", "Footprint classes: strong = an active choice or documented act; "
+                  "supporting = a weaker class (holdings carry an index alibi); "
+                  "descriptive = discriminating power unproven on this record."]
+    else:
+        lines.append("This gap is the sole footprint on this case so far — no other "
+                     "detector in the library independently corroborates it yet.")
     ledger_stamp = next((t for t in s["trail"] if t["desk"] == "ledger"), None)
     lines += ["", "## What the Ledger Desk checked", "",
               f"- {ledger_stamp['note'] if ledger_stamp else 'recount pending'}",
@@ -440,7 +454,26 @@ def run(conn: sqlite3.Connection, *, min_rate: float = 0.5, min_votes: int = 10,
     standards → editor. Writes the run to data/newsroom/runs/<date>/ and
     returns the stories (spiked ones included — the kill file is part of the
     record). Publishing is NOT part of this function."""
-    stories = _desk_assignment(conn, min_rate=min_rate, min_votes=min_votes, top_n=top_n)
+    matrix = investigate.build_matrix(conn)
+    stories = _desk_assignment(conn, min_rate=min_rate, min_votes=min_votes,
+                               top_n=top_n, matrix=matrix)
+    # The case file: what ELSE converges on each story's manager × theme. The
+    # publisher must see the whole case, not just the single say-vs-do pattern.
+    from . import casefile
+    from . import detectors as _det
+    _reg = _det.registry()
+    cases = {(c.institution_id, c.subject): c
+             for c in casefile.build_cases(conn, min_rate=min_rate,
+                                           min_votes=min_votes, matrix=matrix)}
+    for s in stories:
+        case = cases.get((s["institution_id"], s["theme"]))
+        s["case_footprints"] = ([
+            {"detector_id": f.detector_id, "name": _reg[f.detector_id].name,
+             "evidence_class": _reg[f.detector_id].evidence_class,
+             "headline": f.headline, "strength": f.strength}
+            for f in sorted(case.footprints, key=lambda x: -x.strength)
+            if f.detector_id != "broken-promise"] if case else [])
+        s["n_strong"] = case.n_strong if case else 1
     for s in stories:
         _desk_records(conn, s)
         if _desk_ledger(conn, s)["verdict"] == "spike":

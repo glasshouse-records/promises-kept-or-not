@@ -263,3 +263,47 @@ def test_site_ships_masthead_but_never_unpublished_stories(conn, tmp_path):
     firststone.publish(slug, note="verified", human_confirmed=True)
     site.build(conn, out)
     assert (out / f"firststone-story-{slug}.html").exists()
+
+
+# ── Case-based stories: the edition is built from corroborated cases ────────
+
+def test_stories_carry_corroborating_footprints(conn, tmp_path):
+    """The debut story must carry the CASE, not just the single say-vs-do
+    pattern: corroborating footprints appear in the body with their
+    evidentiary class, so the publisher sees everything that converges."""
+    # Rewrite the two policy versions so the climate commitment SOFTENS
+    # between consecutive versions (expect → ask): commitment-decay fires
+    # and corroborates the vote gap.
+    old = tmp_path / "old2.txt"
+    old.write_text(FILLER + " We expect every company to disclose how it manages "
+                   "climate risk in its operations.")
+    conn.execute("UPDATE commitments SET content_path=?, sha256=?, "
+                 "wayback_timestamp='20220101000000', retrieval_date='2022-01-01' "
+                 "WHERE sha256=?", (str(old), "d" * 64, "a" * 64))
+    new = tmp_path / "new2.txt"
+    new.write_text(FILLER + " We ask every company to disclose how it manages "
+                   "climate risk in its operations.")
+    conn.execute("UPDATE commitments SET content_path=?, sha256=? WHERE sha256=?",
+                 (str(new), "e" * 64, "b" * 64))
+    conn.commit()
+    stories = firststone.run(conn, min_votes=1, top_n=3)
+    s = next(x for x in stories if x["institution_id"] == "blackrock")
+    # The case's other footprints ride along, classed:
+    fps = s.get("case_footprints") or []
+    assert any(f["detector_id"] == "commitment-decay" for f in fps), \
+        "corroborating decay footprint missing from the story"
+    assert all(f["evidence_class"] in ("strong", "supporting", "descriptive") for f in fps)
+    assert s["n_strong"] >= 2
+    body = s["body"]
+    assert "converge" in body.lower()          # the corroboration section exists
+    assert "commitment decay" in body.lower() or "Commitment decay" in body
+    # The section discloses evidentiary class so a reader can weigh it.
+    assert "strong" in body.lower()
+
+
+def test_story_without_corroboration_says_so(conn):
+    """A single-footprint story must not pretend to corroboration."""
+    stories = firststone.run(conn, min_votes=1, top_n=3)
+    s = next(x for x in stories if x["institution_id"] == "blackrock")
+    if not (s.get("case_footprints") or []):
+        assert "sole footprint" in s["body"].lower() or "single footprint" in s["body"].lower()
