@@ -59,9 +59,15 @@ institutions:
         name: "Vanguard Index Funds"
         validated: "2026-06-11"
     commitments:
+      # Vanguard moved stewardship under Vanguard Portfolio Management (VPMIS)
+      # in 2026; the old investment-stewardship URL (US_Proxy_Voting.pdf)
+      # soft-404s (200 + text/html). Successor doc is "Proxy voting policy for
+      # U.S. portfolio companies" (effective Jan 2026), linked from
+      # https://corporate.vanguard.com/content/corporatesite/us/en/corp/about-our-funds/proxy-voting-across-funds/vanguard-portfolio-management.html
+      # Verified 2026-07-16 (200, application/pdf). Same doc_label — the old
+      # URL's 7 Wayback versions stay in the lineage.
       - label: us-proxy-voting-policy
-        url: "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/US_Proxy_Voting.pdf"
-        # live URL soft-404s as of 2026-06-11; 7 distinct Wayback versions exist
+        url: "https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vpm/vpm-proxy-voting-policy-us.pdf"
     country: "USA"
     type: "asset_manager"
     aum_usd_tr: 8.7
@@ -82,9 +88,14 @@ institutions:
         name: "SPDR Series Trust"
         validated: "2026-06-11"
     commitments:
+      # SSGA rebranded to "State Street Investment Management" and moved its
+      # stewardship library; the old library-content/pdfs/ URL hard-404s.
+      # Successor doc is the "Global Proxy Voting and Engagement Policy"
+      # (April 2026 on the current copy). Verified 2026-07-16 (200,
+      # application/pdf). Same doc_label — the old URL's 3 Wayback versions
+      # stay in the lineage.
       - label: proxy-voting-engagement-guidelines
-        url: "https://www.ssga.com/library-content/pdfs/global/proxy-voting-and-engagement-guidelines.pdf"
-        # live URL 404s as of 2026-06-11; 3 distinct Wayback versions exist
+        url: "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/proxy-voting-and-engagement-policy.pdf"
     display_name: "State Street Corporation"
     short_name: "State Street"
     cik: "0000093751"
@@ -114,12 +125,18 @@ institutions:
         name: "Goldman Sachs ETF Trust"
         validated: "2026-06-26"
     commitments:
-      # GSAM Global Proxy Voting Policy. Live host (gsam.com) returns 403 to
-      # non-browser clients and we do NOT spoof UAs (honest access) — so this
-      # degrades to the Wayback archive (capture exists 2022-10-31, 200, pdf).
-      # Ingest with `--wayback`.
+      # GSAM's web presence moved gsam.com → am.gs.com (gsam.com still 403s
+      # non-browser clients; we do NOT spoof UAs). am.gs.com serves the
+      # successor "Global Proxy Voting: Policy, Procedures and Guidelines"
+      # (March 2026 on the current copy) to plain honest-UA clients.
+      # Verified 2026-07-16 (200, application/pdf). The URL is a UUID asset
+      # id — if it rots, re-discover it on the "Stewardship, Proxy Voting &
+      # Engagement" tab of
+      # https://am.gs.com/en-us/advisors/creating-impact/policies-and-governance
+      # Same doc_label — the old gsam.com Wayback captures stay in the
+      # lineage (`--wayback`).
       - label: gsam-global-proxy-voting-policy
-        url: "https://www.gsam.com/content/dam/gsam/pdfs/common/en/public/miscellaneous/GSAM_Global_Proxy_Voting_Policy.pdf"
+        url: "https://am.gs.com/public-assets/documents/647d1a9d-6403-4540-8239-5c2a286f5f51"
 
   bank_of_america:
     display_name: "Bank of America Corporation"
