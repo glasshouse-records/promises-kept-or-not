@@ -515,7 +515,7 @@ def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
     _matrix = _bm(conn)                       # built once, shared by the pages below
     _build_systemic(out_dir, _matrix)
     _build_record(conn, out_dir, _matrix)
-    _build_detectors(conn, out_dir)
+    _build_detectors(conn, out_dir, _matrix)
     _build_institutions_index(conn, out_dir, insts)
     n_inst = sum(_build_institution(conn, out_dir, r, findings) for r in insts)
     _build_findings(conn, out_dir)
@@ -526,16 +526,20 @@ def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
     return {"pages": 7 + n_inst + n_fs, "findings": len(findings)}
 
 
-def _build_detectors(conn, out_dir) -> None:
+def _build_detectors(conn, out_dir, matrix=None) -> None:
     """The public 'what we check — and how each check is validated' page. The
     catalogue of detectors, in registrar voice, each with its live scorecard.
     Publishing the validation is the novel part: the tool accountable for its
     own method."""
-    from . import detectors
+    from . import detectors, timeline
+    _timelines = timeline.load_timelines()
     cards = ""
     for d in detectors.registry().values():
         t = detectors.TECHNIQUES[d.technique]
-        sc = d.scorecard(conn)
+        # Pass the SHARED caches: without them every detector rebuilds the
+        # 3.4M-row matrix (and the timelines) from scratch, so the page cost
+        # scaled with the size of the library.
+        sc = d.scorecard(conn, matrix=matrix, timelines=_timelines)
         note = _e(sc.get("note", "")) or _e(d.validation)
         sel = _e(sc.get("selectivity_note", ""))
         sel_html = f"<p class=meta><b>Selectivity:</b> {sel}</p>" if sel else ""
