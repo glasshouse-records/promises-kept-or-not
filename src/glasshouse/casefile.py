@@ -80,6 +80,8 @@ def build_cases(conn: sqlite3.Connection, **kw) -> list[Case]:
 
     for det_id, leads in detectors.run_all(conn, **kw).items():
         scope = reg[det_id].scope
+        if reg[det_id].polarity == "favourable":
+            continue          # exculpatory: shown via favourable_for(), never as corroboration
         for ld in leads:
             if scope == "manager":
                 # keyed by name: vote-divergence carries no institution_id
@@ -99,7 +101,25 @@ def build_cases(conn: sqlite3.Connection, **kw) -> list[Case]:
     return cases
 
 
-def case_markdown(case: Case) -> str:
+def favourable_for(conn: sqlite3.Connection, institution_id: str, subject: str,
+                   **kw) -> list[detectors.Lead]:
+    """What the record shows in the institution's FAVOUR on this same claim.
+
+    A case file that cannot show exculpatory evidence is a case for the
+    prosecution. These leads are deliberately kept out of the corroboration
+    count (good behaviour must not make a case look stronger) and surfaced
+    separately, so the reader weighs both."""
+    out: list[detectors.Lead] = []
+    reg = detectors.registry()
+    for det_id, leads in detectors.run_all(conn, **kw).items():
+        if reg[det_id].polarity != "favourable":
+            continue
+        out += [ld for ld in leads
+                if ld.institution_id == institution_id and ld.subject == subject]
+    return out
+
+
+def case_markdown(case: Case, favourable: list[detectors.Lead] | None = None) -> str:
     """A cited case file, in registrar voice: what converges, how strong each
     footprint is, and where every claim traces to. Never motive."""
     reg = detectors.registry()
@@ -135,6 +155,15 @@ def case_markdown(case: Case) -> str:
             s = ev["shrink"]
             lines.append(f"- *binding commitments fell* {s['from_n']} → {s['to_n']} "
                          f"(versions {s['from_version']}→{s['to_version']})")
+        lines.append("")
+    if favourable:
+        lines += ["## What the record shows in their favour", "",
+                  "_Exculpatory findings on this same claim. They are deliberately NOT "
+                  "counted as corroboration above — good behaviour must not make a case "
+                  "look stronger — but a file that hid them would be a case for the "
+                  "prosecution, not a record._", ""]
+        for f in favourable:
+            lines.append(f"- **{reg[f.detector_id].name}:** {f.headline}")
         lines.append("")
     if case.manager_context:
         lines += ["## Manager-level context", "",

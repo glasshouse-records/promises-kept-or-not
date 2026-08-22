@@ -243,14 +243,23 @@ def _e(s) -> str:
 
 
 def _page(title: str, body: str, active: str = "") -> str:
+    # First Stone earns its place in the nav only once a HUMAN has published a
+    # story. With an empty newsroom, leading the public face with an AI masthead
+    # invites "AI accuses BlackRock" as the first impression, which is a worse
+    # front door than the registrar and a needless launch risk. The pages are
+    # always built and reachable; the nav item appears when there is real,
+    # human-approved journalism behind it.
+    from .firststone import load_published
     links = [("index.html", "Overview", "home"),
              ("promise.html", "Does a promise predict?", "promise"),
              ("record.html", "The record", "record"),
              ("detectors.html", "What we check", "detect"),
              ("institutions.html", "Institutions", "inst"),
              ("findings.html", "Findings", "find"),
-             ("how-to-read.html", "How to read", "how"),
-             ("firststone.html", "First Stone", "fs"), ("feed.xml", "Feed", "feed")]
+             ("how-to-read.html", "How to read", "how")]
+    if load_published():
+        links.append(("firststone.html", "First Stone", "fs"))
+    links.append(("feed.xml", "Feed", "feed"))
     nav = "".join(f"<a href='{h}'{' class=on' if k == active else ''}>{t}</a>"
                   for h, t, k in links)
     return (f"<!doctype html><html lang=en><head><meta charset=utf-8>"
@@ -1141,7 +1150,14 @@ of this project, and holdings-only claims are explicitly labeled as the weakest 
 <li>The full SQLite ledger ships with the project; run any SQL you like via Datasette.</li>
 </ol>
 <p>If you find an error, we want it: discarding almost-right findings is the discipline
-this project is built on.</p>"""
+this project is built on.</p>
+
+<p class=kicker>Use it</p><h2>Tell us if you used this</h2>
+<div class=card><p>This dataset exists to be used, and the only measure that matters
+to us is whether it was. If you cited it, wrote from it, put it in a board pack,
+taught with it, or filed with it — <b>tell us</b>, in one line, so the project knows
+what to build next. Corrections are the most valuable use of all: if a figure is
+wrong, the record should change, and being corrected in public is the point.</p></div>"""
     (out_dir / "how-to-read.html").write_text(_page("How to read", body, "how"))
 
 

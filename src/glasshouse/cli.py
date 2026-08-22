@@ -374,7 +374,8 @@ def cmd_cases(args) -> int:
         if not match:
             print(f"  no case for {args.institution} × {args.theme}. Try: glasshouse cases list")
             return 2
-        print(casefile.case_markdown(match[0]))
+        fav = casefile.favourable_for(conn, args.institution, args.theme, **kw)
+        print(casefile.case_markdown(match[0], favourable=fav))
         return 0
     print(f"\n  {len(cases)} corroborated cases — each needs at least one STRONG footprint.")
     print("  Ranked by INDEPENDENT strong corroboration. All are leads; a human "

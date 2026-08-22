@@ -123,3 +123,56 @@ def test_no_case_without_at_least_one_strong_footprint(tmp_path):
               ("c" * 64, str(p)))
     c.commit()
     assert casefile.build_cases(c, min_rate=0.5, min_votes=1) == []
+
+
+# ── Polarity: favourable evidence must never inflate a case ────────────────
+
+def test_every_detector_declares_a_polarity():
+    for d in detectors.registry().values():
+        assert d.polarity in ("adverse", "favourable", "neutral"), \
+            f"{d.id} has no valid polarity"
+
+
+def test_favourable_footprints_do_not_count_as_corroboration(converged):
+    """A case file ranks by how much ADVERSE evidence converges. Exculpatory
+    findings (promise-kept, commitment-strengthening) belong in the file — but
+    counting them as corroboration would let good behaviour make a case look
+    stronger, which is nonsense."""
+    cases = casefile.build_cases(converged, min_rate=0.5, min_votes=1)
+    for c in cases:
+        for f in c.footprints:
+            assert detectors.registry()[f.detector_id].polarity != "favourable"
+        # …and n_strong is computed only from those adverse footprints
+        assert c.n_strong <= len(c.footprints)
+
+
+def test_case_file_shows_what_counts_in_their_favour(tmp_path):
+    """When the record contains exculpatory evidence for the same manager and
+    theme, the case file must show it — that is the difference between a case
+    file and a case for the prosecution."""
+    c = ledger.connect(tmp_path / "fav.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('k','Keeper AM')")
+    p = tmp_path / "k.txt"
+    p.write_text("We are committed to robust climate risk oversight and we will "
+                 "support emissions reduction at the companies our funds hold.")
+    c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
+              "sha256, content_path, content_type, size_bytes) VALUES "
+              "('k','stewardship','https://x/p.pdf','2023-01-01',?,?,'text/plain',10)",
+              ("a" * 64, str(p)))
+    c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+              "retrieval_date) VALUES ('ACC','1','k','N-PX','https://s','2025-01-01')")
+
+    def vote(i, desc, how):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, "
+                  "vote_description, how_voted, shares_voted, is_duplicate) VALUES "
+                  "('ACC',?,?,'05/21/2024',?,?,100,0)", (f"CO{i}", f"C{i}", desc, how))
+    for i in range(40):        # committed theme: mostly FOR (honours it)
+        vote(i, "Shareholder proposal on greenhouse gas emissions reduction targets",
+             "FOR" if i % 5 else "AGAINST")
+    for i in range(40, 80):    # uncommitted theme: mostly AGAINST (its baseline)
+        vote(i, "Shareholder proposal on lobbying disclosure and political spending",
+             "AGAINST" if i % 5 else "FOR")
+    c.commit()
+    favourable = casefile.favourable_for(c, "k", "climate", min_votes=10)
+    assert favourable, "exculpatory evidence was not surfaced"
+    assert any(f.detector_id == "promise-kept" for f in favourable)

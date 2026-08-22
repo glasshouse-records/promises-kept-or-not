@@ -242,7 +242,11 @@ def act(conn: sqlite3.Connection, action: str, payload: dict) -> dict:
                                 "headline": f.headline, "strength": f.strength}
                                for f in sorted(c.footprints, key=lambda x: -x.strength)],
                 "n_context": len(c.manager_context),
-                "body_html": _md_html(casefile.case_markdown(c))})
+                "n_favourable": len(casefile.favourable_for(
+                    conn, c.institution_id, c.subject, **kw)),
+                "body_html": _md_html(casefile.case_markdown(
+                    c, favourable=casefile.favourable_for(
+                        conn, c.institution_id, c.subject, **kw)))})
         return {"ok": True, "cases": out}
 
     if action == "detectors_run":

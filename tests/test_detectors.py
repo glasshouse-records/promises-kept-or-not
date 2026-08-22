@@ -634,3 +634,73 @@ def test_decay_and_strengthening_are_mirrors(decayed, tmp_path):
     two-sided."""
     assert detectors.registry()["commitment-decay"].run(decayed)
     assert not detectors.registry()["commitment-strengthening"].run(decayed)
+
+
+# ── Symmetry completion: the flagship gets its mirror; influence both ways ──
+
+def test_promise_kept_detector_is_registered():
+    d = detectors.registry().get("promise-kept")
+    assert d and d.technique == "promise-kept" and d.evidence_class == "strong"
+
+
+@pytest.fixture
+def keeper(tmp_path):
+    """A manager that votes FOR its committed theme far more than it votes for
+    the themes it never promised anything about — the flagship's mirror."""
+    c = ledger.connect(tmp_path / "k.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('k','Keeper AM')")
+    p = tmp_path / "k.txt"
+    p.write_text("We are committed to robust climate risk oversight and we will "
+                 "support emissions reduction at the companies our funds hold.")
+    c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
+              "sha256, content_path, content_type, size_bytes) VALUES "
+              "('k','stewardship','https://x/p.pdf','2023-01-01',?,?,'text/plain',10)",
+              ("a" * 64, str(p)))
+    c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+              "retrieval_date) VALUES ('ACC','1','k','N-PX','https://s','2025-01-01')")
+
+    def vote(i, desc, how):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, "
+                  "vote_description, how_voted, shares_voted, is_duplicate) VALUES "
+                  "('ACC',?,?,'05/21/2024',?,?,100,0)", (f"CO{i}", f"C{i}", desc, how))
+    # committed theme (climate): votes FOR 80% of the time
+    for i in range(40):
+        vote(i, "Shareholder proposal on greenhouse gas emissions reduction targets",
+             "FOR" if i % 5 else "AGAINST")
+    # its own uncommitted theme (lobbying): votes AGAINST 80% of the time
+    for i in range(40, 80):
+        vote(i, "Shareholder proposal on lobbying disclosure and political spending",
+             "AGAINST" if i % 5 else "FOR")
+    c.commit()
+    return c
+
+
+def test_promise_kept_reports_honouring_against_own_baseline(keeper):
+    leads = detectors.registry()["promise-kept"].run(keeper, min_votes=10)
+    assert leads, "a manager honouring its commitment was not reported"
+    ld = leads[0]
+    assert ld.institution_id == "k" and ld.subject == "climate"
+    # measured against ITS OWN baseline, not an absolute threshold
+    assert ld.evidence["baseline_rate"] > ld.evidence["committed_rate"]
+    assert ld.evidence["delta"] < 0
+    assert "more" in ld.headline.lower() or "less" in ld.headline.lower()
+
+
+def test_promise_kept_stays_silent_where_the_promise_is_broken(conn):
+    """The mirror must not fire on the say-vs-do gap case."""
+    assert detectors.registry()["promise-kept"].run(conn, min_votes=1) == []
+
+
+def test_skin_in_the_game_reports_both_directions(skin):
+    """Influence cuts both ways: voting BETTER where it holds most is as much a
+    fact about the record as voting worse."""
+    d = detectors.registry()["skin-in-the-game"]
+    leads = d.run(skin, min_held=4, min_delta=0.1)
+    assert leads and leads[0].evidence["direction"] == "worse"
+    # flip the fixture: vote FOR at the big positions instead
+    skin.execute("UPDATE votes SET how_voted = CASE how_voted "
+                 "WHEN 'AGAINST' THEN 'FOR' ELSE 'AGAINST' END")
+    skin.commit()
+    flipped = d.run(skin, min_held=4, min_delta=0.1)
+    assert flipped and flipped[0].evidence["direction"] == "better"
+    assert flipped[0].evidence["delta"] < 0

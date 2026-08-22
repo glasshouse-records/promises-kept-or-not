@@ -46,6 +46,13 @@ TECHNIQUES: dict[str, dict] = {
                     "language rather than a hard pledge?",
         "reads": "archived policy commitment text (Loughran-McDonald strong/weak modal basis)",
     },
+    "promise-kept": {
+        "name": "Promise kept",
+        "family": "Commitment integrity",
+        "question": "Where a manager commits to a theme, does it vote FOR that theme more "
+                    "than it does on the themes it never promised anything about?",
+        "reads": "archived policy commitments × N-PX votes, against the manager's own baseline",
+    },
     "own-enforcement": {
         "name": "Own enforcement record",
         "family": "Own conduct",
@@ -132,6 +139,11 @@ class Detector:
     # A theme-scoped footprint corroborates a specific claim; a manager-scoped
     # one (own rap sheet, internal split) is CONTEXT about the manager.
     scope: str = "theme"          # theme | manager
+    # Whether this detector's finding counts AGAINST the institution, in its
+    # FAVOUR, or neither. Case files corroborate on adverse evidence only:
+    # letting exculpatory findings inflate a case's strength would be nonsense,
+    # and hiding them would make this a case for the prosecution.
+    polarity: str = "adverse"     # adverse | favourable | neutral
 
     def run(self, conn: sqlite3.Connection, **kw) -> list[Lead]:  # pragma: no cover
         raise NotImplementedError
@@ -236,6 +248,69 @@ class BrokenPromise(Detector):
         matrix = matrix if matrix is not None else investigate.build_matrix(conn)
         return sum(1 for inst in matrix["institutions"] for c in inst["cells"].values()
                    if c["committed"] and (c["for"] + c["against"]) >= min_votes)
+
+
+class PromiseKept(Detector):
+    """The mirror of the flagship. Where a manager commits to a theme AND votes
+    for that theme meaningfully more than it does on the themes it never
+    promised anything about, this says so.
+
+    The comparison is PAIRED — against the manager's OWN baseline, not an
+    absolute threshold — because absolute rates are dominated by house voting
+    philosophy (the confound that broke our first cross-manager reading). A
+    house that votes against 95% of everything and 80% on its committed theme
+    is honouring that commitment relative to itself, and the record should say
+    so as plainly as it says the reverse."""
+    id = "promise-kept"
+    polarity = "favourable"
+    name = "Promise kept (votes for it more than its own baseline)"
+    technique = "promise-kept"
+    evidence_class = "strong"      # an active vote choice, same class as the gap
+    scope = "theme"
+    question = ("Where a manager commits to a theme, does it vote FOR that theme more than "
+                "on the themes it never promised anything about?")
+    validation = ("Paired against the manager's own baseline (its against-rate on themes it "
+                  "made no commitment on), so house voting philosophy cannot manufacture the "
+                  "result — the same design that corrected our cross-manager reading. Reports "
+                  "the rates and the difference; states nothing about motive.")
+    FLAT = 0.05                    # below this, not distinguishable from noise
+
+    def run(self, conn: sqlite3.Connection, *, matrix: dict | None = None,
+            min_votes: int = 20, **kw) -> list[Lead]:
+        m = matrix if matrix is not None else investigate.build_matrix(conn)
+        leads: list[Lead] = []
+        for inst in m["institutions"]:
+            bf = ba = 0
+            for c in inst["cells"].values():
+                if not c["committed"] and (c["for"] + c["against"]):
+                    bf += c["for"]
+                    ba += c["against"]
+            if bf + ba < min_votes:
+                continue                       # no baseline → no paired claim
+            baseline = ba / (bf + ba)
+            for theme, c in inst["cells"].items():
+                n = c["for"] + c["against"]
+                if not c["committed"] or n < min_votes:
+                    continue
+                rate = c["against"] / n
+                delta = rate - baseline
+                if delta > -self.FLAT:
+                    continue                   # not meaningfully better than itself
+                label = theme.replace("-", " ")
+                leads.append(Lead(
+                    detector_id=self.id, technique=self.technique,
+                    institution_id=inst["id"], institution_name=inst["name"], subject=theme,
+                    headline=(f"{inst['name']} commits to {label} and votes for {label} "
+                              f"proposals more than its own baseline: {rate:.0%} against on "
+                              f"{label} vs {baseline:.0%} on themes it made no commitment on"),
+                    strength=round(min(1.0, abs(delta) * 4), 4),
+                    evidence={"committed_rate": round(rate, 4), "baseline_rate": round(baseline, 4),
+                              "delta": round(delta, 4), "n_votes": n, "baseline_n": bf + ba,
+                              "commitment_quote": c["quote"], "doc_url": c["doc_url"]},
+                    provenance={"technique": self.technique,
+                                "design": "paired against the manager's own uncommitted themes"}))
+        leads.sort(key=lambda x: x.evidence["delta"])
+        return leads
 
 
 # ── Detector #2: commitment strength (how hedged is the promise itself) ─────
@@ -561,6 +636,7 @@ class CommitmentStrengthening(Detector):
     institution hardened its word. Reporting that plainly is exactly what makes
     the unflattering results hard to dismiss."""
     id = "commitment-strengthening"
+    polarity = "favourable"
     name = "Commitment strengthening (language got firmer)"
     technique = "commitment-strengthening"
     evidence_class = "strong"      # a documented change in their own words
@@ -647,6 +723,7 @@ class VoteDivergence(Detector):
     AGAINST are the as-filed DUPLICATION signature (METHODOLOGY.md), not a real
     split, and are excluded. States the split, never motive."""
     id = "vote-divergence"
+    polarity = "neutral"
     evidence_class = "strong"      # internal to one filer; zero entity-resolution risk
     scope = "manager"
     name = "Vote divergence (same manager, both ways)"
@@ -728,19 +805,25 @@ class SkinInTheGame(Detector):
                 if not hw:
                     continue
                 held = hw.get("held_votes", 0)
-                if held < min_held or hw["delta"] < min_delta:
+                if held < min_held or abs(hw["delta"]) < min_delta:
                     continue
+                # Influence cuts both ways: voting BETTER where it holds most is
+                # as much a fact about the record as voting worse.
+                worse = hw["delta"] > 0
                 label = theme.replace("-", " ")
                 leads.append(Lead(
                     detector_id=self.id, technique=self.technique,
                     institution_id=inst["id"], institution_name=inst["name"], subject=theme,
-                    headline=(f"{inst['name']} commits to {label}, yet votes against {label} "
-                              f"proposals more at its LARGEST holdings "
-                              f"({round(hw['large_rate'] * 100)}%) than its smallest "
-                              f"({round(hw['small_rate'] * 100)}%) — worse where it holds the most"),
-                    strength=round(min(1.0, hw["delta"]), 4),
+                    headline=(
+                        f"{inst['name']} commits to {label} and votes against {label} "
+                        f"proposals {'more' if worse else 'less'} at its LARGEST holdings "
+                        f"({round(hw['large_rate'] * 100)}%) than its smallest "
+                        f"({round(hw['small_rate'] * 100)}%) — "
+                        f"{'worse' if worse else 'better'} where it holds the most"),
+                    strength=round(min(1.0, abs(hw["delta"])), 4),
                     evidence={"large_rate": hw["large_rate"], "small_rate": hw["small_rate"],
                               "delta": hw["delta"], "held_votes": held,
+                              "direction": "worse" if worse else "better",
                               "commitment_quote": c["quote"], "doc_url": c["doc_url"],
                               "low_confidence": held < 60},
                     provenance={"technique": self.technique,
@@ -839,7 +922,7 @@ class FossilExposure(Detector):
 
 # ── registry ────────────────────────────────────────────────────────────────
 
-_DETECTORS: list[Detector] = [BrokenPromise(), CommitmentStrength(), OwnRecord(),
+_DETECTORS: list[Detector] = [BrokenPromise(), PromiseKept(), CommitmentStrength(), OwnRecord(),
                               CommitmentDecay(), CommitmentStrengthening(),
                               VoteDivergence(), SkinInTheGame(), FossilExposure()]
 
