@@ -243,7 +243,9 @@ def _e(s) -> str:
 
 
 def _page(title: str, body: str, active: str = "") -> str:
-    links = [("index.html", "Overview", "home"), ("record.html", "The record", "record"),
+    links = [("index.html", "Overview", "home"),
+             ("promise.html", "Does a promise predict?", "promise"),
+             ("record.html", "The record", "record"),
              ("detectors.html", "What we check", "detect"),
              ("institutions.html", "Institutions", "inst"),
              ("findings.html", "Findings", "find"),
@@ -509,7 +511,10 @@ def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
            FROM institutions i ORDER BY n_votes DESC, i.display_name""").fetchall()
 
     _build_index(conn, out_dir, stats, insts, findings)
-    _build_record(conn, out_dir)
+    from .investigate import build_matrix as _bm
+    _matrix = _bm(conn)                       # built once, shared by the pages below
+    _build_systemic(out_dir, _matrix)
+    _build_record(conn, out_dir, _matrix)
     _build_detectors(conn, out_dir)
     _build_institutions_index(conn, out_dir, insts)
     n_inst = sum(_build_institution(conn, out_dir, r, findings) for r in insts)
@@ -518,7 +523,7 @@ def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
     n_fs = _build_firststone(out_dir)
     _write_feed(conn, out_dir)
     _write_institution_feeds(conn, out_dir, insts, findings)
-    return {"pages": 6 + n_inst + n_fs, "findings": len(findings)}
+    return {"pages": 7 + n_inst + n_fs, "findings": len(findings)}
 
 
 def _build_detectors(conn, out_dir) -> None:
@@ -559,12 +564,59 @@ def _pretty_stamp(v: str) -> str:
     return f"{v[:4]}-{v[4:6]}-{v[6:8]}" if len(v) >= 8 and v[:8].isdigit() else v
 
 
-def _build_record(conn, out_dir) -> None:
+def _build_systemic(out_dir, matrix) -> None:
+    """The lead public page: does a stewardship promise predict anything?
+
+    This is the project's headline claim and the safest one — a statistical
+    statement about an industry practice, computed PAIRED (each manager against
+    itself) so house voting philosophy cannot manufacture the result. It reports
+    managers that vote BETTER on their committed themes as plainly as the
+    reverse."""
+    from . import systemic
+    s = systemic.industry_summary(matrix)
+    def _pct(x):
+        return "—" if x is None else f"{x:.1%}"
+    rows = ""
+    for p in s["pairs"]:
+        cls = {"better": "for", "worse": "against", "no difference": "muted"}[p.direction]
+        mark = {"better": "votes for it more", "worse": "votes against it more",
+                "no difference": "no measurable difference"}[p.direction]
+        rows += (f"<tr><th scope=row>{_e(p.institution_name)}</th>"
+                 f"<td><b>{p.committed_rate:.0%}</b><span>{p.committed_n:,} votes</span></td>"
+                 f"<td><b>{p.baseline_rate:.0%}</b><span>{p.baseline_n:,} votes</span></td>"
+                 f"<td style='color:var(--{cls})'><b>{p.delta:+.1%}</b>"
+                 f"<span>{mark}</span></td></tr>")
+    body = f"""<h1>Does a promise predict anything?</h1>
+<p class=lede>{_e(s['verdict'])}</p>
+<p class=kicker>Method</p><h2>Each manager against itself</h2>
+<p class=secnote>{_e(s['method'])}</p>
+<div class=statband>{_stat(s['n_managers'], 'managers compared')}
+{_stat(s['n_better'], 'vote FOR the theme more where they committed')}
+{_stat(s['n_worse'], 'vote against it more where they committed')}
+{_stat(f"{s['paired_median_delta']:+.1%}" if s['paired_median_delta'] is not None else '—',
+       'median difference')}</div>
+<div class='card flat' style='overflow-x:auto'><table class=rc>
+<thead><tr><th></th><th>on themes it commits to</th><th>on its own other themes</th>
+<th>difference</th></tr></thead><tbody>{rows}</tbody></table></div>
+<p class=secnote>A <b>negative</b> difference means the manager votes <b>for</b> the
+theme more often where it made a public commitment — this record reports that as
+plainly as the reverse.</p>
+<p class=kicker>Transparency</p><h2>The raw comparison, and why we do not rely on it</h2>
+<p class=secnote>Pooled across managers, commitment themes were voted against
+{_pct(s['raw_committed_rate'])} of the time versus {_pct(s['raw_uncommitted_rate'])} on
+uncommitted themes ({s['raw_votes']:,} votes). {_e(s['raw_caveat'])}</p>
+<p class=meta>Data as of {_e(s['generated'][:10])}. Every figure is recomputable from
+the public ledger. This page reports rates and differences in the voting record; it
+does not state why any institution voted as it did.</p>"""
+    (out_dir / "promise.html").write_text(_page("Does a promise predict anything?", body, "promise"))
+
+
+def _build_record(conn, out_dir, matrix=None) -> None:
     """The record — the public say-vs-do matrix, in registrar voice: rates and
     counts from the ledger, framed as leads for the reader to verify, never as
     conclusions."""
     from .investigate import build_matrix
-    m = build_matrix(conn)
+    m = matrix if matrix is not None else build_matrix(conn)
     used = [t for t in m["themes"] if any(t in i["cells"] for i in m["institutions"])]
     head = "".join(f"<th>{_e(t.replace('-', ' '))}</th>" for t in used)
     rows = ""

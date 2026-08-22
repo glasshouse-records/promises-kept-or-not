@@ -5,7 +5,8 @@ name: Scheduled runs
 
 on:
   schedule:
-    - cron: "17 11 * * *"   # daily: enforcement event scan
+    - cron: "17 11 * * *"   # daily: enforcement event scan + policy capture
+    - cron: "23 5 * * 0"    # weekly: Wayback backfill for newly-added sources
     - cron: "31 6 20 2,5,8,11 *"  # quarterly: 13-F (45 days after quarter end)
     - cron: "45 7 5 9 *"    # annual: N-PX (proxy-season close, filings due Aug 31)
   workflow_dispatch:
@@ -34,6 +35,22 @@ jobs:
           glasshouse dedupe
           glasshouse diff --record
           glasshouse digest
+        env:
+          GLASSHOUSE_CONTACT: ${{ vars.GLASSHOUSE_CONTACT }}
+      # THE IRREPLACEABLE CAPTURE. Votes and enforcement can be re-fetched from
+      # SEC/agency archives whenever we like; a POLICY PAGE CANNOT. When a
+      # manager quietly edits or deletes a commitment, that version is gone —
+      # Wayback's coverage is partial and we have already watched three of these
+      # URLs rot away. The versioned promise archive is the one asset no
+      # competitor has and no future run can back-fill, so it is captured every
+      # day, before anything else can fail.
+      - name: Capture policy versions (irreplaceable — run daily)
+        run: glasshouse ingest commitments
+        env:
+          GLASSHOUSE_CONTACT: ${{ vars.GLASSHOUSE_CONTACT }}
+      - name: Weekly deep capture — Wayback history for any newly-added source
+        if: github.event.schedule == '23 5 * * 0'
+        run: glasshouse ingest commitments --wayback --wayback-limit 6 || true
         env:
           GLASSHOUSE_CONTACT: ${{ vars.GLASSHOUSE_CONTACT }}
       - name: Self-diagnosis (emits repair task for the source-medic agent)

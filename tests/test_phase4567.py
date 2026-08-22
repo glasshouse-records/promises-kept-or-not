@@ -122,8 +122,9 @@ def test_site_build(conn, tmp_path):
     assert (out / "firststone.html").exists()
     assert (out / "firststone-masthead.html").exists()
     assert (out / "detectors.html").exists()
+    assert (out / "promise.html").exists()      # the systemic finding leads
     assert (out / "feed.xml").read_text().startswith("<?xml")
-    assert stats["pages"] == 9
+    assert stats["pages"] == 10
     assert (out / "findings.html").exists()
     # The public site must NOT publish a candidates page — unreviewed leads
     # are operator-only (workbench). The publish boundary, on the most public

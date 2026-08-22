@@ -335,6 +335,17 @@ def cmd_detectors(args) -> int:
     return 2
 
 
+def cmd_promise(args) -> int:
+    """The systemic finding: does a published commitment predict how a manager
+    votes? Paired (each manager against itself), so house voting philosophy
+    cannot manufacture the answer."""
+    from . import investigate, systemic
+    conn = _conn()
+    matrix = investigate.load_matrix() or investigate.build_matrix(conn)
+    print(systemic.summary_markdown(systemic.industry_summary(matrix, min_votes=args.min_votes)))
+    return 0
+
+
 def cmd_ftm(args) -> int:
     """Export the unique Glasshouse record as FollowTheMoney entities, ready to
     import into OCCRP Aleph / OpenAleph next to OpenSanctions et al."""
@@ -1132,6 +1143,12 @@ def main(argv: list[str] | None = None) -> int:
                      "headline/standfirst (needs ANTHROPIC_API_KEY; cited evidence stays "
                      "deterministic; falls back if unconfigured)")
     agr.set_defaults(func=cmd_agent)
+
+    pr = sub.add_parser("promise", help="the systemic finding: does a published "
+                        "commitment predict how a manager votes? (paired test)")
+    pr.add_argument("--min-votes", type=int, default=20,
+                    help="min votes on BOTH sides for a manager to be compared")
+    pr.set_defaults(func=cmd_promise)
 
     fm = sub.add_parser("ftm", help="export the unique record as FollowTheMoney entities "
                         "(imports into OCCRP Aleph / OpenAleph)")
