@@ -585,3 +585,52 @@ def test_no_false_softening_from_a_dropped_requirements_clause():
     new = ("We encourage boards to aspire to meaningful diversity of membership, while "
            "recognizing that building a strong, diverse board can take time.")
     assert CS.strength(new)[0] >= CS.strength(old)[0], "false softening resurfaced"
+
+
+# ── Detector #8: commitment strengthening (the registrar looks BOTH ways) ───
+
+def test_strengthening_detector_is_registered():
+    d = detectors.registry().get("commitment-strengthening")
+    assert d and d.technique == "commitment-strengthening"
+    assert d.evidence_class == "strong"
+
+
+def test_strengthening_flags_hardened_language(tmp_path):
+    """ask → expect is the mirror of the walk-back. A registrar that only ever
+    reports weakening is not a record, it is a case for the prosecution."""
+    c = ledger.connect(tmp_path / "st.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('x','X AM')")
+
+    def ver(sha, text, wayback="", retrieval="2026-06-01"):
+        p = tmp_path / f"{sha[:6]}.txt"
+        p.write_text(text)
+        c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
+                  "sha256, content_path, content_type, size_bytes, wayback_timestamp) VALUES "
+                  "('x','stewardship','https://x/p.pdf',?,?,?,'text/plain',?,?)",
+                  (retrieval, sha, str(p), len(text), wayback))
+    ver("a" * 64, _DFILLER + " We ask every company to disclose how it manages "
+        "climate risk in its operations.", wayback="20220101000000")
+    ver("b" * 64, _DFILLER + " We expect every company to disclose how it manages "
+        "climate risk in its operations.")
+    c.commit()
+    leads = detectors.registry()["commitment-strengthening"].run(c)
+    assert leads, "a real ask→expect hardening was not reported"
+    ld = leads[0]
+    assert ld.evidence["hardenings"]
+    old, new = ld.evidence["hardenings"][0]["from"], ld.evidence["hardenings"][0]["to"]
+    assert "ask" in old and "expect" in new
+    # …and it is stated as a fact about the record, with both versions cited.
+    assert ld.evidence["hardenings"][0]["from_url"]
+    assert "strengthen" in ld.headline.lower() or "firmer" in ld.headline.lower()
+
+
+def test_strengthening_ignores_weakening(decayed):
+    """The mirror must not double-report the walk-back."""
+    assert detectors.registry()["commitment-strengthening"].run(decayed) == []
+
+
+def test_decay_and_strengthening_are_mirrors(decayed, tmp_path):
+    """Same ledger, opposite questions — the pair is what makes the record
+    two-sided."""
+    assert detectors.registry()["commitment-decay"].run(decayed)
+    assert not detectors.registry()["commitment-strengthening"].run(decayed)

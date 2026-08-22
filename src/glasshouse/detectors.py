@@ -60,6 +60,13 @@ TECHNIQUES: dict[str, dict] = {
                     "across archived policy versions (e.g. 'expect' → 'ask'), or drop out?",
         "reads": "archived policy versions (walk-back timeline) × commitment-strength",
     },
+    "commitment-strengthening": {
+        "name": "Commitment strengthening",
+        "family": "Commitment integrity",
+        "question": "Did the manager's commitment language on a theme get FIRMER across "
+                    "archived policy versions (e.g. 'ask' → 'expect'), or gain new commitments?",
+        "reads": "archived policy versions (walk-back timeline) × commitment-strength",
+    },
     "internal-divergence": {
         "name": "Vote divergence",
         "family": "Internal consistency",
@@ -542,6 +549,91 @@ class CommitmentDecay(Detector):
         return n
 
 
+class CommitmentStrengthening(Detector):
+    """The MIRROR of commitment-decay: where a manager's commitment language on
+    a theme got FIRMER across archived versions ('ask' → 'expect', 'may' →
+    'will'), or gained binding commitments it did not have before.
+
+    This detector exists for the registrar's integrity, not for balance as a
+    courtesy. A record that can only ever show promises weakening is not a
+    record of what changed — it is a case for the prosecution. The same
+    archive, read with the comparison reversed, must be able to say when an
+    institution hardened its word. Reporting that plainly is exactly what makes
+    the unflattering results hard to dismiss."""
+    id = "commitment-strengthening"
+    name = "Commitment strengthening (language got firmer)"
+    technique = "commitment-strengthening"
+    evidence_class = "strong"      # a documented change in their own words
+    scope = "theme"
+    question = ("Did the manager's commitment language on a theme get firmer across "
+                "archived policy versions, or gain new binding commitments?")
+    validation = ("The exact mirror of commitment-decay, over the same archived versions "
+                  "and the same commitment-strength measure, with the comparison "
+                  "reversed: a change counts only when strength RISES or binding "
+                  "commitments are added. Both versions are cited verbatim. States "
+                  "dated facts, never motive.")
+
+    def run(self, conn: sqlite3.Connection, *, timelines: dict | None = None, **kw) -> list[Lead]:
+        strength = CommitmentStrength.strength
+        decay = CommitmentDecay()
+        leads: list[Lead] = []
+        for tl in decay._timelines(conn, timelines):
+            for theme, data in tl["themes"].items():
+                hardenings = []
+                for ev in data["events"]:
+                    for old, new in ev["revised"]:
+                        if strength(new)[0] > strength(old)[0]:
+                            hardenings.append({
+                                "from": old, "to": new,
+                                "from_version": ev["from"]["version"],
+                                "to_version": ev["to"]["version"],
+                                "from_url": ev["from"]["url"], "to_url": ev["to"]["url"]})
+                # net GROWTH in binding commitments within one document lineage
+                by_doc: dict[str, list] = {}
+                for p in data.get("presence", []):
+                    by_doc.setdefault(p["doc_label"], []).append(p)
+                growth = None
+                for pres in by_doc.values():
+                    if len(pres) >= 2 and pres[-1]["n"] > pres[0]["n"]:
+                        gain = pres[-1]["n"] - pres[0]["n"]
+                        if growth is None or gain > growth["gain"]:
+                            growth = {"gain": gain, "from_n": pres[0]["n"], "to_n": pres[-1]["n"],
+                                      "from_version": pres[0]["version"],
+                                      "to_version": pres[-1]["version"],
+                                      "from_url": pres[0]["url"], "to_url": pres[-1]["url"]}
+                if not hardenings and not growth:
+                    continue
+                label = theme.replace("-", " ")
+                bits = []
+                if growth:
+                    bits.append(f"binding commitments rose from {growth['from_n']} to "
+                                f"{growth['to_n']} (versions {growth['from_version']}→"
+                                f"{growth['to_version']})")
+                if hardenings:
+                    bits.append(f"{len(hardenings)} term(s) made firmer")
+                mag = (growth["gain"] if growth else 0) + len(hardenings)
+                leads.append(Lead(
+                    detector_id=self.id, technique=self.technique,
+                    institution_id=tl["institution_id"], institution_name=tl["name"],
+                    subject=theme,
+                    headline=(f"{tl['name']}'s {label} commitment language strengthened "
+                              f"across archived versions — {'; '.join(bits)}"),
+                    strength=round(min(1.0, mag / 4), 4),
+                    evidence={"hardenings": hardenings, "growth": growth},
+                    provenance={"technique": self.technique,
+                                "source": "walk-back timeline × commitment-strength"}))
+        leads.sort(key=lambda x: -x.strength)
+        return leads
+
+    def universe(self, conn: sqlite3.Connection, *, timelines: dict | None = None, **kw) -> int:
+        n = 0
+        for tl in CommitmentDecay()._timelines(conn, timelines):
+            for data in tl["themes"].values():
+                if data["events"]:
+                    n += 1
+        return n
+
+
 # ── Detector #5: vote divergence (same manager, both ways, one proposal) ────
 
 class VoteDivergence(Detector):
@@ -748,8 +840,8 @@ class FossilExposure(Detector):
 # ── registry ────────────────────────────────────────────────────────────────
 
 _DETECTORS: list[Detector] = [BrokenPromise(), CommitmentStrength(), OwnRecord(),
-                              CommitmentDecay(), VoteDivergence(), SkinInTheGame(),
-                              FossilExposure()]
+                              CommitmentDecay(), CommitmentStrengthening(),
+                              VoteDivergence(), SkinInTheGame(), FossilExposure()]
 
 
 def registry() -> dict[str, Detector]:
