@@ -230,8 +230,10 @@ def act(conn: sqlite3.Connection, action: str, payload: dict) -> dict:
         from .site import _md_html
         reg = detectors.registry()
         kw = {"matrix": investigate.load_matrix(), "timelines": timeline.load_timelines()}
+        fav_idx = casefile.favourable_index(conn, **kw)   # ONE library pass
         out = []
         for c in casefile.build_cases(conn, **kw):
+            fav = fav_idx.get((c.institution_id, c.subject), [])
             out.append({
                 "institution_id": c.institution_id, "institution_name": c.institution_name,
                 "subject": c.subject, "n_strong": c.n_strong,
@@ -242,11 +244,8 @@ def act(conn: sqlite3.Connection, action: str, payload: dict) -> dict:
                                 "headline": f.headline, "strength": f.strength}
                                for f in sorted(c.footprints, key=lambda x: -x.strength)],
                 "n_context": len(c.manager_context),
-                "n_favourable": len(casefile.favourable_for(
-                    conn, c.institution_id, c.subject, **kw)),
-                "body_html": _md_html(casefile.case_markdown(
-                    c, favourable=casefile.favourable_for(
-                        conn, c.institution_id, c.subject, **kw)))})
+                "n_favourable": len(fav),
+                "body_html": _md_html(casefile.case_markdown(c, favourable=fav))})
         return {"ok": True, "cases": out}
 
     if action == "detectors_run":

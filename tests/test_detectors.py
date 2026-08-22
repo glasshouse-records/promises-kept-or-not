@@ -671,6 +671,20 @@ def keeper(tmp_path):
     for i in range(40, 80):
         vote(i, "Shareholder proposal on lobbying disclosure and political spending",
              "AGAINST" if i % 5 else "FOR")
+    # A MARKET to benchmark against: with a single manager in the ledger the
+    # industry rate for a theme IS that manager, so the theme-mix control has
+    # nothing to compare with and correctly suppresses everything.
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('mkt','Market AM')")
+    c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+              "retrieval_date) VALUES ('MKT','2','mkt','N-PX','https://s','2025-01-01')")
+    for i in range(200):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, "
+                  "vote_description, how_voted, shares_voted, is_duplicate) VALUES "
+                  "('MKT',?,?,'05/21/2024',?,?,100,0)",
+                  (f"MK{i}", f"MK{i}",
+                   "Shareholder proposal on greenhouse gas emissions reduction targets"
+                   if i % 2 else "Shareholder proposal on lobbying disclosure and political spending",
+                   "FOR" if i % 5 == 0 else "AGAINST"))
     c.commit()
     return c
 

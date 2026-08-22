@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 
 from . import fossil as _fossil
 from . import investigate
+from . import systemic as _sys
 
 # ── the taxonomy: accountability-evasion techniques ─────────────────────────
 # Stable ids so detectors, leads, and (later) the backtest scorecards all speak
@@ -47,7 +48,7 @@ TECHNIQUES: dict[str, dict] = {
         "reads": "archived policy commitment text (Loughran-McDonald strong/weak modal basis)",
     },
     "promise-kept": {
-        "name": "Promise kept",
+        "name": "Votes better than its own baseline",
         "family": "Commitment integrity",
         "question": "Where a manager commits to a theme, does it vote FOR that theme more "
                     "than it does on the themes it never promised anything about?",
@@ -119,6 +120,11 @@ class Lead:
     strength: float              # 0..1 — how pronounced the footprint is (NOT a probability of guilt)
     evidence: dict = field(default_factory=dict)     # the cited specifics
     provenance: dict = field(default_factory=dict)   # how it was derived
+    # Per-lead polarity. Most detectors are uniformly adverse/favourable and
+    # inherit the class default, but a bidirectional one (skin-in-the-game) MUST
+    # set this: a favourable lead inheriting "adverse" would be counted as
+    # corroboration and could promote a case BECAUSE the firm behaved better.
+    polarity: str | None = None
 
 
 class Detector:
@@ -263,17 +269,18 @@ class PromiseKept(Detector):
     so as plainly as it says the reverse."""
     id = "promise-kept"
     polarity = "favourable"
-    name = "Promise kept (votes for it more than its own baseline)"
+    name = "Votes better than its own baseline"
     technique = "promise-kept"
     evidence_class = "strong"      # an active vote choice, same class as the gap
     scope = "theme"
     question = ("Where a manager commits to a theme, does it vote FOR that theme more than "
                 "on the themes it never promised anything about?")
-    validation = ("Paired against the manager's own baseline (its against-rate on themes it "
-                  "made no commitment on), so house voting philosophy cannot manufacture the "
-                  "result — the same design that corrected our cross-manager reading. Reports "
-                  "the rates and the difference; states nothing about motive.")
-    FLAT = 0.05                    # below this, not distinguishable from noise
+    validation = ("Paired against the manager's own baseline AND controlled for theme mix: "
+                  "the manager's committed and uncommitted baskets contain different themes, "
+                  "and themes have very different industry-wide rates, so the raw difference "
+                  "is mostly composition. Only the RESIDUAL — what mix does not explain, and "
+                  "only when it exceeds sampling noise — is reported. It states rates and "
+                  "differences, never a verdict about whether a promise was 'kept'.")
 
     def run(self, conn: sqlite3.Connection, *, matrix: dict | None = None,
             min_votes: int = 20, **kw) -> list[Lead]:
@@ -285,27 +292,35 @@ class PromiseKept(Detector):
                 if not c["committed"] and (c["for"] + c["against"]):
                     bf += c["for"]
                     ba += c["against"]
-            if bf + ba < min_votes:
+            if bf + ba < max(1, min_votes):
                 continue                       # no baseline → no paired claim
             baseline = ba / (bf + ba)
+            pair = next((x for x in _sys.paired_comparison(m, min_votes=max(1, min_votes))
+                         if x.institution_id == inst["id"]), None)
             for theme, c in inst["cells"].items():
                 n = c["for"] + c["against"]
-                if not c["committed"] or n < min_votes:
+                if not c["committed"] or n < max(1, min_votes):
                     continue
                 rate = c["against"] / n
                 delta = rate - baseline
-                if delta > -self.FLAT:
-                    continue                   # not meaningfully better than itself
+                # Theme mix, not the promise, explains most raw differences —
+                # so a lead needs the manager's RESIDUAL to be genuinely better
+                # and larger than sampling noise (shared threshold, one source).
+                if pair is None or not pair.significant or pair.residual > -_sys.FLAT:
+                    continue
                 label = theme.replace("-", " ")
                 leads.append(Lead(
                     detector_id=self.id, technique=self.technique,
                     institution_id=inst["id"], institution_name=inst["name"], subject=theme,
-                    headline=(f"{inst['name']} commits to {label} and votes for {label} "
-                              f"proposals more than its own baseline: {rate:.0%} against on "
-                              f"{label} vs {baseline:.0%} on themes it made no commitment on"),
-                    strength=round(min(1.0, abs(delta) * 4), 4),
+                    headline=(f"{inst['name']} votes against {label} proposals less than its "
+                              f"own baseline predicts: {rate:.0%} against on {label} vs "
+                              f"{baseline:.0%} on themes it made no commitment on "
+                              f"(residual {pair.residual:+.1%} after theme mix)"),
+                    strength=round(min(1.0, abs(pair.residual) * 4), 4),
                     evidence={"committed_rate": round(rate, 4), "baseline_rate": round(baseline, 4),
-                              "delta": round(delta, 4), "n_votes": n, "baseline_n": bf + ba,
+                              "delta": round(delta, 4), "residual": pair.residual,
+                              "expected_delta": pair.expected_delta,
+                              "n_votes": n, "baseline_n": bf + ba,
                               "commitment_quote": c["quote"], "doc_url": c["doc_url"]},
                     provenance={"technique": self.technique,
                                 "design": "paired against the manager's own uncommitted themes"}))
@@ -614,12 +629,13 @@ class CommitmentDecay(Detector):
         return leads
 
     def universe(self, conn: sqlite3.Connection, *, timelines: dict | None = None, **kw) -> int:
-        # (manager, theme) pairs that changed at all — the honest denominator for
-        # "when the language changed, how often did it weaken?"
+        # (manager, theme) pairs with any version history — the denominator must
+        # cover everything run() can emit, including growth/shrink leads that
+        # carry no diff event, or selectivity could exceed 100%.
         n = 0
         for tl in self._timelines(conn, timelines):
             for data in tl["themes"].values():
-                if data["events"]:
+                if data["events"] or len(data.get("presence", [])) >= 2:
                     n += 1
         return n
 
@@ -705,7 +721,7 @@ class CommitmentStrengthening(Detector):
         n = 0
         for tl in CommitmentDecay()._timelines(conn, timelines):
             for data in tl["themes"].values():
-                if data["events"]:
+                if data["events"] or len(data.get("presence", [])) >= 2:
                     n += 1
         return n
 
@@ -821,6 +837,7 @@ class SkinInTheGame(Detector):
                         f"({round(hw['small_rate'] * 100)}%) — "
                         f"{'worse' if worse else 'better'} where it holds the most"),
                     strength=round(min(1.0, abs(hw["delta"])), 4),
+                    polarity="adverse" if worse else "favourable",
                     evidence={"large_rate": hw["large_rate"], "small_rate": hw["small_rate"],
                               "delta": hw["delta"], "held_votes": held,
                               "direction": "worse" if worse else "better",

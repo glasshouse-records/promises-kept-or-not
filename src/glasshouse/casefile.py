@@ -80,9 +80,12 @@ def build_cases(conn: sqlite3.Connection, **kw) -> list[Case]:
 
     for det_id, leads in detectors.run_all(conn, **kw).items():
         scope = reg[det_id].scope
-        if reg[det_id].polarity == "favourable":
-            continue          # exculpatory: shown via favourable_for(), never as corroboration
         for ld in leads:
+            # LEAD polarity first: a bidirectional detector emits both, and a
+            # favourable lead inheriting the class default would be counted as
+            # corroboration — promoting a case because the firm behaved better.
+            if (ld.polarity or reg[det_id].polarity) == "favourable":
+                continue      # exculpatory: shown via favourable_for(), never as corroboration
             if scope == "manager":
                 # keyed by name: vote-divergence carries no institution_id
                 mgr_leads.setdefault(ld.institution_name, []).append(ld)
@@ -101,6 +104,20 @@ def build_cases(conn: sqlite3.Connection, **kw) -> list[Case]:
     return cases
 
 
+def favourable_index(conn: sqlite3.Connection, **kw) -> dict[tuple[str, str], list]:
+    """All favourable leads, indexed by (institution_id, subject), from ONE pass
+    over the library. favourable_for() re-runs every detector, so calling it per
+    case turned a 13-second build into minutes — use this when handling more
+    than one case."""
+    reg = detectors.registry()
+    idx: dict[tuple[str, str], list] = {}
+    for det_id, leads in detectors.run_all(conn, **kw).items():
+        for ld in leads:
+            if (ld.polarity or reg[det_id].polarity) == "favourable":
+                idx.setdefault((ld.institution_id, ld.subject), []).append(ld)
+    return idx
+
+
 def favourable_for(conn: sqlite3.Connection, institution_id: str, subject: str,
                    **kw) -> list[detectors.Lead]:
     """What the record shows in the institution's FAVOUR on this same claim.
@@ -112,10 +129,9 @@ def favourable_for(conn: sqlite3.Connection, institution_id: str, subject: str,
     out: list[detectors.Lead] = []
     reg = detectors.registry()
     for det_id, leads in detectors.run_all(conn, **kw).items():
-        if reg[det_id].polarity != "favourable":
-            continue
         out += [ld for ld in leads
-                if ld.institution_id == institution_id and ld.subject == subject]
+                if (ld.polarity or reg[det_id].polarity) == "favourable"
+                and ld.institution_id == institution_id and ld.subject == subject]
     return out
 
 

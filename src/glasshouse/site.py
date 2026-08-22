@@ -592,34 +592,43 @@ def _build_systemic(out_dir, matrix) -> None:
     rows = ""
     for p in s["pairs"]:
         cls = {"better": "for", "worse": "against", "no difference": "muted"}[p.direction]
-        mark = {"better": "votes for it more", "worse": "votes against it more",
+        mark = {"better": "votes for it more than mix predicts",
+                "worse": "votes against it more than mix predicts",
                 "no difference": "no measurable difference"}[p.direction]
         rows += (f"<tr><th scope=row>{_e(p.institution_name)}</th>"
-                 f"<td><b>{p.committed_rate:.0%}</b><span>{p.committed_n:,} votes</span></td>"
-                 f"<td><b>{p.baseline_rate:.0%}</b><span>{p.baseline_n:,} votes</span></td>"
-                 f"<td style='color:var(--{cls})'><b>{p.delta:+.1%}</b>"
+                 f"<td><b>{p.committed_rate:.0%}</b><span>against · "
+                 f"{p.committed_n:,} votes</span></td>"
+                 f"<td><b>{p.baseline_rate:.0%}</b><span>against · "
+                 f"{p.baseline_n:,} votes</span></td>"
+                 f"<td><b>{p.delta:+.1%}</b><span>raw</span></td>"
+                 f"<td><b>{p.expected_delta:+.1%}</b><span>theme mix</span></td>"
+                 f"<td style='color:var(--{cls})'><b>{p.residual:+.1%}</b>"
                  f"<span>{mark}</span></td></tr>")
     body = f"""<h1>Does a promise predict anything?</h1>
 <p class=lede>{_e(s['verdict'])}</p>
 <p class=kicker>Method</p><h2>Each manager against itself</h2>
 <p class=secnote>{_e(s['method'])}</p>
 <div class=statband>{_stat(s['n_managers'], 'managers compared')}
-{_stat(s['n_better'], 'vote FOR the theme more where they committed')}
-{_stat(s['n_worse'], 'vote against it more where they committed')}
-{_stat(f"{s['paired_median_delta']:+.1%}" if s['paired_median_delta'] is not None else '—',
-       'median difference')}</div>
+{_stat(s['n_better'], 'vote FOR the theme more than their theme mix predicts')}
+{_stat(s['n_worse'], 'vote against it more than their theme mix predicts')}
+{_stat(f"{s['paired_median_residual']:+.1%}" if s['paired_median_residual'] is not None else '—',
+       'median residual (theme mix removed)')}</div>
 <div class='card flat' style='overflow-x:auto'><table class=rc>
 <thead><tr><th></th><th>on themes it commits to</th><th>on its own other themes</th>
-<th>difference</th></tr></thead><tbody>{rows}</tbody></table></div>
-<p class=secnote>A <b>negative</b> difference means the manager votes <b>for</b> the
-theme more often where it made a public commitment — this record reports that as
-plainly as the reverse.</p>
+<th>raw diff.</th><th>predicted by theme mix</th><th>residual</th></tr></thead><tbody>{rows}</tbody></table></div>
+<p class=secnote>All rates are <b>against</b>-rates. A negative <b>residual</b> means the
+manager votes <b>for</b> the theme more often than its own theme mix predicts — this
+record reports that as plainly as the reverse. The raw difference is shown for
+transparency, but it is mostly composition: a manager's committed and uncommitted
+baskets contain different themes, and themes have very different industry-wide rates,
+so only the residual — and only when it exceeds sampling noise — carries a label.</p>
 <p class=kicker>Transparency</p><h2>The raw comparison, and why we do not rely on it</h2>
 <p class=secnote>Pooled across managers, commitment themes were voted against
 {_pct(s['raw_committed_rate'])} of the time versus {_pct(s['raw_uncommitted_rate'])} on
 uncommitted themes ({s['raw_votes']:,} votes). {_e(s['raw_caveat'])}</p>
-<p class=meta>Data as of {_e(s['generated'][:10])}. Every figure is recomputable from
-the public ledger. This page reports rates and differences in the voting record; it
+<p class=meta>Built {_e(s['generated'][:10])} from the voting record as ingested
+(see the coverage statement in the release datasheet — this is the build date, not
+the end of the proxy-vote record). Every figure is recomputable from the public ledger. This page reports rates and differences in the voting record; it
 does not state why any institution voted as it did.</p>"""
     (out_dir / "promise.html").write_text(_page("Does a promise predict anything?", body, "promise"))
 
@@ -1157,7 +1166,10 @@ this project is built on.</p>
 to us is whether it was. If you cited it, wrote from it, put it in a board pack,
 taught with it, or filed with it — <b>tell us</b>, in one line, so the project knows
 what to build next. Corrections are the most valuable use of all: if a figure is
-wrong, the record should change, and being corrected in public is the point.</p></div>"""
+wrong, the record should change, and being corrected in public is the point.</p>
+<p class=cite>How: open an issue on the project repository titled
+<code>used: &lt;who you are&gt;</code>, or cite the dataset DOI and say so. Recorded
+uses are kept in <code>ADOPTION.md</code> in the repository.</p></div>"""
     (out_dir / "how-to-read.html").write_text(_page("How to read", body, "how"))
 
 

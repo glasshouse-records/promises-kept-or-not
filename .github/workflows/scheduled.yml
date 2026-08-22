@@ -27,6 +27,10 @@ jobs:
           key: ledger-${{ github.run_id }}
           restore-keys: ledger-
       - name: Daily event scan
+        # Must not be able to skip the policy capture below it: this step runs
+        # several network ingests under `bash -e`, and any raise would abort the
+        # job before the one capture that cannot be back-filled.
+        continue-on-error: true
         run: |
           glasshouse init-db
           glasshouse scan-events --news

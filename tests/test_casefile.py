@@ -133,17 +133,40 @@ def test_every_detector_declares_a_polarity():
             f"{d.id} has no valid polarity"
 
 
-def test_favourable_footprints_do_not_count_as_corroboration(converged):
-    """A case file ranks by how much ADVERSE evidence converges. Exculpatory
-    findings (promise-kept, commitment-strengthening) belong in the file — but
-    counting them as corroboration would let good behaviour make a case look
-    stronger, which is nonsense."""
-    cases = casefile.build_cases(converged, min_rate=0.5, min_votes=1)
-    for c in cases:
-        for f in c.footprints:
-            assert detectors.registry()[f.detector_id].polarity != "favourable"
-        # …and n_strong is computed only from those adverse footprints
-        assert c.n_strong <= len(c.footprints)
+def test_favourable_lead_from_a_bidirectional_detector_is_not_corroboration(tmp_path):
+    """The real regression (found in review, 2026-07-16): skin-in-the-game can
+    emit a FAVOURABLE lead while its class polarity is 'adverse'. Filtering on
+    the class alone let that lead into case.footprints, inflating n_strong —
+    a case promoted up the publication queue BECAUSE the firm behaved better.
+
+    This test fails if build_cases filters on the detector's class polarity
+    instead of the lead's."""
+    conn = ledger.connect(tmp_path / "bidir.db")
+    cells = {"climate": {**_c(True, 10, 90),
+                         # votes against far LESS at its largest holdings
+                         "hw": {"large_rate": 0.5, "small_rate": 0.9,
+                                "delta": -0.4, "held_votes": 200}}}
+    matrix = {"generated": "2026-07-16", "themes": ["climate"],
+              "institutions": [{"id": "x", "name": "X AM", "cells": cells}]}
+    leads = detectors.registry()["skin-in-the-game"].run(
+        conn, matrix=matrix, min_held=30, min_delta=0.1)
+    assert leads and leads[0].evidence["direction"] == "better", "fixture no longer bidirectional"
+    assert leads[0].polarity == "favourable", "lead must carry its own polarity"
+
+    cases = casefile.build_cases(conn, matrix=matrix, min_rate=0.5, min_votes=10)
+    case = next(c for c in cases if c.institution_id == "x")
+    ids = {f.detector_id for f in case.footprints}
+    assert "broken-promise" in ids                 # the adverse footprint counts
+    assert "skin-in-the-game" not in ids           # the favourable one must NOT
+    assert case.n_strong == 1                      # and cannot inflate the count
+
+
+def _c(committed, for_, against):
+    return {"committed": committed, "for": for_, "against": against,
+            "quote": "We are committed to climate risk oversight." if committed else None,
+            "n": for_ + against, "rate": against / (for_ + against),
+            "doc_label": "p", "doc_version": "v", "doc_url": "https://x/p.pdf",
+            "examples": [], "low_confidence": False}
 
 
 def test_case_file_shows_what_counts_in_their_favour(tmp_path):
@@ -172,6 +195,20 @@ def test_case_file_shows_what_counts_in_their_favour(tmp_path):
     for i in range(40, 80):    # uncommitted theme: mostly AGAINST (its baseline)
         vote(i, "Shareholder proposal on lobbying disclosure and political spending",
              "AGAINST" if i % 5 else "FOR")
+    # A MARKET to benchmark against: with a single manager in the ledger the
+    # industry rate for a theme IS that manager, so the theme-mix control has
+    # nothing to compare with and correctly suppresses everything.
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('mkt','Market AM')")
+    c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+              "retrieval_date) VALUES ('MKT','2','mkt','N-PX','https://s','2025-01-01')")
+    for i in range(200):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, "
+                  "vote_description, how_voted, shares_voted, is_duplicate) VALUES "
+                  "('MKT',?,?,'05/21/2024',?,?,100,0)",
+                  (f"MK{i}", f"MK{i}",
+                   "Shareholder proposal on greenhouse gas emissions reduction targets"
+                   if i % 2 else "Shareholder proposal on lobbying disclosure and political spending",
+                   "FOR" if i % 5 == 0 else "AGAINST"))
     c.commit()
     favourable = casefile.favourable_for(c, "k", "climate", min_votes=10)
     assert favourable, "exculpatory evidence was not surfaced"

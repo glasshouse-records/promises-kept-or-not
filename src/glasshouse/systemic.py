@@ -37,6 +37,7 @@ ever: it reports rates, differences and sample sizes.
 
 from __future__ import annotations
 
+import math
 import statistics
 from dataclasses import dataclass
 
@@ -48,27 +49,82 @@ FLAT = 0.05
 
 @dataclass
 class ManagerPair:
-    """One manager compared against itself."""
+    """One manager compared against itself, with theme mix controlled."""
     institution_id: str
     institution_name: str
     committed_rate: float      # against-rate on themes it publicly commits to
     committed_n: int
     baseline_rate: float       # its own rate on themes it never promised
     baseline_n: int
+    expected_delta: float = 0.0   # what THEME MIX alone predicts (the placebo)
 
     @property
     def delta(self) -> float:
         """committed − baseline. NEGATIVE means it votes against LESS where it
-        made a promise (the promise looks like it mattered)."""
+        made a promise. Raw: still contains theme mix."""
         return round(self.committed_rate - self.baseline_rate, 4)
 
     @property
+    def residual(self) -> float:
+        """The part of the difference theme mix does NOT explain. This is the
+        only quantity that can carry a direction label: a manager's committed
+        and baseline baskets are different mixes of themes, and themes have
+        very different industry-wide rates, so the raw delta is mostly
+        composition (verified by placebo, 2026-07-16)."""
+        return round(self.delta - self.expected_delta, 4)
+
+    @property
+    def significant(self) -> bool:
+        """Is the residual larger than sampling noise? Normal approximation on
+        the difference of two proportions. Without this, a bounded rate near
+        1.0 makes a manager structurally unable to be labelled in one
+        direction while remaining eligible for the other."""
+        p1, n1 = self.committed_rate, self.committed_n
+        p2, n2 = self.baseline_rate, self.baseline_n
+        if n1 < 1 or n2 < 1:
+            return False
+        se = math.sqrt(p1 * (1 - p1) / n1 + p2 * (1 - p2) / n2)
+        if se == 0:
+            se = math.sqrt(0.25 / n1 + 0.25 / n2)   # degenerate rate: conservative
+        return abs(self.residual) / se >= 1.96
+
+    @property
     def direction(self) -> str:
-        if self.delta <= -FLAT:
-            return "better"        # votes for the theme more where it committed
-        if self.delta >= FLAT:
+        if not self.significant:
+            return "no difference"
+        if self.residual <= -FLAT:
+            return "better"        # votes for the theme more than mix predicts
+        if self.residual >= FLAT:
             return "worse"
         return "no difference"
+
+
+def theme_industry_rates(matrix: dict) -> dict[str, float]:
+    """Industry-wide against-rate per theme, over every manager. The benchmark
+    the placebo is built from."""
+    agg: dict[str, list[int]] = {}
+    for inst in matrix["institutions"]:
+        for th, c in inst["cells"].items():
+            n = c["for"] + c["against"]
+            if not n:
+                continue
+            a = agg.setdefault(th, [0, 0])
+            a[0] += c["for"]
+            a[1] += c["against"]
+    return {th: (a[1] / (a[0] + a[1])) for th, a in agg.items() if a[0] + a[1]}
+
+
+def _expected_rate(inst: dict, committed: bool, industry: dict[str, float]) -> float | None:
+    """What this manager's basket would score if it voted exactly at each
+    theme's industry rate — i.e. the rate its THEME MIX alone predicts."""
+    num = den = 0.0
+    for th, c in inst["cells"].items():
+        n = c["for"] + c["against"]
+        if not n or bool(c["committed"]) is not committed or th not in industry:
+            continue
+        num += n * industry[th]
+        den += n
+    return (num / den) if den else None
 
 
 def _split(inst: dict) -> tuple[int, int, int, int]:
@@ -89,16 +145,21 @@ def _split(inst: dict) -> tuple[int, int, int, int]:
 def paired_comparison(matrix: dict, *, min_votes: int = 20) -> list[ManagerPair]:
     """Each manager against itself. A manager needs enough votes on BOTH sides
     to be compared at all — no baseline means no comparison, not a guess."""
+    industry = theme_industry_rates(matrix)
     out: list[ManagerPair] = []
     for inst in matrix["institutions"]:
         cf, ca, bf, ba = _split(inst)
         if cf + ca < min_votes or bf + ba < min_votes:
             continue
+        exp_c = _expected_rate(inst, True, industry)
+        exp_b = _expected_rate(inst, False, industry)
         out.append(ManagerPair(
             institution_id=inst["id"], institution_name=inst["name"],
             committed_rate=round(ca / (cf + ca), 4), committed_n=cf + ca,
-            baseline_rate=round(ba / (bf + ba), 4), baseline_n=bf + ba))
-    out.sort(key=lambda p: p.delta, reverse=True)
+            baseline_rate=round(ba / (bf + ba), 4), baseline_n=bf + ba,
+            expected_delta=(round(exp_c - exp_b, 4)
+                            if exp_c is not None and exp_b is not None else 0.0)))
+    out.sort(key=lambda p: p.residual, reverse=True)
     return out
 
 
@@ -118,18 +179,20 @@ def industry_summary(matrix: dict, *, min_votes: int = 20) -> dict:
     pairs = paired_comparison(matrix, min_votes=min_votes)
     deltas = [p.delta for p in pairs]
     median = round(statistics.median(deltas), 4) if deltas else None
+    residuals = [p.residual for p in pairs]
+    median_res = round(statistics.median(residuals), 4) if residuals else None
 
-    if median is None:
+    if median_res is None:
         verdict = ("Not enough paired evidence yet to say whether a published "
                    "commitment is associated with how a manager votes.")
-    elif abs(median) < FLAT:
+    elif abs(median_res) < FLAT:
         verdict = (
             "Across the managers that can be compared against themselves, a "
             "published commitment shows no measurable association with how the "
             "manager votes: the same firms vote against theme proposals at "
             "close to the same rate whether or not they publicly committed to "
             "that theme.")
-    elif median >= FLAT:
+    elif median_res >= FLAT:
         verdict = (
             "Across the managers that can be compared against themselves, "
             "commitment themes are voted against at a higher rate than the "
@@ -149,9 +212,12 @@ def industry_summary(matrix: dict, *, min_votes: int = 20) -> dict:
             "This raw comparison pools different managers and is CONFOUNDED: the "
             "committed group is dominated by houses that vote against nearly "
             "everything, so a difference here can be composition rather than "
-            "behaviour. It is shown for transparency; the paired result below is "
-            "the one to rely on."),
+            "behaviour. It is shown for transparency only; the paired, "
+            "theme-mix-controlled result above is the one to rely on. Note also "
+            "that it covers every manager, while the paired table covers only "
+            "those with enough votes on both sides."),
         "paired_median_delta": median,
+        "paired_median_residual": median_res,
         "n_managers": len(pairs),
         "n_better": sum(1 for p in pairs if p.direction == "better"),
         "n_worse": sum(1 for p in pairs if p.direction == "worse"),
@@ -161,9 +227,15 @@ def industry_summary(matrix: dict, *, min_votes: int = 20) -> dict:
         "method": (
             "Each manager is compared against ITSELF: its against-rate on themes "
             "its own archived policy commits to, versus its against-rate on "
-            "themes it never committed to. This paired design cancels out house "
-            "voting philosophy, the confound that breaks the raw comparison. "
-            f"Managers need at least {min_votes} votes on both sides to appear."),
+            "themes it never committed to. That pairing cancels house voting "
+            "philosophy — one confound. It does not cancel THEME MIX: the two "
+            "baskets contain different themes, and themes have very different "
+            "industry-wide rates, so most of the raw difference is composition. "
+            "Each manager's difference is therefore compared against what its "
+            "own theme mix alone predicts, and only the RESIDUAL — the part mix "
+            "does not explain, and only when it exceeds sampling noise — can "
+            f"carry a direction. Managers need at least {min_votes} votes on "
+            "both sides to appear."),
     }
 
 
@@ -175,23 +247,28 @@ def summary_markdown(s: dict) -> str:
         f"**{s['verdict']}**", "",
         "## How this is measured", "", s["method"], "",
         "## The paired result", "",
-        f"Managers compared: **{s['n_managers']}** · votes better than their own "
-        f"baseline: **{s['n_better']}** · worse: **{s['n_worse']}** · no measurable "
-        f"difference: **{s['n_flat']}** · median difference: "
-        f"**{pct(s['paired_median_delta'])}**", "",
-        "| Manager | On themes it commits to | On its own other themes | Difference | |",
-        "|---|---|---|---|---|",
+        f"Managers compared: **{s['n_managers']}** · better than their theme mix "
+        f"predicts: **{s['n_better']}** · worse: **{s['n_worse']}** · no measurable "
+        f"difference: **{s['n_flat']}** · median residual: "
+        f"**{pct(s['paired_median_residual'])}**", "",
+        "| Manager | On themes it commits to | On its own other themes | Raw diff. | "
+        "Predicted by theme mix | Residual | |",
+        "|---|---|---|---|---|---|---|",
     ]
     for p in s["pairs"]:
-        mark = {"better": "votes for it more", "worse": "votes against it more",
+        mark = {"better": "votes for it more than mix predicts",
+                "worse": "votes against it more than mix predicts",
                 "no difference": "no measurable difference"}[p.direction]
         lines.append(
             f"| {p.institution_name} | {pct(p.committed_rate)} against "
             f"({p.committed_n:,} votes) | {pct(p.baseline_rate)} against "
-            f"({p.baseline_n:,} votes) | {p.delta:+.1%} | {mark} |")
+            f"({p.baseline_n:,} votes) | {p.delta:+.1%} | {p.expected_delta:+.1%} | "
+            f"{p.residual:+.1%} | {mark} |")
     lines += [
-        "", "A negative difference means the manager votes **for** the theme more "
-        "often where it made a public commitment.", "",
+        "", "A negative **residual** means the manager votes *for* the theme more "
+        "often than its own theme mix predicts. The raw difference is shown for "
+        "transparency, but it is mostly composition: only the residual, and only "
+        "when it exceeds sampling noise, carries a label.", "",
         "## The raw comparison, and why we do not rely on it", "",
         f"Pooled across managers, commitment themes were voted against "
         f"{pct(s['raw_committed_rate'])} of the time versus "

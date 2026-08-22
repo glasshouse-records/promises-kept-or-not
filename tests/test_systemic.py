@@ -95,3 +95,71 @@ def test_markdown_shows_both_directions_and_cites_method(matrix):
     assert "confound" in md.lower()
     for banned in ("hypocri", "greenwash", "betray"):
         assert banned not in md.lower()
+
+
+# ── Theme-mix control (review finding, 2026-07-16) ─────────────────────────
+# The paired design removes the MANAGER confound and leaves a THEME-MIX one of
+# identical shape: a manager's committed basket and its baseline basket are
+# different mixes of themes, and themes have very different industry-wide
+# against-rates. A placebo (every cell set to its theme's industry rate)
+# reproduced almost the entire published median. Direction labels must
+# therefore be computed on the RESIDUAL, after subtracting what theme mix
+# alone predicts — and only when the difference exceeds sampling noise.
+
+def _mx(cells_by_mgr, industry):
+    """industry: {theme: rate} realised by a large 'market' manager."""
+    insts = []
+    for mid, cells in cells_by_mgr.items():
+        insts.append({"id": mid, "name": f"{mid} AM", "cells": cells})
+    big = {}
+    for th, rate in industry.items():
+        n = 10000
+        big[th] = _cell(False, int(n * (1 - rate)), int(n * rate))
+    insts.append({"id": "market", "name": "Market", "cells": big})
+    return _matrix(insts)
+
+
+def test_theme_mix_alone_is_not_reported_as_a_commitment_effect():
+    """A manager whose every theme sits exactly at its industry rate has NO
+    commitment effect, however its baskets are composed. The old absolute
+    delta would have labelled it; the residual must not."""
+    industry = {"climate": 0.70, "nature": 0.95}
+    m = _mx({"mix": {"climate": _cell(True, 30, 70),      # exactly industry
+                     "nature": _cell(False, 5, 95)}},     # exactly industry
+            industry)
+    p = next(x for x in systemic.paired_comparison(m, min_votes=20)
+             if x.institution_id == "mix")
+    assert p.delta < -0.2                      # raw delta looks large…
+    assert abs(p.residual) < 0.05              # …and is entirely theme mix
+    assert p.direction == "no difference"
+
+
+def test_real_effect_survives_the_theme_mix_control():
+    """A manager that genuinely votes better than its themes predict is still
+    reported — the control removes the artifact, not the signal."""
+    industry = {"climate": 0.70, "nature": 0.95}
+    m = _mx({"real": {"climate": _cell(True, 70, 30),     # 30% vs 70% expected
+                      "nature": _cell(False, 5, 95)}},
+            industry)
+    p = next(x for x in systemic.paired_comparison(m, min_votes=20)
+             if x.institution_id == "real")
+    assert p.residual < -0.05
+    assert p.direction == "better"
+
+
+def test_direction_requires_more_than_sampling_noise():
+    """A tiny sample cannot earn a direction label, whatever the point estimate."""
+    industry = {"climate": 0.50, "nature": 0.50}
+    m = _mx({"noisy": {"climate": _cell(True, 6, 14),     # 70% on 20 votes
+                       "nature": _cell(False, 10, 10)}},  # 50% on 20
+            industry)
+    p = next(x for x in systemic.paired_comparison(m, min_votes=20)
+             if x.institution_id == "noisy")
+    assert not p.significant
+    assert p.direction == "no difference"
+
+
+def test_summary_reports_the_theme_mix_control(matrix):
+    s = systemic.industry_summary(matrix, min_votes=20)
+    assert "theme" in s["method"].lower()
+    assert s["paired_median_residual"] is not None
