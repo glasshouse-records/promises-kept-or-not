@@ -413,6 +413,29 @@ def integrity_check(conn: sqlite3.Connection) -> dict[str, list]:
     ).fetchall()
     problems["votes_orphaned"] = [tuple(r) for r in rows]
 
+    # Custody of the archive. A policy snapshot is the ONE artefact here that
+    # cannot be re-fetched once its URL rots — three already have — so a missing
+    # or altered file is a hard failure, not a warning. This is also what catches
+    # a CI pipeline that captures bytes onto a runner and then discards them.
+    import hashlib as _hashlib
+
+    bad_custody = []
+    for cid, inst, label, path_s, sha in conn.execute(
+            "SELECT id, institution_id, doc_label, content_path, sha256 "
+            "FROM commitments").fetchall():
+        fp = Path(path_s)
+        if not fp.exists():
+            bad_custody.append((cid, inst, label, "missing"))
+            continue
+        try:
+            actual = _hashlib.sha256(fp.read_bytes()).hexdigest()
+        except OSError as exc:
+            bad_custody.append((cid, inst, label, f"unreadable: {exc}"))
+            continue
+        if actual != sha:
+            bad_custody.append((cid, inst, label, "sha256 mismatch"))
+    problems["commitments_custody"] = bad_custody
+
     rows = conn.execute(
         "SELECT id, agency, company_name FROM enforcement_actions "
         "WHERE resolution_type = 'unverified' OR primary_ref = ''"

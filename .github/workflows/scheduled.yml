@@ -26,6 +26,19 @@ jobs:
           path: data/glasshouse.db
           key: ledger-${{ github.run_id }}
           restore-keys: ledger-
+      # The captured policy bytes get their OWN cache key. They are the one
+      # artefact no future run can re-fetch once a source URL rots, and the
+      # ledger is ~1.7GB against a 10GB repo cache limit — sharing a key would
+      # let the database's eviction pressure silently take the archive with it.
+      # Without this the daily capture wrote the snapshots onto the runner and
+      # discarded them at teardown, leaving content_path rows pointing at files
+      # that would never exist again. integrity_check() now fails loudly on that.
+      - name: Restore commitment snapshots
+        uses: actions/cache@v4
+        with:
+          path: data/commitments
+          key: commitments-${{ github.run_id }}
+          restore-keys: commitments-
       - name: Daily event scan
         # Must not be able to skip the policy capture below it: this step runs
         # several network ingests under `bash -e`, and any raise would abort the
