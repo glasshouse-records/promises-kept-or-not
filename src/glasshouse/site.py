@@ -1051,6 +1051,9 @@ def _build_institution(conn, out_dir, r, findings) -> int:
         body += (f"<p class=kicker>Paper trail</p><h2>Every version of its own words</h2>"
                  f"<p class=secnote>Each node is a distinct archived version of the "
                  f"institution's policy (teal = Wayback Machine, red = live fetch). "
+                 f"<strong>Dates are capture dates, not publication dates</strong> — "
+                 f"they establish that the text was public by that day. A policy is "
+                 f"routinely archived months after it takes effect. "
                  f"Sentence-level differences are documented in the change log below.</p>"
                  f"<div class='card r'>{_timeline_svg(versions)}</div>")
 

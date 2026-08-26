@@ -81,6 +81,12 @@ def policy_versions(conn: sqlite3.Connection, inst_id: str) -> list[dict]:
         last_sha[r["doc_label"]] = ident(r)
         out.append({"doc_label": r["doc_label"], "url": r["url"], "sha256": r["sha256"],
                     "content_path": r["content_path"], "version": r["version"],
+                    # `captured` names what this date IS: the day the document was
+                    # archived, not the day the institution published it. Across the
+                    # Wayback captures the two differ by a median of 98 days and by
+                    # up to 342, so a bare date invites the cheapest rebuttal there
+                    # is. Its evidentiary job is a FLOOR — public by this date.
+                    "captured": r["version"],
                     "wayback": bool(r["wayback_timestamp"])})
     return out
 
@@ -213,14 +219,19 @@ def timeline_markdown(t: dict) -> str:
     lines = [f"# {t['name']} — policy language over time", "",
              "Facts of record. Each entry cites the archived document versions in "
              "which the quoted language is, or is no longer, present. Verify against "
-             "the linked sources; interpretation is the reader's.", ""]
+             "the linked sources; interpretation is the reader's.", "",
+             "**Dates are archive CAPTURE dates**, not publication dates — the day "
+             "the document was archived, which establishes only that the text was "
+             "public by then. A policy is routinely captured months after it takes "
+             "effect (median 98 days across this archive, up to 342), so where the "
+             "document states its own effective date, that date governs.", ""]
     for th, data in sorted(t["themes"].items()):
         if not data["events"]:
             continue
         lines.append(f"## {th}")
         for ev in data["events"]:
             frm, to = ev["from"], ev["to"]
-            lines.append(f"- **{ev['doc_label']}**, version `{frm['version']}` → "
+            lines.append(f"- **{ev['doc_label']}**, version captured `{frm['version']}` → "
                          f"`{to['version']}` ([earlier]({frm['url']}), [later]({to['url']})):")
             for s in ev["removed"]:
                 lines.append(f"  - present in `{frm['version']}`, not present in "
