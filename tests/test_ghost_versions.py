@@ -155,3 +155,21 @@ def test_unreadable_pdf_failure_is_cached(tmp_path, caplog):
         assert extract_text(p) == ""
         second = len([r for r in caplog.records if "extraction failed" in r.message])
     assert first == 1 and second == 1, "the failure must be parsed once and remembered"
+
+
+def test_run_all_builds_the_vote_matrix_once(conn, monkeypatch):
+    """run_all() is the obvious entry point to the detector library, and it
+    silently rebuilt the 3.7M-row vote matrix once PER DETECTOR — nine full
+    scans. Callers that knew to pass matrix= (the site, the workbench) were
+    fast; everyone else, including `scorecards`, paid nine times over."""
+    from glasshouse import detectors, investigate
+    calls = []
+    real = investigate.build_matrix
+
+    def counted(c, *a, **k):
+        calls.append(1)
+        return real(c, *a, **k)
+
+    monkeypatch.setattr(investigate, "build_matrix", counted)
+    detectors.run_all(conn)
+    assert len(calls) <= 1, f"one shared matrix per run_all, not {len(calls)}"

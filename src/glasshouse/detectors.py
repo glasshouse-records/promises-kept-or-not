@@ -949,12 +949,26 @@ def registry() -> dict[str, Detector]:
     return {d.id: d for d in _DETECTORS}
 
 
+def _shared_matrix(conn: sqlite3.Connection, kw: dict) -> dict:
+    """Build the say-vs-do matrix ONCE for a whole-library pass.
+
+    Every detector falls back to investigate.build_matrix() when handed no
+    matrix, and that is a full scan of 3.7M vote rows. Callers who knew to pass
+    matrix= were fast; run_all() and scorecards() did not, so the obvious entry
+    point to the library rescanned the votes once per detector."""
+    if kw.get("matrix") is None:
+        kw["matrix"] = investigate.build_matrix(conn)
+    return kw
+
+
 def run_all(conn: sqlite3.Connection, **kw) -> dict[str, list[Lead]]:
     """Run every detector; return leads grouped by detector id. Reads only."""
+    kw = _shared_matrix(conn, dict(kw))
     return {d.id: d.run(conn, **kw) for d in _DETECTORS}
 
 
 def scorecards(conn: sqlite3.Connection, **kw) -> list[dict]:
     """Every detector's self-describing scorecard — the catalogue of what the
     tool can find and why each finding can be trusted."""
+    kw = _shared_matrix(conn, dict(kw))
     return [d.scorecard(conn, **kw) for d in _DETECTORS]
