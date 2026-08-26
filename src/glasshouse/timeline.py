@@ -58,20 +58,27 @@ def policy_versions(conn: sqlite3.Connection, inst_id: str) -> list[dict]:
     document lineage. Version date = wayback timestamp when present, else the
     retrieval date."""
     rows = conn.execute(
-        """SELECT doc_label, url, sha256, content_path, wayback_timestamp,
+        """SELECT doc_label, url, sha256, text_sha256, content_path, wayback_timestamp,
                   CASE WHEN wayback_timestamp != '' THEN substr(wayback_timestamp, 1, 8)
                        ELSE replace(substr(retrieval_date, 1, 10), '-', '') END AS version
            FROM commitments WHERE institution_id = ?
            ORDER BY doc_label, version, wayback_timestamp, id""", (inst_id,))
+    # Identity is the POLICY TEXT, never the bytes: a CDN beacon token changes
+    # the sha256 on every fetch of an unchanged policy, which put ten "versions"
+    # of one BNY document into this lineage. text_sha256 is '' only when the
+    # text could not be read — then bytes are all we have.
+    def ident(r) -> str:
+        return r["text_sha256"] or "raw:" + r["sha256"]
+
     # Dedupe CONSECUTIVE identical content within one lineage only. A version
     # whose content REAPPEARS later (removed, then restored) must survive, or
     # the public record's last word stays a removal the manager reversed.
     last_sha: dict[str, str] = {}
     out = []
     for r in rows:
-        if last_sha.get(r["doc_label"]) == r["sha256"]:
+        if last_sha.get(r["doc_label"]) == ident(r):
             continue
-        last_sha[r["doc_label"]] = r["sha256"]
+        last_sha[r["doc_label"]] = ident(r)
         out.append({"doc_label": r["doc_label"], "url": r["url"], "sha256": r["sha256"],
                     "content_path": r["content_path"], "version": r["version"],
                     "wayback": bool(r["wayback_timestamp"])})

@@ -81,10 +81,16 @@ _SENTENCE_SPLIT = re.compile(r"(?<=[.;])\d{0,3}\s+")
 def extract_text(pdf_path: Path) -> str:
     """Plain text of a commitment PDF (best-effort; pypdf). Cached as a
     sibling .txt so policy diffs and quote lookups are cheap."""
-    txt_path = pdf_path.with_suffix(pdf_path.suffix + ".txt")
+    # Cache suffix is versioned: every .txt written before 2026-08-26 holds
+    # RAW HTML for html sources (25,479 chars of BNY page source for 2,851
+    # chars of policy), which the commitment scorer then read as prose.
+    txt_path = pdf_path.with_suffix(pdf_path.suffix + ".v2.txt")
     if txt_path.exists():
         return txt_path.read_text(errors="replace")
-    if pdf_path.suffix.lower() in (".html", ".txt"):
+    if pdf_path.suffix.lower() in (".html", ".htm", ".xhtml"):
+        from .ingest.commitments import html_to_text
+        text = html_to_text(pdf_path.read_text(errors="replace"))
+    elif pdf_path.suffix.lower() == ".txt":
         text = pdf_path.read_text(errors="replace")
     else:
         from pypdf import PdfReader
@@ -93,8 +99,14 @@ def extract_text(pdf_path: Path) -> str:
             text = "\n".join((page.extract_text() or "") for page in reader.pages)
         except Exception as exc:
             logger.warning("text extraction failed for %s: %s", pdf_path.name, exc)
-            return ""
-    txt_path.write_text(text)
+            # Remember the failure. A corrupt PDF (T. Rowe Price's 2023 capture
+            # is truncated) is otherwise re-parsed on every call, which took a
+            # detector pass from ~26s past ten minutes.
+            text = ""
+    try:
+        txt_path.write_text(text)
+    except OSError as exc:                       # read-only archive: still usable
+        logger.warning("could not cache extracted text for %s: %s", pdf_path.name, exc)
     return text
 
 
@@ -351,12 +363,26 @@ def find_commitment_vote_contradictions(
     # All commitment versions, grouped by document and sorted oldest→newest.
     versions: dict[tuple[str, str], list[sqlite3.Row]] = {}
     for d in conn.execute(
-        """SELECT c.institution_id, c.doc_label, c.url, c.sha256, c.content_path,
+        """SELECT c.institution_id, c.doc_label, c.url, c.sha256, c.text_sha256,
+                  c.content_path,
                   COALESCE(NULLIF(c.wayback_timestamp,''), c.retrieval_date) AS version
            FROM commitments c"""):
         versions.setdefault((d["institution_id"], d["doc_label"]), []).append(d)
     for vs in versions.values():
         vs.sort(key=lambda d: _yyyymmdd(d["version"]))
+    # Collapse byte-distinct captures of identical policy TEXT before anything
+    # diffs version N against N+1 — otherwise a CDN beacon token manufactures a
+    # "policy edit" out of a document compared with itself.
+    for key, vs in list(versions.items()):
+        seen: set[str] = set()
+        kept = []
+        for d in vs:
+            ident = d["text_sha256"] or "raw:" + d["sha256"]
+            if ident in seen:
+                continue
+            seen.add(ident)
+            kept.append(d)
+        versions[key] = kept
 
     # The best promissory, non-discretionary quote for (version, theme),
     # cached so each PDF is parsed once.

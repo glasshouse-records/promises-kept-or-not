@@ -136,7 +136,7 @@ def pipeline_status(conn: sqlite3.Connection) -> list[dict]:
     votes = one("SELECT COUNT(*) FROM votes WHERE is_duplicate=0")
     holdings = one("SELECT COUNT(*) FROM holdings")
     enf = one("SELECT COUNT(*) FROM enforcement_actions WHERE is_duplicate=0")
-    commits = one("SELECT COUNT(DISTINCT sha256) FROM commitments")
+    commits = one("SELECT COUNT(DISTINCT CASE WHEN text_sha256='' THEN 'raw:'||sha256 ELSE text_sha256 END) FROM commitments")
     insts = one("SELECT COUNT(DISTINCT institution_id) FROM filings "
                 "WHERE institution_id IS NOT NULL")
     cands = one("SELECT COUNT(*) FROM findings WHERE status='pending'")

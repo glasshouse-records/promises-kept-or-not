@@ -903,7 +903,8 @@ def _write_institution_feeds(conn, out_dir, insts, findings) -> None:
                 f"{_e(p['commitment_quote'][:200])} | N-PX {_e(p['accession'])}</content></entry>")
         for d in conn.execute(
                 "SELECT doc_label, sha256, retrieval_date FROM commitments "
-                "WHERE institution_id=? GROUP BY sha256 ORDER BY id DESC LIMIT 10", (r["id"],)):
+                "WHERE institution_id=? GROUP BY CASE WHEN text_sha256='' THEN 'raw:'||sha256 ELSE text_sha256 END "
+                "ORDER BY id DESC LIMIT 10", (r["id"],)):
             entries.append(
                 f"<entry><title>Policy version: {_e(d['doc_label'])}</title>"
                 f"<id>urn:glasshouse:doc:{_e(d['sha256'][:16])}</id>"
@@ -1037,7 +1038,8 @@ def _build_institution(conn, out_dir, r, findings) -> int:
     docs = conn.execute(
         """SELECT doc_label, sha256, wayback_timestamp,
                   COALESCE(NULLIF(wayback_timestamp,''), retrieval_date) AS version
-           FROM commitments WHERE institution_id=? GROUP BY sha256 ORDER BY version""",
+           FROM commitments WHERE institution_id=?
+           GROUP BY CASE WHEN text_sha256='' THEN 'raw:'||sha256 ELSE text_sha256 END ORDER BY version""",
         (inst_id,)).fetchall()
     if docs:
         versions = []

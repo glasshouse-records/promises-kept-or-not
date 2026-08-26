@@ -24,6 +24,7 @@ import logging
 import re
 import sqlite3
 from datetime import date
+from html import unescape
 from pathlib import Path
 
 from .. import http
@@ -76,6 +77,70 @@ def looks_like_error_page(content: bytes, content_type: str = "") -> bool:
     return any(sig in hay for sig in _ERROR_SIGNATURES)
 
 
+# --- Version identity -------------------------------------------------------
+# A "version" is a change in what the institution SAYS, not a change in bytes.
+# BNY's policy page is served behind Akamai, whose mPulse beacon carries a
+# per-REQUEST token: two captures of an unchanged policy hash differently.
+# Deduping on raw bytes therefore filed phantom versions (8 of BNY's 10), and
+# with a daily capture cron that would compound every single day. Raw sha256
+# still records byte-integrity of what we stored; THIS decides what counts as
+# a new version.
+
+_SCRIPT_STYLE = re.compile(r"(?is)<(script|style|noscript)\b.*?</\1\s*>")
+_TAG = re.compile(r"(?s)<[^>]+>")
+_MIN_TEXT = 200        # below this, extraction is untrustworthy — see policy_text()
+
+
+def html_to_text(raw: str) -> str:
+    """Visible prose from an HTML page: no markup, no script bodies.
+
+    Used on both sides of the archive — the capture path (to decide what is a
+    new version) and the analysis path (the commitment scorer must weigh
+    promise language, not navigation markup)."""
+    txt = _SCRIPT_STYLE.sub(" ", raw)
+    txt = _TAG.sub(" ", txt)
+    txt = unescape(txt)
+    return re.sub(r"\s+", " ", txt).strip()
+
+
+def policy_text(content: bytes, content_type: str = "", url: str = "") -> str:
+    """The readable policy text of a snapshot, or '' if it can't be read.
+
+    An empty return is deliberate and load-bearing: callers must fall back to
+    byte identity rather than treat every unreadable document as the same
+    version. Over-counting versions is recoverable; silently merging two
+    genuinely different policies is not."""
+    ext = _ext_for(content_type, url)
+    if ext == ".pdf":
+        try:
+            from io import BytesIO
+
+            from pypdf import PdfReader
+
+            reader = PdfReader(BytesIO(content))
+            text = "\n".join((page.extract_text() or "") for page in reader.pages)
+        except Exception as exc:
+            logger.warning("policy-text extraction failed (%s): %s", url, exc)
+            return ""
+        return re.sub(r"\s+", " ", text).strip()
+    raw = content.decode("utf-8", "replace")
+    base = (content_type or "").split(";")[0].strip().lower()
+    if base in ("text/html", "application/xhtml+xml") or raw.lstrip()[:200].lower().startswith(
+            ("<!doctype html", "<html")):
+        return html_to_text(raw)
+    return re.sub(r"\s+", " ", raw).strip()
+
+
+def version_identity(content: bytes, content_type: str = "", url: str = "") -> tuple[str, str]:
+    """(raw_sha256, text_sha256). text_sha256 is '' when the text could not be
+    read or is too short to trust — the caller then dedupes on bytes."""
+    raw_sha = hashlib.sha256(content).hexdigest()
+    text = policy_text(content, content_type, url)
+    if len(text) < _MIN_TEXT:
+        return raw_sha, ""
+    return raw_sha, hashlib.sha256(text.encode()).hexdigest()
+
+
 def record_snapshot(conn: sqlite3.Connection, institution_id: str, doc_label: str,
                     url: str, content: bytes, content_type: str = "",
                     wayback_timestamp: str = "",
@@ -87,12 +152,22 @@ def record_snapshot(conn: sqlite3.Connection, institution_id: str, doc_label: st
         logger.warning("%s/%s: content looks like an error page (rotted URL?) — "
                         "not recording as a policy version", institution_id, doc_label)
         return False
-    sha = hashlib.sha256(content).hexdigest()
-    exists = conn.execute(
-        "SELECT 1 FROM commitments WHERE institution_id=? AND doc_label=? "
-        "AND sha256=? AND wayback_timestamp=?",
-        (institution_id, doc_label, sha, wayback_timestamp),
-    ).fetchone()
+    sha, text_sha = version_identity(content, content_type, url)
+    if text_sha:
+        # Same words already on file for this document = not a new version,
+        # whatever the bytes say. Deliberately NOT scoped to wayback_timestamp:
+        # a Wayback capture that reproduces text we already hold is the same
+        # version of the policy, filed from a different place.
+        exists = conn.execute(
+            "SELECT 1 FROM commitments WHERE institution_id=? AND doc_label=? "
+            "AND text_sha256=?", (institution_id, doc_label, text_sha)).fetchone()
+    else:
+        # Unreadable (scanned PDF, extraction failure): fall back to bytes.
+        # Over-counting is recoverable; merging two real policies is not.
+        exists = conn.execute(
+            "SELECT 1 FROM commitments WHERE institution_id=? AND doc_label=? "
+            "AND sha256=? AND wayback_timestamp=?",
+            (institution_id, doc_label, sha, wayback_timestamp)).fetchone()
     if exists:
         return False
 
@@ -104,17 +179,53 @@ def record_snapshot(conn: sqlite3.Connection, institution_id: str, doc_label: st
 
     conn.execute(
         "INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
-        "sha256, content_path, content_type, size_bytes, wayback_timestamp) "
-        "VALUES (?,?,?,?,?,?,?,?,?)",
+        "sha256, content_path, content_type, size_bytes, wayback_timestamp, "
+        "text_sha256) VALUES (?,?,?,?,?,?,?,?,?,?)",
         (institution_id, doc_label, url, retrieval_date or date.today().isoformat(),
-         sha, str(dest), content_type, len(content), wayback_timestamp),
+         sha, str(dest), content_type, len(content), wayback_timestamp, text_sha),
     )
     conn.commit()
     return True
 
 
+def backfill_text_hashes(conn: sqlite3.Connection) -> int:
+    """Give every already-archived snapshot its text hash. Returns rows filled.
+
+    Without this the dedupe added 2026-08-26 compares each new capture against
+    a history of empty hashes, so the first capture of every CDN-served page
+    would still land as a phantom version. Idempotent; safe to call on every
+    run. Never rewrites an existing hash and never deletes a row — the
+    duplicates already on file stay as provenance of what we fetched, and the
+    honest version count is COUNT(DISTINCT text_sha256)."""
+    todo = conn.execute(
+        "SELECT id, content_path, content_type, url FROM commitments "
+        "WHERE text_sha256 = ''").fetchall()
+    filled = 0
+    for row in todo:
+        path = Path(row["content_path"] if isinstance(row, sqlite3.Row) else row[1])
+        if not path.exists():
+            continue
+        try:
+            content = path.read_bytes()
+        except OSError as exc:
+            logger.warning("backfill: cannot read %s: %s", path, exc)
+            continue
+        _raw, text_sha = version_identity(
+            content,
+            row["content_type"] if isinstance(row, sqlite3.Row) else row[2],
+            row["url"] if isinstance(row, sqlite3.Row) else row[3])
+        if not text_sha:
+            continue                      # unreadable: stays on byte identity
+        conn.execute("UPDATE commitments SET text_sha256=? WHERE id=?",
+                     (text_sha, row["id"] if isinstance(row, sqlite3.Row) else row[0]))
+        filled += 1
+    conn.commit()
+    return filled
+
+
 def fetch_live(conn: sqlite3.Connection, institutions: dict[str, dict]) -> dict[str, int]:
     """Fetch the current version of every configured commitment document."""
+    backfill_text_hashes(conn)   # history must be comparable before we compare
     new_versions: dict[str, int] = {}
     for inst_id, inst in institutions.items():
         for doc in inst.get("commitments", []):

@@ -19,6 +19,7 @@ import subprocess
 from datetime import date
 
 from . import __version__
+from .ledger import iso_meeting_date
 from .publish import PUBLIC_TABLES
 
 # Per-table, per-column human descriptions — the public contract. Only public
@@ -67,21 +68,29 @@ DATA_DICTIONARY: dict[str, dict] = {
 }
 
 
+# Coverage bounds are PUBLISHED — they tell a consumer the dataset's real
+# boundaries. Sorted as stored they were off by six months.
+_ISO = iso_meeting_date("v.meeting_date")
+
+
 def coverage(conn: sqlite3.Connection) -> list[dict]:
     """Honest per-institution coverage — what's actually in the dataset, so a
     consumer knows the boundaries (a partial snapshot stated as partial)."""
     rows = []
     for inst in conn.execute("SELECT id, display_name FROM institutions ORDER BY id"):
         npx = conn.execute(
-            "SELECT COUNT(DISTINCT f.accession) n, MIN(v.meeting_date) lo, "
-            "MAX(v.meeting_date) hi, COUNT(*) rows FROM filings f "
+            f"SELECT COUNT(DISTINCT f.accession) n, MIN({_ISO}) lo, "
+            f"MAX({_ISO}) hi, COUNT(*) rows FROM filings f "
             "JOIN votes v ON v.accession=f.accession "
             "WHERE f.institution_id=? AND v.is_duplicate=0", (inst["id"],)).fetchone()
         hold = conn.execute(
             "SELECT COUNT(*) FROM holdings h JOIN filings f ON f.accession=h.accession "
             "WHERE f.institution_id=?", (inst["id"],)).fetchone()[0]
         docs = conn.execute(
-            "SELECT COUNT(DISTINCT sha256) FROM commitments WHERE institution_id=?",
+            # Version identity is the policy TEXT: counting distinct bytes
+            # published 63 "versions" where the archive holds 51.
+            "SELECT COUNT(DISTINCT CASE WHEN text_sha256='' THEN 'raw:'||sha256 ELSE text_sha256 END) "
+            "FROM commitments WHERE institution_id=?",
             (inst["id"],)).fetchone()[0]
         if not (npx["n"] or hold or docs):
             continue  # registered but not yet ingested — omit from coverage

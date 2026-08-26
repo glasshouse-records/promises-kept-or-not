@@ -12,6 +12,7 @@ import sqlite3
 from dataclasses import dataclass
 
 from .entities import normalize_name
+from .ledger import iso_meeting_date
 
 # Heuristic for shareholder-proposal votes: management recommended AGAINST
 # and the proposal text reads like a shareholder resolution.
@@ -180,9 +181,9 @@ def flagged_votes(conn: sqlite3.Connection, *, shareholder_proposals_only: bool 
           -- false-positive class ("ALDAR PROPERTIES" SDN ≠ Aldar PJSC). Drop
           -- them from this name-join (43 pure collisions in the live data).
           AND e.resolution_type != 'sanction_designation'
-        ORDER BY e.resolution_type != 'unverified' DESC, v.meeting_date DESC
+        ORDER BY e.resolution_type != 'unverified' DESC, {ISO_V} DESC
         LIMIT ?
-    """
+    """.format(ISO_V=iso_meeting_date("v.meeting_date"))
     rows = conn.execute(sql, (limit,)).fetchall()
     out = []
     for r in rows:

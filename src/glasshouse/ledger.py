@@ -20,6 +20,21 @@ from .http import DATA_DIR
 
 DB_PATH = DATA_DIR / "glasshouse.db"
 
+# N-PX reports meeting dates as US 'MM/DD/YYYY'. Stored verbatim — that is
+# what the source said, and provenance outranks convenience — but NEVER sorted
+# or compared as stored: '12/31/2024' > '06/30/2025' lexicographically. On the
+# live ledger MAX(meeting_date) returned 12/31/2024 while the latest meeting
+# was 2025-06-30, so published coverage bounds were wrong and every
+# "most recent evidence" LIMIT picked the wrong rows. Sort on this instead.
+# The GLOB guard passes any value already in ISO through untouched.
+def iso_meeting_date(col: str = "meeting_date") -> str:
+    return (f"CASE WHEN {col} GLOB '[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]' "
+            f"THEN substr({col},7,4)||'-'||substr({col},1,2)||'-'||substr({col},4,2) "
+            f"ELSE {col} END")
+
+
+ISO_MEETING_DATE = iso_meeting_date()
+
 # Legally distinct outcomes — never collapsed. See METHODOLOGY.md.
 RESOLUTION_TYPES = frozenset({
     "guilty_plea",
@@ -199,6 +214,10 @@ CREATE TABLE IF NOT EXISTS commitments (
     content_type      TEXT,
     size_bytes        INTEGER,
     wayback_timestamp TEXT NOT NULL DEFAULT '',  -- '' = live fetch
+    -- Version identity is the POLICY TEXT, not the bytes: CDN beacons
+    -- (Akamai mPulse) carry a per-request token, so raw sha256 changes
+    -- on every fetch of an unchanged policy. '' = text unreadable.
+    text_sha256       TEXT NOT NULL DEFAULT '',
     UNIQUE (institution_id, doc_label, sha256, wayback_timestamp)
 );
 
@@ -248,6 +267,11 @@ def _migrate(conn: sqlite3.Connection) -> None:
     if "is_duplicate" not in ecols:
         conn.execute("ALTER TABLE enforcement_actions ADD COLUMN is_duplicate "
                      "INTEGER NOT NULL DEFAULT 0")
+        conn.commit()
+    ccols = {r[1] for r in conn.execute("PRAGMA table_info(commitments)")}
+    if "text_sha256" not in ccols:
+        conn.execute("ALTER TABLE commitments ADD COLUMN text_sha256 "
+                     "TEXT NOT NULL DEFAULT ''")
         conn.commit()
     ocols = {r[1] for r in conn.execute("PRAGMA table_info(outreach)")}
     if "finding_fingerprint" not in ocols:

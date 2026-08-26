@@ -19,6 +19,7 @@ import time
 
 from .. import http
 from ..entities import upsert_entity
+from ..ledger import iso_meeting_date
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ def enrich_from_votes(conn: sqlite3.Connection, limit: int | None = None) -> dic
     first, skipping CUSIPs already linked to an entity.
     """
     pairs = conn.execute(
-        """SELECT v.isin, v.cusip, MAX(v.meeting_date) AS last_meeting
+        f"""SELECT v.isin, v.cusip, MAX({iso_meeting_date("v.meeting_date")}) AS last_meeting
            FROM votes v
            LEFT JOIN entity_cusips ec ON ec.cusip = v.cusip
            WHERE v.isin != '' AND v.cusip != '' AND ec.cusip IS NULL
