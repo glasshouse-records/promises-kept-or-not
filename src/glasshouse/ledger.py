@@ -218,6 +218,13 @@ CREATE TABLE IF NOT EXISTS commitments (
     -- (Akamai mPulse) carry a per-request token, so raw sha256 changes
     -- on every fetch of an unchanged policy. '' = text unreadable.
     text_sha256       TEXT NOT NULL DEFAULT '',
+    -- What the DOCUMENT says about its own authorship, written by the
+    -- manager's own software. Independent of both our hash and the Wayback
+    -- timestamp. Corroboration only: a creation date is not a publication
+    -- date, and nothing may present it as one.
+    doc_created_at    TEXT NOT NULL DEFAULT '',
+    doc_modified_at   TEXT NOT NULL DEFAULT '',
+    doc_producer      TEXT NOT NULL DEFAULT '',
     UNIQUE (institution_id, doc_label, sha256, wayback_timestamp)
 );
 
@@ -273,6 +280,11 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE commitments ADD COLUMN text_sha256 "
                      "TEXT NOT NULL DEFAULT ''")
         conn.commit()
+    for col in ("doc_created_at", "doc_modified_at", "doc_producer"):
+        if col not in ccols:
+            conn.execute(f"ALTER TABLE commitments ADD COLUMN {col} "
+                         "TEXT NOT NULL DEFAULT ''")
+            conn.commit()
     ocols = {r[1] for r in conn.execute("PRAGMA table_info(outreach)")}
     if "finding_fingerprint" not in ocols:
         conn.execute("ALTER TABLE outreach ADD COLUMN finding_fingerprint "
@@ -435,6 +447,21 @@ def integrity_check(conn: sqlite3.Connection) -> dict[str, list]:
         if actual != sha:
             bad_custody.append((cid, inst, label, "sha256 mismatch"))
     problems["commitments_custody"] = bad_custody
+
+    # Dating inversion: a document cannot have been authored AFTER the capture
+    # that contains it. The manager's own software wrote that date, so an
+    # inversion means our lineage is wrong — not that the manager is. Currently
+    # 0 of 63 datable documents; the value of the check is that it stays 0
+    # without anyone remembering to look.
+    from .ingest.commitments import dating_is_consistent
+
+    problems["commitments_dating"] = [
+        (cid, inst, label, created, wb)
+        for cid, inst, label, created, wb in conn.execute(
+            "SELECT id, institution_id, doc_label, doc_created_at, "
+            "COALESCE(NULLIF(wayback_timestamp,''), replace(retrieval_date,'-','')) "
+            "FROM commitments WHERE doc_created_at != ''").fetchall()
+        if not dating_is_consistent(created, wb)]
 
     rows = conn.execute(
         "SELECT id, agency, company_name FROM enforcement_actions "

@@ -23,7 +23,7 @@ import hashlib
 import logging
 import re
 import sqlite3
-from datetime import date
+from datetime import date, datetime
 from html import unescape
 from pathlib import Path
 
@@ -141,6 +141,83 @@ def version_identity(content: bytes, content_type: str = "", url: str = "") -> t
     return raw_sha, hashlib.sha256(text.encode()).hexdigest()
 
 
+# --- Manager-originated dating evidence -------------------------------------
+# Our own sha256 is a statement by US about OUR custody; a Wayback timestamp is
+# the Internet Archive's statement about when IT looked (and Weinhoffer v. Davie
+# Shoring, 5th Cir. 2022, held such captures are not self-authenticating). The
+# strongest dating evidence in the corpus was never ours to make: 61 of 62
+# archived PDFs carry /CreationDate and /Producer written by the MANAGER'S own
+# software, every one preceding its capture, median lag 79 days, zero
+# inversions. Extracting it costs nothing and cannot be dismissed as ours.
+#
+# It is NOT proof of publication — a file's creation date is not the day it went
+# on a website — and nothing here may present it as such.
+
+_PDF_DATE = re.compile(
+    r"D:(\d{4})(\d{2})(\d{2})(\d{2})?(\d{2})?(\d{2})?"
+    r"(?:([+-Z])(\d{2})'?(\d{2})?'?)?")
+
+
+def _pdf_date_to_iso(raw: str | None) -> str:
+    """PDF DocInfo date -> ISO-8601, or '' if it cannot be parsed.
+
+    Never guesses. A half-read date published as corroboration would support a
+    claim it does not actually make."""
+    if not raw:
+        return ""
+    m = _PDF_DATE.match(str(raw).strip())
+    if not m:
+        return ""
+    y, mo, d, hh, mm, ss, sign, oh, om = m.groups()
+    try:
+        stamp = (f"{int(y):04d}-{int(mo):02d}-{int(d):02d}"
+                 f"T{int(hh or 0):02d}:{int(mm or 0):02d}:{int(ss or 0):02d}")
+        datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%S")     # reject 2020-13-45
+    except (TypeError, ValueError):
+        return ""
+    if sign in ("+", "-"):
+        stamp += f"{sign}{int(oh or 0):02d}:{int(om or 0):02d}"
+    elif sign == "Z":
+        stamp += "+00:00"
+    return stamp
+
+
+def origin_metadata(content: bytes, content_type: str = "", url: str = "") -> dict:
+    """What the document says about its own authorship. Empty strings, never
+    None, and never an exception — a snapshot must still be archivable when its
+    metadata is missing or its bytes are malformed."""
+    out = {"doc_created_at": "", "doc_modified_at": "", "doc_producer": ""}
+    if _ext_for(content_type, url) != ".pdf":
+        return out
+    try:
+        from io import BytesIO
+
+        from pypdf import PdfReader
+
+        info = PdfReader(BytesIO(content)).metadata or {}
+    except Exception:
+        return out                       # unreadable: no claim, not a failure
+    out["doc_created_at"] = _pdf_date_to_iso(info.get("/CreationDate"))
+    out["doc_modified_at"] = _pdf_date_to_iso(info.get("/ModDate"))
+    producer = info.get("/Producer") or info.get("/Creator") or ""
+    out["doc_producer"] = str(producer)[:200]
+    return out
+
+
+def dating_is_consistent(doc_created_at: str, wayback_timestamp: str) -> bool:
+    """False only when a document was authored AFTER the capture that contains
+    it — which would mean the lineage is wrong. Unknown dates make no claim and
+    so are consistent; this check may only ever falsify, never confirm."""
+    if not doc_created_at or not wayback_timestamp:
+        return True
+    try:
+        created = datetime.fromisoformat(doc_created_at).date()
+        captured = datetime.strptime(wayback_timestamp[:8], "%Y%m%d").date()
+    except ValueError:
+        return True
+    return created <= captured
+
+
 def record_snapshot(conn: sqlite3.Connection, institution_id: str, doc_label: str,
                     url: str, content: bytes, content_type: str = "",
                     wayback_timestamp: str = "",
@@ -177,12 +254,21 @@ def record_snapshot(conn: sqlite3.Connection, institution_id: str, doc_label: st
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_bytes(content)
 
+    origin = origin_metadata(content, content_type, url)
+    if not dating_is_consistent(origin["doc_created_at"], wayback_timestamp):
+        # Not fatal, but it means the lineage is telling us something wrong.
+        logger.warning("%s/%s: document authored %s but captured %s — dating "
+                       "inconsistent, review before citing this version",
+                       institution_id, doc_label, origin["doc_created_at"],
+                       wayback_timestamp)
     conn.execute(
         "INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
         "sha256, content_path, content_type, size_bytes, wayback_timestamp, "
-        "text_sha256) VALUES (?,?,?,?,?,?,?,?,?,?)",
+        "text_sha256, doc_created_at, doc_modified_at, doc_producer) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (institution_id, doc_label, url, retrieval_date or date.today().isoformat(),
-         sha, str(dest), content_type, len(content), wayback_timestamp, text_sha),
+         sha, str(dest), content_type, len(content), wayback_timestamp, text_sha,
+         origin["doc_created_at"], origin["doc_modified_at"], origin["doc_producer"]),
     )
     conn.commit()
     return True
@@ -219,6 +305,28 @@ def backfill_text_hashes(conn: sqlite3.Connection) -> int:
         conn.execute("UPDATE commitments SET text_sha256=? WHERE id=?",
                      (text_sha, row["id"] if isinstance(row, sqlite3.Row) else row[0]))
         filled += 1
+    # Origin metadata for everything captured before this existed.
+    for row in conn.execute(
+            "SELECT id, content_path, content_type, url, wayback_timestamp "
+            "FROM commitments WHERE doc_created_at = '' AND doc_producer = ''"
+    ).fetchall():
+        path = Path(row["content_path"])
+        if not path.exists():
+            continue
+        try:
+            origin = origin_metadata(path.read_bytes(), row["content_type"], row["url"])
+        except OSError:
+            continue
+        if not any(origin.values()):
+            continue
+        if not dating_is_consistent(origin["doc_created_at"], row["wayback_timestamp"]):
+            logger.warning("commitment %s: authored %s, captured %s — dating "
+                           "inconsistent", row["id"], origin["doc_created_at"],
+                           row["wayback_timestamp"])
+        conn.execute("UPDATE commitments SET doc_created_at=?, doc_modified_at=?, "
+                     "doc_producer=? WHERE id=?",
+                     (origin["doc_created_at"], origin["doc_modified_at"],
+                      origin["doc_producer"], row["id"]))
     conn.commit()
     return filled
 

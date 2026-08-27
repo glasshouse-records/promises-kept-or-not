@@ -92,13 +92,21 @@ def coverage(conn: sqlite3.Connection) -> list[dict]:
             "SELECT COUNT(DISTINCT CASE WHEN text_sha256='' THEN 'raw:'||sha256 ELSE text_sha256 END) "
             "FROM commitments WHERE institution_id=?",
             (inst["id"],)).fetchone()[0]
+        # How many of this institution's archived policies carry a date written
+        # by ITS OWN software. That is the only dating evidence in the corpus
+        # that is not ours or the Internet Archive's, so a consumer deciding how
+        # far to trust our timeline needs to see it per institution.
+        dated = conn.execute(
+            "SELECT COUNT(*) FROM commitments WHERE institution_id=? "
+            "AND doc_created_at != ''", (inst["id"],)).fetchone()[0]
         if not (npx["n"] or hold or docs):
             continue  # registered but not yet ingested — omit from coverage
         rows.append({
             "institution": inst["display_name"],
             "npx_filings": npx["n"] or 0, "votes": npx["rows"] or 0,
             "vote_dates": f"{npx['lo']} → {npx['hi']}" if npx["lo"] else "—",
-            "holdings": hold, "policy_versions": docs})
+            "holdings": hold, "policy_versions": docs,
+            "policies_self_dated": dated})
     return rows
 
 
