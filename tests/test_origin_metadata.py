@@ -112,3 +112,32 @@ def test_integrity_check_catches_a_dating_inversion(tmp_path):
     assert ledger.integrity_check(c)["commitments_dating"] == []
     add("2026-01-05T09:00:00+00:00", "20250101000000")     # authored after capture
     assert len(ledger.integrity_check(c)["commitments_dating"]) == 1
+
+
+def test_self_dated_count_uses_the_same_denominator_as_versions(tmp_path):
+    """Published counts must be comparable to each other.
+
+    First cut counted self-dated CAPTURES against distinct VERSIONS, so coverage
+    read "7 self-dated of 5 versions" — a dataset that cannot count its own
+    contents invites the reader to discard everything else in the table."""
+    import hashlib
+
+    from glasshouse import dataset, ledger
+    c = ledger.connect(tmp_path / "t.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('blk','BlackRock')")
+    doc = tmp_path / "p.pdf"
+    doc.write_bytes(b"%PDF-1.4")
+    # one policy version captured three times, each capture self-dated
+    for i in range(3):
+        c.execute(
+            "INSERT INTO commitments (institution_id, doc_label, url, retrieval_date,"
+            " sha256, content_path, content_type, size_bytes, wayback_timestamp,"
+            " text_sha256, doc_created_at) VALUES ('blk','p','https://x/p.pdf',"
+            "'2026-01-01',?,?,'application/pdf',8,?,'SAMETEXT','2020-12-08T00:00:00')",
+            (hashlib.sha256(f"{i}".encode()).hexdigest(), str(doc), f"2020010{i+1}000000"))
+    c.commit()
+    row = next(r for r in dataset.coverage(c) if r["institution"] == "BlackRock")
+    assert row["policy_versions"] == 1
+    assert row["policies_self_dated"] <= row["policy_versions"], (
+        f"{row['policies_self_dated']} self-dated cannot exceed "
+        f"{row['policy_versions']} versions")

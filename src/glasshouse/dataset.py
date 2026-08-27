@@ -96,8 +96,11 @@ def coverage(conn: sqlite3.Connection) -> list[dict]:
         # by ITS OWN software. That is the only dating evidence in the corpus
         # that is not ours or the Internet Archive's, so a consumer deciding how
         # far to trust our timeline needs to see it per institution.
+        # Counted over the SAME identity as policy_versions. Counting captures
+        # here instead published "7 self-dated of 5 versions".
         dated = conn.execute(
-            "SELECT COUNT(*) FROM commitments WHERE institution_id=? "
+            "SELECT COUNT(DISTINCT CASE WHEN text_sha256='' THEN 'raw:'||sha256 "
+            "ELSE text_sha256 END) FROM commitments WHERE institution_id=? "
             "AND doc_created_at != ''", (inst["id"],)).fetchone()[0]
         if not (npx["n"] or hold or docs):
             continue  # registered but not yet ingested — omit from coverage
