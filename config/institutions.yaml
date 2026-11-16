@@ -60,8 +60,13 @@ institutions:
       # URLs verified live before being added; rotted URLs are findings too
       # (the non-response ledger will track disappearing policies).
       - label: investment-stewardship-global-principles
-        url: "https://www.blackrock.com/corporate/literature/fact-sheet/blk-responsible-investment-engprinciples-global.pdf"
-        # verified 2026-06-11: 200, application/pdf
+        url: "https://www.blackrock.com/gls-download/literature/publication/blackrock-investment-stewardship-benchmark-global-principles.pdf"
+        # verified 2026-11-17: 200, application/pdf; linked from blackrock.com's
+        # own "BlackRock Investment Stewardship" page. Text is identical to the
+        # last live capture (same text_sha256), so the series continues unbroken.
+        # Previous URL (verified 2026-06-11, soft-404 since 2026-11-17: 301 to
+        # /gls-download/... then 302 to the site error page):
+        #   https://www.blackrock.com/corporate/literature/fact-sheet/blk-responsible-investment-engprinciples-global.pdf
 
   vanguard:
     display_name: "The Vanguard Group, Inc."
@@ -354,11 +359,21 @@ institutions:
         name: "UBS AM (UBS Asset Management Americas LLC)"
         validated: "2026-06-26"
     commitments:
-      # UBS AM's formal "Corporate Governance and Proxy Voting Policy &
-      # Procedures" (2024), published via ISS's policy repository (repo 254 = UBS).
-      # Verified 2026-06-26 (200, application/pdf). UBS-authored primary source.
+      # UBS AM's formal "Proxy Voting Policy and Procedures" (2026 edition),
+      # published via ISS's policy repository (repo 254 = UBS). UBS-authored
+      # primary source. Verified 2026-11-17 (200, application/pdf, authored
+      # 2026-05-15): this is the file UBS's own VDS dashboard links to, read
+      # from https://vds.issgovernance.com/repo/254/CustomProperties.json.
+      # THE FILENAME CARRIES A YEAR and has not followed a pattern (2024:
+      # ...-policy-procedures-2024.pdf; 2026: ...-policy-2026_FINAL.pdf), so
+      # when this 404s, read the current name from CustomProperties.json
+      # rather than guessing. Previous URL (verified 2026-06-26, 404 since
+      # 2026-11-17):
+      #   https://vds.issgovernance.com/repo/254/policies/corporate-governance-and-proxy-voting-policy-procedures-2024.pdf
+      # NOT a successor: .../policies/UBSGlobalAM-US-NY-Americas.pdf is still
+      # served but was authored in 2017.
       - label: corporate-governance-proxy-voting-policy-procedures
-        url: "https://vds.issgovernance.com/repo/254/policies/corporate-governance-and-proxy-voting-policy-procedures-2024.pdf"
+        url: "https://vds.issgovernance.com/repo/254/policies/corporate-gov-and-proxy-voting-policy-2026_FINAL.pdf"
 
   bnp_paribas:
     display_name: "BNP Paribas Asset Management Holding S.A."

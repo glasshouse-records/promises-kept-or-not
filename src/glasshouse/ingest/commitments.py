@@ -331,10 +331,33 @@ def backfill_text_hashes(conn: sqlite3.Connection) -> int:
     return filled
 
 
+def log_attempt(conn: sqlite3.Connection, institution_id: str, doc_label: str,
+                url: str, outcome: str, detail: str = "") -> None:
+    """Record that a live capture was attempted, and how it ended.
+
+    A policy that has not changed writes no `commitments` row, so without this
+    a page confirmed unchanged today and a page that has been failing for five
+    months look the same to `glasshouse doctor`. Called only after the network
+    call has returned, and committed at once: no lock is held across a wait."""
+    conn.execute(
+        "INSERT INTO capture_attempts (institution_id, doc_label, url, attempted_at, "
+        "outcome, detail) VALUES (?,?,?,?,?,?)",
+        (institution_id, doc_label, url,
+         # Local time with its offset: the date part must agree with
+         # commitments.retrieval_date (date.today()), which the doctor compares it to.
+         datetime.now().astimezone().isoformat(timespec="seconds"), outcome, detail[:300]))
+    conn.commit()
+
+
 def fetch_live(conn: sqlite3.Connection, institutions: dict[str, dict]) -> dict[str, int]:
-    """Fetch the current version of every configured commitment document."""
+    """Fetch the current version of every configured commitment document.
+
+    Returns {inst/label: 1 if new version else 0} for the documents captured;
+    a document whose capture failed is absent from it, warned about in the
+    log, and recorded as a failed attempt for the doctor to find."""
     backfill_text_hashes(conn)   # history must be comparable before we compare
     new_versions: dict[str, int] = {}
+    failed = 0
     for inst_id, inst in institutions.items():
         for doc in inst.get("commitments", []):
             label, url = doc["label"], doc["url"]
@@ -342,6 +365,8 @@ def fetch_live(conn: sqlite3.Connection, institutions: dict[str, dict]) -> dict[
                 resp = http.get(url, timeout=60)
             except Exception as exc:
                 logger.warning("%s/%s fetch failed: %s", inst_id, label, exc)
+                log_attempt(conn, inst_id, label, url, "failed", f"fetch failed: {exc}")
+                failed += 1
                 continue
             ctype = resp.headers.get("Content-Type", "")
             # Soft-404 guard: a .pdf URL answering with HTML is an error page
@@ -350,11 +375,26 @@ def fetch_live(conn: sqlite3.Connection, institutions: dict[str, dict]) -> dict[
             if url.lower().split("?")[0].endswith(".pdf") and "html" in ctype.lower():
                 logger.warning("%s/%s: .pdf URL returned HTML (soft 404) — skipping; "
                                "wayback history may still serve", inst_id, label)
+                log_attempt(conn, inst_id, label, url, "failed",
+                            ".pdf URL returned HTML (soft 404)")
+                failed += 1
+                continue
+            # record_snapshot refuses an error page by returning False — the
+            # same value as "unchanged". It must not be reported as a capture.
+            if looks_like_error_page(resp.content, ctype):
+                logger.warning("%s/%s: live URL served an error page (rotted URL?) — "
+                               "not captured", inst_id, label)
+                log_attempt(conn, inst_id, label, url, "failed", "URL served an error page")
+                failed += 1
                 continue
             is_new = record_snapshot(conn, inst_id, label, url, resp.content, ctype)
+            log_attempt(conn, inst_id, label, url, "new_version" if is_new else "unchanged")
             key = f"{inst_id}/{label}"
             new_versions[key] = int(is_new)
             logger.info("%s: %s", key, "NEW VERSION" if is_new else "unchanged")
+    if failed:
+        logger.warning("%d tracked policy page(s) were NOT captured today; an uncaptured "
+                       "day cannot be back-filled — run `glasshouse doctor`", failed)
     return new_versions
 
 

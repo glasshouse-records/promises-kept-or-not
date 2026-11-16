@@ -22,6 +22,13 @@ _FRESHNESS_DAYS = {
     "DOJ (FCPA)": 45,
     "Federal Reserve": 45,
 }
+# A tracked policy page must be confirmed live at least this often. Capture is
+# a daily chore, so a FAILED attempt is reported the same day regardless; this
+# budget only catches the chore itself having stopped. 14 days matches the
+# tightest source budget above and outlasts a fortnight with the maintainer's
+# machine off, without letting a silent gap in the one record that cannot be
+# back-filled grow past two weeks.
+CAPTURE_BUDGET_DAYS = 14
 _KNOWN_BLOCKED = {
     # Documented in METHODOLOGY source-access notes; listed so the report
     # distinguishes "known blocked, awaiting new access path" from new rot.
@@ -53,6 +60,45 @@ def missing_vote_seasons(conn: sqlite3.Connection, today: date | None = None) ->
             latest[key] = max(latest.get(key, 0), int(year))
     return [{"institution": i, "cik": c, "latest_on_file": y, "expected": expected}
             for (i, c), y in sorted(latest.items()) if y < expected]
+
+
+def capture_health(conn: sqlite3.Connection, institution_id: str, doc_label: str,
+                   today: date | None = None,
+                   budget_days: int = CAPTURE_BUDGET_DAYS) -> tuple[bool, str, str]:
+    """(ok, detail, severity) for one tracked policy document. Read-only.
+
+    Counting snapshots is not enough: an unchanged policy adds no snapshot, so
+    "1 live snapshot on record" was true of a page captured this morning and of
+    one whose URL rotted months ago. Two things are an error: the most recent
+    attempt failed, or nothing has confirmed the page within the budget (the
+    newest of the last successful attempt and the newest live snapshot)."""
+    today = today or _today()
+    n, newest_row = conn.execute(
+        "SELECT COUNT(*), MAX(retrieval_date) FROM commitments WHERE institution_id=? "
+        "AND doc_label=? AND wayback_timestamp=''", (institution_id, doc_label)).fetchone()
+    last = conn.execute(
+        "SELECT attempted_at, outcome, detail, url FROM capture_attempts "
+        "WHERE institution_id=? AND doc_label=? ORDER BY id DESC LIMIT 1",
+        (institution_id, doc_label)).fetchone()
+    last_ok = conn.execute(
+        "SELECT MAX(attempted_at) FROM capture_attempts WHERE institution_id=? "
+        "AND doc_label=? AND outcome != 'failed'", (institution_id, doc_label)).fetchone()[0]
+    confirmed = max((last_ok or "")[:10], newest_row or "")
+    if last and last[1] == "failed":
+        return (False, f"capture FAILED on {last[0][:10]} ({last[2] or 'no detail'}) for "
+                f"{last[3]}; last confirmed live {confirmed or 'never'}. Every uncaptured "
+                f"day is a permanent gap: find the document's current official URL and "
+                f"update config/institutions.yaml (keep the label).", "error")
+    if n == 0:
+        return (False, "no live version ever fetched (wayback-only — live URL likely "
+                "rotted)", "warn")
+    age = (today - date.fromisoformat(confirmed)).days
+    if age > budget_days:
+        return (False, f"last confirmed live {confirmed} ({age}d ago; budget "
+                f"{budget_days}d) — captures have stopped. Run `glasshouse ingest "
+                f"commitments`.", "error")
+    return (True, f"{n} live snapshot(s) on record; last confirmed live {confirmed} "
+            f"({age}d ago; budget {budget_days}d)", "warn")
 
 
 def diagnose(conn: sqlite3.Connection) -> dict:
@@ -91,16 +137,12 @@ def diagnose(conn: sqlite3.Connection) -> dict:
               f"sanctioned access path (bulk file or official API; no browser "
               f"impersonation)", "warn")
 
-    # 3. Commitments: any configured doc whose live fetch can't succeed.
+    # 3. Commitments: is every tracked policy page actually being captured?
     from .registry import load
     for inst_id, inst in load().items():
         for doc in inst.get("commitments", []):
-            n = conn.execute(
-                "SELECT COUNT(*) FROM commitments WHERE institution_id=? AND "
-                "doc_label=? AND wayback_timestamp=''", (inst_id, doc["label"])).fetchone()[0]
-            check(f"commitment-live:{inst_id}/{doc['label']}", n > 0,
-                  "no live version ever fetched (wayback-only — live URL likely rotted)"
-                  if n == 0 else f"{n} live snapshot(s) on record")
+            ok, detail, severity = capture_health(conn, inst_id, doc["label"], today)
+            check(f"commitment-live:{inst_id}/{doc['label']}", ok, detail, severity)
 
     # 4. Ledger integrity (hard failures only; quarantine is healthy).
     from .ledger import integrity_check

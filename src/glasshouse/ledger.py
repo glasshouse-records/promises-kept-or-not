@@ -233,6 +233,22 @@ CREATE TABLE IF NOT EXISTS commitments (
     UNIQUE (institution_id, doc_label, sha256, wayback_timestamp)
 );
 
+-- Every live capture ATTEMPT, including the ones that found nothing new and
+-- the ones that failed. `commitments` only gains a row when the policy text
+-- changes, so on its own it cannot tell "confirmed unchanged this morning"
+-- from "not looked at since June". Operator-internal: never published.
+CREATE TABLE IF NOT EXISTS capture_attempts (
+    id             INTEGER PRIMARY KEY,
+    institution_id TEXT NOT NULL,
+    doc_label      TEXT NOT NULL,
+    url            TEXT NOT NULL,
+    attempted_at   TEXT NOT NULL,   -- ISO-8601, local time with offset
+    outcome        TEXT NOT NULL CHECK (outcome IN ('new_version','unchanged','failed')),
+    detail         TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_capture_attempts_doc
+    ON capture_attempts (institution_id, doc_label, id);
+
 CREATE TABLE IF NOT EXISTS runs (
     id                INTEGER PRIMARY KEY,
     ts                TEXT NOT NULL,

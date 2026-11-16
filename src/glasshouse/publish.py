@@ -41,7 +41,8 @@ PUBLIC_TABLES: dict[str, str] = {
 }
 
 # Explicitly never published (here for the test that asserts the boundary).
-OPERATOR_ONLY = ("triage", "llm_log", "outreach", "signals", "match_log", "runs")
+OPERATOR_ONLY = ("triage", "llm_log", "outreach", "signals", "match_log", "runs",
+                 "capture_attempts")
 
 # Columns dropped from otherwise-public tables: operator-internal artifacts that
 # are useless to consumers and leak local structure (content_path is the
