@@ -402,3 +402,60 @@ def test_coverage_shows_filings_per_season_so_a_partial_season_is_visible(eng):
     assert row["vote_filings_by_season"] == {2024: 1}
     assert row["director_items_by_year"] == {2024: 2, 2025: 2}
     assert c.execute("SELECT COUNT(*) FROM filings").fetchone()[0] == 3
+
+
+# ------------------------------------------- faults reported by the third trial
+
+@pytest.mark.parametrize("bad", ["", "2024-01-01 2024-06-30", "garbage", "2024-13-01", "01/01/2024"])
+def test_a_malformed_date_is_refused_not_ignored(eng, bad):
+    """An empty `until` was silently dropped and a two-date `since` matched
+    everything after it, under an echoed args block that looked right."""
+    for call in (lambda: eng.director_record("alpha", since="2024-01-01", until=bad),
+                 lambda: eng.director_peers(since=bad),
+                 lambda: eng.peers(theme="climate", since=bad),
+                 lambda: eng.voting_record("alpha", theme="climate", until=bad)):
+        with pytest.raises(ValueError, match="ISO date"):
+            call()
+
+
+def test_director_panel_holds_the_companies_constant(eng):
+    """'Different companies each year' is the first dull explanation for a
+    moving rate; the control must be citable, not hand SQL."""
+    r = eng.director_panel("alpha", windows="2024-01-01:2024-06-30,2025-01-01:2025-06-30")
+    r = r["result"]
+    assert r["companies_in_every_window"] == 1
+    w24, w25 = r["windows"]
+    assert w24["companies_with_opposition"] == 1 and w25["companies_with_opposition"] == 0
+    assert w24["opposed"] == 1 and w24["nominees"] == 2
+    assert r["opposed_in_first_and_last"] == 0
+
+
+def test_a_claim_id_of_the_wrong_shape_is_named_as_such(eng):
+    d = _draft(eng)
+    d["claims"][2]["id"] = "rate"
+    d["body"] = d["body"].replace("[c3]", "[rate]")
+    assert any("claim id 'rate'" in p for p in desk.verify(d, eng)["problems"])
+
+
+def test_a_date_in_the_prose_must_be_a_date_the_claims_carry(eng):
+    """'2024-05-20' was checked as the loose numbers 2024, 5 and 20."""
+    d = _draft(eng)
+    d["body"] = d["body"].replace("on 2024-05-20 it voted", "on 2024-05-02 it voted")
+    d["claims"][2]["check"]["args"]["since"] = "2024-01-02"     # a stray 2 to borrow
+    assert any("date 2024-05-02" in p for p in desk.verify(d, eng)["problems"])
+
+
+def test_thousands_separators_are_read_as_one_number(eng):
+    assert desk._numbers("opposed 3,229 of 12,400.5 items, then 4, 5") == [
+        "3229", "12400.5", "4", "5"]
+
+
+def test_limitations_may_not_characterise_either(eng):
+    d = _draft(eng, limitations=["Alpha misled nobody on record.", "One proposal only."])
+    assert any("characterisation" in p for p in desk.verify(d, eng)["problems"])
+
+
+def test_a_filtered_diff_says_what_the_filter_can_hide(eng):
+    a, b = _readable(eng)
+    cav = " ".join(eng.policy_diff("alpha", a, b, pattern="1\\.5")["caveats"])
+    assert "replacement" in cav

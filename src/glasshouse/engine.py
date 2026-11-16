@@ -34,7 +34,7 @@ import json
 import re
 import sqlite3
 from collections import defaultdict
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from .contradictions import THEMES, extract_text, proposal_is_oppositional
@@ -171,6 +171,21 @@ def is_rollback(description: str) -> bool:
         return False
     return bool(proposal_is_oppositional(description or "")
                 or _ROLLBACK_EXTRA.search(description or ""))
+
+
+def _iso(value, name: str) -> str | None:
+    """A date argument, or a refusal. A malformed or empty date must never be
+    silently dropped: the answer would cover a different period than asked."""
+    if value is None:
+        return None
+    v = str(value)
+    try:
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", v):
+            raise ValueError
+        date.fromisoformat(v)
+    except ValueError:
+        raise ValueError(f"`{name}` must be one ISO date YYYY-MM-DD, got {value!r}") from None
+    return v
 
 
 def _ro(path: Path) -> sqlite3.Connection:
@@ -377,10 +392,10 @@ class Engine:
         if year:
             w.append("p.year = ?")
             p.append(int(year))
-        if since:
+        if _iso(since, "since"):
             w.append("p.meeting_date >= ?")
             p.append(since)
-        if until:
+        if _iso(until, "until"):
             w.append("p.meeting_date <= ?")
             p.append(until)
         if position:
@@ -545,7 +560,12 @@ class Engine:
                      "Sentence-level diff of extracted PDF text. A sentence that was "
                      "reflowed or lightly reworded appears as one removal plus one "
                      "addition: read both lists before calling anything a deletion.",
-                     "Compare adjacent versions; a diff across many years mixes many edits."])
+                     "Compare adjacent versions; a diff across many years mixes many edits."]
+                    + (["`pattern` filters BOTH lists. A replacement sentence that does "
+                        "not contain the pattern word is hidden, so a rewording can look "
+                        "like a removal: re-run without `pattern`, or search the later "
+                        "version for the rest of the sentence, before writing 'removed'."]
+                       if pattern else []))
 
     def policy_in_force(self, institution: str, date: str) -> dict:
         """The latest version demonstrably public on `date` (ISO)."""
@@ -786,10 +806,10 @@ class Engine:
         if year:
             w.append("d.year = ?")
             p.append(int(year))
-        if since:
+        if _iso(since, "since"):
             w.append("d.meeting_date >= ?")
             p.append(since)
-        if until:
+        if _iso(until, "until"):
             w.append("d.meeting_date <= ?")
             p.append(until)
         if position:
@@ -905,6 +925,47 @@ class Engine:
                      "file a slate as a single item, so compare "
                      "`share_of_meetings_with_opposition` before `opposition_rate`.",
                      "Each manager's figures cover only the shared meetings IT voted at.",
+                     *self._DIRECTOR_CAVEATS])
+
+    def director_panel(self, institution: str, windows: str) -> dict:
+        """The same-companies control: director opposition in each of several
+        date windows, restricted to companies the manager voted at in EVERY
+        window. `windows` = "2024-01-01:2024-06-30,2025-01-01:2025-06-30"."""
+        iid = self._inst(institution)
+        spans = []
+        for part in str(windows).split(","):
+            a, _, b = part.strip().partition(":")
+            spans.append((_iso(a, "windows start"), _iso(b, "windows end")))
+        if len(spans) < 2:
+            raise ValueError("`windows` needs at least two start:end spans, comma-separated")
+        per = []
+        for a, b in spans:
+            per.append({r["cusip"]: (r["n"], r["o"]) for r in self.db.execute(
+                """SELECT cusip, SUM(position IN ('FOR','AGAINST')) n,
+                          SUM(position='AGAINST') o
+                   FROM director_votes WHERE institution_id=? AND cusip != ''
+                     AND meeting_date BETWEEN ? AND ? GROUP BY cusip""", (iid, a, b))
+                if r["n"]})
+        panel = set(per[0]).intersection(*per[1:])
+        out = []
+        for (a, b), w in zip(spans, per, strict=True):
+            n = sum(w[c][0] for c in panel)
+            o = sum(w[c][1] for c in panel)
+            out.append({"since": a, "until": b, "companies_voted": len(w),
+                        "nominees": n, "opposed": o,
+                        "opposition_rate": round(o / n, 4) if n else None,
+                        "companies_with_opposition": sum(1 for c in panel if w[c][1])})
+        first = {c for c in panel if per[0][c][1]}
+        last = {c for c in panel if per[-1][c][1]}
+        return _env("director_panel", {"institution": institution, "windows": windows},
+                    {"companies_in_every_window": len(panel), "windows": out,
+                     "opposed_in_first_and_last": len(first & last),
+                     "opposed_in_first_only": len(first - last),
+                     "opposed_in_last_only": len(last - first)},
+                    ["Companies are matched by CUSIP; a company that changed CUSIP or "
+                     "filed none drops out of the panel.",
+                     "The companies are constant; the nominees and the funds holding "
+                     "them are not.",
                      *self._DIRECTOR_CAVEATS])
 
     def fund_votes(self, proposal_id: int) -> dict:
@@ -1040,7 +1101,7 @@ class Engine:
 
 TOOLS = ("coverage", "policy_versions", "policy_search", "policy_diff", "policy_in_force",
          "proposals", "voting_record", "peers", "ballot", "fund_votes", "reversals", "say_vs_do", "filers",
-         "director_record", "director_votes", "director_peers",
+         "director_record", "director_votes", "director_peers", "director_panel",
          "company",
          "enforcement", "holdings", "verify_quote", "sql")
 

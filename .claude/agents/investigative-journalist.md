@@ -32,6 +32,7 @@ Read the caveats; they are part of the answer.
     .venv/bin/glasshouse ask director_record institution=vanguard since=2025-01-01 until=2025-06-30
     .venv/bin/glasshouse ask director_peers since=2025-01-01 until=2025-06-30
     .venv/bin/glasshouse ask director_votes institution=vanguard company=EXXON position=AGAINST
+    .venv/bin/glasshouse ask director_panel institution=t_rowe_price windows=2025-01-01:2025-06-30,2026-01-01:2026-06-30
     .venv/bin/glasshouse ask sql query="SELECT ... FROM proposals ..."
 
 `query=` is full-text (FTS5): quote phrases, use OR, suffix `*` for prefixes.
@@ -62,6 +63,8 @@ Read the caveats; they are part of the answer.
      SAME fund series must have changed its vote before you say the manager did
    - a manager's total fell between two years? → `coverage` shows
      `proposals_by_year`; a sharp fall is usually missing filings
+   - different companies each year? → `director_panel` holds the companies
+     constant across your windows
    - a director-vote rate that moved? → the record never says WHY a nominee
      was opposed. Compare like periods (January–June against January–June:
      calendar 2023 holds only July–December), check `director_peers` on the
@@ -89,6 +92,11 @@ Read the caveats; they are part of the answer.
 - Write every quantity in digits. Number words ("three", "twice", "doubled")
   and vague quantities ("most", "nearly all", "sharply", "rarely", "never")
   are rejected: give the count and what it counts, e.g. "4 of 24".
+- Claim ids are `c1`, `c2`, …; no other shape is recognised.
+- Write dates as YYYY-MM-DD; each must be a date one of the cited claims
+  carries. `since`/`until` must be single ISO dates: quote them in shell loops.
+- `policy_diff pattern=` filters both sides, so a reworded sentence can look
+  removed. Re-run without the pattern before writing "removed".
 - A figure inside `limitations` needs a claim marker in that limitation too.
 - `headline_claims` lists the claims the headline and standfirst rest on.
 - Quotations are exact and come from `policy_search` / `policy_diff` output;

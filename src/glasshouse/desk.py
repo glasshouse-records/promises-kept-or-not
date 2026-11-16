@@ -61,7 +61,14 @@ _CHARACTERISATION = re.compile(
     r"quietly|silently|secretly|stealth\w*|walk\w* back|backtrack\w*|back[- ]?pedal\w*|"
     r"retreat\w*|revers\w+ (itself|course)|water\w* down|gut(s|ted|ting)?|"
     r"dodg\w*|evad\w*|hid(es?|den|ing)?|bur(y|ied|ies))\b", re.IGNORECASE)
-_NUM = re.compile(r"\d+(?:\.\d+)?")
+_NUM = re.compile(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?")
+_DATE = re.compile(r"\b(?:19|20)\d\d-\d\d-\d\d\b")
+_CLAIM_ID = re.compile(r"c\d+")
+
+
+def _numbers(text: str) -> list[str]:
+    """Figures in prose, with thousands separators folded: 3,229 is one number."""
+    return [n.replace(",", "") for n in _NUM.findall(text)]
 # A quantity written as a word is still a quantity, and escapes a digit check.
 _NUMBER_WORD = re.compile(
     r"\b(two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|"
@@ -207,8 +214,8 @@ def verify(draft: dict, eng: engine.Engine | None = None) -> dict:
 
     detail = {r["id"]: r["detail"] for r in results}
 
-    def backing(ids) -> list[float]:
-        """Every number the cited claims actually establish."""
+    def backing(ids) -> tuple[list[float], set[str]]:
+        """Every number, and every whole date, the cited claims establish."""
         # Internal identifiers and path indices are not facts about the world:
         # a proposal_id of 7 must not make a stray "7" in the prose look sourced.
         parts = []
@@ -222,13 +229,18 @@ def verify(draft: dict, eng: engine.Engine | None = None) -> dict:
             parts += re.findall(r"\b(?:19|20)\d\d\b", str(chk.get("path", "")))
             parts.append(detail.get(i, "").split("→")[-1].split(" = ", 1)[-1]
                          if chk.get("type") == "stat" else detail.get(i, ""))
-        return [float(x) for x in _NUM.findall(" ".join(parts))]
+        blob = " ".join(parts)
+        return [float(x) for x in _numbers(blob)], set(_DATE.findall(blob))
 
     def unbacked(prose: str, ids) -> list[str]:
-        have = backing(ids)
-        return [n for n in _NUM.findall(_MARK.sub("", prose))
-                if not any(abs(float(n) - h) < 1e-9 or abs(float(n) - h * 100) <= 0.06
-                           for h in have)]
+        have, dates = backing(ids)
+        prose = _MARK.sub("", prose)
+        # A date is one fact, not three loose numbers: 2024-05-02 must not pass
+        # because some cited claim happens to contain a 2024, a 5 and a 2.
+        bad = [f"date {d}" for d in _DATE.findall(prose) if d not in dates]
+        return bad + [f"figure {n}" for n in _numbers(_DATE.sub(" ", prose))
+                      if not any(abs(float(n) - h) < 1e-9 or abs(float(n) - h * 100) <= 0.06
+                                 for h in have)]
 
     # Headline and standfirst are the most-read sentences and had no check at all.
     head = f"{draft.get('headline', '')} {draft.get('standfirst', '')}"
@@ -236,7 +248,7 @@ def verify(draft: dict, eng: engine.Engine | None = None) -> dict:
     if not head_ids:
         problems.append("headline_claims is empty: the headline must rest on named claims")
     for n in unbacked(head, head_ids):
-        problems.append(f"headline/standfirst figure {n} is not established by its claims")
+        problems.append(f"headline/standfirst {n} is not established by its claims")
 
     # Every paragraph rests on claims — not only the ones with digits in them:
     # "opposed nearly all such resolutions" is as factual as "49 of 52".
@@ -249,7 +261,7 @@ def verify(draft: dict, eng: engine.Engine | None = None) -> dict:
             problems.append(f"paragraph has no claim: “{pt[:70]}…”")
             continue
         for n in unbacked(pt, ids):
-            problems.append(f"figure {n} in “{pt[:50]}…” is not established by the claims "
+            problems.append(f"{n} in “{pt[:50]}…” is not established by the claims "
                             f"that paragraph cites ({', '.join(ids)})")
 
     # A proposal's title may be quoted verbatim when its claim carries `title`.
@@ -273,9 +285,14 @@ def verify(draft: dict, eng: engine.Engine | None = None) -> dict:
     # Limitations are read as fact too; a figure there needs a claim like any other.
     for lim in draft.get("limitations") or []:
         for n in unbacked(str(lim), _MARK.findall(str(lim))):
-            problems.append(f"figure {n} in limitation “{str(lim)[:50]}…” is not "
+            problems.append(f"{n} in limitation “{str(lim)[:50]}…” is not "
                             "established by a claim cited in it")
 
+    for cid in claims:
+        if not _CLAIM_ID.fullmatch(str(cid)):
+            problems.append(f"claim id {cid!r} must be the letter c and digits (c1, c2 …); "
+                            "markers of any other shape are not seen in the text")
+    unquoted += " " + _QUOTED.sub("", " ".join(map(str, draft.get("limitations") or [])))
     for m in _CHARACTERISATION.finditer(unquoted):
         problems.append(f"characterisation {m.group(0)!r}: state what the record shows, "
                         "not motive or wrongdoing")
