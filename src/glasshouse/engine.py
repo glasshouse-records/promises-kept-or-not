@@ -430,8 +430,22 @@ class Engine:
                 yrs = {r["year"]: r["n"] for r in self.db.execute(
                     "SELECT year, COUNT(*) n FROM proposals WHERE institution_id=? "
                     "GROUP BY year ORDER BY year", (iid,))}
+                seasons: dict = defaultdict(int)
+                for r in self.ledger.execute(
+                        "SELECT period_of_report p FROM filings WHERE institution_id=? "
+                        "AND form_type LIKE 'N-PX%' AND report_type LIKE '%VOTING REPORT%'",
+                        (iid,)):
+                    pr = (r["p"] or "").strip()
+                    y = pr[:4] if pr[:4].isdigit() else pr[-4:]
+                    seasons[int(y) if y.isdigit() else "unknown"] += 1
+                dyrs = {r["year"]: r["n"] for r in self.db.execute(
+                    "SELECT year, COUNT(*) n FROM director_votes WHERE institution_id=? "
+                    "GROUP BY year ORDER BY year", (iid,))}
                 per.append({"institution": iid, "name": name,
                             "fund_registrants_on_file": reg,
+                            "vote_filings_by_season": dict(sorted(
+                                seasons.items(), key=lambda kv: str(kv[0]))),
+                            "director_items_by_year": dyrs,
                             "proposals_by_year": yrs,
                             "shareholder_proposals": v["n"],
                             "votes_from": v["lo"], "votes_to": v["hi"],
@@ -448,6 +462,10 @@ class Engine:
                      "Management's director nominees have their own tools "
                      "(director_record, director_votes, director_peers). Other management "
                      "proposals (say-on-pay, auditors) are in the ledger but not indexed.",
+                     "`vote_filings_by_season` counts voting reports on file per N-PX "
+                     "season (July to June, named by its end year). A season with fewer "
+                     "filings than the one before may be only partly ingested: do not "
+                     "compare it with a full season.",
                      "A year with few proposals is thin coverage, not a quiet year. Check "
                      "each manager's `proposals_by_year` before comparing two years: a "
                      "sharp fall usually means filings are missing, not that behaviour "

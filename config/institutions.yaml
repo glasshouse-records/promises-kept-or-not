@@ -43,6 +43,19 @@ institutions:
       - cik: "1100663"
         name: "iShares Trust"
         validated: "2026-06-10"
+      # Added 2026-11-16: brand-named INDEX trusts only. Actively managed and
+      # externally sub-advised trusts are deliberately left out — their votes
+      # may be cast by another adviser, and attributing those to this manager
+      # is the one error that cannot be tolerated here.
+      - cik: "930667"
+        name: "iShares, Inc."
+        validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1524513"
+        name: "iShares U.S. ETF Trust"
+        validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1026144"
+        name: "BlackRock Index Funds, Inc."
+        validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
     commitments:
       # URLs verified live before being added; rotted URLs are findings too
       # (the non-response ledger will track disappearing policies).
@@ -58,6 +71,22 @@ institutions:
       - cik: "36405"
         name: "Vanguard Index Funds"
         validated: "2026-06-11"
+      # Added 2026-11-16: brand-named INDEX trusts only. Actively managed and
+      # externally sub-advised trusts are deliberately left out — their votes
+      # may be cast by another adviser, and attributing those to this manager
+      # is the one error that cannot be tolerated here.
+      - cik: "862084"
+        name: "Vanguard Institutional Index Funds"
+        validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "857489"
+        name: "Vanguard International Equity Index Funds"
+        validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1021882"
+        name: "Vanguard Scottsdale Funds"
+        validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "891190"
+        name: "Vanguard Admiral Funds"
+        validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
     commitments:
       # Vanguard moved stewardship under Vanguard Portfolio Management (VPMIS)
       # in 2026; the old investment-stewardship URL (US_Proxy_Voting.pdf)
@@ -87,6 +116,19 @@ institutions:
       - cik: "1064642"
         name: "SPDR Series Trust"
         validated: "2026-06-11"
+      # Added 2026-11-16: brand-named INDEX trusts only. Actively managed and
+      # externally sub-advised trusts are deliberately left out — their votes
+      # may be cast by another adviser, and attributing those to this manager
+      # is the one error that cannot be tolerated here.
+      - cik: "1064641"
+        name: "Select Sector SPDR Trust"
+        validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1168164"
+        name: "SPDR Index Shares Funds"
+        validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1107414"
+        name: "State Street Institutional Investment Trust"
+        validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
     commitments:
       # SSGA rebranded to "State Street Investment Management" and moved its
       # stewardship library; the old library-content/pdfs/ URL hard-404s.

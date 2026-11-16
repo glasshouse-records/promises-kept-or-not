@@ -21,7 +21,8 @@ def eng(tmp_path):
         c.execute("INSERT INTO institutions (id, display_name) VALUES (?,?)",
                   (iid, iid.title() + " Asset Management"))
         c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url,"
-                  " retrieval_date) VALUES (?,?,?,'N-PX',?,'2026-01-01')",
+                  " retrieval_date, period_of_report, report_type) VALUES (?,?,?,'N-PX',?,"
+                  "'2026-01-01','06/30/2024','FUND VOTING REPORT')",
                   (f"ACC-{iid}", "1", iid, f"https://sec.example/{iid}"))
 
     def vote(iid, how, desc="Report on Climate Transition Plan", date="05/20/2024",
@@ -390,3 +391,14 @@ def test_figures_in_the_limitations_are_checked_too(eng):
     d = _draft(eng, limitations=["Alpha backed 0 such proposals in 2024, a single item. [c3]",
                                  "One proposal is an anecdote."])
     assert desk.verify(d, eng)["verified"], desk.verify(d, eng)["problems"]
+
+
+def test_coverage_shows_filings_per_season_so_a_partial_season_is_visible(eng):
+    """One filing of a season's dozen looks like a collapse in every rate unless
+    the count of filings on file is shown next to it."""
+    c = eng.ledger
+    row = next(i for i in eng.coverage()["result"]["institutions"]
+               if i["institution"] == "alpha")
+    assert row["vote_filings_by_season"] == {2024: 1}
+    assert row["director_items_by_year"] == {2024: 2, 2025: 2}
+    assert c.execute("SELECT COUNT(*) FROM filings").fetchone()[0] == 3
