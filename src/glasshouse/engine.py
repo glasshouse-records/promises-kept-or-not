@@ -75,8 +75,11 @@ CREATE TABLE director_votes (
     position       TEXT NOT NULL,   -- FOR | AGAINST (incl. WITHHOLD) | ABSTAIN | SPLIT | NONE
     n_lines INTEGER, n_for INTEGER, n_against INTEGER, n_other INTEGER,
     meeting_key    TEXT,            -- same meeting across managers ('' if no CUSIP)
-    accession      TEXT, source_url TEXT, vote_id INTEGER
+    accession      TEXT, source_url TEXT, vote_id INTEGER,
+    isin_country   TEXT             -- country that ISSUED the ISIN (not where the company
+                                    -- is run); NULL if none, malformed or lines disagree
 );
+CREATE INDEX ix_d_country ON director_votes(isin_country);
 CREATE INDEX ix_d_inst ON director_votes(institution_id, year);
 CREATE INDEX ix_d_meeting ON director_votes(meeting_key);
 CREATE INDEX ix_d_cusip ON director_votes(cusip);
@@ -188,6 +191,40 @@ def _iso(value, name: str) -> str | None:
     return v
 
 
+_CODE = re.compile(r"[A-Z]{2}")
+
+
+def isin_country(isins) -> str | None:
+    """The country code that issued an item's ISIN, or None. `isins` are the raw
+    ISINs of every fund line grouped into one item: blanks are ignored, but a
+    malformed prefix or two different prefixes make the item unknown. A wrong
+    country would put a company in the wrong market; an unknown one only leaves
+    it out of country filters (and is counted there)."""
+    seen = set()
+    for raw in isins:
+        v = (raw or "").strip().upper()
+        if not v:
+            continue
+        seen.add(v[:2] if _CODE.fullmatch(v[:2]) else None)
+    return seen.pop() if len(seen) == 1 and None not in seen else None
+
+
+def _country(value) -> tuple[str, list[str]] | None:
+    """A `country` argument as (SQL condition on isin_country, params), or a
+    refusal. One code (`US`), a comma list (`US,CA`) or `non-US`. Never
+    silently widened: an unrecognised value would answer a different question."""
+    if value is None:
+        return None
+    v = str(value).strip().upper()
+    if v == "NON-US":
+        return "d.isin_country IS NOT NULL AND d.isin_country != 'US'", []
+    codes = v.split(",")
+    if not all(_CODE.fullmatch(c) for c in codes):
+        raise ValueError(f"`country` must be one two-letter code (US), a comma list (US,CA) "
+                         f"or non-US, got {value!r}")
+    return f"d.isin_country IN ({','.join('?' * len(codes))})", codes
+
+
 def _ro(path: Path) -> sqlite3.Connection:
     conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
@@ -203,7 +240,7 @@ def _grouped(led: sqlite3.Connection, which: str) -> dict[tuple, dict]:
     iso = iso_meeting_date("v.meeting_date")
     groups: dict[tuple, dict] = {}
     for v in led.execute(
-        f"""SELECT v.id, f.institution_id AS iid, v.issuer_name, v.cusip, {iso} AS md,
+        f"""SELECT v.id, f.institution_id AS iid, v.issuer_name, v.cusip, v.isin, {iso} AS md,
                    v.vote_description AS d, v.category_type, v.how_voted, v.shares_voted,
                    v.management_recommendation AS mr, v.accession, f.source_url
             FROM votes v JOIN filings f ON f.accession = v.accession
@@ -213,11 +250,12 @@ def _grouped(led: sqlite3.Connection, which: str) -> dict[tuple, dict]:
                norm(v["d"]))
         g = groups.get(key)
         if g is None:
-            g = groups[key] = {"row": v, "for": 0, "against": 0, "abstain": 0, "other": 0,
+            g = groups[key] = {"row": v, "isins": set(), "for": 0, "against": 0, "abstain": 0, "other": 0,
                                "n": 0, "with_m": 0, "against_m": 0, "sf": 0.0, "sa": 0.0}
         # N-PX's "management recommendation" element records whether THIS vote
         # went with (FOR) or against (AGAINST) management — not what management
         # recommended. Say-on-pay shows it plainly: FOR/FOR and AGAINST/AGAINST.
+        g["isins"].add(v["isin"])
         mr = (v["mr"] or "").strip().upper()
         g["with_m"] += mr == "FOR"
         g["against_m"] += mr == "AGAINST"
@@ -290,8 +328,9 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
                       int(md[:4]) if md[:4].isdigit() else None, v["d"] or "", _position(g),
                       g["n"], g["for"], g["against"], g["abstain"] + g["other"],
                       f"{cusip}|{md}" if cusip and md else "",
-                      v["accession"], v["source_url"] or "", v["id"]))
-    eng.executemany("INSERT INTO director_votes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", drows)
+                      v["accession"], v["source_url"] or "", v["id"],
+                      isin_country(g["isins"])))
+    eng.executemany("INSERT INTO director_votes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", drows)
     del dgroups
 
     # Policy text: one row per distinct TEXT version (earliest capture wins —
@@ -795,7 +834,7 @@ class Engine:
 
     # -- directors
     def _dwhere(self, *, institution=None, company=None, year=None, since=None, until=None,
-                position=None):
+                position=None, country=None):
         w, p = ["1=1"], []
         if institution:
             w.append("d.institution_id = ?")
@@ -815,7 +854,28 @@ class Engine:
         if position:
             w.append("d.position = ?")
             p.append(position.upper())
+        c = _country(country)
+        if c:
+            w.append(c[0])
+            p += c[1]
         return " AND ".join(w), p
+
+    def _dexcluded(self, country, **filters) -> list[str]:
+        """Caveats for a country-filtered query: how many items the query's OTHER
+        filters matched that had no usable ISIN country (so the filter dropped
+        them), and what the country means."""
+        if country is None:
+            return []
+        w, p = self._dwhere(**filters)
+        n = self.db.execute(
+            f"SELECT COUNT(*) FROM director_votes d WHERE {w} AND d.isin_country IS NULL",
+            p).fetchone()[0]
+        return [f"{n} nominee {'item was' if n == 1 else 'items were'} excluded for lacking an "
+                "ISIN with a usable country (missing, malformed, or fund lines that "
+                "disagreed): the country filter cannot say where those companies are.",
+                "`country` is the country that issued the ISIN, not where the company is "
+                "run: Cayman- or Bermuda-registered companies (KY, BM) are non-US here "
+                "even when run from the US."]
 
     @staticmethod
     def _dtally(t: dict) -> dict:
@@ -836,13 +896,19 @@ class Engine:
         "overboarding, pay, attendance and independence all look identical here. "
         "A change in the rate is not evidence about any one reason.",
         "Counts are ballot items as each filer worded them; a slate voted as one "
-        "item counts once. Non-US meetings are included: narrow with company=.",
+        "item counts once. Non-US meetings are included: narrow with country= "
+        "(US, US,CA or non-US) or company=.",
         "Year-to-year change can reflect which companies the funds held."]
 
-    def director_record(self, institution: str, company=None, since=None, until=None) -> dict:
-        """How often one manager opposed management's board nominees, by year,
-        counted per nominee item and per meeting."""
-        w, p = self._dwhere(institution=institution, company=company, since=since, until=until)
+    def _dtotal(self, w: str, p: list) -> dict:
+        years = self._dyears(w, p)
+        total: dict = defaultdict(int)
+        for t in years.values():
+            for k, n in t.items():
+                total[k] += n
+        return total
+
+    def _dyears(self, w: str, p: list) -> dict:
         years: dict = defaultdict(lambda: defaultdict(int))
         for r in self.db.execute(
                 f"SELECT d.year, d.position, COUNT(*) n FROM director_votes d WHERE {w} "
@@ -855,29 +921,52 @@ class Engine:
                     GROUP BY year""", p):
             years[r["year"]]["meetings"] = r["m"]
             years[r["year"]]["opp_meetings"] = r["om"] or 0
-        total: dict = defaultdict(int)
-        for t in years.values():
-            for k, n in t.items():
-                total[k] += n
+        return years
+
+    _BUCKETS = (("US", "d.isin_country = 'US'"),
+                ("non-US", "d.isin_country IS NOT NULL AND d.isin_country != 'US'"),
+                ("unknown", "d.isin_country IS NULL"))
+
+    def director_record(self, institution: str, company=None, since=None, until=None,
+                        country=None) -> dict:
+        """How often one manager opposed management's board nominees, by year,
+        counted per nominee item and per meeting. Without `country`, also split
+        into US / non-US / unknown by the country that issued the ISIN."""
+        w, p = self._dwhere(institution=institution, company=company, since=since,
+                            until=until, country=country)
+        years = self._dyears(w, p)
+        out = {"overall": self._dtally(self._dtotal(w, p)),
+               "by_year": {y: self._dtally(t) for y, t in
+                           sorted(years.items(), key=lambda kv: kv[0] or 0)}}
+        caveats = list(self._DIRECTOR_CAVEATS)
+        if country is None:
+            out["by_country"] = {
+                name: self._dtally(self._dtotal(f"{w} AND {cond}", p))
+                for name, cond in self._BUCKETS}
+            caveats.append(
+                "`by_country` splits by the country that issued the ISIN, not where the "
+                "company is run; `unknown` = no usable ISIN. Nominee counts add up to "
+                "`overall`; a meeting with items in two groups is counted in both.")
+        else:
+            caveats += self._dexcluded(country, institution=institution, company=company,
+                                       since=since, until=until)
         return _env("director_record", _clean(institution=institution, company=company,
-                                              since=since, until=until),
-                    {"overall": self._dtally(total),
-                     "by_year": {y: self._dtally(t) for y, t in
-                                 sorted(years.items(), key=lambda kv: kv[0] or 0)}},
-                    self._DIRECTOR_CAVEATS)
+                                              since=since, until=until, country=country),
+                    out, caveats)
 
     def director_votes(self, institution: str, company=None, year=None, position=None,
-                       since=None, until=None, limit: int = 60) -> dict:
+                       since=None, until=None, limit: int = 60, country=None) -> dict:
         """The nominee items behind director_record(), each with its filing."""
         w, p = self._dwhere(institution=institution, company=company, year=year,
-                            since=since, until=until, position=position)
+                            since=since, until=until, position=position,
+                            country=country)
         rows = self.db.execute(
             f"SELECT d.* FROM director_votes d WHERE {w} "
             "ORDER BY d.meeting_date DESC, d.issuer_name, d.director_id LIMIT ?",
             [*p, int(limit)]).fetchall()
         return _env("director_votes", _clean(institution=institution, company=company,
                                              year=year, position=position, since=since,
-                                             until=until, limit=limit),
+                                             until=until, limit=limit, country=country),
                     [{"director_id": r["director_id"], "institution": r["institution_id"],
                       "company": r["issuer_name"], "cusip": r["cusip"],
                       "meeting_date": r["meeting_date"], "nominee_item": r["nominee_item"],
@@ -886,13 +975,17 @@ class Engine:
                                      "against": r["n_against"], "other": r["n_other"]},
                       "accession": r["accession"], "source_url": r["source_url"]}
                      for r in rows],
-                    [*self._DIRECTOR_CAVEATS, f"At most {limit} rows; raise limit= for more."])
+                    [*self._DIRECTOR_CAVEATS, f"At most {limit} rows; raise limit= for more.",
+                     *self._dexcluded(country, institution=institution, company=company,
+                                      year=year, since=since, until=until,
+                                      position=position)])
 
     def director_peers(self, year=None, since=None, until=None, company=None,
-                       min_managers: int = 3) -> dict:
+                       min_managers: int = 3, country=None) -> dict:
         """Managers compared on the SAME shareholder meetings: at how many did
         each oppose at least one management nominee?"""
-        w, p = self._dwhere(company=company, year=year, since=since, until=until)
+        w, p = self._dwhere(company=company, year=year, since=since, until=until,
+                            country=country)
         per: dict = defaultdict(dict)
         for r in self.db.execute(
                 f"""SELECT d.meeting_key k, d.institution_id i, SUM(d.position='FOR') f,
@@ -917,7 +1010,8 @@ class Engine:
                 o["meetings_with_opposition"] / o["shared_meetings"], 4)
         table = dict(sorted(out.items(), key=lambda kv: -(kv[1]["opposition_rate"] or 0)))
         return _env("director_peers", _clean(year=year, since=since, until=until,
-                                             company=company, min_managers=min_managers),
+                                             company=company, min_managers=min_managers,
+                                             country=country),
                     {"shared_meetings": len(shared), "candidate_meetings": len(per),
                      "managers": table},
                     ["Meetings are matched by CUSIP and meeting date. Nominee items are "
@@ -925,13 +1019,17 @@ class Engine:
                      "file a slate as a single item, so compare "
                      "`share_of_meetings_with_opposition` before `opposition_rate`.",
                      "Each manager's figures cover only the shared meetings IT voted at.",
-                     *self._DIRECTOR_CAVEATS])
+                     *self._DIRECTOR_CAVEATS,
+                     *self._dexcluded(country, company=company, year=year, since=since,
+                                      until=until)])
 
-    def director_panel(self, institution: str, windows: str) -> dict:
+    def director_panel(self, institution: str, windows: str, country=None) -> dict:
         """The same-companies control: director opposition in each of several
         date windows, restricted to companies the manager voted at in EVERY
         window. `windows` = "2024-01-01:2024-06-30,2025-01-01:2025-06-30"."""
         iid = self._inst(institution)
+        cond = _country(country)
+        cw, cp = (f" AND {cond[0]}", cond[1]) if cond else ("", [])
         spans = []
         for part in str(windows).split(","):
             a, _, b = part.strip().partition(":")
@@ -941,10 +1039,11 @@ class Engine:
         per = []
         for a, b in spans:
             per.append({r["cusip"]: (r["n"], r["o"]) for r in self.db.execute(
-                """SELECT cusip, SUM(position IN ('FOR','AGAINST')) n,
-                          SUM(position='AGAINST') o
-                   FROM director_votes WHERE institution_id=? AND cusip != ''
-                     AND meeting_date BETWEEN ? AND ? GROUP BY cusip""", (iid, a, b))
+                f"""SELECT d.cusip, SUM(d.position IN ('FOR','AGAINST')) n,
+                          SUM(d.position='AGAINST') o
+                   FROM director_votes d WHERE d.institution_id=? AND d.cusip != ''
+                     AND d.meeting_date BETWEEN ? AND ?{cw} GROUP BY d.cusip""",
+                (iid, a, b, *cp))
                 if r["n"]})
         panel = set(per[0]).intersection(*per[1:])
         out = []
@@ -957,7 +1056,19 @@ class Engine:
                         "companies_with_opposition": sum(1 for c in panel if w[c][1])})
         first = {c for c in panel if per[0][c][1]}
         last = {c for c in panel if per[-1][c][1]}
-        return _env("director_panel", {"institution": institution, "windows": windows},
+        excluded = []
+        if country is not None:
+            ors = " OR ".join("d.meeting_date BETWEEN ? AND ?" for _ in spans)
+            n = self.db.execute(
+                "SELECT COUNT(*) FROM director_votes d WHERE d.institution_id=? AND "
+                f"d.cusip != '' AND d.isin_country IS NULL AND ({ors})",
+                [iid, *[x for span in spans for x in span]]).fetchone()[0]
+            excluded = [f"{n} nominee {'item was' if n == 1 else 'items were'} excluded for "
+                        "lacking an ISIN with a usable country (missing, malformed, or fund "
+                        "lines that disagreed) within these windows.",
+                        self._dexcluded(country, institution=institution)[1]]
+        return _env("director_panel", _clean(institution=institution, windows=windows,
+                                             country=country),
                     {"companies_in_every_window": len(panel), "windows": out,
                      "opposed_in_first_and_last": len(first & last),
                      "opposed_in_first_only": len(first - last),
@@ -966,7 +1077,7 @@ class Engine:
                      "filed none drops out of the panel.",
                      "The companies are constant; the nominees and the funds holding "
                      "them are not.",
-                     *self._DIRECTOR_CAVEATS])
+                     *self._DIRECTOR_CAVEATS, *excluded])
 
     def fund_votes(self, proposal_id: int) -> dict:
         """The individual fund lines behind one position: which fund series voted

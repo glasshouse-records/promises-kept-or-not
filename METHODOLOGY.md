@@ -101,6 +101,13 @@ the say-vs-do analysis described below in three ways, each a correction:
   Managers are compared on shared MEETINGS (CUSIP + date), not on matched
   nominees: filers word nominee items differently. Other management
   proposals stay in the ledger but are not indexed.
+  Each director item carries `isin_country`, the first two letters of the
+  ISIN on its fund lines. That is the country that *issued the ISIN*, not
+  where the company is run (a Cayman-registered company is `KY`); it is NULL
+  where no line has an ISIN, the prefix is malformed, or the lines disagree.
+  The director tools accept `country=` (`US`, `US,CA` or `non-US`); items with
+  no usable country are excluded then, and the number excluded is stated in
+  the result's caveats. `director_record` splits US / non-US / unknown.
 - **Peer comparison is on identical proposals.** `peers` matches the same
   ballot item across managers by company, meeting date and the proposal's
   significant words. Matching is deliberately strict: an unmatched proposal

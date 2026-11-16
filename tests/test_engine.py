@@ -459,3 +459,148 @@ def test_a_filtered_diff_says_what_the_filter_can_hide(eng):
     a, b = _readable(eng)
     cav = " ".join(eng.policy_diff("alpha", a, b, pattern="1\\.5")["caveats"])
     assert "replacement" in cav
+
+
+# ------------------------------------------------- country of the issuer's ISIN
+
+@pytest.fixture()
+def iso(tmp_path):
+    """Director items at US, non-US, no-ISIN and conflicting-ISIN companies."""
+    led = tmp_path / "ledger.db"
+    c = ledger.connect(led)
+    for iid in ("alpha", "beta"):
+        c.execute("INSERT INTO institutions (id, display_name) VALUES (?,?)",
+                  (iid, iid.title() + " Asset Management"))
+        c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url,"
+                  " retrieval_date, period_of_report, report_type) VALUES (?,?,?,'N-PX',?,"
+                  "'2026-01-01','06/30/2024','FUND VOTING REPORT')",
+                  (f"ACC-{iid}", "1", iid, f"https://sec.example/{iid}"))
+
+    def d(iid, how, company, cusip, isin, nominee, date="05/20/2024"):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, isin, meeting_date,"
+                  " vote_description, category_type, vote_source, how_voted,"
+                  " management_recommendation, shares_voted, is_duplicate) VALUES"
+                  " (?,?,?,?,?,?,'DIRECTOR ELECTIONS','ISSUER',?,?,100,0)",
+                  (f"ACC-{iid}", company, cusip, isin, date, nominee, how,
+                   "FOR" if how == "FOR" else "AGAINST"))
+
+    for iid in ("alpha", "beta"):
+        for date in ("05/20/2024", "05/20/2025"):
+            d(iid, "FOR", "ACME", "000000001", "US0000000010", "Elect Ann", date)
+            d(iid, "AGAINST" if iid == "alpha" else "FOR", "ACME", "000000001",
+              "US0000000010", "Elect Bob", date)
+            d(iid, "AGAINST" if iid == "alpha" else "FOR", "NIPPON", "000000002",
+              "JP0000000020", "Elect Chi", date)
+        d(iid, "FOR", "CAYCO", "000000003", "KY0000000030", "Elect Dee")
+        d(iid, "FOR", "NOISIN", "000000004", None, "Elect Eve")
+        d(iid, "AGAINST", "NOISIN", "000000004", "", "Elect Fay")
+        d(iid, "FOR", "BADISIN", "000000006", "12XYZ", "Elect Hal")
+    # one item whose fund lines disagree on the country: stored as unknown
+    d("alpha", "FOR", "CONFLICT", "000000005", "US0000000050", "Elect Gus")
+    d("alpha", "FOR", "CONFLICT", "000000005", "CA0000000050", "Elect Gus")
+    c.commit()
+    c.close()
+    out = tmp_path / "engine.db"
+    engine.build(led, out)
+    return engine.Engine(out, led)
+
+
+def _country_of(iso, company):
+    return {r[0] for r in iso.db.execute(
+        "SELECT isin_country FROM director_votes WHERE issuer_name=?", (company,))}
+
+
+def test_isin_country_is_two_letters_or_unknown(iso):
+    assert _country_of(iso, "ACME") == {"US"}
+    assert _country_of(iso, "NIPPON") == {"JP"}
+    assert _country_of(iso, "CAYCO") == {"KY"}
+    assert _country_of(iso, "NOISIN") == {None}
+    assert _country_of(iso, "BADISIN") == {None}       # "12" is not a country
+    assert _country_of(iso, "CONFLICT") == {None}      # US and CA on one item
+
+
+@pytest.mark.parametrize("bad", ["", "USA", "u", "US,", "US,non-US", "nonUS", "non-us,CA", "1S",
+                                 "US CA", "everything"])
+def test_an_unrecognised_country_is_refused_not_ignored(iso, bad):
+    for call in (lambda: iso.director_record("alpha", country=bad),
+                 lambda: iso.director_votes("alpha", country=bad),
+                 lambda: iso.director_peers(country=bad),
+                 lambda: iso.director_panel("alpha", windows="2024-01-01:2024-12-31,"
+                                            "2025-01-01:2025-12-31", country=bad)):
+        with pytest.raises(ValueError, match="country"):
+            call()
+
+
+def test_country_filters_and_counts_what_it_excluded(iso):
+    us = iso.director_record("alpha", country="US")
+    assert us["result"]["overall"]["nominees"] == 4     # ACME: two nominees, two years
+    assert us["args"] == {"institution": "alpha", "country": "US"}
+    excluded = [c for c in us["caveats"] if "lacking an ISIN" in c]
+    assert len(excluded) == 1
+    # NOISIN x2, BADISIN, CONFLICT: four items with no usable country
+    assert excluded[0].startswith("4 nominee items were excluded")
+    assert any("country that issued the ISIN" in c and "not where the company is run" in c
+               for c in us["caveats"])
+    non = iso.director_record("alpha", country="non-US")["result"]["overall"]
+    assert non["nominees"] == 3                          # NIPPON x2, CAYCO x1 (KY counts)
+    both = iso.director_record("alpha", country="jp,KY")["result"]["overall"]
+    assert both["nominees"] == 3
+
+
+def test_the_excluded_count_follows_the_other_filters(iso):
+    r = iso.director_record("alpha", country="US", since="2025-01-01")
+    assert any(c.startswith("0 nominee items were excluded") for c in r["caveats"])
+
+
+def test_no_country_means_no_country_caveat(iso):
+    r = iso.director_record("alpha")
+    assert not any("lacking an ISIN" in c for c in r["caveats"])
+
+
+def test_by_country_adds_up_to_the_overall_block(iso):
+    r = iso.director_record("alpha")["result"]
+    bc = r["by_country"]
+    assert set(bc) == {"US", "non-US", "unknown"}
+    for k in ("nominees", "opposed"):
+        assert sum(bc[b][k] for b in bc) == r["overall"][k]
+    assert bc["US"]["nominees"] == 4 and bc["US"]["opposed"] == 2
+    assert bc["US"]["opposition_rate"] == 0.5
+    assert bc["non-US"]["nominees"] == 3 and bc["non-US"]["opposed"] == 2
+    assert bc["unknown"]["nominees"] == 4
+    assert "by_country" not in iso.director_record("alpha", country="US")["result"]
+
+
+def test_country_args_round_trip(iso):
+    env = iso.director_record("alpha", country="non-US", since="2024-01-01")
+    assert env["args"]["country"] == "non-US"
+    assert iso.director_record(**env["args"])["result"] == env["result"]
+    env = iso.director_votes("alpha", country="US,CA")
+    assert iso.director_votes(**env["args"])["result"] == env["result"]
+    env = iso.director_peers(country="US", min_managers=2)
+    assert iso.director_peers(**env["args"])["result"] == env["result"]
+    env = iso.director_panel("alpha", windows="2024-01-01:2024-12-31,2025-01-01:2025-12-31",
+                             country="US")
+    assert iso.director_panel(**env["args"])["result"] == env["result"]
+
+
+def test_director_votes_with_country_lists_only_those_items(iso):
+    rows = iso.director_votes("alpha", country="non-US", limit=100)["result"]
+    assert {r["company"] for r in rows} == {"NIPPON", "CAYCO"}
+
+
+def test_director_peers_with_country(iso):
+    r = iso.director_peers(country="non-US", min_managers=2)["result"]
+    assert r["shared_meetings"] == 3                     # NIPPON 2024, 2025 and CAYCO 2024
+    assert r["managers"]["alpha"]["opposed"] == 2
+    us = iso.director_peers(country="US", min_managers=2)["result"]
+    assert us["shared_meetings"] == 2
+
+
+def test_director_panel_with_country(iso):
+    w = "2024-01-01:2024-12-31,2025-01-01:2025-12-31"
+    r = iso.director_panel("alpha", windows=w, country="non-US")
+    assert r["result"]["companies_in_every_window"] == 1     # NIPPON; CAYCO only in 2024
+    assert r["result"]["windows"][0]["nominees"] == 1
+    assert any("lacking an ISIN" in c for c in r["caveats"])
+    allc = iso.director_panel("alpha", windows=w)["result"]
+    assert allc["companies_in_every_window"] == 2
