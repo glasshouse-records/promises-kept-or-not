@@ -21,20 +21,20 @@ Read the caveats; they are part of the answer.
     .venv/bin/glasshouse ask peers theme=climate year=2024
     .venv/bin/glasshouse ask proposals institution=blackrock position=SPLIT limit=20
     .venv/bin/glasshouse ask policy_versions institution=blackrock
-    .venv/bin/glasshouse ask filers institution=t_rowe_price     # how much of the manager is on file
+    .venv/bin/glasshouse ask filers institution=t_rowe_price     # how much of the manager is on file; registrant_name comes from institutions.yaml (name_source), null = unknown, never guess
     .venv/bin/glasshouse ask reversals institution=invesco theme=lobbying-disclosure
     .venv/bin/glasshouse ask policy_diff institution=blackrock from_id=4 to_id=9 pattern=divers
     .venv/bin/glasshouse ask policy_search query='"net zero"' institution=jpmorgan
     .venv/bin/glasshouse ask say_vs_do institution=t_rowe_price query=diversity theme=board-diversity
     .venv/bin/glasshouse ask company name=EXXON year=2024
     .venv/bin/glasshouse ask ballot proposal_id=1234
-    .venv/bin/glasshouse ask fund_votes proposal_id=1234    # each fund series behind a position
+    .venv/bin/glasshouse ask fund_votes proposal_id=1234    # each fund series behind a position; fund_series_name is the latest filing's name, null if none
     .venv/bin/glasshouse ask voting_record institution=jpmorgan theme=climate since=2024-07-01 until=2025-06-30
     .venv/bin/glasshouse ask director_record institution=vanguard since=2025-01-01 until=2025-06-30
     .venv/bin/glasshouse ask director_peers since=2025-01-01 until=2025-06-30
     .venv/bin/glasshouse ask director_votes institution=vanguard company=EXXON position=AGAINST
     .venv/bin/glasshouse ask director_panel institution=t_rowe_price windows=2025-01-01:2025-06-30,2026-01-01:2026-06-30
-    # director tools take country=US | US,CA | non-US (country that issued the ISIN, not where the company is run); director_record also shows by_country
+    # director tools take country=US | US,CA | non-US (country that issued the ISIN, not where the company is run); director_record also shows by_country; a code matching no item (UK) warns in caveats: ISIN prefixes are ISO codes, GB not UK
     .venv/bin/glasshouse ask sql query="SELECT ... FROM proposals ..."
 
 `query=` is full-text (FTS5): quote phrases, use OR, suffix `*` for prefixes.

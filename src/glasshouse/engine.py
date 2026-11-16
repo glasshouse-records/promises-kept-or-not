@@ -225,6 +225,18 @@ def _country(value) -> tuple[str, list[str]] | None:
     return f"d.isin_country IN ({','.join('?' * len(codes))})", codes
 
 
+def _registry_names(institution_id: str) -> dict[str, str]:
+    """CIK (no leading zeros) -> registrant name from the `npx_ciks` entries in
+    config/institutions.yaml: the only place registrant names live."""
+    from . import registry
+    try:
+        entries = registry.load().get(institution_id, {}).get("npx_ciks") or []
+    except (OSError, KeyError, AttributeError):
+        return {}
+    return {str(e["cik"]).lstrip("0"): e["name"] for e in entries
+            if e.get("cik") and e.get("name")}
+
+
 def _ro(path: Path) -> sqlite3.Connection:
     conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
@@ -860,6 +872,20 @@ class Engine:
             p += c[1]
         return " AND ".join(w), p
 
+    def _unmatched_country(self, country) -> list[str]:
+        """A well-formed code that no indexed item carries is almost always a
+        wrong code (UK for GB), not a market with no votes: say so, never raise."""
+        c = _country(country)
+        if not c or not c[1]:
+            return []
+        known = {r[0] for r in self.db.execute(
+            "SELECT DISTINCT isin_country FROM director_votes WHERE isin_country IS NOT NULL")}
+        if any(code in known for code in c[1]):
+            return []
+        return [f"`country` {str(country).strip().upper()!r} matches no item in the index. "
+                "ISIN prefixes are ISO 3166 country codes (GB, not UK); a valid country "
+                "with no votes also gives an empty result."]
+
     def _dexcluded(self, country, **filters) -> list[str]:
         """Caveats for a country-filtered query: how many items the query's OTHER
         filters matched that had no usable ISIN country (so the filter dropped
@@ -875,7 +901,8 @@ class Engine:
                 "disagreed): the country filter cannot say where those companies are.",
                 "`country` is the country that issued the ISIN, not where the company is "
                 "run: Cayman- or Bermuda-registered companies (KY, BM) are non-US here "
-                "even when run from the US."]
+                "even when run from the US.",
+                *self._unmatched_country(country)]
 
     @staticmethod
     def _dtally(t: dict) -> dict:
@@ -1066,7 +1093,8 @@ class Engine:
             excluded = [f"{n} nominee {'item was' if n == 1 else 'items were'} excluded for "
                         "lacking an ISIN with a usable country (missing, malformed, or fund "
                         "lines that disagreed) within these windows.",
-                        self._dexcluded(country, institution=institution)[1]]
+                        self._dexcluded(country, institution=institution)[1],
+                        *self._unmatched_country(country)]
         return _env("director_panel", _clean(institution=institution, windows=windows,
                                              country=country),
                     {"companies_in_every_window": len(panel), "windows": out,
@@ -1088,6 +1116,20 @@ class Engine:
             raise ValueError(f"no proposal {proposal_id}")
         iso = iso_meeting_date("v.meeting_date")
         lines = []
+        names: dict[str, str | None] = {}
+
+        def series_name(sid):
+            """Name of the series from the most recent filing that names it."""
+            if sid not in names:
+                row = self.ledger.execute(
+                    """SELECT fs.name FROM fund_series fs JOIN filings f
+                         ON f.accession = fs.accession
+                       WHERE fs.series_id=? AND fs.name IS NOT NULL AND fs.name != ''
+                       ORDER BY COALESCE(f.filing_date, f.period_of_report, '') DESC,
+                                f.accession DESC LIMIT 1""", (sid,)).fetchone()
+                names[sid] = row[0] if row else None
+            return names[sid]
+
         for v in self.ledger.execute(
             f"""SELECT v.vote_series, v.how_voted, v.shares_voted, v.vote_description,
                        v.accession, f.cik, f.source_url
@@ -1097,7 +1139,9 @@ class Engine:
                   AND (v.cusip=? OR v.issuer_name=?)""",
                 (r["institution_id"], r["meeting_date"], r["cusip"], r["issuer_name"])):
             if norm(v["vote_description"]) == norm(r["description"]):
-                lines.append({"fund_series": v["vote_series"], "registrant_cik": v["cik"],
+                lines.append({"fund_series": v["vote_series"],
+                              "fund_series_name": series_name(v["vote_series"]),
+                              "registrant_cik": v["cik"],
                               "how_voted": v["how_voted"], "shares": v["shares_voted"],
                               "accession": v["accession"], "source_url": v["source_url"]})
         tot = defaultdict(float)
@@ -1125,8 +1169,13 @@ class Engine:
                         WHERE f2.cik = f.cik) AS fund_series
                FROM filings f WHERE f.institution_id=? AND f.form_type LIKE 'N-PX%'
                GROUP BY f.cik ORDER BY filings DESC""", (iid,))]
+        names = _registry_names(iid)
+        for r in rows:
+            r["registrant_name"] = names.get(str(r["cik"]).lstrip("0"))
         return _env("filers", {"institution": iid},
-                    {"registrants": len(rows), "filers": rows},
+                    {"registrants": len(rows), "filers": rows,
+                     "name_source": "config/institutions.yaml npx_ciks (the ledger stores "
+                                    "no registrant names); null = no name on record"},
                     ["A registrant is one fund trust. Large managers have dozens; this is "
                      "the subset ingested. Different registrants of one group can be "
                      "advised by different entities with their own voting policies.",

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sqlite3
+
 import pytest
 
 from glasshouse import desk, engine, ledger
@@ -604,3 +606,103 @@ def test_director_panel_with_country(iso):
     assert any("lacking an ISIN" in c for c in r["caveats"])
     allc = iso.director_panel("alpha", windows=w)["result"]
     assert allc["companies_in_every_window"] == 2
+
+
+# ------------------------------------------------ instrument fixes (2026-11-17)
+
+def test_country_matching_nothing_in_the_index_says_so(iso):
+    eng = iso
+    """UK is well-formed but the ISIN prefix is GB: an empty answer needs a hint."""
+    env = eng.director_votes("alpha", country="UK")
+    assert any("UK" in c and "matches no item" in c and "GB, not UK" in c
+               for c in env["caveats"])
+    ok = eng.director_votes("alpha", country="US")
+    assert not any("matches no item" in c for c in ok["caveats"])
+    # one known code among unknown ones: no warning
+    assert not any("matches no item" in c
+                   for c in eng.director_votes("alpha", country="US,UK")["caveats"])
+
+
+def test_filers_names_come_from_the_registry_and_unknown_is_null(eng, monkeypatch):
+    monkeypatch.setattr(engine, "_registry_names", lambda iid: {"1": "Alpha Funds Trust"})
+    env = eng.filers("alpha")
+    assert env["result"]["filers"][0]["registrant_name"] == "Alpha Funds Trust"
+    assert "institutions.yaml" in env["result"]["name_source"]
+    monkeypatch.setattr(engine, "_registry_names", lambda iid: {})
+    assert eng.filers("alpha")["result"]["filers"][0]["registrant_name"] is None
+
+
+def _ledger_rw(eng):
+    path = eng.ledger.execute("PRAGMA database_list").fetchone()[2]
+    return sqlite3.connect(path)
+
+
+def test_fund_votes_names_the_series_by_its_latest_filing(eng):
+    w = _ledger_rw(eng)
+    w.execute("UPDATE filings SET filing_date='2024-08-01' WHERE accession='ACC-alpha'")
+    w.execute("INSERT INTO filings (accession, cik, institution_id, form_type,"
+              " filing_date, source_url, retrieval_date) VALUES ('ACC-alpha-2','1',"
+              "'alpha','N-PX','2025-08-01','https://sec.example/a2','2026-01-01')")
+    w.execute("UPDATE votes SET vote_series='S1' WHERE accession='ACC-alpha'")
+    w.executemany("INSERT INTO fund_series (series_id, accession, name) VALUES (?,?,?)",
+                  [("S1", "ACC-alpha", "Old Name Fund"), ("S1", "ACC-alpha-2", "New Name Fund")])
+    w.commit()
+    pid = eng.proposals(institution="alpha", year=2024)["result"]["shown"][0]["proposal_id"]
+    lines = eng.fund_votes(pid)["result"]["lines"]
+    assert {ln["fund_series"] for ln in lines} == {"S1"}
+    assert {ln["fund_series_name"] for ln in lines} == {"New Name Fund"}
+    w.execute("DELETE FROM fund_series")
+    w.commit()
+    assert {ln["fund_series_name"]
+            for ln in eng.fund_votes(pid)["result"]["lines"]} == {None}
+
+
+def _problems(eng, body, **over):
+    d = _draft(eng, body=body, **over)
+    return desk.verify(d, eng)["problems"]
+
+
+def test_majority_governance_terms_of_art_are_not_vague(eng):
+    base = ("Alpha's 2023 policy said “We expect boards to disclose climate transition "
+            "plans aligned with a 1.5 degree pathway.” [c1]\n\n"
+            "That sentence is not in the version archived in 2025. [c2]\n\n"
+            "Alpha supported 0 such proposals in 2024. [c3]\n\n")
+    tail = "At Exxon Mobil on 2024-05-20 it voted against {} [c4]"
+    for ok in ("a majority vote standard.", "majority voting.", "a majority-vote rule.",
+               "a majority of votes cast.", "a supermajority."):
+        assert not any("vague" in p for p in _problems(eng, base + tail.format(ok))), ok
+    for bad in ("the majority of proposals.", "a majority of managers."):
+        assert any("vague" in p for p in _problems(eng, base + tail.format(bad))), bad
+
+
+def test_straight_quote_with_a_stray_inch_mark_is_checked_not_mispaired(eng):
+    q = ("We expect boards to disclose climate transition plans aligned with a 1.5 "
+         "degree pathway.")
+    body = ('Alpha\'s 2023 policy said "' + q + '" [c1]\n\n'
+            "That sentence is not in the version archived in 2025. [c2]\n\n"
+            "Alpha supported 0 such proposals in 2024. [c3]\n\n"
+            "At Exxon Mobil on 2024-05-20 it voted against. [c4]")
+    assert _problems(eng, body) == []
+    # an inch mark makes the straight quotes odd: refuse to guess a pairing, so a
+    # fabricated quote cannot hide behind it and a genuine one is not misread
+    stray = body.replace("Alpha's", 'A 6" gap: Alpha\'s', 1)
+    probs = _problems(eng, stray)
+    assert any("odd number of straight" in p for p in probs)
+    assert not any("not backed" in p for p in probs)
+    # mixed curly and straight in one paragraph: each kind pairs with its own
+    mixed = body.replace(f'"{q}"', f'“{q}” and, as the "short phrase" shows,')
+    assert _problems(eng, mixed) == []
+
+
+def test_a_quotation_must_be_backed_by_a_claim_that_paragraph_cites(eng):
+    q = ("We expect boards to disclose climate transition plans aligned with a 1.5 "
+         "degree pathway.")
+    body = ("Alpha's 2023 policy said something. [c1]\n\n"
+            f"The wording “{q}” appears elsewhere. [c3]\n\n"
+            "That sentence is not in the version archived in 2025. [c2]\n\n"
+            "At Exxon Mobil on 2024-05-20 it voted against. [c4]")
+    assert any("not backed" in p for p in _problems(eng, body))
+
+
+def test_standing_limitations_say_paragraph_relevance_is_unchecked():
+    assert any("relevan" in s.lower() for s in desk.STANDING_LIMITATIONS)

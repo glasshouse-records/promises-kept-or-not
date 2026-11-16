@@ -84,6 +84,11 @@ _VAGUE = re.compile(
     r"slump\w*|tumbl\w*|significant\w*|substantial\w*|marked(ly)?|largely|"
     r"increasingly|roughly|approximately)\b", re.IGNORECASE)
 
+# Governance terms of art, not vague quantities: the phrase names a voting standard.
+_TERM_OF_ART = re.compile(
+    r"\b(?:supermajority|majority[- ]vot(?:e|es|ing)|majority of (?:the )?votes cast)\b",
+    re.IGNORECASE)
+
 STANDING_LIMITATIONS = (
     "Votes are from SEC N-PX filings: US-registered funds only, and only the fund "
     "registrants ingested for each manager.",
@@ -93,9 +98,30 @@ STANDING_LIMITATIONS = (
     "necessarily published then. Gaps between captures are gaps in the archive.",
     "Wording and voting are shown side by side. Nothing here establishes why a "
     "manager voted as it did.",
+    "The verifier checks that each figure, date and quotation is backed by a claim the "
+    "same paragraph cites, but not that a paragraph with none of these is relevant to "
+    "the claims it cites: a caveat can sit beside an unrelated claim unchallenged.",
 )
 _MARK = re.compile(r"\[(c\d+)\]")
-_QUOTED = re.compile(r"[“\"]([^”\"]{25,})[”\"]")
+_CURLY = re.compile(r"“([^“”]*)”")
+_STRAIGHT = re.compile(r'"([^"]*)"')
+_MIN_QUOTE = 25
+
+
+def _quotations(text: str) -> tuple[list[str], str, bool]:
+    """(long quotations, the text with every quoted span removed, ok). Curly
+    quotes pair with curly, straight with straight, and the two kinds are never
+    paired with each other. An odd number of straight marks (an inch sign, a
+    stray quote) cannot be paired without guessing, so ok is False and the
+    caller must reject the text rather than check a guessed span."""
+    quotes = [q for q in _CURLY.findall(text) if len(q) >= _MIN_QUOTE]
+    rest = _CURLY.sub(" ", text)
+    ok = rest.count('"') % 2 == 0
+    if ok:
+        quotes += [q for q in _STRAIGHT.findall(rest) if len(q) >= _MIN_QUOTE]
+        rest = _STRAIGHT.sub(lambda m: " " if len(m.group(1)) >= _MIN_QUOTE else m.group(0),
+                             rest)
+    return quotes, rest, ok
 _FACTUAL = re.compile(r"\d|[“\"]")
 
 
@@ -264,21 +290,41 @@ def verify(draft: dict, eng: engine.Engine | None = None) -> dict:
             problems.append(f"{n} in “{pt[:50]}…” is not established by the claims "
                             f"that paragraph cites ({', '.join(ids)})")
 
-    # A proposal's title may be quoted verbatim when its claim carries `title`.
-    quotes = [engine.norm(c["check"]["text"]) for c in claims.values()
-              if (c.get("check") or {}).get("type") == "quote"]
-    quotes += [engine.norm(c["check"]["title"]) for c in claims.values()
-               if (c.get("check") or {}).get("type") == "proposal"
-               and c["check"].get("title")]
-    for q in _QUOTED.findall(text):
-        if not any(engine.norm(q) in v or v in engine.norm(q) for v in quotes):
-            problems.append(f"quotation not backed by a quote claim: “{q[:60]}…”")
+    # A quotation must be backed by a quote claim (or a proposal title) that the
+    # SAME paragraph cites: a verified quote elsewhere in the piece is no cover.
+    def quote_values(ids) -> list[str]:
+        out = []
+        for i in ids:
+            chk = (claims.get(i) or {}).get("check") or {}
+            if chk.get("type") == "quote":
+                out.append(engine.norm(chk["text"]))
+            elif chk.get("type") == "proposal" and chk.get("title"):
+                out.append(engine.norm(chk["title"]))
+        return out
 
-    unquoted = _QUOTED.sub("", text)
+    unquoted_parts = []
+    chunks = [(head, head_ids)]
+    for para in re.split(r"\n\s*\n", str(draft.get("body", ""))):
+        if para.strip():
+            chunks.append((para.strip(), _MARK.findall(para)))
+    for chunk, ids in chunks:
+        qs, rest, paired = _quotations(chunk)
+        unquoted_parts.append(rest)
+        if not paired:
+            problems.append(f"odd number of straight double quotes in “{chunk[:50]}…”: "
+                            "quotations cannot be paired; use curly quotes “…”")
+        vals = quote_values(ids)
+        for q in qs:
+            nq = engine.norm(q)
+            if not any(nq in v or v in nq for v in vals):
+                problems.append(f"quotation not backed by a quote claim cited in the same "
+                                f"paragraph: “{q[:60]}…”")
+
+    unquoted = " ".join(unquoted_parts)
     for m in _NUMBER_WORD.finditer(unquoted):
         problems.append(f"number written as a word ({m.group(0)!r}): write figures in "
                         "digits so they are checked against the claims")
-    for m in _VAGUE.finditer(unquoted):
+    for m in _VAGUE.finditer(_TERM_OF_ART.sub(" ", unquoted)):
         problems.append(f"vague quantity {m.group(0)!r}: state the count and what it is "
                         "a count of, or leave it out")
 
@@ -292,7 +338,7 @@ def verify(draft: dict, eng: engine.Engine | None = None) -> dict:
         if not _CLAIM_ID.fullmatch(str(cid)):
             problems.append(f"claim id {cid!r} must be the letter c and digits (c1, c2 …); "
                             "markers of any other shape are not seen in the text")
-    unquoted += " " + _QUOTED.sub("", " ".join(map(str, draft.get("limitations") or [])))
+    unquoted += " " + _quotations(" ".join(map(str, draft.get("limitations") or [])))[1]
     for m in _CHARACTERISATION.finditer(unquoted):
         problems.append(f"characterisation {m.group(0)!r}: state what the record shows, "
                         "not motive or wrongdoing")
