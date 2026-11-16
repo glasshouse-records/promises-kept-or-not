@@ -249,6 +249,22 @@ CREATE TABLE IF NOT EXISTS capture_attempts (
 CREATE INDEX IF NOT EXISTS idx_capture_attempts_doc
     ON capture_attempts (institution_id, doc_label, id);
 
+-- Every enforcement-source ingest RUN, including the ones that found nothing
+-- new. `enforcement_actions` only gains a row when a record is new, so on its
+-- own it cannot tell "checked this morning, nothing new" from "not looked at
+-- since June". ok = 1 only when the fetch returned records (a blocked endpoint
+-- that returns 0 is not a success). Operator-internal: never published.
+CREATE TABLE IF NOT EXISTS ingest_runs (
+    id       INTEGER PRIMARY KEY,
+    source   TEXT NOT NULL,         -- CLI source name, e.g. doj_fcpa
+    run_at   TEXT NOT NULL,         -- ISO-8601, local time with offset
+    fetched  INTEGER NOT NULL,
+    inserted INTEGER NOT NULL,
+    ok       INTEGER NOT NULL CHECK (ok IN (0,1)),
+    error    TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_ingest_runs_source ON ingest_runs (source, ok, id);
+
 CREATE TABLE IF NOT EXISTS runs (
     id                INTEGER PRIMARY KEY,
     ts                TEXT NOT NULL,
@@ -373,6 +389,21 @@ class EnforcementAction:
             self.retrieval_date = date.today().isoformat()
         if self.resolution_type == "allegation":
             self.is_allegation = True
+
+
+def record_ingest_run(conn: sqlite3.Connection, source: str, fetched: int,
+                      inserted: int, error: str = "") -> None:
+    """Record one ingest run in its own short transaction, after the fetch has
+    returned (no write lock is held across a network wait). A run is a success
+    only if it fetched at least one record and did not error."""
+    from datetime import datetime
+    ok = 1 if fetched > 0 and not error else 0
+    conn.execute(
+        "INSERT INTO ingest_runs (source, run_at, fetched, inserted, ok, error) "
+        "VALUES (?,?,?,?,?,?)",
+        (source, datetime.now().astimezone().isoformat(timespec="seconds"),
+         fetched, inserted, ok, error[:300]))
+    conn.commit()
 
 
 def insert_enforcement(conn: sqlite3.Connection, actions: list[EnforcementAction]) -> int:

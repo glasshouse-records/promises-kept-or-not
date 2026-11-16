@@ -57,8 +57,13 @@ def cmd_ingest_enforcement(args) -> int:
     }
     names = list(sources) if args.source == "all" else [args.source]
     for name in names:
-        actions = sources[name]()
+        try:
+            actions = sources[name]()
+        except Exception as e:
+            ledger.record_ingest_run(conn, name, 0, 0, error=f"{type(e).__name__}: {e}")
+            raise
         n = ledger.insert_enforcement(conn, actions)
+        ledger.record_ingest_run(conn, name, len(actions), n)
         print(f"  {name:<12} fetched {len(actions):>6}, inserted {n:>6} new")
     return 0
 

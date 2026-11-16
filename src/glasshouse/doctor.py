@@ -22,6 +22,10 @@ _FRESHNESS_DAYS = {
     "DOJ (FCPA)": 45,
     "Federal Reserve": 45,
 }
+# doctor agency name -> `glasshouse ingest enforcement --source` name, so the
+# ingest_runs record can be found for it.
+_AGENCY_SOURCE = {"OFAC (SDN)": "ofac", "DOJ (FCPA)": "doj_fcpa",
+                  "Federal Reserve": "fed"}
 # A tracked policy page must be confirmed live at least this often. Capture is
 # a daily chore, so a FAILED attempt is reported the same day regardless; this
 # budget only catches the chore itself having stopped. 14 days matches the
@@ -119,10 +123,17 @@ def diagnose(conn: sqlite3.Connection) -> dict:
 
     # 1. Live-source freshness: newest retrieval per agency.
     for agency, budget in _FRESHNESS_DAYS.items():
+        # Prefer the last SUCCESSFUL run (a run that found nothing new is still
+        # a successful look); fall back to the newest row when none are recorded.
         row = conn.execute(
-            "SELECT MAX(retrieval_date) FROM enforcement_actions "
-            "WHERE agency = ? AND source_kind='live'", (agency,)).fetchone()
+            "SELECT MAX(substr(run_at,1,10)) FROM ingest_runs "
+            "WHERE source = ? AND ok = 1", (_AGENCY_SOURCE.get(agency, agency),)).fetchone()
         last = row[0]
+        if not last:
+            row = conn.execute(
+                "SELECT MAX(retrieval_date) FROM enforcement_actions "
+                "WHERE agency = ? AND source_kind='live'", (agency,)).fetchone()
+            last = row[0]
         if not last:
             check(f"source:{agency}", False, "no live rows ever ingested", "error")
             continue
