@@ -57,6 +57,13 @@ beats recall everywhere; every record is self-describing and traceable.
 ## Layout
 
 - `src/glasshouse/ingest/` — one module per source; streaming parsers
+- `engine.py` — THE query surface: a derived, proposal-level index
+  (`data/engine.db`, `glasshouse engine build`) with cited tools
+  (`glasshouse ask <tool> k=v`). New analysis goes through it. `desk.py`
+  re-checks an agent's draft claim by claim (`glasshouse desk verify`);
+  `.claude/agents/investigative-journalist.md` is the agent that uses both.
+  `investigate`/`systemic`/`detectors`/`casefile` are the older LINE-level
+  layer: their rates are not comparable to engine rates.
 - `ledger.py` (schema + invariants), `findings.py` / `contradictions.py`
   (analysis), `review.py` (human gate), `site.py` (static output),
   `workbench.py` (localhost operator desk), `doctor.py` + 

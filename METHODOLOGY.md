@@ -71,7 +71,45 @@ published output until a human verifies the primary source (see
 5. **Commitment ⟷ holding** — weakest (index alibi exists); still reported,
    labeled as such.
 
-## Say-vs-do analysis (the investigation engine)
+## The evidence engine (proposal-level; supersedes line-level rates)
+
+`engine.py` builds a derived index (`data/engine.db`, rebuildable, never a
+source of truth) that every investigation now goes through. It differs from
+the say-vs-do analysis described below in three ways, each a correction:
+
+- **The unit is the proposal, not the ballot line.** N-PX reports one line per
+  fund per ballot item. The ledger's 105,795 shareholder-proposal lines are
+  19,729 distinct (manager, company, meeting, proposal) decisions. Rates over
+  lines weight a proposal by how many of a manager's funds hold the stock;
+  the engine counts each decision once. Where a manager's funds voted both
+  ways the position is `SPLIT` and is excluded from the support rate's
+  denominator (FOR / (FOR + AGAINST)), with the count reported beside it.
+- **Scope is shareholder-sponsored proposals** (`vote_source = SECURITY
+  HOLDER`), de-duplicated. Director elections and management proposals stay
+  in the ledger but are not indexed.
+- **Peer comparison is on identical proposals.** `peers` matches the same
+  ballot item across managers by company, meeting date and the proposal's
+  significant words. Matching is deliberately strict: an unmatched proposal
+  costs a comparison; a false merge would compare votes on different items.
+- **Say is time-aligned to do.** A vote is set only against the policy
+  version archived on or before the meeting date. Capture dates are "public
+  by", so the true window opens earlier and votes just before a capture are
+  attributed to the previous version.
+
+Figures produced by the older line-level modules (`investigate`, `systemic`,
+`detectors`, `casefile`) are NOT comparable to engine figures and should not
+be cited alongside them. The 175 rows in `findings` predate the temporal
+guard — 25 of them pair a vote with a policy version archived after it — and
+all remain `pending`; none is publishable.
+
+**Drafts are machine-checked.** An investigating agent files a draft to
+`data/desk/` in which every factual sentence carries a claim (`quote`,
+`absent`, `stat`, `proposal`, `enforcement`). `glasshouse desk verify`
+re-executes each claim against the engine, rejects uncited figures and
+unbacked quotations, and rejects words asserting motive or wrongdoing. A
+verified draft is an unpublished lead; publication remains a human act.
+
+## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting
 record (DO)** on a theme, as a quantified, cited result. It is an
@@ -174,7 +212,7 @@ Scope is deliberately narrow, precision-first:
   during an editorial audit): the same voteRecord repeated within one
   exhibit (one copy per share class) and the same series' votes filed in
   two exhibits of the same period — 107,088 of 2,158,394 ingested rows
-  (~5%). Rows are kept as filed but marked `is_duplicate`; every analytic
+  (9.3% of rows — 350,732 of 3,765,999 as of 2026-11). Rows are kept as filed but marked `is_duplicate`; every analytic
   query excludes them. **Never sum `shares_voted` without this filter.**
   Rows where identical share counts appear FOR and AGAINST the same
   proposal are additionally excluded from divergence visuals as likely

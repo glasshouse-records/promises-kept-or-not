@@ -932,6 +932,64 @@ def cmd_integrity(_args) -> int:
     return 1 if hard_fail else 0
 
 
+def _kv(pairs: list[str]) -> dict:
+    """key=value CLI args → kwargs, with ints and booleans typed."""
+    out = {}
+    for pair in pairs:
+        if "=" not in pair:
+            raise SystemExit(f"expected key=value, got {pair!r}")
+        k, v = pair.split("=", 1)
+        out[k] = (int(v) if v.lstrip("-").isdigit()
+                  else {"true": True, "false": False}.get(v.lower(), v))
+    return out
+
+
+def cmd_engine(args) -> int:
+    """Rebuild the derived evidence index from the ledger."""
+    from . import engine
+    for k, v in engine.build().items():
+        print(f"  {k:<22} {v}")
+    return 0
+
+
+def cmd_ask(args) -> int:
+    """Ask the evidence engine one question; prints the cited JSON envelope."""
+    from . import engine
+    if args.tool == "tools":
+        import inspect
+        for t in engine.TOOLS:
+            fn = getattr(engine.Engine, t)
+            sig = ", ".join(
+                n if prm.default is inspect.Parameter.empty else f"[{n}]"
+                for n, prm in inspect.signature(fn).parameters.items() if n != "self")
+            doc = " ".join((fn.__doc__ or "").split()).split(". ")[0]
+            print(f"  {t}({sig})\n      {doc}.".replace("..", "."))
+        return 0
+    try:
+        print(engine.dumps(engine.call(args.tool, **_kv(args.params))))
+    except (ValueError, TypeError, FileNotFoundError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
+def cmd_desk(args) -> int:
+    """Check an investigating agent's draft against the record, or list drafts."""
+    from . import desk
+    if args.action == "list":
+        for d in desk.listing():
+            mark = {True: "VERIFIED", False: "FAILED  ", None: "unchecked"}[d["verified"]]
+            print(f"  [{mark}] {d['slug']:<40} {d['claims']:>3} claims  {d['headline'][:60]}")
+        return 0
+    report = desk.verify_file(args.path)
+    for c in report["claims"]:
+        print(f"  {'ok ' if c['ok'] else 'BAD'} {c['id']:<5} {c['detail']}")
+    for pr in report["problems"]:
+        print(f"  ! {pr}")
+    print(f"\n  {'VERIFIED' if report['verified'] else 'NOT VERIFIED'} — {report['status']}")
+    return 0 if report["verified"] else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     p = argparse.ArgumentParser(prog="glasshouse")
@@ -1216,6 +1274,23 @@ def main(argv: list[str] | None = None) -> int:
     orr.add_argument("id", type=int)
     orr.add_argument("summary")
     orr.set_defaults(func=cmd_outreach_record_response)
+
+    eng = sub.add_parser("engine", help="the evidence engine: rebuild the derived, "
+                         "proposal-level index an investigator queries")
+    eng.add_subparsers(dest="action", required=True).add_parser(
+        "build").set_defaults(func=cmd_engine)
+    ask = sub.add_parser("ask", help="ask the evidence engine one question "
+                         "(`glasshouse ask tools` lists them); prints cited JSON")
+    ask.add_argument("tool")
+    ask.add_argument("params", nargs="*", help="key=value arguments")
+    ask.set_defaults(func=cmd_ask)
+    dk = sub.add_parser("desk", help="the desk: mechanically re-check an investigating "
+                        "agent's draft against the record (never publishes)")
+    dk_sub = dk.add_subparsers(dest="action", required=True)
+    dk_sub.add_parser("list").set_defaults(func=cmd_desk)
+    dkv = dk_sub.add_parser("verify")
+    dkv.add_argument("path")
+    dkv.set_defaults(func=cmd_desk)
 
     sub.add_parser("integrity").set_defaults(func=cmd_integrity)
     sub.add_parser("dedupe", help="mark exact-duplicate vote rows so analytics "

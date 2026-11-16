@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "glasshouse-engine": {
+      "command": ".venv/bin/python",
+      "args": ["-m", "glasshouse.engine_mcp"]
+    }
+  }
+}
