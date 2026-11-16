@@ -99,3 +99,16 @@ def test_meeting_dates_sort_chronologically_not_lexicographically(tmp_path):
     assert latest == "2025-06-30"
     earliest = c.execute(f"SELECT MIN({ISO_MEETING_DATE}) FROM votes").fetchone()[0]
     assert earliest == "2023-01-15"
+
+
+def test_meeting_dates_without_zero_padding_still_sort_as_dates():
+    """Found 2026-11-16: one filer's 2026 N-PX writes 9/30/2025 and 1/6/2026.
+    The ISO helper only recognised 09/30/2025, so 135,766 vote rows had no
+    year and fell out of every by-year figure."""
+    import sqlite3
+
+    from glasshouse.ledger import iso_meeting_date
+    c = sqlite3.connect(":memory:")
+    got = [c.execute(f"SELECT {iso_meeting_date('?')}".replace("?", "?1"), (v,)).fetchone()[0]
+           for v in ("9/30/2025", "1/6/2026", "12/1/2025", "06/30/2025", "2024-05-20", "", "n/a")]
+    assert got == ["2025-09-30", "2026-01-06", "2025-12-01", "2025-06-30", "2024-05-20", "", "n/a"]

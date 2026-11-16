@@ -78,8 +78,8 @@ source of truth) that every investigation now goes through. It differs from
 the say-vs-do analysis described below in three ways, each a correction:
 
 - **The unit is the proposal, not the ballot line.** N-PX reports one line per
-  fund per ballot item. The ledger's 105,795 shareholder-proposal lines are
-  19,729 distinct (manager, company, meeting, proposal) decisions. Rates over
+  fund per ballot item. As of 2026-11-16 (three N-PX seasons, 2024–2026) the ledger's 280,687
+  shareholder-proposal lines are 56,164 distinct (manager, company, meeting, proposal) decisions. Rates over
   lines weight a proposal by how many of a manager's funds hold the stock;
   the engine counts each decision once. The position is SHARE-weighted:
   funds routinely file a sliver the other way (0.2–2.5% of shares at State
@@ -88,8 +88,9 @@ the say-vs-do analysis described below in three ways, each a correction:
   604 BlackRock proposals split and dropped them from every rate; share
   weighting leaves 7 and 3. `SPLIT` is outside the support rate
   (FOR / (FOR + AGAINST)) and reported beside it.
-- **Coverage is a handful of fund registrants per manager** (BlackRock: one;
-  T. Rowe Price: four). Figures describe "the funds on file", not the firm.
+- **Coverage is a handful of fund registrants per manager** (BlackRock,
+  State Street and T. Rowe Price: four each; Vanguard: five; index trusts
+  only for the largest three, added 2026-11-16). Figures describe "the funds on file", not the firm.
 - **Scope is shareholder-sponsored proposals** (`vote_source = SECURITY
   HOLDER`), de-duplicated, plus **management's director nominees**
   (`vote_source = ISSUER`, category `DIRECTOR ELECTIONS`) in a separate table
