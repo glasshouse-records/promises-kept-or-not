@@ -81,3 +81,12 @@ beats recall everywhere; every record is self-describing and traceable.
 accent, condensed-caps display, reading serif, monospace for every
 machine-verifiable identifier, rubber-stamp status marks. Do not regress
 to the cream/serif/terracotta default.
+
+## Who does the work
+
+`docs/ROADMAP.md` is the list; `docs/WORKFLOW.md` is the routing. Use the
+cheapest tier that can do the job properly: a script before any model,
+`clerk` (Haiku) to run known commands, `builder`/`source-medic` (Sonnet) for
+one specified change, `investigative-journalist`/`glasshouse-reviewer` (Opus)
+for investigation and review. `/next` continues the roadmap from a cold start.
+`scripts/gates.sh` runs every gate quietly.
