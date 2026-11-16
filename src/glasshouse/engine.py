@@ -66,6 +66,20 @@ CREATE INDEX ix_p_inst ON proposals(institution_id, year);
 CREATE INDEX ix_p_ballot ON proposals(ballot_key);
 CREATE INDEX ix_p_cusip ON proposals(cusip);
 CREATE VIRTUAL TABLE proposal_fts USING fts5(description, issuer_name, content='');
+CREATE TABLE director_votes (
+    director_id    INTEGER PRIMARY KEY,
+    institution_id TEXT NOT NULL,
+    issuer_name    TEXT, cusip TEXT,
+    meeting_date   TEXT, year INTEGER,
+    nominee_item   TEXT,            -- the ballot line as filed (names the nominee)
+    position       TEXT NOT NULL,   -- FOR | AGAINST (incl. WITHHOLD) | ABSTAIN | SPLIT | NONE
+    n_lines INTEGER, n_for INTEGER, n_against INTEGER, n_other INTEGER,
+    meeting_key    TEXT,            -- same meeting across managers ('' if no CUSIP)
+    accession      TEXT, source_url TEXT, vote_id INTEGER
+);
+CREATE INDEX ix_d_inst ON director_votes(institution_id, year);
+CREATE INDEX ix_d_meeting ON director_votes(meeting_key);
+CREATE INDEX ix_d_cusip ON director_votes(cusip);
 CREATE TABLE policy_versions (
     commitment_id  INTEGER PRIMARY KEY,   -- ledger commitments.id
     institution_id TEXT, doc_label TEXT, url TEXT,
@@ -167,17 +181,10 @@ def _ro(path: Path) -> sqlite3.Connection:
 
 # --------------------------------------------------------------------- build
 
-def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
-    """Rebuild the derived index from the ledger. Reads the ledger read-only."""
-    led = _ro(ledger_path)
-    tmp = engine_path.with_suffix(".building")
-    tmp.unlink(missing_ok=True)
-    tmp.parent.mkdir(parents=True, exist_ok=True)
-    eng = sqlite3.connect(tmp)
-    eng.executescript(SCHEMA)
-
-    theme_rx = {t: re.compile("|".join(spec["proposal"]), re.IGNORECASE)
-                for t, spec in THEMES.items()}
+def _grouped(led: sqlite3.Connection, which: str) -> dict[tuple, dict]:
+    """Collapse fund ballot lines to one decision per (manager, company, meeting,
+    item), carrying line and share tallies. `which` is a fixed SQL condition
+    chosen by build(), never caller input."""
     iso = iso_meeting_date("v.meeting_date")
     groups: dict[tuple, dict] = {}
     for v in led.execute(
@@ -185,7 +192,7 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
                    v.vote_description AS d, v.category_type, v.how_voted, v.shares_voted,
                    v.management_recommendation AS mr, v.accession, f.source_url
             FROM votes v JOIN filings f ON f.accession = v.accession
-            WHERE v.is_duplicate = 0 AND v.vote_source = 'SECURITY HOLDER'
+            WHERE v.is_duplicate = 0 AND {which}
               AND f.institution_id IS NOT NULL"""):
         key = (v["iid"], (v["cusip"] or "").strip().upper() or v["issuer_name"], v["md"],
                norm(v["d"]))
@@ -213,6 +220,28 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
         else:
             g["other"] += 1
 
+    return groups
+
+
+def _position(g: dict) -> str:
+    if g["sf"] + g["sa"] > 0:
+        return position_from_shares(g["sf"], g["sa"], g["abstain"])
+    return position_from_shares(g["for"], g["against"], g["abstain"])
+
+
+def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
+    """Rebuild the derived index from the ledger. Reads the ledger read-only."""
+    led = _ro(ledger_path)
+    tmp = engine_path.with_suffix(".building")
+    tmp.unlink(missing_ok=True)
+    tmp.parent.mkdir(parents=True, exist_ok=True)
+    eng = sqlite3.connect(tmp)
+    eng.executescript(SCHEMA)
+
+    theme_rx = {t: re.compile("|".join(spec["proposal"]), re.IGNORECASE)
+                for t, spec in THEMES.items()}
+    groups = _grouped(led, "v.vote_source = 'SECURITY HOLDER'")
+
     rows, fts = [], []
     for pid, g in enumerate(groups.values(), 1):
         v = g["row"]
@@ -224,9 +253,7 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
                      year, desc, v["category_type"],
                      ("MIXED" if g["with_m"] and g["against_m"] else
                       "AGAINST" if g["against_m"] else "WITH" if g["with_m"] else ""),
-                     (position_from_shares(g["sf"], g["sa"], g["abstain"])
-                      if g["sf"] + g["sa"] > 0 else
-                      position_from_shares(g["for"], g["against"], g["abstain"])),
+                     _position(g),
                      g["n"], g["for"],
                      g["against"], g["abstain"] + g["other"],
                      "," + ",".join(themes) + "," if themes else "",
@@ -236,6 +263,21 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
         fts.append((pid, desc, v["issuer_name"] or ""))
     eng.executemany("INSERT INTO proposals VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
     eng.executemany("INSERT INTO proposal_fts(rowid, description, issuer_name) VALUES (?,?,?)", fts)
+
+    # Management's director nominees: where board-composition policy is acted on.
+    dgroups = _grouped(led, "v.vote_source = 'ISSUER' AND v.category_type = 'DIRECTOR ELECTIONS'")
+    drows = []
+    for did, g in enumerate(dgroups.values(), 1):
+        v = g["row"]
+        md = v["md"] or ""
+        cusip = (v["cusip"] or "").strip().upper()
+        drows.append((did, v["iid"], v["issuer_name"], cusip, md,
+                      int(md[:4]) if md[:4].isdigit() else None, v["d"] or "", _position(g),
+                      g["n"], g["for"], g["against"], g["abstain"] + g["other"],
+                      f"{cusip}|{md}" if cusip and md else "",
+                      v["accession"], v["source_url"] or "", v["id"]))
+    eng.executemany("INSERT INTO director_votes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", drows)
+    del dgroups
 
     # Policy text: one row per distinct TEXT version (earliest capture wins —
     # that is the date the wording is first demonstrably public).
@@ -271,6 +313,7 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
         "built_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "ballot_lines": sum(g["n"] for g in groups.values()),
         "proposals": len(rows),
+        "director_items": len(drows),
         "policy_versions": len(seen),
         "policy_sentences": sid,
         "ledger_max_vote_id": led.execute("SELECT MAX(id) FROM votes").fetchone()[0],
@@ -401,8 +444,10 @@ class Engine:
                                      "themes": sorted(THEMES)},
                     ["Votes are SEC N-PX filings: US-registered funds only. A manager's "
                      "separate accounts and non-US funds are not here.",
-                     "Only shareholder-sponsored proposals are indexed. Director elections "
-                     "and management proposals are in the ledger but not in this index.",
+                     "proposals() and its tools cover shareholder-sponsored items only. "
+                     "Management's director nominees have their own tools "
+                     "(director_record, director_votes, director_peers). Other management "
+                     "proposals (say-on-pay, auditors) are in the ledger but not indexed.",
                      "A year with few proposals is thin coverage, not a quiet year. Check "
                      "each manager's `proposals_by_year` before comparing two years: a "
                      "sharp fall usually means filings are missing, not that behaviour "
@@ -710,6 +755,140 @@ class Engine:
                      "Check ballot() on each side: if peers moved the same way, the "
                      "proposal changed, not this manager."])
 
+    # -- directors
+    def _dwhere(self, *, institution=None, company=None, year=None, since=None, until=None,
+                position=None):
+        w, p = ["1=1"], []
+        if institution:
+            w.append("d.institution_id = ?")
+            p.append(self._inst(institution))
+        if company:
+            w.append("(d.issuer_name LIKE ? OR d.cusip = ?)")
+            p += [f"%{company}%", company.upper()]
+        if year:
+            w.append("d.year = ?")
+            p.append(int(year))
+        if since:
+            w.append("d.meeting_date >= ?")
+            p.append(since)
+        if until:
+            w.append("d.meeting_date <= ?")
+            p.append(until)
+        if position:
+            w.append("d.position = ?")
+            p.append(position.upper())
+        return " AND ".join(w), p
+
+    @staticmethod
+    def _dtally(t: dict) -> dict:
+        decided = t["FOR"] + t["AGAINST"]
+        return {"nominees": t["FOR"] + t["AGAINST"] + t["SPLIT"] + t["ABSTAIN"] + t["NONE"],
+                "for": t["FOR"], "opposed": t["AGAINST"], "split": t["SPLIT"],
+                "abstain": t["ABSTAIN"], "none": t["NONE"],
+                "opposition_rate": round(t["AGAINST"] / decided, 4) if decided else None,
+                "meetings": t["meetings"], "meetings_with_opposition": t["opp_meetings"]}
+
+    _DIRECTOR_CAVEATS = [
+        "Covers management's nominees only (N-PX source ISSUER, category DIRECTOR "
+        "ELECTIONS). Dissident nominees in contested elections are in proposals().",
+        "`opposed` = AGAINST or WITHHOLD, share-weighted across the funds on file. "
+        "ABSTAIN is counted separately, though in some markets it is the only way to "
+        "oppose a nominee.",
+        "The record never says WHY a nominee was opposed: board diversity, "
+        "overboarding, pay, attendance and independence all look identical here. "
+        "A change in the rate is not evidence about any one reason.",
+        "Counts are ballot items as each filer worded them; a slate voted as one "
+        "item counts once. Non-US meetings are included: narrow with company=.",
+        "Year-to-year change can reflect which companies the funds held."]
+
+    def director_record(self, institution: str, company=None, since=None, until=None) -> dict:
+        """How often one manager opposed management's board nominees, by year,
+        counted per nominee item and per meeting."""
+        w, p = self._dwhere(institution=institution, company=company, since=since, until=until)
+        years: dict = defaultdict(lambda: defaultdict(int))
+        for r in self.db.execute(
+                f"SELECT d.year, d.position, COUNT(*) n FROM director_votes d WHERE {w} "
+                "GROUP BY d.year, d.position", p):
+            years[r["year"]][r["position"]] += r["n"]
+        for r in self.db.execute(
+                f"""SELECT year, COUNT(*) m, SUM(opp > 0) om FROM (
+                        SELECT d.year, SUM(d.position='AGAINST') opp FROM director_votes d
+                        WHERE {w} GROUP BY d.year, d.cusip, d.issuer_name, d.meeting_date)
+                    GROUP BY year""", p):
+            years[r["year"]]["meetings"] = r["m"]
+            years[r["year"]]["opp_meetings"] = r["om"] or 0
+        total: dict = defaultdict(int)
+        for t in years.values():
+            for k, n in t.items():
+                total[k] += n
+        return _env("director_record", _clean(institution=institution, company=company,
+                                              since=since, until=until),
+                    {"overall": self._dtally(total),
+                     "by_year": {y: self._dtally(t) for y, t in
+                                 sorted(years.items(), key=lambda kv: kv[0] or 0)}},
+                    self._DIRECTOR_CAVEATS)
+
+    def director_votes(self, institution: str, company=None, year=None, position=None,
+                       since=None, until=None, limit: int = 60) -> dict:
+        """The nominee items behind director_record(), each with its filing."""
+        w, p = self._dwhere(institution=institution, company=company, year=year,
+                            since=since, until=until, position=position)
+        rows = self.db.execute(
+            f"SELECT d.* FROM director_votes d WHERE {w} "
+            "ORDER BY d.meeting_date DESC, d.issuer_name, d.director_id LIMIT ?",
+            [*p, int(limit)]).fetchall()
+        return _env("director_votes", _clean(institution=institution, company=company,
+                                             year=year, position=position, since=since,
+                                             until=until, limit=limit),
+                    [{"director_id": r["director_id"], "institution": r["institution_id"],
+                      "company": r["issuer_name"], "cusip": r["cusip"],
+                      "meeting_date": r["meeting_date"], "nominee_item": r["nominee_item"],
+                      "position": r["position"],
+                      "fund_lines": {"total": r["n_lines"], "for": r["n_for"],
+                                     "against": r["n_against"], "other": r["n_other"]},
+                      "accession": r["accession"], "source_url": r["source_url"]}
+                     for r in rows],
+                    [*self._DIRECTOR_CAVEATS, f"At most {limit} rows; raise limit= for more."])
+
+    def director_peers(self, year=None, since=None, until=None, company=None,
+                       min_managers: int = 3) -> dict:
+        """Managers compared on the SAME shareholder meetings: at how many did
+        each oppose at least one management nominee?"""
+        w, p = self._dwhere(company=company, year=year, since=since, until=until)
+        per: dict = defaultdict(dict)
+        for r in self.db.execute(
+                f"""SELECT d.meeting_key k, d.institution_id i, SUM(d.position='FOR') f,
+                           SUM(d.position='AGAINST') a
+                    FROM director_votes d WHERE {w} AND d.meeting_key != ''
+                    GROUP BY d.meeting_key, d.institution_id""", p):
+            if r["f"] + r["a"]:
+                per[r["k"]][r["i"]] = (r["f"], r["a"])
+        shared = {k: v for k, v in per.items() if len(v) >= min_managers}
+        out: dict = defaultdict(lambda: {"shared_meetings": 0, "meetings_with_opposition": 0,
+                                         "nominees": 0, "opposed": 0})
+        for votes in shared.values():
+            for iid, (f, a) in votes.items():
+                o = out[iid]
+                o["shared_meetings"] += 1
+                o["meetings_with_opposition"] += a > 0
+                o["nominees"] += f + a
+                o["opposed"] += a
+        for o in out.values():
+            o["opposition_rate"] = round(o["opposed"] / o["nominees"], 4) if o["nominees"] else None
+            o["share_of_meetings_with_opposition"] = round(
+                o["meetings_with_opposition"] / o["shared_meetings"], 4)
+        table = dict(sorted(out.items(), key=lambda kv: -(kv[1]["opposition_rate"] or 0)))
+        return _env("director_peers", _clean(year=year, since=since, until=until,
+                                             company=company, min_managers=min_managers),
+                    {"shared_meetings": len(shared), "candidate_meetings": len(per),
+                     "managers": table},
+                    ["Meetings are matched by CUSIP and meeting date. Nominee items are "
+                     "NOT matched one-to-one: filers word them differently, and one may "
+                     "file a slate as a single item, so compare "
+                     "`share_of_meetings_with_opposition` before `opposition_rate`.",
+                     "Each manager's figures cover only the shared meetings IT voted at.",
+                     *self._DIRECTOR_CAVEATS])
+
     def fund_votes(self, proposal_id: int) -> dict:
         """The individual fund lines behind one position: which fund series voted
         how, with how many shares, from which filing."""
@@ -843,6 +1022,7 @@ class Engine:
 
 TOOLS = ("coverage", "policy_versions", "policy_search", "policy_diff", "policy_in_force",
          "proposals", "voting_record", "peers", "ballot", "fund_votes", "reversals", "say_vs_do", "filers",
+         "director_record", "director_votes", "director_peers",
          "company",
          "enforcement", "holdings", "verify_quote", "sql")
 

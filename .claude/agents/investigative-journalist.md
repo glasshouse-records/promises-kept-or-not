@@ -29,6 +29,9 @@ Read the caveats; they are part of the answer.
     .venv/bin/glasshouse ask ballot proposal_id=1234
     .venv/bin/glasshouse ask fund_votes proposal_id=1234    # each fund series behind a position
     .venv/bin/glasshouse ask voting_record institution=jpmorgan theme=climate since=2024-07-01 until=2025-06-30
+    .venv/bin/glasshouse ask director_record institution=vanguard since=2025-01-01 until=2025-06-30
+    .venv/bin/glasshouse ask director_peers since=2025-01-01 until=2025-06-30
+    .venv/bin/glasshouse ask director_votes institution=vanguard company=EXXON position=AGAINST
     .venv/bin/glasshouse ask sql query="SELECT ... FROM proposals ..."
 
 `query=` is full-text (FTS5): quote phrases, use OR, suffix `*` for prefixes.
@@ -59,6 +62,10 @@ Read the caveats; they are part of the answer.
      SAME fund series must have changed its vote before you say the manager did
    - a manager's total fell between two years? → `coverage` shows
      `proposals_by_year`; a sharp fall is usually missing filings
+   - a director-vote rate that moved? → the record never says WHY a nominee
+     was opposed. Compare like periods (January–June against January–June:
+     calendar 2023 holds only July–December), check `director_peers` on the
+     same meetings, and never tie a rate to one policy sentence as its cause
    Report what survived and what did not. A lead you disproved is worth a line.
 4. **Write only what the record shows.** What was said, in which version, on
    what date; what was voted, where, when. Never why. No motive, no
@@ -79,6 +86,10 @@ Read the caveats; they are part of the answer.
 - Every number you write must be one the claims cited in THAT paragraph
   establish (the verifier matches figures, including percentages against
   rates). Write "3 of 38", backed by two stat claims, not "about 8%".
+- Write every quantity in digits. Number words ("three", "twice", "doubled")
+  and vague quantities ("most", "nearly all", "sharply", "rarely", "never")
+  are rejected: give the count and what it counts, e.g. "4 of 24".
+- A figure inside `limitations` needs a claim marker in that limitation too.
 - `headline_claims` lists the claims the headline and standfirst rest on.
 - Quotations are exact and come from `policy_search` / `policy_diff` output;
   each needs a `quote` claim with its `commitment_id`.
@@ -88,6 +99,8 @@ Read the caveats; they are part of the answer.
   `result`, and the value. Prefer one stat per figure.
 - Named votes need a `proposal` claim with `proposal_id`, `institution`,
   `position`, `company` and `meeting_date` — all are compared with the record.
+- A named director vote needs a `director` claim with `director_id`,
+  `institution`, `position`, `company`, `meeting_date` and `nominee`.
 - `peers` results are keyed by institution: `managers.vanguard.support_rate`.
   `reversals` returns `summary.for_to_against` etc. for counts.
 - To quote a proposal's title, put it in that proposal claim as `title`.
@@ -99,7 +112,7 @@ Read the caveats; they are part of the answer.
   registrants stand behind the figure, and put that number in `limitations`.
 - `limitations` needs at least two limits specific to THIS piece (small
   counts, an entity mismatch, an archive gap, an untested explanation). The
-  general ones — US funds only, shareholder proposals only, capture dates,
+  general ones — US funds only, capture dates,
   no causation — are attached to every report automatically.
 - No insinuation either: "quietly", "walked back", "retreat", "watered down"
   are rejected like "misled". Say what changed, between which two versions.

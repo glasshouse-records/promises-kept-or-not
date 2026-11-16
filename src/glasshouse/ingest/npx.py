@@ -200,7 +200,7 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
     until validated. Default (False) preserves the safe skip behavior.
     """
     today = date.today().isoformat()
-    stats = {"filings": 0, "skipped": 0, "notices": 0, "votes": 0}
+    stats = {"filings": 0, "skipped": 0, "notices": 0, "votes": 0, "failed": 0}
 
     filings = list_filings(cik, NPX_FORMS, limit=max_filings)
     for filing in filings:
@@ -257,45 +257,68 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
             stats["skipped"] += 1
             continue
 
-        conn.execute(
-            """INSERT INTO filings (accession, cik, institution_id, form_type, filing_date,
-                                    period_of_report, report_type, source_url, retrieval_date)
-               VALUES (?,?,?,?,?,?,?,?,?)""",
-            (filing.accession_number, filing.cik, institution_id, filing.form_type,
-             filing.filing_date, cover.period_of_report or filing.period_of_report,
-             cover.report_type, filing.directory_url, today),
-        )
-        for s in cover.series:
+        # Network first, ledger second: every exhibit is on disk before the
+        # filing is recorded, so no write lock is held across a download and a
+        # filing is never left in the ledger with part of its votes.
+        locals_: list[Path] = []
+        if not cover.is_notice_only:
+            try:
+                for url in find_vote_table_exhibits(filing):
+                    local = (http.CACHE_DIR / "npx" / filing.accession_clean
+                             / url.rsplit("/", 1)[-1])
+                    http.download(url, local)
+                    locals_.append(local)
+            except Exception as exc:
+                logger.warning("could not fetch exhibits for %s (%s) — not recorded, "
+                               "will retry next run", filing.accession_number, exc)
+                stats["failed"] += 1
+                continue
+
+        try:
             conn.execute(
-                "INSERT OR IGNORE INTO fund_series (series_id, accession, name, lei) VALUES (?,?,?,?)",
-                (s["series_id"], filing.accession_number, s["name"], s["lei"]),
+                """INSERT INTO filings (accession, cik, institution_id, form_type,
+                                        filing_date, period_of_report, report_type,
+                                        source_url, retrieval_date)
+                   VALUES (?,?,?,?,?,?,?,?,?)""",
+                (filing.accession_number, filing.cik, institution_id, filing.form_type,
+                 filing.filing_date, cover.period_of_report or filing.period_of_report,
+                 cover.report_type, filing.directory_url, today),
             )
+            for sr in cover.series:
+                conn.execute(
+                    "INSERT OR IGNORE INTO fund_series (series_id, accession, name, lei) "
+                    "VALUES (?,?,?,?)",
+                    (sr["series_id"], filing.accession_number, sr["name"], sr["lei"]),
+                )
+            n_votes = 0
+            for local in locals_:
+                rows = []
+                for row in iter_vote_rows(local, max_tables=max_tables):
+                    rows.append((
+                        filing.accession_number, row.issuer_name, row.cusip, row.isin,
+                        row.meeting_date, row.vote_description, row.category_type,
+                        row.vote_source, row.shares_on_loan, row.vote_series,
+                        row.how_voted, row.shares_voted, row.management_recommendation,
+                    ))
+                    if len(rows) >= 5000:
+                        conn.executemany(_VOTE_INSERT, rows)
+                        n_votes += len(rows)
+                        rows = []
+                if rows:
+                    conn.executemany(_VOTE_INSERT, rows)
+                    n_votes += len(rows)
+            conn.commit()
+        except Exception as exc:
+            conn.rollback()
+            logger.warning("could not ingest %s (%s) — rolled back, will retry next run",
+                           filing.accession_number, exc)
+            stats["failed"] += 1
+            continue
 
         if cover.is_notice_only:
             stats["notices"] += 1
-            conn.commit()
             continue
-
-        for url in find_vote_table_exhibits(filing):
-            local = http.CACHE_DIR / "npx" / filing.accession_clean / url.rsplit("/", 1)[-1]
-            http.download(url, local)
-            rows = []
-            for row in iter_vote_rows(local, max_tables=max_tables):
-                rows.append((
-                    filing.accession_number, row.issuer_name, row.cusip, row.isin,
-                    row.meeting_date, row.vote_description, row.category_type,
-                    row.vote_source, row.shares_on_loan, row.vote_series,
-                    row.how_voted, row.shares_voted, row.management_recommendation,
-                ))
-                if len(rows) >= 5000:
-                    conn.executemany(_VOTE_INSERT, rows)
-                    stats["votes"] += len(rows)
-                    rows = []
-            if rows:
-                conn.executemany(_VOTE_INSERT, rows)
-                stats["votes"] += len(rows)
-            conn.commit()
-
+        stats["votes"] += n_votes
         stats["filings"] += 1
         logger.info("ingested %s (%s): %d votes so far",
                     filing.accession_number, cover.report_type, stats["votes"])

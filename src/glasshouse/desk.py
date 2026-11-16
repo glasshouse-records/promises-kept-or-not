@@ -21,6 +21,9 @@ Check types (each re-executed against the engine, never taken on trust):
     {"type": "proposal", "proposal_id": 991, "institution": "blackrock",
                          "position": "AGAINST", "company": "EXXON",
                          "meeting_date": "2024-05-29"}
+    {"type": "director", "director_id": 5512, "institution": "vanguard",
+                         "position": "AGAINST", "company": "EXXON",
+                         "meeting_date": "2024-05-29", "nominee": "Jane Roe"}
     {"type": "enforcement", "id": 4410}
 
 `verify()` also lints the prose: every paragraph must cite a claim; every
@@ -59,12 +62,26 @@ _CHARACTERISATION = re.compile(
     r"retreat\w*|revers\w+ (itself|course)|water\w* down|gut(s|ted|ting)?|"
     r"dodg\w*|evad\w*|hid(es?|den|ing)?|bur(y|ied|ies))\b", re.IGNORECASE)
 _NUM = re.compile(r"\d+(?:\.\d+)?")
+# A quantity written as a word is still a quantity, and escapes a digit check.
+_NUMBER_WORD = re.compile(
+    r"\b(two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|"
+    r"fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|"
+    r"seventy|eighty|ninety|hundreds?|thousands?|millions?|billions?|dozens?|twice|thrice|"
+    r"doubl\w+|tripl\w+|quadrupl\w+|halv\w+)\b", re.IGNORECASE)
+# Words that assert a proportion, a frequency or a size of change without one.
+_VAGUE = re.compile(
+    r"\b(most|mostly|majority|minority|nearly|almost|virtually|practically|vast|"
+    r"overwhelming\w*|many|few|several|numerous|rarely|seldom|often|usually|"
+    r"typically|routinely|consistently|frequently|never|always|sharp\w*|steep\w*|"
+    r"dramatic\w*|drastic\w*|plung\w*|plummet\w*|collaps\w*|soar\w*|surg\w*|"
+    r"slump\w*|tumbl\w*|significant\w*|substantial\w*|marked(ly)?|largely|"
+    r"increasingly|roughly|approximately)\b", re.IGNORECASE)
 
 STANDING_LIMITATIONS = (
     "Votes are from SEC N-PX filings: US-registered funds only, and only the fund "
     "registrants ingested for each manager.",
-    "Only shareholder-sponsored proposals are counted; director elections and "
-    "management proposals are not.",
+    "Proposal figures cover shareholder-sponsored proposals only. Director figures "
+    "cover management's nominees, and the filings never state the reason for a vote.",
     "Policy dates are archive capture dates: the wording was public by then, not "
     "necessarily published then. Gaps between captures are gaps in the archive.",
     "Wording and voting are shown side by side. Nothing here establishes why a "
@@ -135,6 +152,22 @@ def _check(eng: engine.Engine, check: dict) -> tuple[bool, str]:
                    or engine.norm(check["title"]) in engine.norm(row["description"])))
         return ok, (f"{row['institution_id']} voted {row['position']} at "
                     f"{row['issuer_name']} {row['meeting_date']}")
+    if kind == "director":
+        row = eng.db.execute("SELECT institution_id, position, issuer_name, meeting_date,"
+                             " nominee_item FROM director_votes WHERE director_id=?",
+                             (int(check["director_id"]),)).fetchone()
+        if not row:
+            return False, "no such director item"
+        for field in ("company", "meeting_date", "nominee"):
+            if not check.get(field):
+                return False, f"a director claim must state `{field}` so the prose is checked"
+        ok = (row["position"] == check["position"].upper()
+              and row["institution_id"] == eng._inst(check["institution"])
+              and check["company"].lower() in (row["issuer_name"] or "").lower()
+              and row["meeting_date"] == check["meeting_date"]
+              and engine.norm(check["nominee"]) in engine.norm(row["nominee_item"]))
+        return ok, (f"{row['institution_id']} voted {row['position']} on "
+                    f"{row['nominee_item']!r} at {row['issuer_name']} {row['meeting_date']}")
     if kind == "enforcement":
         row = eng.ledger.execute(
             "SELECT resolution_type, company_name FROM enforcement_actions WHERE id=?",
@@ -165,7 +198,8 @@ def verify(draft: dict, eng: engine.Engine | None = None) -> dict:
             problems.append(f"claim {cid} failed: {detail}")
 
     text = " ".join(str(draft.get(k, "")) for k in ("headline", "standfirst", "body"))
-    used = set(_MARK.findall(text)) | set(draft.get("headline_claims") or [])
+    used = (set(_MARK.findall(text)) | set(draft.get("headline_claims") or [])
+            | set(_MARK.findall(" ".join(map(str, draft.get("limitations") or [])))))
     for m in sorted(used - set(claims)):
         problems.append(f"text cites [{m}] but there is no such claim")
     for m in sorted(set(claims) - used):
@@ -228,7 +262,21 @@ def verify(draft: dict, eng: engine.Engine | None = None) -> dict:
         if not any(engine.norm(q) in v or v in engine.norm(q) for v in quotes):
             problems.append(f"quotation not backed by a quote claim: “{q[:60]}…”")
 
-    for m in _CHARACTERISATION.finditer(_QUOTED.sub("", text)):
+    unquoted = _QUOTED.sub("", text)
+    for m in _NUMBER_WORD.finditer(unquoted):
+        problems.append(f"number written as a word ({m.group(0)!r}): write figures in "
+                        "digits so they are checked against the claims")
+    for m in _VAGUE.finditer(unquoted):
+        problems.append(f"vague quantity {m.group(0)!r}: state the count and what it is "
+                        "a count of, or leave it out")
+
+    # Limitations are read as fact too; a figure there needs a claim like any other.
+    for lim in draft.get("limitations") or []:
+        for n in unbacked(str(lim), _MARK.findall(str(lim))):
+            problems.append(f"figure {n} in limitation “{str(lim)[:50]}…” is not "
+                            "established by a claim cited in it")
+
+    for m in _CHARACTERISATION.finditer(unquoted):
         problems.append(f"characterisation {m.group(0)!r}: state what the record shows, "
                         "not motive or wrongdoing")
 

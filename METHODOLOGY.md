@@ -91,8 +91,15 @@ the say-vs-do analysis described below in three ways, each a correction:
 - **Coverage is a handful of fund registrants per manager** (BlackRock: one;
   T. Rowe Price: four). Figures describe "the funds on file", not the firm.
 - **Scope is shareholder-sponsored proposals** (`vote_source = SECURITY
-  HOLDER`), de-duplicated. Director elections and management proposals stay
-  in the ledger but are not indexed.
+  HOLDER`), de-duplicated, plus **management's director nominees**
+  (`vote_source = ISSUER`, category `DIRECTOR ELECTIONS`) in a separate table
+  with their own tools. Director items are counted per nominee item as filed
+  and per meeting; `opposed` is AGAINST or WITHHOLD, share-weighted. N-PX
+  never records the reason for a vote, so a director-opposition rate cannot
+  be attributed to any one policy provision (diversity, overboarding, pay).
+  Managers are compared on shared MEETINGS (CUSIP + date), not on matched
+  nominees: filers word nominee items differently. Other management
+  proposals stay in the ledger but are not indexed.
 - **Peer comparison is on identical proposals.** `peers` matches the same
   ballot item across managers by company, meeting date and the proposal's
   significant words. Matching is deliberately strict: an unmatched proposal

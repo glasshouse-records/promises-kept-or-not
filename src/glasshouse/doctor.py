@@ -30,6 +30,31 @@ _KNOWN_BLOCKED = {
 }
 
 
+def _today() -> date:
+    return date.today()
+
+
+def missing_vote_seasons(conn: sqlite3.Connection, today: date | None = None) -> list[dict]:
+    """Fund registrants whose newest N-PX season on file is older than the one
+    already due. N-PX covers the 12 months to 30 June and must be filed by
+    31 August; from mid-September its absence is a hole in the record, not a
+    filer running late. Offline by design: it needs no network to raise the alarm."""
+    today = today or _today()
+    expected = today.year if (today.month, today.day) >= (9, 15) else today.year - 1
+    latest: dict[tuple, int] = {}
+    for r in conn.execute(
+            "SELECT institution_id, cik, period_of_report FROM filings "
+            "WHERE form_type LIKE 'N-PX%' AND report_type NOT LIKE 'LEGACY%' "
+            "AND institution_id IS NOT NULL"):
+        p = (r[2] or "").strip()
+        year = p[:4] if p[:4].isdigit() else p[-4:]
+        if year.isdigit():
+            key = (r[0], r[1])
+            latest[key] = max(latest.get(key, 0), int(year))
+    return [{"institution": i, "cik": c, "latest_on_file": y, "expected": expected}
+            for (i, c), y in sorted(latest.items()) if y < expected]
+
+
 def diagnose(conn: sqlite3.Connection) -> dict:
     checks: list[dict] = []
 
@@ -37,7 +62,14 @@ def diagnose(conn: sqlite3.Connection) -> dict:
         checks.append({"name": name, "ok": ok, "detail": detail,
                        "severity": "info" if ok else severity})
 
-    today = date.today()
+    today = _today()
+
+    # 0. The votes themselves: every rate is computed from them.
+    for g in missing_vote_seasons(conn, today):
+        check(f"votes:{g['institution']}/{g['cik']}", False,
+              f"N-PX season {g['expected']} was due 31 Aug and is not on file (latest: "
+              f"{g['latest_on_file']}). Run `glasshouse ingest npx --institution "
+              f"{g['institution']}`, then `dedupe` and `engine build`.", "error")
 
     # 1. Live-source freshness: newest retrieval per agency.
     for agency, budget in _FRESHNESS_DAYS.items():

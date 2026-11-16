@@ -58,6 +58,25 @@ def eng(tmp_path):
               " text_sha256) VALUES ('alpha','policy','https://alpha.example/p.html',"
               "'2026-01-01','shaE',?,'text/html',1,'20240101000000','')", (str(empty),))
     vote("alpha", "FOR", date="05/20/2025", desc="Report on Climate Transition Plan")
+
+    def director(iid, how, nominee, date="05/20/2024", shares=100, dup=0):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date,"
+                  " vote_description, category_type, vote_source, how_voted,"
+                  " management_recommendation, shares_voted, is_duplicate) VALUES"
+                  " (?,'EXXON MOBIL','30231G102',?,?,'DIRECTOR ELECTIONS','ISSUER',?,?,?,?)",
+                  (f"ACC-{iid}", date, nominee, how, "FOR" if how == "FOR" else "AGAINST",
+                   shares, dup))
+
+    for _ in range(2):                       # two funds, two nominees
+        director("alpha", "FOR", "Elect Director Jane Roe")
+        director("alpha", "WITHHOLD", "Elect Director John Poe")
+    director("alpha", "WITHHOLD", "Elect Director Jane Roe", shares=1)   # a sliver
+    director("alpha", "WITHHOLD", "Elect Director Jane Roe", dup=1)
+    for iid in ("beta", "gamma"):            # another vendor's wording
+        director(iid, "FOR", "Election of Directors: Jane Roe")
+        director(iid, "FOR", "Election of Directors: John Poe")
+    director("alpha", "FOR", "Elect Director Jane Roe", date="05/19/2025")
+    director("alpha", "FOR", "Elect Director John Poe", date="05/19/2025")
     c.commit()
     c.close()
     out = tmp_path / "engine.db"
@@ -303,3 +322,71 @@ def test_internal_ids_do_not_back_a_number_in_prose(eng):
     d["body"] = d["body"].replace("it voted against. [c4]",
                                   f"it voted against, one of {pid + 900} such votes. [c4]")
     assert any(str(pid + 900) in p for p in desk.verify(d, eng)["problems"])
+
+
+# ---------------------------------------------------------------- directors
+
+def test_director_votes_count_per_nominee_not_per_fund(eng):
+    """Two funds withholding from one nominee is one decision; a sliver the
+    other way does not turn a FOR into a split; duplicates never count."""
+    r = eng.director_record("alpha")["result"]["by_year"]
+    assert r[2024]["nominees"] == 2 and r[2024]["opposed"] == 1 and r[2024]["for"] == 1
+    assert r[2024]["opposition_rate"] == 0.5
+    assert r[2024]["meetings"] == 1 and r[2024]["meetings_with_opposition"] == 1
+    assert r[2025]["opposed"] == 0 and r[2025]["meetings_with_opposition"] == 0
+
+
+def test_director_elections_stay_out_of_the_proposal_index(eng):
+    n = eng.db.execute("SELECT COUNT(*) FROM proposals WHERE description LIKE '%Roe%'")
+    assert n.fetchone()[0] == 0
+
+
+def test_director_peers_compares_the_same_meetings(eng):
+    """Vendors word nominees differently, so managers are compared on the
+    meetings they all voted at, not on nominee strings."""
+    r = eng.director_peers(year=2024)["result"]
+    assert r["shared_meetings"] == 1
+    assert r["managers"]["alpha"]["meetings_with_opposition"] == 1
+    assert r["managers"]["beta"]["meetings_with_opposition"] == 0
+    assert r["managers"]["alpha"]["opposition_rate"] == 0.5
+
+
+def test_director_votes_lists_the_nominees_with_their_source(eng):
+    rows = eng.director_votes("alpha", company="exxon", position="AGAINST")["result"]
+    assert len(rows) == 1 and rows[0]["nominee_item"] == "Elect Director John Poe"
+    assert rows[0]["source_url"] == "https://sec.example/alpha"
+
+
+def test_a_director_claim_checks_who_where_and_when(eng):
+    row = eng.director_votes("alpha", company="exxon", position="AGAINST")["result"][0]
+    check = {"type": "director", "director_id": row["director_id"], "institution": "alpha",
+             "position": "AGAINST", "company": "Exxon", "meeting_date": "2024-05-20",
+             "nominee": "John Poe"}
+    assert desk._check(eng, check)[0]
+    assert not desk._check(eng, {**check, "nominee": "Jane Roe"})[0]
+    assert not desk._check(eng, {**check, "meeting_date": "2025-05-19"})[0]
+    assert not desk._check(eng, {k: v for k, v in check.items() if k != "nominee"})[0]
+
+
+def test_a_number_spelled_out_is_still_a_number(eng):
+    """"Three of four" slipped past a check that only looked for digits."""
+    d = _draft(eng)
+    d["body"] += "\n\nAlpha opposed three such proposals. [c3]"
+    assert any("digits" in p for p in desk.verify(d, eng)["problems"])
+
+
+def test_a_vague_quantity_is_not_a_fact(eng):
+    """"Nearly all" beside a valid claim asserts a proportion no claim checks."""
+    d = _draft(eng)
+    d["body"] += "\n\nAlpha opposed nearly all such resolutions. [c3]"
+    assert any("count" in p for p in desk.verify(d, eng)["problems"])
+    d = _draft(eng, headline="Alpha's climate support fell sharply")
+    assert any("count" in p for p in desk.verify(d, eng)["problems"])
+
+
+def test_figures_in_the_limitations_are_checked_too(eng):
+    d = _draft(eng, limitations=["Only 9 funds are on file.", "One proposal is an anecdote."])
+    assert any("limitation" in p for p in desk.verify(d, eng)["problems"])
+    d = _draft(eng, limitations=["Alpha backed 0 such proposals in 2024, a single item. [c3]",
+                                 "One proposal is an anecdote."])
+    assert desk.verify(d, eng)["verified"], desk.verify(d, eng)["problems"]
