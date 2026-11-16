@@ -261,33 +261,49 @@ institutions:
         url: "https://www.fidelity.com/bin-public/060_www_fidelity_com/documents/Full-Proxy-Voting-Guidelines-for-Fidelity-Funds-Advised-by-FMRCo-or-FDS.pdf"
 
   t_rowe_price:
-    display_name: "T. Rowe Price Investment Management, Inc."
+    display_name: "T. Rowe Price (group: TRPA advisory + TRPIM 13-F filer)"
     short_name: "T. Rowe Price"
     cik: "0001897612"
     country: "USA"
     type: "asset_manager"
     aum_usd_tr: 1.5
-    notes: "Active asset manager; parent is T. Rowe Price Group Inc. (TROW). 13-F filed by T. Rowe Price Investment Management, Inc. (CIK 0001897612), the registered investment adviser entity formed 2021. aum_usd_tr is TRPA managed AUM (~$1.5T)."
+    notes: "LABEL CAUTION (verified 2026-11-17): the 13-F filer (CIK 0001897612) is T. Rowe Price Investment Management, Inc. (TRPIM), but three of the four N-PX funds on file are advised by T. Rowe Price Associates, Inc. (TRPA) with no sub-adviser, and the archived policy proxy-voting-guidelines-trpa is TRPA's. Capital Appreciation Fund (793347) is TRPA-advised but sub-advised by TRPIM, which holds discretionary voting authority, so its votes follow TRPIM's guidelines (proxy-voting-guidelines-trpim), not TRPA's. TRPA and TRPIM run controls preventing sharing of proxy voting decisions. Do not compare 13-F holdings (TRPIM) or votes across the two advisers without the per-fund adviser field. Parent is T. Rowe Price Group Inc. (TROW). aum_usd_tr is firm-wide AUM (~$1.5T, pre-2026 figure)."
     npx_ciks:
       # Verified 2026-06-26. T. Rowe files N-PX per fund (dozens of CIKs) — these
       # are four broad, unambiguous T. Rowe Price equity funds filing through
       # 2025. All cleanly named "T. Rowe Price ... Fund, Inc." (attribution-safe).
       - cik: "773485"
+        adviser: "T. Rowe Price Associates, Inc. (no sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/773485/000199937126004108/nag-485bpos_030126.htm"  # 485BPOS filed 2026-02-25
+        adviser_verified: "2026-11-17"
         name: "T. Rowe Price All-Cap Opportunities Fund, Inc."
         validated: "2026-06-26"
       - cik: "793347"
+        adviser: "T. Rowe Price Associates, Inc.; sub-adviser T. Rowe Price Investment Management, Inc. (discretionary voting authority)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/793347/000199937126004099/caf-485bpos_022526.htm"  # 485BPOS filed 2026-02-25
+        adviser_verified: "2026-11-17"
         name: "T. Rowe Price Capital Appreciation Fund, Inc."
         validated: "2026-06-26"
       - cik: "902259"
+        adviser: "T. Rowe Price Associates, Inc. (no sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/902259/000199937126004097/bcg-485bpos_022526.htm"  # 485BPOS filed 2026-02-25
+        adviser_verified: "2026-11-17"
         name: "T. Rowe Price Blue Chip Growth Fund, Inc."
         validated: "2026-06-26"
       - cik: "931151"
+        adviser: "T. Rowe Price Associates, Inc. (no sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/931151/000199937126004122/cof-485bpos_022526.htm"  # 485BPOS filed 2026-02-25
+        adviser_verified: "2026-11-17"
         name: "T. Rowe Price U.S. Equity Research Fund, Inc."
         validated: "2026-06-26"
     commitments:
       # Canonical TRPA Proxy Voting Guidelines, verified 2026-06-26 (200, pdf).
       - label: proxy-voting-guidelines-trpa
         url: "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/proxy-voting-guidelines-TRPA.pdf"
+      # TRPIM publishes its own guidelines; fetched 200 application/pdf 2026-11-17.
+      # Applies to TRPIM-managed/sub-advised portfolios (e.g. Capital Appreciation Fund).
+      - label: proxy-voting-guidelines-trpim
+        url: "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/proxy-voting-guidelines-TRPIM.pdf"
 
   invesco:
     display_name: "Invesco Ltd."
