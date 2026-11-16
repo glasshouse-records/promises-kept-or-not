@@ -11,20 +11,21 @@ Tick with the date and one line of result.
 - [x] 2026-11-17 Low-cost workflow: tier scripts, `clerk`/`builder` agents, model tiers, `/next`.
 - [x] 2026-11-17 First live routine run: Fidelity's guidelines changed (document dated 2026-10-05) and were captured; Fed +10 actions.
 - [x] 2026-11-17 Both policy pages repaired (BlackRock unchanged; UBS came back as a NEW VERSION dated 2026-05-15); doctor now errors on a failed or 14-day-stale capture.
-- [ ] Source freshness must mean "last successful fetch", not "last new row" (DOJ shows stale after a clean zero-new run). *(builder)*
+- [x] 2026-11-17 Source freshness now means last successful fetch (`ingest_runs`); the false DOJ error is gone.
 
 ## 2. Close the known instrument gaps
 - [x] 2026-11-17 `country=` on the director tools (country that issued the ISIN); Vanguard Jan–Jun 2026 splits sum to the overall 79,430.
 - [ ] `country=` with a code no item carries (e.g. UK instead of GB) returns empty without a warning. *(builder)*
-- [ ] T. Rowe Price: label says Investment Management (TRPIM) but the archived policy is Associates (TRPA); the two advisers publish separate guidelines. Verify each fund's adviser from its SEC filings, then label per registrant. *(source-medic verifies, builder applies)*
-- [ ] Verifier: straight-quote pairing in the quotation check; a caveat-only paragraph must cite a relevant claim. *(builder)*
+- [x] 2026-11-17 T. Rowe Price advisers verified from each fund's 485BPOS (filed 2026-02-25): three funds are TRPA-voted; Capital Appreciation (CIK 793347) is TRPIM-voted. TRPIM's own guidelines now captured.
+- [ ] Engine: `adviser` on registrants and on policy documents; `adviser=` filter on vote tools; a caveat whenever an institution's registrants are voted by different advisers; `say_vs_do`/`policy_in_force` must not pair a policy with another adviser's votes. *(builder, then reviewer)*
+- [ ] Verifier and tool faults reported by the three investigations (quote pairing, "majority vote", registrant and series names, unknown country code). *(builder — running)*
 - [ ] Skeptical review of the engine + desk as they now stand. *(glasshouse-reviewer)*
 
 ## 3. Show what the instrument can do (verified drafts in `data/desk/`)
-- [x] T. Rowe Price board-composition wording vs director votes — VERIFIED 47/47.
-- [ ] Deutsche Bank (DWS) climate votes across three seasons. *(journalist)*
+- [ ] T. Rowe Price board-composition wording vs director votes — verified 47/47 on 2026-11-16 but its vote figures include the TRPIM-voted fund; redo scoped to the three TRPA funds once `adviser=` exists. *(journalist)*
+- [x] 2026-11-17 Deutsche/DWS US trusts: climate support 44 of 51 → 12 of 32 → 3 of 22 over three seasons, lobbying steady; same funds, same companies. VERIFIED. Open for a human: proposal sponsors, which adviser votes the trusts.
 - [ ] BlackRock global principles: what left the text between 2025-09-30 and 2026-06-11. *(journalist)*
-- [ ] Fidelity guidelines: what changed in the October 2026 version. *(journalist)*
+- [x] 2026-11-17 Fidelity October 2026 guidelines: two long-standing sentences removed, poison-pill and supermajority rules softened, burn-rate limits added. VERIFIED 48/48.
 - [ ] UBS policy: what changed between the 2024 document and the one dated 2026-05-15. *(journalist)*
 - [ ] One open brief: "find the largest change in the record nobody asked about". *(journalist)*
 
