@@ -146,6 +146,7 @@ def test_management_field_means_vote_versus_management(eng):
 
 def test_reversals_finds_the_same_proposal_voted_differently_next_year(eng):
     r = eng.reversals("alpha", query="climate transition")["result"]
+    r = r["pairs"]
     assert len(r) == 1 and r[0]["from"]["position"] == "AGAINST" \
         and r[0]["to"]["position"] == "FOR"
 
@@ -266,3 +267,39 @@ def test_the_headline_must_rest_on_claims(eng):
 def test_insinuation_is_rejected_like_accusation(eng):
     d = _draft(eng, standfirst="Alpha quietly walked back its wording. [c1]")
     assert any("characterisation" in p for p in desk.verify(d, eng)["problems"])
+
+
+def test_a_sliver_of_shares_the_other_way_is_not_a_split(tmp_path):
+    """Second trial run: State Street showed 801 'split' proposals because each
+    fund files a tiny second line (0.2-2.5% of its shares) the other way. Counting
+    lines called that an even split and dropped the proposal from every rate."""
+    assert engine.position_from_shares(4997.6, 1_040_000.0, 0) == "AGAINST"
+    assert engine.position_from_shares(600.0, 400.0, 0) == "SPLIT"
+    assert engine.position_from_shares(0, 0, 3) == "ABSTAIN"
+
+
+def test_rollback_wording_the_shared_detector_misses():
+    assert engine.is_rollback("Remove Emissions Reduction Targets")
+    assert engine.is_rollback("Revisit Executive Pay Incentives for GHG Emission Reductions")
+    # As You Sow's retirement-plan proposal ASKS for climate-risk reporting
+    assert not engine.is_rollback("Report on Climate Risks to Retirement Plan Beneficiaries")
+
+
+def test_fund_votes_shows_each_series_behind_a_position(eng):
+    pid = eng.proposals(institution="alpha", year=2024)["result"]["shown"][0]["proposal_id"]
+    r = eng.fund_votes(pid)["result"]
+    assert len(r["lines"]) == 3 and r["shares"]["against"] == 300
+
+
+def test_reversals_reports_direction_counts(eng):
+    r = eng.reversals("alpha", query="climate transition")["result"]
+    assert r["summary"] == {"pairs": 1, "for_to_against": 0, "against_to_for": 1}
+
+
+def test_internal_ids_do_not_back_a_number_in_prose(eng):
+    """A proposal_id of 7 must not make a stray '7' in the prose look sourced."""
+    d = _draft(eng)
+    pid = d["claims"][3]["check"]["proposal_id"]
+    d["body"] = d["body"].replace("it voted against. [c4]",
+                                  f"it voted against, one of {pid + 900} such votes. [c4]")
+    assert any(str(pid + 900) in p for p in desk.verify(d, eng)["problems"])

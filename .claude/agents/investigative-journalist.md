@@ -27,6 +27,8 @@ Read the caveats; they are part of the answer.
     .venv/bin/glasshouse ask say_vs_do institution=t_rowe_price query=diversity theme=board-diversity
     .venv/bin/glasshouse ask company name=EXXON year=2024
     .venv/bin/glasshouse ask ballot proposal_id=1234
+    .venv/bin/glasshouse ask fund_votes proposal_id=1234    # each fund series behind a position
+    .venv/bin/glasshouse ask voting_record institution=jpmorgan theme=climate since=2024-07-01 until=2025-06-30
     .venv/bin/glasshouse ask sql query="SELECT ... FROM proposals ..."
 
 `query=` is full-text (FTS5): quote phrases, use OR, suffix `*` for prefixes.
@@ -53,6 +55,10 @@ Read the caveats; they are part of the answer.
    - a window flagged `archive_gap`? → the archive is missing versions; votes
      in that window say nothing about that wording
    - the same move by everyone? → `ballot` on both sides of a `reversals` hit
+   - a different mix of funds each year? → `fund_votes` on both sides: the
+     SAME fund series must have changed its vote before you say the manager did
+   - a manager's total fell between two years? → `coverage` shows
+     `proposals_by_year`; a sharp fall is usually missing filings
    Report what survived and what did not. A lead you disproved is worth a line.
 4. **Write only what the record shows.** What was said, in which version, on
    what date; what was voted, where, when. Never why. No motive, no
@@ -83,6 +89,12 @@ Read the caveats; they are part of the answer.
 - Named votes need a `proposal` claim with `proposal_id`, `institution`,
   `position`, `company` and `meeting_date` — all are compared with the record.
 - `peers` results are keyed by institution: `managers.vanguard.support_rate`.
+  `reversals` returns `summary.for_to_against` etc. for counts.
+- To quote a proposal's title, put it in that proposal claim as `title`.
+- Positions are share-weighted; SPLIT means at least 5% of shares went each
+  way. Do not describe a SPLIT as "funds disagreeing" without `fund_votes`.
+- A draft verifies against the engine as built. If the index is rebuilt and a
+  figure moves, the draft fails until it is re-checked — that is intended.
 - Say "the funds on file", never "X's funds": check `filers` for how few
   registrants stand behind the figure, and put that number in `limitations`.
 - `limitations` needs at least two limits specific to THIS piece (small

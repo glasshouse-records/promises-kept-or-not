@@ -116,7 +116,8 @@ def _check(eng: engine.Engine, check: dict) -> tuple[bool, str]:
         return ok, f"{check['tool']}→{check['path']} = {got!r}" + (
             "" if ok else f", draft says {check['equals']!r}")
     if kind == "proposal":
-        row = eng.db.execute("SELECT institution_id, position, issuer_name, meeting_date "
+        row = eng.db.execute("SELECT institution_id, position, issuer_name, meeting_date,"
+                             " description "
                              "FROM proposals WHERE proposal_id=?",
                              (int(check["proposal_id"]),)).fetchone()
         if not row:
@@ -129,7 +130,9 @@ def _check(eng: engine.Engine, check: dict) -> tuple[bool, str]:
         ok = (row["position"] == check["position"].upper()
               and row["institution_id"] == eng._inst(check["institution"])
               and check["company"].lower() in (row["issuer_name"] or "").lower()
-              and row["meeting_date"] == check["meeting_date"])
+              and row["meeting_date"] == check["meeting_date"]
+              and (not check.get("title")
+                   or engine.norm(check["title"]) in engine.norm(row["description"])))
         return ok, (f"{row['institution_id']} voted {row['position']} at "
                     f"{row['issuer_name']} {row['meeting_date']}")
     if kind == "enforcement":
@@ -172,9 +175,20 @@ def verify(draft: dict, eng: engine.Engine | None = None) -> dict:
 
     def backing(ids) -> list[float]:
         """Every number the cited claims actually establish."""
-        blob = " ".join(json.dumps(claims[i].get("check", {})) + " " + detail.get(i, "")
-                        for i in ids if i in claims)
-        return [float(x) for x in _NUM.findall(blob)]
+        # Internal identifiers and path indices are not facts about the world:
+        # a proposal_id of 7 must not make a stray "7" in the prose look sourced.
+        parts = []
+        for i in ids:
+            if i not in claims:
+                continue
+            chk = claims[i].get("check", {})
+            parts.append(json.dumps({k: v for k, v in chk.items()
+                                     if k not in ("proposal_id", "commitment_id", "id",
+                                                  "path", "type")}))
+            parts += re.findall(r"\b(?:19|20)\d\d\b", str(chk.get("path", "")))
+            parts.append(detail.get(i, "").split("→")[-1].split(" = ", 1)[-1]
+                         if chk.get("type") == "stat" else detail.get(i, ""))
+        return [float(x) for x in _NUM.findall(" ".join(parts))]
 
     def unbacked(prose: str, ids) -> list[str]:
         have = backing(ids)
@@ -204,8 +218,12 @@ def verify(draft: dict, eng: engine.Engine | None = None) -> dict:
             problems.append(f"figure {n} in “{pt[:50]}…” is not established by the claims "
                             f"that paragraph cites ({', '.join(ids)})")
 
+    # A proposal's title may be quoted verbatim when its claim carries `title`.
     quotes = [engine.norm(c["check"]["text"]) for c in claims.values()
               if (c.get("check") or {}).get("type") == "quote"]
+    quotes += [engine.norm(c["check"]["title"]) for c in claims.values()
+               if (c.get("check") or {}).get("type") == "proposal"
+               and c["check"].get("title")]
     for q in _QUOTED.findall(text):
         if not any(engine.norm(q) in v or v in engine.norm(q) for v in quotes):
             problems.append(f"quotation not backed by a quote claim: “{q[:60]}…”")

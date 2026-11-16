@@ -123,14 +123,40 @@ def _ballot_key(cusip: str, issuer: str, date: str, desc: str) -> str:
     return f"{who}|{date}|{' '.join(sorted(set(toks))[:14])}"
 
 
-def _position(n_for: int, n_against: int, n_abstain: int) -> str:
-    if n_for and n_against:
-        return "SPLIT"
-    if n_for:
+SPLIT_FLOOR = 0.05    # the minority side must carry at least this share to be a split
+
+
+def position_from_shares(for_: float, against: float, n_abstain: int) -> str:
+    """A manager's position on one proposal, weighted by SHARES (or by lines
+    where no share counts were filed). Funds routinely file a sliver the other
+    way — securities on loan, a sub-account — so the minority side must reach
+    5% before the position is called SPLIT rather than FOR or AGAINST."""
+    decided = for_ + against
+    if decided <= 0:
+        return "ABSTAIN" if n_abstain else "NONE"
+    share = for_ / decided
+    if share >= 1 - SPLIT_FLOOR:
         return "FOR"
-    if n_against:
+    if share <= SPLIT_FLOOR:
         return "AGAINST"
-    return "ABSTAIN" if n_abstain else "NONE"
+    return "SPLIT"
+
+
+_ROLLBACK_EXTRA = re.compile(
+    r"\b(remove|drop|rescind|revisit|reconsider|eliminate)\b.{0,70}"
+    r"\b(emissions?|ghg|greenhouse|climate|net[\s-]?zero|decarboni[sz]ation)\b", re.IGNORECASE)
+_NOT_ROLLBACK = re.compile(
+    r"\bclimate\b.{0,25}\brisks?\b.{0,25}\b(retirement|401|pension|beneficiar)", re.IGNORECASE)
+
+
+def is_rollback(description: str) -> bool:
+    """Does the proposal ask to ROLL BACK the theme it names? Extends the shared
+    detector with wordings it misses and one it gets backwards: a proposal asking
+    a company to report climate risk in its retirement plan is a pro-climate ask."""
+    if _NOT_ROLLBACK.search(description or ""):
+        return False
+    return bool(proposal_is_oppositional(description or "")
+                or _ROLLBACK_EXTRA.search(description or ""))
 
 
 def _ro(path: Path) -> sqlite3.Connection:
@@ -156,7 +182,7 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
     groups: dict[tuple, dict] = {}
     for v in led.execute(
         f"""SELECT v.id, f.institution_id AS iid, v.issuer_name, v.cusip, {iso} AS md,
-                   v.vote_description AS d, v.category_type, v.how_voted,
+                   v.vote_description AS d, v.category_type, v.how_voted, v.shares_voted,
                    v.management_recommendation AS mr, v.accession, f.source_url
             FROM votes v JOIN filings f ON f.accession = v.accession
             WHERE v.is_duplicate = 0 AND v.vote_source = 'SECURITY HOLDER'
@@ -166,7 +192,7 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
         g = groups.get(key)
         if g is None:
             g = groups[key] = {"row": v, "for": 0, "against": 0, "abstain": 0, "other": 0,
-                               "n": 0, "with_m": 0, "against_m": 0}
+                               "n": 0, "with_m": 0, "against_m": 0, "sf": 0.0, "sa": 0.0}
         # N-PX's "management recommendation" element records whether THIS vote
         # went with (FOR) or against (AGAINST) management — not what management
         # recommended. Say-on-pay shows it plainly: FOR/FOR and AGAINST/AGAINST.
@@ -175,10 +201,13 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
         g["against_m"] += mr == "AGAINST"
         hv = (v["how_voted"] or "").strip().upper()
         g["n"] += 1
+        sh = v["shares_voted"] or 0.0
         if hv == "FOR":
             g["for"] += 1
+            g["sf"] += sh
         elif hv in ("AGAINST", "WITHHOLD"):
             g["against"] += 1
+            g["sa"] += sh
         elif hv == "ABSTAIN":
             g["abstain"] += 1
         else:
@@ -195,10 +224,13 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
                      year, desc, v["category_type"],
                      ("MIXED" if g["with_m"] and g["against_m"] else
                       "AGAINST" if g["against_m"] else "WITH" if g["with_m"] else ""),
-                     _position(g["for"], g["against"], g["abstain"]), g["n"], g["for"],
+                     (position_from_shares(g["sf"], g["sa"], g["abstain"])
+                      if g["sf"] + g["sa"] > 0 else
+                      position_from_shares(g["for"], g["against"], g["abstain"])),
+                     g["n"], g["for"],
                      g["against"], g["abstain"] + g["other"],
                      "," + ",".join(themes) + "," if themes else "",
-                     int(proposal_is_oppositional(desc)),
+                     int(is_rollback(desc)),
                      _ballot_key(v["cusip"], v["issuer_name"], md, desc),
                      v["accession"], v["source_url"] or "", v["id"]))
         fts.append((pid, desc, v["issuer_name"] or ""))
@@ -279,7 +311,7 @@ class Engine:
         return hits[0]
 
     def _where(self, *, institution=None, theme=None, query=None, company=None, year=None,
-               position=None, include_rollback=False):
+               position=None, include_rollback=False, since=None, until=None):
         w, p, join = ["1=1"], [], ""
         if institution:
             w.append("p.institution_id = ?")
@@ -302,6 +334,12 @@ class Engine:
         if year:
             w.append("p.year = ?")
             p.append(int(year))
+        if since:
+            w.append("p.meeting_date >= ?")
+            p.append(since)
+        if until:
+            w.append("p.meeting_date <= ?")
+            p.append(until)
         if position:
             w.append("p.position = ?")
             p.append(position.upper())
@@ -346,8 +384,12 @@ class Engine:
                 "SELECT COUNT(DISTINCT cik) FROM filings WHERE institution_id=? "
                 "AND form_type LIKE 'N-PX%'", (iid,)).fetchone()[0]
             if v["n"] or pv["n"]:
+                yrs = {r["year"]: r["n"] for r in self.db.execute(
+                    "SELECT year, COUNT(*) n FROM proposals WHERE institution_id=? "
+                    "GROUP BY year ORDER BY year", (iid,))}
                 per.append({"institution": iid, "name": name,
                             "fund_registrants_on_file": reg,
+                            "proposals_by_year": yrs,
                             "shareholder_proposals": v["n"],
                             "votes_from": v["lo"], "votes_to": v["hi"],
                             "policy_versions": pv["n"],
@@ -361,7 +403,10 @@ class Engine:
                      "separate accounts and non-US funds are not here.",
                      "Only shareholder-sponsored proposals are indexed. Director elections "
                      "and management proposals are in the ledger but not in this index.",
-                     "A year with few proposals is thin coverage, not a quiet year.",
+                     "A year with few proposals is thin coverage, not a quiet year. Check "
+                     "each manager's `proposals_by_year` before comparing two years: a "
+                     "sharp fall usually means filings are missing, not that behaviour "
+                     "changed.",
                      "`fund_registrants_on_file` is how many of a manager's fund trusts are "
                      "ingested — often a handful of a large complex. Use filers() before "
                      "writing 'X's funds'; say 'the funds on file'.",
@@ -480,11 +525,12 @@ class Engine:
                     ["SPLIT means the manager's own funds voted both ways on the same item."])
 
     def voting_record(self, institution: str, theme=None, query=None, company=None,
-                      include_rollback=False) -> dict:
+                      include_rollback=False, since=None, until=None) -> dict:
         """One manager's record on a theme or free-text query, by year, counted
         per proposal. `support_rate` = FOR / (FOR + AGAINST)."""
         join, w, p = self._where(institution=institution, theme=theme, query=query,
-                                 company=company, include_rollback=include_rollback)
+                                 company=company, include_rollback=include_rollback,
+                                 since=since, until=until)
         rows = self.db.execute(
             f"SELECT p.year, p.position, COUNT(*) n FROM proposals p {join} WHERE {w} "
             "GROUP BY p.year, p.position", p).fetchall()
@@ -496,7 +542,7 @@ class Engine:
                        SUM(p.position IN ('FOR','AGAINST')) decided
                 FROM proposals p {join} WHERE {w}""", p).fetchone()
         return _env("voting_record", _clean(institution=institution, theme=theme, query=query,
-                                            company=company,
+                                            company=company, since=since, until=until,
                                             include_rollback=include_rollback),
                     {"overall": self._tally(rows),
                      "by_year": {y: self._tally(rs) for y, rs in sorted(years.items(),
@@ -504,9 +550,9 @@ class Engine:
                      "against_management": {
                          "count": mr["agm"] or 0, "of": mr["decided"] or 0}},
                     ["Counts are proposals, not fund ballot lines.",
-                     "SPLIT (the manager's funds on file voted both ways) is outside the "
-                     "support rate. How many funds are on file differs by manager, so "
-                     "SPLIT counts are not comparable between managers.",
+                     "Position is share-weighted: SPLIT means the minority side carried at "
+                     "least 5% of the shares voted. Use fund_votes() to see which funds.",
+                     "`since`/`until` take ISO dates for periods finer than a year.",
                      "`none` includes duplicate cards from contested meetings; it does not "
                      "affect the support rate.",
                      "Rollback detection recognises anti-DEI and anti-climate wording only. "
@@ -518,10 +564,12 @@ class Engine:
                     + ([] if include_rollback or not theme else
                        ["Proposals asking to roll the theme back are excluded."]))
 
-    def peers(self, theme=None, query=None, year=None, min_managers: int = 3) -> dict:
+    def peers(self, theme=None, query=None, year=None, min_managers: int = 3,
+              since=None, until=None) -> dict:
         """Managers compared on the SAME proposals — the control for 'they just
         faced different ballots'. Only proposals at least `min_managers` voted on."""
-        join, w, p = self._where(theme=theme, query=query, year=year)
+        join, w, p = self._where(theme=theme, query=query, year=year, since=since,
+                                 until=until)
         rows = self.db.execute(
             f"SELECT p.ballot_key, p.institution_id, p.position FROM proposals p {join} "
             f"WHERE {w}", p).fetchall()
@@ -552,8 +600,8 @@ class Engine:
                                  if o["shared_proposals"] else None)
         table = dict(sorted(out.items(), key=lambda kv: (kv[1]["support_rate"] is None,
                                                          kv[1]["support_rate"] or 0)))
-        return _env("peers", _clean(theme=theme, query=query, year=year,
-                                    min_managers=min_managers),
+        return _env("peers", _clean(theme=theme, query=query, year=year, since=since,
+                                    until=until, min_managers=min_managers),
                     {"shared_proposals": len(shared), "candidate_proposals": len(by_ballot),
                      "managers": table},
                     ["Proposals are matched across managers by company, meeting date and "
@@ -561,9 +609,8 @@ class Engine:
                      "unmatched; no two different proposals are merged.",
                      "Each manager's rate covers only the shared proposals IT voted on, so "
                      "rows are comparable in kind but not over identical sets.",
-                     "A manager with a high `split_or_unvoted_not_counted` (BlackRock, "
-                     "State Street) is represented only by its unanimous ballots — its "
-                     "rate here describes a minority of its record."])
+                     "`split_or_unvoted_not_counted` proposals are outside that manager's "
+                     "rate; if it is large relative to `shared_proposals`, say so."])
 
     def ballot(self, proposal_id: int) -> dict:
         """One proposal: how every tracked manager voted on it."""
@@ -647,9 +694,13 @@ class Engine:
                     if j > score or (j == score and best is not None
                                      and a["meeting_date"] > best["meeting_date"]):
                         best, score = a, j
-                if best is not None and score >= 0.5 and best["position"] != b["position"]:
+                if best is not None and score >= 0.6 and best["position"] != b["position"] \
+                        and (set(best["themes"].split(",")) & set(b["themes"].split(","))):
                     out.append({"from": self._prop(best), "to": self._prop(b),
                                 "title_similarity": round(score, 2)})
+        f2a = sum(1 for x in out if x["from"]["position"] == "FOR")
+        out = {"summary": {"pairs": len(out), "for_to_against": f2a,
+                           "against_to_for": len(out) - f2a}, "pairs": out}
         return _env("reversals", _clean(institution=institution, theme=theme, query=query,
                                         company=company), out,
                     ["Matched on company and the proposal title's significant words. The "
@@ -659,13 +710,47 @@ class Engine:
                      "Check ballot() on each side: if peers moved the same way, the "
                      "proposal changed, not this manager."])
 
+    def fund_votes(self, proposal_id: int) -> dict:
+        """The individual fund lines behind one position: which fund series voted
+        how, with how many shares, from which filing."""
+        r = self.db.execute("SELECT * FROM proposals WHERE proposal_id=?",
+                            (proposal_id,)).fetchone()
+        if not r:
+            raise ValueError(f"no proposal {proposal_id}")
+        iso = iso_meeting_date("v.meeting_date")
+        lines = []
+        for v in self.ledger.execute(
+            f"""SELECT v.vote_series, v.how_voted, v.shares_voted, v.vote_description,
+                       v.accession, f.cik, f.source_url
+                FROM votes v JOIN filings f ON f.accession = v.accession
+                WHERE f.institution_id=? AND v.is_duplicate=0
+                  AND v.vote_source='SECURITY HOLDER' AND {iso}=?
+                  AND (v.cusip=? OR v.issuer_name=?)""",
+                (r["institution_id"], r["meeting_date"], r["cusip"], r["issuer_name"])):
+            if norm(v["vote_description"]) == norm(r["description"]):
+                lines.append({"fund_series": v["vote_series"], "registrant_cik": v["cik"],
+                              "how_voted": v["how_voted"], "shares": v["shares_voted"],
+                              "accession": v["accession"], "source_url": v["source_url"]})
+        tot = defaultdict(float)
+        for ln in lines:
+            hv = (ln["how_voted"] or "").upper()
+            tot["for" if hv == "FOR" else "against" if hv in ("AGAINST", "WITHHOLD")
+                else "other"] += ln["shares"] or 0.0
+        return _env("fund_votes", {"proposal_id": proposal_id},
+                    {"proposal": self._prop(r), "lines": lines,
+                     "shares": {k: tot[k] for k in ("for", "against", "other")}},
+                    ["One fund series can file several lines for one item. Compare the "
+                     "same series across years before saying a manager changed its vote: "
+                     "a different mix of funds can move the total on its own."])
+
     def filers(self, institution: str) -> dict:
         """Which of a manager's fund registrants are on file — how much of the
         manager the vote record actually covers."""
         iid = self._inst(institution)
         rows = [dict(r) for r in self.ledger.execute(
-            """SELECT f.cik, COUNT(*) AS filings, MIN(f.period_of_report) AS first_period,
-                      MAX(f.period_of_report) AS last_period,
+            f"""SELECT f.cik, COUNT(*) AS filings,
+                      MIN({iso_meeting_date("f.period_of_report")}) AS first_period,
+                      MAX({iso_meeting_date("f.period_of_report")}) AS last_period,
                       (SELECT COUNT(DISTINCT fs.series_id) FROM fund_series fs
                         JOIN filings f2 ON f2.accession = fs.accession
                         WHERE f2.cik = f.cik) AS fund_series
@@ -757,7 +842,7 @@ class Engine:
 
 
 TOOLS = ("coverage", "policy_versions", "policy_search", "policy_diff", "policy_in_force",
-         "proposals", "voting_record", "peers", "ballot", "reversals", "say_vs_do", "filers",
+         "proposals", "voting_record", "peers", "ballot", "fund_votes", "reversals", "say_vs_do", "filers",
          "company",
          "enforcement", "holdings", "verify_quote", "sql")
 

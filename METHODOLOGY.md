@@ -81,9 +81,15 @@ the say-vs-do analysis described below in three ways, each a correction:
   fund per ballot item. The ledger's 105,795 shareholder-proposal lines are
   19,729 distinct (manager, company, meeting, proposal) decisions. Rates over
   lines weight a proposal by how many of a manager's funds hold the stock;
-  the engine counts each decision once. Where a manager's funds voted both
-  ways the position is `SPLIT` and is excluded from the support rate's
-  denominator (FOR / (FOR + AGAINST)), with the count reported beside it.
+  the engine counts each decision once. The position is SHARE-weighted:
+  funds routinely file a sliver the other way (0.2–2.5% of shares at State
+  Street), so the minority side must carry at least 5% of shares voted before
+  the position is `SPLIT`. Counting lines instead called 801 State Street and
+  604 BlackRock proposals split and dropped them from every rate; share
+  weighting leaves 7 and 3. `SPLIT` is outside the support rate
+  (FOR / (FOR + AGAINST)) and reported beside it.
+- **Coverage is a handful of fund registrants per manager** (BlackRock: one;
+  T. Rowe Price: four). Figures describe "the funds on file", not the firm.
 - **Scope is shareholder-sponsored proposals** (`vote_source = SECURITY
   HOLDER`), de-duplicated. Director elections and management proposals stay
   in the ledger but are not indexed.
