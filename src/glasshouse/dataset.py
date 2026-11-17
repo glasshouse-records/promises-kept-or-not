@@ -17,6 +17,7 @@ from __future__ import annotations
 import sqlite3
 import subprocess
 from datetime import date
+from pathlib import Path
 
 from . import __version__
 from .ledger import iso_meeting_date
@@ -26,45 +27,124 @@ from .publish import PUBLIC_TABLES
 # tables (publish.PUBLIC_TABLES) are documented; operator tables never ship.
 DATA_DICTIONARY: dict[str, dict] = {
     "institutions": {"_": "Tracked institutions (registry).",
-        "id": "stable slug", "display_name": "legal name", "cik": "SEC CIK",
-        "type": "bank | asset_manager | …", "country": "ISO country"},
-    "filings": {"_": "SEC filings ingested (N-PX, 13F-HR, NPORT-P).",
-        "accession": "SEC accession (primary key)", "cik": "filer CIK",
-        "institution_id": "→ institutions.id", "form_type": "SEC form",
-        "filing_date": "date filed", "period_of_report": "reporting period",
-        "source_url": "EDGAR directory (provenance)", "retrieval_date": "when fetched"},
-    "votes": {"_": "Proxy votes from N-PX, one row per voteRecord. "
-        "ALWAYS filter is_duplicate = 0 before aggregating shares_voted.",
-        "accession": "→ filings.accession", "issuer_name": "company voted on",
-        "cusip": "security CUSIP", "isin": "security ISIN", "meeting_date": "meeting date",
-        "vote_description": "verbatim proposal text", "how_voted": "FOR/AGAINST/ABSTAIN/…",
-        "shares_voted": "shares cast", "management_recommendation": "as filed (KNOWN-UNRELIABLE)",
-        "is_duplicate": "1 = as-filed duplicate, exclude from analytics"},
-    "holdings": {"_": "13-F / N-PORT holdings (full USD).",
-        "accession": "→ filings.accession", "issuer_name": "company held",
-        "cusip": "security CUSIP", "value_usd": "position value (full dollars)",
-        "shares": "share/principal amount"},
+        "id": "stable slug used by every other table (institution_id)",
+        "display_name": "legal or common name of the institution",
+        "cik": "SEC Central Index Key of the institution itself, as recorded in the registry",
+        "type": "kind of institution, e.g. asset_manager or bank",
+        "country": "ISO country code of the institution"},
+    "filings": {"_": "SEC filings ingested (N-PX, 13F-HR, NPORT-P). This is where `votes`, "
+        "`holdings` and `fund_series` rows get their source_url and retrieval_date "
+        "(join on accession).",
+        "accession": "SEC accession number of the filing (primary key)",
+        "cik": "CIK of the filer (the registrant that filed it), with leading zeros",
+        "institution_id": "→ institutions.id: the tracked institution this filer belongs to",
+        "form_type": "SEC form type, e.g. N-PX, 13F-HR, NPORT-P",
+        "filing_date": "date the filing was filed with the SEC",
+        "period_of_report": "period of report, as filed",
+        "report_type": "as filed in N-PX cover field reportType (e.g. FUND VOTING REPORT, "
+                       "FUND NOTICE REPORT, INSTITUTIONAL MANAGER VOTING REPORT); LEGACY_NO_COVER "
+                       "= pre-2024 filing with no structured cover, skipped; LEGACY_PARSED = such a "
+                       "filing read from HTML (its votes are not shipped); NULL for 13-F and "
+                       "N-PORT filings",
+        "source_url": "EDGAR directory of the filing (primary source)",
+        "retrieval_date": "date Glasshouse fetched the filing",
+        "notes": "free-text note; no ingester writes it, so it is empty in every row"},
+    "votes": {"_": "Proxy votes from N-PX, one row per voteRecord (de-duplicated, cast votes "
+        "only). Carries no source_url or retrieval_date: join votes.accession → "
+        "filings.accession for them. ALWAYS filter is_duplicate = 0 before aggregating "
+        "shares_voted (the release already does).",
+        "id": "row id in the Glasshouse ledger (an integer assigned at ingest, not an SEC "
+              "identifier); derived tables cite it as vote_id",
+        "accession": "→ filings.accession: the N-PX filing this line came from",
+        "issuer_name": "company voted on, as filed",
+        "cusip": "security CUSIP, as filed",
+        "isin": "security ISIN, as filed",
+        "meeting_date": "meeting date as filed, M/D/YYYY text (07/11/2024 or 7/11/2024), not ISO",
+        "vote_description": "verbatim proposal text as filed",
+        "category_type": "as filed in N-PX field categoryType: the SEC's subject category of the "
+                         "item (e.g. DIRECTOR ELECTIONS, SECTION 14A SAY-ON-PAY VOTES, "
+                         "CAPITAL STRUCTURE)",
+        "vote_source": "as filed in N-PX field voteSource: ISSUER (put on the ballot by the "
+                       "issuer) or SECURITY HOLDER (shareholder proposal); empty where the "
+                       "filer left it blank (see Code lists)",
+        "shares_on_loan": "as filed in N-PX field sharesOnLoan: shares on loan; 0 where not filed",
+        "vote_series": "as filed in N-PX field voteSeries: id of the fund series that cast the "
+                       "vote (S000…); joins to fund_series.series_id; empty where not filed",
+        "how_voted": "as filed in N-PX field howVoted: FOR, AGAINST, WITHHOLD, ABSTAIN or "
+                     "another code as filed (see Code lists)",
+        "shares_voted": "shares cast on this line, as filed",
+        "management_recommendation": "as filed in N-PX; engine.py reads it as whether THIS vote "
+                                     "went with (FOR) or against (AGAINST) management, not what "
+                                     "management recommended: KNOWN-UNRELIABLE, do not rely on it",
+        "is_duplicate": "1 = as-filed duplicate of another line; always 0 in the release, "
+                        "which excludes duplicates"},
+    "holdings": {"_": "13-F / N-PORT holdings (full USD). No source_url or retrieval_date: "
+        "join holdings.accession → filings.accession.",
+        "id": "row id in the Glasshouse ledger (not an SEC identifier)",
+        "accession": "→ filings.accession: the filing this position came from",
+        "issuer_name": "company held, as filed",
+        "cusip": "security CUSIP, as filed",
+        "title_class": "as filed in 13-F infoTable field titleOfClass: title of the security class",
+        "value_usd": "position value in full US dollars",
+        "shares": "share or principal amount, as filed",
+        "shares_type": "as filed in 13-F infoTable field sshPrnamtType: SH = shares, "
+                       "PRN = principal amount",
+        "put_call": "as filed in 13-F infoTable field putCall; empty for non-option positions",
+        "discretion": "as filed in 13-F infoTable field investmentDiscretion",
+        "voting_sole": "as filed in 13-F votingAuthority field Sole: shares with sole voting authority",
+        "voting_shared": "as filed in 13-F votingAuthority field Shared: shares with shared "
+                         "voting authority",
+        "voting_none": "as filed in 13-F votingAuthority field None: shares with no voting authority"},
     "enforcement_actions": {"_": "Enforcement universe. resolution_type is "
         "legally material; is_duplicate excludes curated/live overlaps.",
-        "agency": "issuing body", "company_name": "respondent",
-        "action_date": "date", "resolution_type": "guilty_plea/dpa/npa/… (closed enum)",
-        "penalty_usd": "penalty", "primary_ref": "agency reference number",
-        "source_url": "provenance", "retrieval_date": "when fetched",
-        "source_kind": "live | curated_snapshot", "is_duplicate": "exclude when 1"},
+        "id": "row id in the Glasshouse ledger (not an agency identifier)",
+        "agency": "issuing body",
+        "company_name": "respondent, as named by the agency",
+        "action_date": "date of the action",
+        "resolution_type": "guilty_plea/dpa/npa/… (closed enum in ledger.py; allegation = pending "
+                           "docket, unverified = not yet checked by a human)",
+        "penalty_usd": "penalty in US dollars, where the source states one",
+        "primary_ref": "agency reference number",
+        "description": "description of the action, from the source",
+        "source_url": "primary source of the row (provenance)",
+        "retrieval_date": "date Glasshouse fetched the source",
+        "source_kind": "live | curated_snapshot",
+        "is_allegation": "1 = a pending docket, never to be reported as a finding",
+        "is_duplicate": "1 = overlaps another row; always 0 in the release"},
     "commitments": {"_": "Versioned, content-addressed policy snapshots (live + Wayback).",
-        "institution_id": "→ institutions.id", "doc_label": "document",
-        "url": "source URL", "sha256": "content hash", "retrieval_date": "when fetched",
-        "wayback_timestamp": "'' = live fetch, else Wayback ts", "size_bytes": "size"},
+        "id": "row id in the Glasshouse ledger; policy_versions.commitment_id points here",
+        "institution_id": "→ institutions.id", "doc_label": "label of the policy document",
+        "url": "URL the document was fetched from", "sha256": "SHA-256 of the file bytes",
+        "retrieval_date": "date Glasshouse fetched it",
+        "content_type": "HTTP content type of the file when fetched",
+        "wayback_timestamp": "'' = live fetch, else Wayback Machine capture timestamp",
+        "size_bytes": "file size in bytes",
+        "text_sha256": "SHA-256 of the extracted text (the identity of a policy version); "
+                       "'' if no text could be extracted",
+        "doc_created_at": "creation date written inside the PDF by the manager's own software; "
+                          "'' if none",
+        "doc_modified_at": "modification date written inside the PDF; '' if none",
+        "doc_producer": "software named in the PDF's producer metadata; '' if none"},
     "findings": {"_": "HUMAN-APPROVED findings only (status='approved'). The "
         "verified, citable claims; everything unreviewed stays operator-side.",
-        "fingerprint": "stable id", "theme": "theme", "institution_id": "→ institutions.id",
+        "id": "row id in the Glasshouse ledger",
+        "fingerprint": "stable id of the underlying candidate", "theme": "theme of the finding",
+        "institution_id": "→ institutions.id",
+        "status": "review status; only 'approved' rows are shipped",
         "reviewer_note": "why a human approved it", "reviewed_date": "approval date",
-        "payload": "JSON citation chain (say + did)"},
-    "fund_series": {"_": "N-PX fund series with LEIs.", "series_id": "series id",
-        "accession": "→ filings.accession", "name": "series name", "lei": "series LEI"},
+        "payload": "JSON citation chain (say + did), frozen at review time"},
+    "fund_series": {"_": "N-PX fund series with LEIs. Join from votes on "
+        "votes.vote_series = fund_series.series_id AND votes.accession = fund_series.accession.",
+        "series_id": "SEC series id (S000…) as filed in the N-PX cover",
+        "accession": "→ filings.accession", "name": "series name as filed",
+        "lei": "series LEI as filed; empty if none"},
     "entities": {"_": "Resolved issuer identities (GLEIF-enriched).",
-        "canonical_name": "legal name", "lei": "LEI", "country": "country"},
-    "entity_cusips": {"_": "CUSIP → entity map.", "cusip": "CUSIP", "entity_id": "→ entities.id"},
+        "id": "row id in the Glasshouse ledger; entity_cusips.entity_id points here",
+        "canonical_name": "legal name", "normalized_name": "canonical_name lower-cased and "
+        "stripped of punctuation and legal suffixes, used for matching",
+        "cik": "SEC CIK of the entity where known", "lei": "Legal Entity Identifier",
+        "country": "country of the entity"},
+    "entity_cusips": {"_": "CUSIP → entity map.", "cusip": "security CUSIP", "entity_id": "→ entities.id"},
 }
 
 
@@ -145,12 +225,20 @@ def coverage(conn: sqlite3.Connection) -> list[dict]:
     return rows
 
 
-def _git_commit() -> str:
+def git_state(repo: Path | str | None = None) -> dict:
+    """The commit actually checked out in `repo` (default: this repository) and whether
+    the working tree differs from it. An untracked file counts as dirty: it can change
+    what the code does. {"commit": "unknown", "dirty": None} when git cannot say."""
+    repo = Path(repo) if repo else Path(__file__).resolve().parents[2]
+
+    def run(*args):
+        return subprocess.run(["git", "-C", str(repo), *args], capture_output=True,
+                              text=True, timeout=30, check=True).stdout
     try:
-        return subprocess.run(["git", "rev-parse", "--short", "HEAD"],
-                              capture_output=True, text=True, timeout=5).stdout.strip() or "unknown"
+        return {"commit": run("rev-parse", "HEAD").strip() or "unknown",
+                "dirty": bool(run("status", "--porcelain").strip())}
     except Exception:
-        return "unknown"
+        return {"commit": "unknown", "dirty": None}
 
 
 def _counts(conn: sqlite3.Connection) -> dict[str, int]:
@@ -166,6 +254,7 @@ def _counts(conn: sqlite3.Connection) -> dict[str, int]:
 def build_datapackage(conn: sqlite3.Connection) -> dict:
     """Frictionless-style descriptor so the dataset is machine-self-describing."""
     counts = _counts(conn)
+    git = git_state()
     resources = []
     for table, fields in DATA_DICTIONARY.items():
         resources.append({
@@ -182,9 +271,13 @@ def build_datapackage(conn: sqlite3.Connection) -> dict:
                        "enforcement record. Public, primary-source-cited, deduplicated.",
         "licenses": [{"name": "CC-BY-4.0",
                       "path": "https://creativecommons.org/licenses/by/4.0/"}],
-        "created": date.today().isoformat(), "git_commit": _git_commit(),
+        "created": date.today().isoformat(), "git_commit": git["commit"][:7],
+        "git": git,
         "provenance_guarantees": [
-            "Every record carries source_url + retrieval_date.",
+            "Provenance columns: `filings` and `enforcement_actions` rows carry source_url + "
+            "retrieval_date; `commitments` rows carry url + retrieval_date. `votes`, `holdings` "
+            "and `fund_series` rows carry neither: each links by accession to its `filings` row "
+            "(votes.accession = filings.accession), which does.",
             "votes/enforcement de-duplicated; filter is_duplicate = 0.",
             "Enforcement resolution_type is from a closed legal enum; "
             "dockets are allegations; ambiguous rows are 'unverified'.",
@@ -200,8 +293,8 @@ def build_datasheet(conn: sqlite3.Connection) -> str:
     cov = coverage(conn)
     lines = [
         "# Glasshouse evidence dataset — datasheet", "",
-        f"Version {pkg['version']} · generated {pkg['created']} · commit {pkg['git_commit']} · "
-        "license CC-BY-4.0", "",
+        f"Version {pkg['version']} · generated {pkg['created']} · commit {pkg['git_commit']}"
+        f"{' (working tree dirty)' if pkg['git']['dirty'] else ''} · license CC-BY-4.0", "",
         pkg["description"], "",
         "## Provenance guarantees",
         *[f"- {g}" for g in pkg["provenance_guarantees"]],

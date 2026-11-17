@@ -2,8 +2,9 @@
 
 Glasshouse is a dataset. It puts three public records side by side: what large
 asset managers wrote in their proxy-voting policies, how their US funds voted
-(SEC form N-PX), and the public enforcement record. Every row names its source
-and the date it was fetched. The dataset records votes, texts and dates. It
+(SEC form N-PX), and the public enforcement record. Every row traces to its source
+and the date it was fetched, directly or through its filing (`votes.accession` →
+`filings.accession`). The dataset records votes, texts and dates. It
 makes no claim about why anyone voted or wrote anything.
 
 On top sit an evidence engine (`glasshouse ask`, cited queries) and a checker
@@ -42,7 +43,7 @@ fund trusts are on file, often a small part of a large manager.
 
 | Manager | Adviser groups (`adviser_key`) | Seasons | Votes held | Registrants | Policy versions | Scope notes (short) |
 |---|---|---|---|---|---|---|
-| BlackRock | BIS, BAIS, UNRESOLVED | 2024-26 | all kinds | 4 | 13 (from 2019-08-06) | BIS/BAIS split from 2025-01-01; 10 series cannot be placed (UNRESOLVED), incl. iShares Core S&P 500 |
+| BlackRock | BIS, BAIS, UNRESOLVED | 2024-26 | all kinds | 4 | 13: 12 of the BIS principles + 1 of the BAIS guidelines (from 2019-08-06) | BIS/BAIS split from 2025-01-01; 10 series cannot be placed (UNRESOLVED), incl. iShares Core S&P 500 |
 | Vanguard | VANGUARD, VPM, VCM, EXTERNAL | 2024-26 | all kinds | 5 | 5 (from 2022-01-17) | Teams split 2026-01-12; one pre-split capture (2022) for 2022 to 2026-01-11 |
 | State Street | none keyed | 2024-26 | all kinds | 4 | 7 (from 2020-09-29) | 3 SPDR Nuveen muni ETFs may follow Nuveen's policy |
 | Fidelity | none keyed | 2024-26 | all kinds | 4 | 6 (from 2023-04-16) | |
@@ -50,7 +51,7 @@ fund trusts are on file, often a small part of a large manager.
 | Goldman Sachs | none keyed | 2024-26 | all kinds | 2 | 2 (from 2022-10-31) | |
 | BNY | none keyed | 2024-26 | all kinds | 2 | 1 (2025-07-18) | Sub-advised funds vote under the sub-adviser's own rules |
 | Invesco | none keyed | 2024-26 | all kinds | 1 | 2 (from 2024-02-24) | One trust only; sub-adviser policies not checked |
-| T. Rowe Price | TRPA, TRPIM | 2024-26 | all kinds | 4 | 12 (from 2023-01-30) | 3 funds TRPA-voted, Capital Appreciation TRPIM-voted |
+| T. Rowe Price | TRPA, TRPIM | 2024-26 | all kinds | 4 | 12 (from 2023-01-30) | 4 registrants, 5 fund series: 3 registrants (1 series each) TRPA-voted; the 4th (CIK 793347) holds 2 series, Capital Appreciation and Capital Appreciation and Income, both TRPIM-voted |
 | Franklin Templeton | none keyed | 2024-26 | all kinds | 2 | 2 (from 2026-06-26) | Sub-adviser use not ruled out for some series |
 | Deutsche Bank (DWS) | DIMA | 2024-26 | all kinds | 3 | 2 (from 2026-06-27) | One archived letter is DWS Investment GmbH's, not the US trusts' adviser |
 | Northern Trust | none keyed | 2024-26 | all kinds | 1 | 4 (from 2024-05-14) | Multi-manager series use outside sub-advisers |
@@ -68,8 +69,8 @@ votes before it have no archived policy. Full notes: `facts/voting_scope_notes.c
 
 **1. Votes belong to the adviser that cast them, not to the brand.** One manager
 can have funds voted by different advisers under different policies. Group by
-`adviser_key` (in `proposal_decisions` and `director_decisions`; for raw
-`votes` resolve it from `voting_advisers`). Example from this record, Vanguard
+`adviser_key` (a column of `proposal_decisions`, `director_decisions` and `votes`;
+`voting_advisers` holds the rules it is resolved from). Example from this record, Vanguard
 director items from meetings in 2026, non-support (against or abstain) in the
 release: VCM 7.4%, VPM 3.1%, the EXTERNAL fund 1.6%, and the pre-split VANGUARD
 key (2026-01-01 to 01-11) 19.0% on 195 items. Pooled, the figure is 6.1%, and it
@@ -98,15 +99,26 @@ company runs. Never sum `shares_voted` without `is_duplicate = 0` (the release
 
 ## Quickstart A: the release bundle (about ten minutes)
 
-No network needed once you hold the bundle; it is not downloadable yet.
+No network needed once you hold the bundle; it is not downloadable yet. Nothing
+here assumes any library is installed. Check the files with the shell alone:
 
 ```sh
 cd data/releases/v2026-11-17
-shasum -a 256 -c MANIFEST.sha256          # Linux: sha256sum -c ... ; every line must say OK
-pip install duckdb                        # or: pip install pandas pyarrow
+shasum -a 256 -c MANIFEST.sha256 | grep -vc OK   # Linux: sha256sum -c ... ; prints 0 when every file is OK
 ```
 
-Director decisions grouped by `adviser_key` (this exact query was run):
+The manifest covers every file except itself and nothing signs it
+(`DATASHEET.md`, Integrity). `DATASHEET.md` also defines every column, every code
+(`how_voted`, `position`, `vote_source`, `adviser_key` values) and the joins.
+Then pick one way to read the Parquet files:
+
+```sh
+pip install duckdb pyarrow        # SQL; or: pip install pandas pyarrow
+pip install pyarrow               # the pyarrow-only alternative below needs nothing else
+```
+
+Director decisions grouped by `adviser_key` (this exact query was run, with
+duckdb 2.0.0):
 
 ```sql
 SELECT coalesce(adviser_key, 'ALL (pooled)') AS adviser_key,
@@ -125,9 +137,34 @@ GROUP BY ROLLUP(adviser_key) ORDER BY items;
  ALL (pooled) 112850  6.1
 ```
 
-Run it in the DuckDB shell or with `duckdb.sql(...)`. In pandas:
-`pd.read_parquet('facts/director_decisions.parquet')`. `proposal_id` and
-`director_id` are not stable across rebuilds; cite `accession` and `source_url`.
+Paste it into the DuckDB shell, or pass it to `duckdb.sql("""...""").show()` in Python.
+The same numbers with pyarrow only (run in the bundle directory; run with pyarrow 26.0.1):
+
+```python
+import pyarrow as pa
+import pyarrow.compute as pc
+import pyarrow.parquet as pq
+
+t = pq.read_table('facts/director_decisions.parquet',
+                  filters=[('institution_id', '=', 'vanguard'), ('meeting_date', '>=', '2026-01-01')],
+                  columns=['adviser_key', 'position'])
+def count(tbl, *positions):
+    return pc.sum(pc.is_in(tbl['position'], pa.array(positions)).cast('int64')).as_py()
+groups = sorted(pc.unique(t['adviser_key']).drop_null().to_pylist(),
+                key=lambda k: pc.sum(pc.equal(t['adviser_key'], k).cast('int64')).as_py()) + [None]
+for key in groups:
+    sub = t if key is None else t.filter(pc.equal(t['adviser_key'], key))
+    pct = 100 * count(sub, 'AGAINST', 'ABSTAIN') / count(sub, 'FOR', 'AGAINST', 'ABSTAIN')
+    print(f"{key or 'ALL (pooled)':14}{sub.num_rows:7}{pct:6.1f}")
+```
+
+The ratio is non-support: (AGAINST + ABSTAIN) / (FOR + AGAINST + ABSTAIN). It leaves
+`SPLIT` (the manager's own funds voted both ways) and `NONE` (no for, against or
+abstain vote) out of both numerator and denominator, because counting them as
+support or as opposition would state a position the manager did not take. They
+are still in `items`. In pandas: `pd.read_parquet('facts/director_decisions.parquet')`.
+`proposal_id` and `director_id` are not stable across rebuilds; cite `accession`
+and `source_url`.
 
 ## Quickstart B: the evidence engine
 
@@ -181,7 +218,8 @@ quotations not in the archived text, and words that assert motive or wrongdoing.
 
 ## How trust is enforced
 
-- Every ledger row has `source_url` and `retrieval_date`. Enforcement rows have a
+- Every ledger row has `source_url` and `retrieval_date`, or links by `accession` to a
+  `filings` row that has them (that is how `votes` and `holdings` carry theirs). Enforcement rows have a
   `resolution_type` from a closed list; dockets are `allegation`, doubt is `unverified`.
 - N-PX as filed repeats vote lines. 793,769 of 10,733,655 ledger vote lines are
   flagged `is_duplicate`; the release keeps only the rest.

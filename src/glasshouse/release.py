@@ -34,7 +34,7 @@ import sqlite3
 from datetime import date
 from pathlib import Path
 
-from . import dataset, publish, registry
+from . import dataset, ledger, publish, registry
 from .http import DATA_DIR
 
 RELEASES_DIR = DATA_DIR / "releases"
@@ -121,6 +121,28 @@ def _emit_rows(name: str, cols: list[str], rows_fn, n: int, facts: Path,
     return csv_name, pq_name
 
 
+def _csv_header(path: Path) -> list[str]:
+    opener = gzip.open if str(path).endswith(".gz") else open
+    with opener(path, "rt", encoding="utf-8", newline="") as fh:
+        return next(csv.reader(fh))
+
+
+class UndocumentedColumnError(RuntimeError):
+    """A column is about to ship that COLUMN_DICTIONARY does not define."""
+
+
+def _schema_in_file_order(name: str, header: list[str], fields: list[dict]) -> list[dict]:
+    """The descriptor's fields in the order the CSV carries them. A shipped column with no
+    definition stops the build: a column cannot ship undocumented."""
+    by_name = {f["name"]: f for f in fields}
+    missing = [c for c in header if not (by_name.get(c) or {}).get("description", "").strip()]
+    if missing:
+        raise UndocumentedColumnError(
+            f"table {name!r} ships column(s) {missing} with no definition: add them to "
+            "dataset.DATA_DICTIONARY (or release.NEW_TABLES / VOTES_ADDED)")
+    return [by_name[c] for c in header]
+
+
 def _sha256(path: Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as fh:
@@ -189,7 +211,7 @@ NEW_TABLES: dict[str, dict] = {
     "policy_versions": {"_": "One row per archived version of a policy document, by TEXT "
         "identity. Hashes, dates and URLs only: no policy text and no local paths.",
         "commitment_id": "→ commitments.id of the first capture of this text",
-        "institution": "→ institutions.id", "doc_label": "document",
+        "institution": "→ institutions.id", "doc_label": "label of the policy document",
         "adviser_key": "whose policy this is, as the engine resolved it on adviser_key_date; "
                        "NULL = not on record",
         "adviser_key_date": "date the key was resolved on (= captured)",
@@ -203,12 +225,14 @@ NEW_TABLES: dict[str, dict] = {
         "proposal) decision on shareholder-sponsored proposals, rebuilt from `votes` by "
         "src/glasshouse/engine.py (`glasshouse engine build`). Not a ledger table.",
         "proposal_id": "engine row id; not stable across rebuilds",
-        "institution_id": "→ institutions.id", "issuer_name": "company", "cusip": "CUSIP",
-        "meeting_date": "ISO date", "year": "meeting year", "description": "proposal text as filed",
-        "category": "N-PX category", "mgmt_rec": "vote vs management: WITH | AGAINST | MIXED | ''",
+        "institution_id": "→ institutions.id", "issuer_name": "company voted on, as filed",
+        "cusip": "security CUSIP, as filed",
+        "meeting_date": "meeting date, ISO YYYY-MM-DD", "year": "meeting year",
+        "description": "proposal text as filed",
+        "category": "N-PX category_type of the item, as filed", "mgmt_rec": "vote vs management: WITH | AGAINST | MIXED | ''",
         "position": "FOR | AGAINST | ABSTAIN | SPLIT | NONE (share-weighted)",
         "n_lines": "ballot lines folded into the decision", "n_for": "lines FOR",
-        "n_against": "lines AGAINST", "n_other": "other lines",
+        "n_against": "lines AGAINST or WITHHOLD", "n_other": "lines ABSTAIN or with another code",
         "themes": "lexical theme tags ',climate,' — a lead, not a classification",
         "oppositional": "1 if the proposal asks to roll back the theme",
         "ballot_key": "same proposal across managers (strict match)",
@@ -221,12 +245,13 @@ NEW_TABLES: dict[str, dict] = {
         "(`vote_source = ISSUER`, category DIRECTOR ELECTIONS) per manager and adviser, "
         "rebuilt from `votes` by src/glasshouse/engine.py. Not a ledger table.",
         "director_id": "engine row id; not stable across rebuilds",
-        "institution_id": "→ institutions.id", "issuer_name": "company", "cusip": "CUSIP",
-        "meeting_date": "ISO date", "year": "meeting year",
+        "institution_id": "→ institutions.id", "issuer_name": "company voted on, as filed",
+        "cusip": "security CUSIP, as filed",
+        "meeting_date": "meeting date, ISO YYYY-MM-DD", "year": "meeting year",
         "nominee_item": "the ballot line as filed (names the nominee)",
         "position": "FOR | AGAINST (incl. WITHHOLD) | ABSTAIN | SPLIT | NONE",
-        "n_lines": "ballot lines folded in", "n_for": "lines FOR", "n_against": "lines AGAINST",
-        "n_other": "other lines", "meeting_key": "same meeting across managers (CUSIP|date)",
+        "n_lines": "ballot lines folded in", "n_for": "lines FOR", "n_against": "lines AGAINST or WITHHOLD",
+        "n_other": "lines ABSTAIN or with another code", "meeting_key": "same meeting across managers (CUSIP|date)",
         "adviser_key": "voting adviser group; same semantics as proposal_decisions",
         "accession": "→ filings.accession", "source_url": "EDGAR source",
         "vote_id": "→ votes.id of a representative line",
@@ -235,8 +260,69 @@ NEW_TABLES: dict[str, dict] = {
 }
 
 
+# The two columns appended to the shipped `votes` table at release time.
+VOTES_ADDED_COLS = ["institution_id", "adviser_key"]
+VOTES_ADDED: dict[str, str] = {
+    "institution_id": "→ institutions.id: the institution of the filing (copied from "
+                      "filings.institution_id so a vote needs no join to name it)",
+    "adviser_key": "voting adviser group of this line: engine.resolve_key over the registrant "
+                   "CIK (filings.cik), vote_series and meeting date, so it equals the "
+                   "adviser_key of proposal_decisions / director_decisions. Set only for "
+                   "institutions with two or more adviser groups; 'unlabelled' = the line "
+                   "resolves to no key; UNRESOLVED, EXTERNAL, UNDATED, unlabelled are never "
+                   "comparable with a policy; NULL = no adviser key recorded for the institution",
+}
+
+# THE column dictionary: every column of every shipped table, one line each. The
+# datapackage, the datasheet and the test that fails on an undocumented column all
+# read this; dataset.DATA_DICTIONARY (ledger tables) and NEW_TABLES (config- and
+# engine-derived tables) are its two sources.
+COLUMN_DICTIONARY: dict[str, dict] = {
+    **{t: dict(d) for t, d in dataset.DATA_DICTIONARY.items()}, **NEW_TABLES}
+COLUMN_DICTIONARY["votes"].update(VOTES_ADDED)
+
+
 def _http(u) -> bool:
     return isinstance(u, str) and u.strip().lower().startswith(("http://", "https://"))
+
+
+def adviser_context(conn: sqlite3.Connection, institutions: dict) -> tuple[dict, set]:
+    """(rules, split): the registry's key rules per institution and CIK, and the
+    institutions the engine splits by adviser. Built exactly as engine.build does, with
+    the engine's own functions, so a shipped vote line resolves as the engine would."""
+    from . import engine
+    rules = {iid: {engine._norm_cik(e["cik"]): engine.normalize_rules(e)
+                   for e in (inst.get("npx_ciks") or []) if e.get("cik")}
+             for iid, inst in institutions.items()}
+    doc_rules = {(iid, c["label"]): engine.normalize_rules(c) for iid, inst in institutions.items()
+                 for c in (inst.get("commitments") or []) if c.get("label")}
+    return rules, set(engine._multi_group(conn, rules, doc_rules))
+
+
+def votes_rows(conn: sqlite3.Connection, cols: list[str], where: str, rules: dict, split: set):
+    """A function yielding the shipped votes (`cols`) plus institution_id and adviser_key.
+    adviser_key is engine.resolve_key per line for institutions the engine splits by
+    adviser ('unlabelled' where a line resolves to none), NULL for all others."""
+    from . import engine
+    iso = ledger.iso_meeting_date("v.meeting_date")
+    sel = ",".join(f"v.{c} AS {c}" for c in cols)
+
+    def fn():
+        cache: dict[tuple, str | None] = {}
+        for r in conn.execute(
+                f"SELECT {sel}, f.institution_id AS _iid, f.cik AS _cik, {iso} AS _md "
+                f"FROM votes v LEFT JOIN filings f ON f.accession = v.accession {where}"):
+            iid = r["_iid"]
+            adv = None
+            if iid in split:
+                k = (iid, r["_cik"], r["vote_series"], r["_md"])
+                if k not in cache:
+                    cache[k] = engine.resolve_key(
+                        rules.get(iid, {}).get(engine._norm_cik(r["_cik"])),
+                        r["vote_series"], r["_md"]) or engine.UNLABELLED
+                adv = cache[k]
+            yield tuple(r[c] for c in cols) + (iid, adv)
+    return fn
 
 
 def voting_advisers_rows(institutions: dict) -> tuple[list[tuple], int]:
@@ -316,6 +402,95 @@ def _engine_rows(eng, table: str, src_cols: list[str], names: list[str], order: 
     return fn
 
 
+
+CODE_LISTS_MD = """\
+## Code lists
+
+### `votes.how_voted` and the position codes
+
+`votes.how_voted` is N-PX field howVoted, kept as filed; spelling and case vary
+(`Take No Action`, `TAKE NO ACTION`, `Takenoaction`). Lines with an empty value are not shipped.
+
+- `FOR`: voted for the item.
+- `AGAINST`: voted against. `WITHHOLD` (a withheld director vote) is counted as AGAINST by the engine.
+- `ABSTAIN`: abstained. Whether a withheld director vote is filed as WITHHOLD or ABSTAIN is the filer's coding choice.
+- Anything else, as filed (frequency votes `ONE YEAR`, `1 YEAR`, `TWO YEARS`, `THREE YEARS`; `TAKE NO ACTION`; `DO NOT VOTE`; `NONE`; `Not Applicable`): the engine counts these lines as "other": in no FOR, AGAINST or ABSTAIN tally. A filed `NONE` is a `how_voted` value; the position `NONE` below is something else.
+
+`position` (`proposal_decisions`, `director_decisions`) is one decision per manager and adviser
+for one item, folded from its fund lines and weighted by `shares_voted` (by line count where no
+shares were filed):
+
+- `FOR`: FOR carries at least 95% of the FOR plus AGAINST shares.
+- `AGAINST` (includes WITHHOLD): FOR carries 5% or less of the FOR plus AGAINST shares.
+- `SPLIT`: in between: the minority side carries at least 5% of the shares voted, so the manager's own funds voted both ways. The 5% floor exists because funds routinely file a sliver the other way (0.2 to 2.5% of shares at State Street).
+- `ABSTAIN`: no FOR or AGAINST line, at least one ABSTAIN line. ABSTAIN lines do not count toward the 5% floor.
+- `NONE`: no FOR, AGAINST, WITHHOLD or ABSTAIN line (only "other" codes, e.g. a frequency vote).
+
+**How SPLIT and NONE are treated in every rate shown in this documentation and the README
+quickstart:** SPLIT and NONE items are in neither numerator nor denominator, and they are
+reported beside the rate, never inside it. Support is FOR / (FOR + AGAINST). Non-support
+(`not_supported`) is (AGAINST + ABSTAIN) / (FOR + AGAINST + ABSTAIN). Why: a SPLIT item means the
+manager's own funds voted both ways, so counting it as support or as opposition would state a
+position the manager did not take; a NONE item has no for, against or abstain vote to count.
+The README quickstart ratio therefore filters to FOR, AGAINST and ABSTAIN items in its
+denominator and counts SPLIT and NONE only in its `items` column.
+
+### `votes.vote_source`
+
+N-PX field voteSource: `ISSUER` (item put on the ballot by the issuer) or `SECURITY HOLDER`
+(shareholder-sponsored proposal). Empty where the filer left it blank. `legacy_html` is a
+Glasshouse tag for pre-2024 votes parsed from HTML; those votes are not validated and are NOT in
+this release.
+
+### Kinds of vote (`COVERAGE.json` `vote_kinds`, `votes_by_kind`)
+
+Assigned per shipped line from the filed fields, in this order: `shareholder_proposals`
+(`vote_source` = SECURITY HOLDER); else `director_elections` (`category_type` = DIRECTOR
+ELECTIONS); else `say_on_pay` (`category_type` = SECTION 14A SAY-ON-PAY VOTES); else
+`management_other` (every other management item: auditors, capital structure, and so on). An
+institution whose shipped votes are one kind only (for example `say_on_pay`) has no other kind of
+vote in this release.
+
+### `adviser_key` values
+
+An adviser key is a short label for WHO votes a registrant's shares (and, in `policy_versions`,
+whose policy a document is). Real keys (BIS, BAIS, VPM, TRPA, ...) are defined by rows of
+`voting_advisers`. Special values:
+
+- `UNRESOLVED`: the registry could not establish which adviser votes this series for these dates (BlackRock series with 2025 votes that appear in no 2025-26 policy table). Never comparable with any policy.
+- `EXTERNAL`: a series advised by an outside manager, so no archived policy of the institution governs it.
+- `UNDATED`: the meeting date does not parse, on a series or registrant that has a dated rule, so the adviser in force cannot be told.
+- `unlabelled`: used by `votes`, `proposal_decisions` and `director_decisions` for an institution that has adviser groups, where this line resolves to no key.
+- `NULL` = no adviser key recorded for that institution (empty in CSV), so nothing is split (for example UBS: in `votes`, `proposal_decisions` and `director_decisions` for its lines, and in `policy_versions` for its documents). In `votes` and the derived tables a NULL also covers an institution with only one adviser group, since there is nothing to separate.
+
+## Joins and provenance
+
+- `votes.accession = filings.accession` gives the N-PX filing of a vote line. `votes` rows carry no
+  `source_url` or `retrieval_date`; they live on the `filings` row (`filings.source_url` is the EDGAR
+  directory of the filing, `filings.retrieval_date` the day it was fetched). `holdings` and
+  `fund_series` link to `filings` the same way.
+- `votes.vote_series = fund_series.series_id AND votes.accession = fund_series.accession` names the
+  fund series that cast the vote (series name and LEI). The pair is the key because
+  `fund_series` has one row per series per filing. A line with an empty `vote_series` has no series.
+- `votes.institution_id` is `filings.institution_id`, copied onto the vote at release time.
+- `votes.adviser_key` is computed at release time with the same function the engine uses for a
+  line (`engine.resolve_key`): the registrant CIK (`filings.cik`, matched to
+  `voting_advisers.registrant_cik` without leading zeros), `vote_series` and the meeting date;
+  a series rule that covers the meeting date wins, then the registrant's dated history, then
+  its default key. It is set only for the institutions the engine splits by adviser (two or
+  more adviser groups); for the others it is NULL. Per (institution, adviser_key) the
+  director-election lines of `votes` (`vote_source` = ISSUER, `category_type` = DIRECTOR
+  ELECTIONS) are the lines `director_decisions` folds into its `n_lines`.
+
+## Integrity of this bundle
+
+MANIFEST.sha256 covers every file in the bundle except itself (`shasum -a 256 -c MANIFEST.sha256`
+reports damage or change to any other file). To be plain: nothing signs it; there is no signature, and the
+manifest's own hash is not published anywhere else, so it proves the files match the manifest,
+not who made either. Anyone able to alter the files could alter the manifest too.
+"""
+
+
 def _derived_extra(pkg: dict, datasheet: str, notes: dict) -> str:
     """Insert the comparison warning near the top of the datasheet and document the
     new tables before the reading guide."""
@@ -325,8 +500,9 @@ def _derived_extra(pkg: dict, datasheet: str, notes: dict) -> str:
         "with another adviser's policy, produces false results.**", "",
         "- One institution's registrants can be voted by different advisers under "
         "different policies. Group votes by `adviser_key` "
-        "(`proposal_decisions`, `director_decisions`; for raw `votes`, resolve the key "
-        "from `voting_advisers` by registrant CIK, `fund_series.series_id` and meeting date).",
+        "(`proposal_decisions`, `director_decisions` and the shipped `votes`, which carries "
+        "the key resolved from `voting_advisers` by registrant CIK, `vote_series` and meeting "
+        "date).",
         "- A policy version (`policy_versions`) applies only to votes with the SAME "
         "`adviser_key`, and only when the version was captured on or before the meeting date.",
         "- Keys `UNRESOLVED`, `EXTERNAL` and `UNDATED` (and `unlabelled`, no adviser on "
@@ -349,6 +525,11 @@ def _derived_extra(pkg: dict, datasheet: str, notes: dict) -> str:
     else:
         warn += ["**This bundle was built with `--no-derived`: `proposal_decisions` and "
                  "`director_decisions` are NOT included.**", ""]
+    # `votes` ships two columns the ledger table does not have: document them in its section.
+    i = datasheet.index("### `votes`")
+    j = datasheet.index("\n\n", i)
+    added = "".join(f"\n- **{k}** — {VOTES_ADDED[k]}" for k in VOTES_ADDED_COLS)
+    datasheet = datasheet[:j] + added + datasheet[j:]
     marker = "## Provenance guarantees"
     datasheet = datasheet.replace(marker, "\n".join(warn) + "\n" + marker, 1)
 
@@ -368,7 +549,7 @@ def _derived_extra(pkg: dict, datasheet: str, notes: dict) -> str:
             doc.append(f"- **{f['name']}** — {f['description']}")
         doc.append("")
     marker2 = "## How to read this dataset"
-    return datasheet.replace(marker2, "\n".join(doc) + "\n" + marker2, 1)
+    return datasheet.replace(marker2, "\n".join(doc) + "\n" + CODE_LISTS_MD + "\n" + marker2, 1)
 
 
 def build_release(conn: sqlite3.Connection, root: Path | str | None = None,
@@ -400,14 +581,15 @@ def build_release(conn: sqlite3.Connection, root: Path | str | None = None,
         va_rows, omitted = voting_advisers_rows(institutions)
         sn_rows = scope_notes_rows(institutions)
         eng_meta = {r[0]: r[1] for r in eng.execute("SELECT key, value FROM meta")}
+        adv_ctx = adviser_context(conn, institutions)
         return _build(conn, eng, root, version, with_parquet, with_sqlite, no_derived,
-                      max_vote_id, eng_meta, pv_rows, va_rows, omitted, sn_rows)
+                      max_vote_id, eng_meta, pv_rows, va_rows, omitted, sn_rows, adv_ctx)
     finally:
         eng.close()
 
 
 def _build(conn, eng, root, version, with_parquet, with_sqlite, no_derived, max_vote_id,
-           eng_meta, pv_rows, va_rows, omitted, sn_rows) -> dict:
+           eng_meta, pv_rows, va_rows, omitted, sn_rows, adv_ctx) -> dict:
     d = root / f"v{version}"
     if d.exists():            # reproducible: the dir reflects exactly this build
         shutil.rmtree(d)
@@ -418,8 +600,15 @@ def _build(conn, eng, root, version, with_parquet, with_sqlite, no_derived, max_
     tables: dict[str, dict] = {}
     formats = {"csv"}
     for table, where in public.items():
-        csv_name, rows = _emit_csv(conn, table, where, facts)
-        pq_name = _emit_parquet(conn, table, where, facts) if with_parquet else None
+        if table == "votes":     # shipped with institution_id + adviser_key (see votes_rows)
+            cols = publish.public_columns(conn, "votes")
+            rows = conn.execute(f"SELECT COUNT(*) FROM votes {where}").fetchone()[0]
+            csv_name, pq_name = _emit_rows(
+                "votes", cols + VOTES_ADDED_COLS, votes_rows(conn, cols, where, *adv_ctx),
+                rows, facts, with_parquet)
+        else:
+            csv_name, rows = _emit_csv(conn, table, where, facts)
+            pq_name = _emit_parquet(conn, table, where, facts) if with_parquet else None
         if pq_name:
             formats.add("parquet")
         tables[table] = {"csv": f"facts/{csv_name}", "rows": rows,
@@ -456,6 +645,11 @@ def _build(conn, eng, root, version, with_parquet, with_sqlite, no_derived, max_
                      eng_meta.get("ledger_max_vote_id"),
                      "built_at": eng_meta.get("built_at"),
                      "current_at_release": not no_derived}
+    votes_res = next(r for r in pkg["resources"] if r["name"] == "votes")
+    votes_res["schema"]["fields"] += [{"name": k, "description": VOTES_ADDED[k]}
+                                      for k in VOTES_ADDED_COLS]
+    votes_res["description"] += (" Shipped with two columns added at release time, "
+                                 "institution_id and adviser_key (see Joins).")
     for name, spec in NEW_TABLES.items():
         if name not in tables:
             continue
@@ -474,6 +668,8 @@ def _build(conn, eng, root, version, with_parquet, with_sqlite, no_derived, max_
         t = tables.get(res["name"])
         if not t:
             continue
+        res["schema"]["fields"] = _schema_in_file_order(
+            res["name"], _csv_header(d / t["csv"]), res["schema"]["fields"])
         paths = [t["csv"]] + ([t["parquet"]] if t["parquet"] else [])
         res["path"] = paths
         res["format"] = "csv"
@@ -508,14 +704,19 @@ def _build(conn, eng, root, version, with_parquet, with_sqlite, no_derived, max_
 def _readme(pkg: dict, tables: dict, version: str, with_sqlite: bool = False) -> str:
     rows = sum(t["rows"] for t in tables.values())
     has_pq = any(t["parquet"] for t in tables.values())
+    dirty = pkg["git"]["dirty"]
+    state = (" (the working tree was dirty at build: the bundle is not reproducible from that "
+             "commit alone)" if dirty else "")
     cite = (f"Glasshouse evidence dataset, v{version} (commit {pkg['git_commit']}). "
-            "CC-BY-4.0. https://github.com/ (add release/DOI URL).")
+            "CC-BY-4.0. Not yet published; no DOI, no public URL.")
     lines = [
         f"# Glasshouse evidence dataset — v{version}", "",
         pkg["description"], "",
         f"**{rows:,} public rows** across {len(tables)} tables · "
         f"formats: CSV{' + Parquet' if has_pq else ''} · license CC-BY-4.0 · "
         f"commit `{pkg['git_commit']}`", "",
+        f"Built from git commit `{pkg['git']['commit']}`" + state + "; "
+        "`datapackage.json` records it under `git`.", "",
         "## What this is",
         "A primary-source-cited, deduplicated, **versioned** snapshot of what major "
         "financial institutions say (archived policy documents) versus what they do "
@@ -523,17 +724,22 @@ def _readme(pkg: dict, tables: dict, version: str, with_sqlite: bool = False) ->
         "record. Built for researchers and journalists to find and cite insights.", "",
         "## Verify it (don't trust us)",
         "```sh",
-        "sha256sum -c MANIFEST.sha256   # every file's checksum",
+        "sha256sum -c MANIFEST.sha256   # every file's checksum (macOS: shasum -a 256 -c)",
         "```",
-        "Each row carries `source_url` + `retrieval_date`; `datapackage.json` lists "
-        "per-table schema and content hashes; `DATASHEET.md` documents coverage and "
-        "limits.", "",
+        "The manifest covers every file except itself and nothing signs it (see "
+        "`DATASHEET.md`, Integrity). Every row traces to its source: `filings`, "
+        "`enforcement_actions` and `policy_versions` rows carry `source_url`; `votes` and "
+        "`holdings` rows reach theirs through `accession` → `filings` (see `DATASHEET.md`, "
+        "Joins). `datapackage.json` defines every column of every table and lists content "
+        "hashes; `DATASHEET.md` documents code lists, coverage and limits.", "",
         "## Use it",
         "- `facts/*.csv[.gz]` — open everywhere (pandas, R, DuckDB, spreadsheets).",
         *(["- `facts/*.parquet` — typed, columnar, for analysis at scale."] if has_pq else []),
         *(["- `derived/glasshouse.db` — SQLite; browse with "
            "`datasette derived/glasshouse.db`."] if with_sqlite else []), "",
-        "## Cite it", "```", cite, "```", "",
+        "## Cite it",
+        "Status: not yet published; no DOI. Cite only with the version and commit below, and "
+        "say that it is unpublished.", "```", cite, "```", "",
         "## Leads, not findings (read before publishing)",
         "This is a factual compilation — acts, dates, amounts, votes; never motive. "
         "Any say-vs-do gap you derive is a **lead**: theme matching is lexical, so "

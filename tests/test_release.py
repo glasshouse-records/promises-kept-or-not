@@ -12,6 +12,7 @@ import gzip
 import hashlib
 import json
 import re
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -414,3 +415,148 @@ def test_coverage_states_which_kinds_of_votes_are_shipped(conn, tmp_path):
     assert br["votes_by_kind"]["shareholder_proposals"] == 1
     sheet = (d / "DATASHEET.md").read_text()
     assert "say-on-pay votes only" in sheet
+
+
+# ---------------------------------------------------------------- documentation gaps
+
+def _add_vote(c, acc, series, md, desc, how="FOR", cat="DIRECTOR ELECTIONS", src="ISSUER"):
+    c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, vote_description, "
+              "category_type, vote_source, vote_series, how_voted, shares_voted, is_duplicate) "
+              "VALUES (?, 'ACME', '000000001', ?, ?, ?, ?, ?, ?, 10, 0)",
+              (acc, md, desc, cat, src, series, how))
+
+
+def _adviser_ledger(conn):
+    """BlackRock (multi-adviser: BIS to 2024, BAIS from 2025 on one series), one filing from
+    a registrant the registry does not list, and UBS (no keys at all)."""
+    conn.execute("INSERT INTO institutions (id, display_name, cik) VALUES ('ubs','UBS','9')")
+    for acc, cik, iid in (("ACC-2", "9", "ubs"), ("ACC-3", "77", "blackrock")):
+        conn.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+                     "retrieval_date) VALUES (?,?,?,'N-PX','https://e','2026-06-11')",
+                     (acc, cik, iid))
+    _add_vote(conn, "ACC-1", "S000000001", "06/01/2024", "ELECT A")          # BIS
+    _add_vote(conn, "ACC-1", "S000000001", "6/1/2025", "ELECT B", how="WITHHOLD")  # BAIS
+    _add_vote(conn, "ACC-1", "S000000002", "06/01/2025", "ELECT C")          # default BIS
+    _add_vote(conn, "ACC-1", "S000000001", "not a date", "ELECT D")          # UNDATED
+    _add_vote(conn, "ACC-3", "S000000001", "06/01/2025", "ELECT E")          # unlisted registrant
+    _add_vote(conn, "ACC-2", "S000000001", "06/01/2025", "ELECT F")          # UBS: no keys
+    conn.commit()
+
+
+def test_shipped_votes_carry_institution_and_the_engines_adviser_key(conn, tmp_path):
+    _adviser_ledger(conn)
+    ep = _build_engine(conn, tmp_path)
+    release.build_release(conn, root=tmp_path, version="a1", with_parquet=False,
+                          engine_path=ep, institutions=REGISTRY)
+    votes = _read_csv(tmp_path / "va1" / "facts" / "votes.csv")
+    assert list(votes[0])[-2:] == ["institution_id", "adviser_key"]
+    by_desc = {r["vote_description"]: r for r in votes if r["vote_description"]}
+    got = {k: (v["institution_id"], v["adviser_key"]) for k, v in by_desc.items()}
+    assert got == {"ELECT A": ("blackrock", "BIS"), "ELECT B": ("blackrock", "BAIS"),
+                   "ELECT C": ("blackrock", "BIS"), "ELECT D": ("blackrock", "UNDATED"),
+                   "ELECT E": ("blackrock", "unlabelled"), "ELECT F": ("ubs", "")}
+    # ...and it is the engine's own resolution, line for line: per (institution, key) the
+    # shipped director lines equal what the engine folded into director_decisions.
+    eng = sqlite3.connect(ep)
+    eng_n = {(i, a): n for i, a, n in eng.execute(
+        "SELECT institution_id, adviser, SUM(n_lines) FROM director_votes GROUP BY 1,2")}
+    ship_n: dict = {}
+    for r in votes:
+        if r["category_type"] == "DIRECTOR ELECTIONS" and r["vote_source"] == "ISSUER":
+            k = (r["institution_id"], r["adviser_key"] or None)
+            ship_n[k] = ship_n.get(k, 0) + 1
+    assert ship_n == eng_n
+    pkg = json.loads((tmp_path / "va1" / "datapackage.json").read_text())
+    vres = next(r for r in pkg["resources"] if r["name"] == "votes")
+    assert [f["name"] for f in vres["schema"]["fields"]][-2:] == ["institution_id", "adviser_key"]
+    assert vres["rowCount"] == len(votes)
+
+
+def _shipped_columns(path):
+    opener = gzip.open if str(path).endswith(".gz") else open
+    with opener(path, "rt", encoding="utf-8", newline="") as fh:
+        return next(csv.reader(fh))
+
+
+def test_every_shipped_column_of_every_shipped_table_is_defined(conn, tmp_path):
+    """A new column cannot ship undocumented: the descriptor must define, in the
+    one dictionary, exactly the columns the CSV carries; the datasheet repeats them."""
+    release.build_release(conn, root=tmp_path, version="d1", with_parquet=False)
+    d = tmp_path / "vd1"
+    pkg = json.loads((d / "datapackage.json").read_text())
+    sheet = (d / "DATASHEET.md").read_text()
+    assert {r["name"] for r in pkg["resources"]} == {
+        p.name.split(".")[0] for p in (d / "facts").iterdir()}
+    for res in pkg["resources"]:
+        cols = _shipped_columns(d / res["path"][0])
+        assert [f["name"] for f in res["schema"]["fields"]] == cols, res["name"]
+        for f in res["schema"]["fields"]:
+            assert len(f["description"].strip()) > 8, (res["name"], f["name"])
+            assert f"- **{f['name']}** — {f['description']}" in sheet, (res["name"], f["name"])
+            assert release.COLUMN_DICTIONARY[res["name"]][f["name"]] == f["description"]
+    for table, col in (("votes", "id"), ("votes", "category_type"), ("votes", "vote_source"),
+                       ("votes", "shares_on_loan"), ("votes", "vote_series"),
+                       ("filings", "report_type"), ("filings", "notes")):
+        assert col in release.COLUMN_DICTIONARY[table]
+
+
+def test_datasheet_defines_code_lists_joins_and_manifest(conn, tmp_path):
+    release.build_release(conn, root=tmp_path, version="d2", with_parquet=False)
+    sheet = (tmp_path / "vd2" / "DATASHEET.md").read_text()
+    flat = " ".join(sheet.split())
+    for needle in ("## Code lists", "`FOR`", "`AGAINST`", "WITHHOLD", "`ABSTAIN`", "`SPLIT`",
+                   "5%", "`NONE`", "ISSUER", "SECURITY HOLDER", "legacy_html",
+                   "shareholder_proposals", "director_elections", "say_on_pay",
+                   "management_other", "`UNRESOLVED`", "`EXTERNAL`", "`UNDATED`",
+                   "`unlabelled`", "`NULL` = no adviser key recorded",
+                   "votes.accession = filings.accession",
+                   "votes.vote_series = fund_series.series_id",
+                   "neither numerator nor denominator",
+                   "MANIFEST.sha256 covers every file in the bundle except itself",
+                   "nothing signs it"):
+        assert needle in flat, needle
+    # the sentence that overstated provenance is gone: votes carry it via filings
+    assert "Every record carries source_url + retrieval_date." not in sheet
+    assert "`votes` rows carry no `source_url`" in flat
+
+
+def test_bundle_readme_has_no_placeholder_citation(conn, tmp_path):
+    release.build_release(conn, root=tmp_path, version="d3", with_parquet=False)
+    readme = (tmp_path / "vd3" / "README.md").read_text()
+    assert "add release/DOI URL" not in readme and "https://github.com/" not in readme
+    assert "not yet published; no DOI" in readme
+
+
+def test_git_state_names_the_checked_out_commit_and_flags_a_dirty_tree(tmp_path):
+    import subprocess
+
+    from glasshouse import dataset
+
+    def git(*a):
+        return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@x", *a],
+                              cwd=tmp_path, check=True, capture_output=True, text=True).stdout
+    git("init", "-q")
+    (tmp_path / "f.txt").write_text("1")
+    git("add", "f.txt")
+    git("commit", "-q", "-m", "c")
+    head = git("rev-parse", "HEAD").strip()
+    st = dataset.git_state(tmp_path)
+    assert st == {"commit": head, "dirty": False}
+    (tmp_path / "f.txt").write_text("2")
+    assert dataset.git_state(tmp_path) == {"commit": head, "dirty": True}
+    (tmp_path / "f.txt").write_text("1")
+    (tmp_path / "new.txt").write_text("x")           # an untracked file is a dirty tree too
+    assert dataset.git_state(tmp_path)["dirty"] is True
+    assert dataset.git_state(tmp_path / "missing") == {"commit": "unknown", "dirty": None}
+
+
+def test_datapackage_records_git_state(conn, tmp_path, monkeypatch):
+    from glasshouse import dataset
+    monkeypatch.setattr(dataset, "git_state", lambda *a: {"commit": "f" * 40, "dirty": True})
+    release.build_release(conn, root=tmp_path, version="d4", with_parquet=False)
+    d = tmp_path / "vd4"
+    pkg = json.loads((d / "datapackage.json").read_text())
+    assert pkg["git"] == {"commit": "f" * 40, "dirty": True}
+    assert pkg["git_commit"] == "f" * 7
+    assert "dirty" in (d / "DATASHEET.md").read_text().split("\n")[2]
+    assert "working tree was dirty" in (d / "README.md").read_text()
