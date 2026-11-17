@@ -440,6 +440,7 @@ def _adviser_ledger(conn):
     _add_vote(conn, "ACC-1", "S000000001", "not a date", "ELECT D")          # UNDATED
     _add_vote(conn, "ACC-3", "S000000001", "06/01/2025", "ELECT E")          # unlisted registrant
     _add_vote(conn, "ACC-2", "S000000001", "06/01/2025", "ELECT F")          # UBS: no keys
+    _add_vote(conn, "ACC-1", "S000000001", "6/1/2025", "ELECT G", how="")    # not shipped
     conn.commit()
 
 
@@ -465,7 +466,9 @@ def test_shipped_votes_carry_institution_and_the_engines_adviser_key(conn, tmp_p
         if r["category_type"] == "DIRECTOR ELECTIONS" and r["vote_source"] == "ISSUER":
             k = (r["institution_id"], r["adviser_key"] or None)
             ship_n[k] = ship_n.get(k, 0) + 1
-    assert ship_n == eng_n
+    # the engine also counts a line filed with an empty how_voted (not shipped): the one
+    # documented difference, here one BAIS line
+    assert {k: n + (1 if k == ("blackrock", "BAIS") else 0) for k, n in ship_n.items()} == eng_n
     pkg = json.loads((tmp_path / "va1" / "datapackage.json").read_text())
     vres = next(r for r in pkg["resources"] if r["name"] == "votes")
     assert [f["name"] for f in vres["schema"]["fields"]][-2:] == ["institution_id", "adviser_key"]

@@ -480,7 +480,9 @@ whose policy a document is). Real keys (BIS, BAIS, VPM, TRPA, ...) are defined b
   its default key. It is set only for the institutions the engine splits by adviser (two or
   more adviser groups); for the others it is NULL. Per (institution, adviser_key) the
   director-election lines of `votes` (`vote_source` = ISSUER, `category_type` = DIRECTOR
-  ELECTIONS) are the lines `director_decisions` folds into its `n_lines`.
+  ELECTIONS) are the lines `director_decisions` folds into its `n_lines`, except that
+  `director_decisions` also counts lines filed with an empty `how_voted` (administrative
+  records that `votes` does not ship), so its `n_lines` can exceed the count in `votes`.
 
 ## Integrity of this bundle
 
