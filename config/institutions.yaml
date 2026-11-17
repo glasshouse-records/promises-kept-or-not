@@ -354,6 +354,10 @@ institutions:
     # 2010; discover-npx finds only the bank / U.S. Trust entities, no
     # asset-management fund trusts. Not a proxy-voting manager → removed from the
     # voting-coverage denominator. Still tracked for holdings + enforcement.
+    # Fund-trust search checked 2026-11-17: NONE exists. discover-npx 'Bank of America' returns only BANK OF AMERICA NA (1102113), U.S. TRUST Co OF
+    # DELAWARE (1185372) and BANK OF AMERICA CORP (70858): institutional-manager N-PX, no fund trusts. 'BofA Funds Series Trust' (CIK 1477434) last
+    # filed N-PX in 2015 (0001104659-15-055351). Columbia Funds Series Trust (1097519, N-PX 2026-08-18) is advised by Columbia Management Investment
+    # Advisers, LLC, an Ameriprise Financial company (485BPOS 0001193125-26-361885), so it is not a BofA affiliate and is not added.
     notes: "Major US bank; 13-F filed by Bank of America Corp. Exited fund management (sold Columbia Management 2010), so aum_usd_tr (voting basis) is 0; Merrill wealth advisory does not file N-PX as a manager."
 
   citigroup:
@@ -571,6 +575,16 @@ institutions:
         voting_note: "Combination report also covers other UBS managers (UBS Asset Management Trust Company, UBS AM Switzerland AG, UBS AM (UK) Ltd., CIG US); their votes may follow separate policies."
         name: "UBS AM (UBS Asset Management Americas LLC)"
         validated: "2026-06-26"
+    # Fund-trust search 2023-26, checked 2026-11-17 (discover-npx + data.sec.gov submissions + SAI text); NO fund trust added:
+    #  - PACE Select Advisors Trust (CIK 930007) is the only UBS-managed registrant with 2023-26 N-PX (0001104659-26-101229, 0001104659-26-101223,
+    #    0001104659-25-081739, 0001104659-25-081736). UBS AM (Americas) LLC is its manager, but the SAI (485BPOS 0001104659-25-115979,
+    #    https://www.sec.gov/Archives/edgar/data/930007/000110465925115979/tm2523865d1_485bpos.htm) says the board delegated proxy voting "to UBS AM and each
+    #    fund's subadvisor(s)"; UBS AM's own policy applies only to UBS Government Money Market Investments Fund and PACE Alternative Strategies
+    #    Investments, every other series is voted by its subadvisor (PIMCO, J.P. Morgan, MFS, Lazard, ARGA, Polen, KAR, NBIA...). Ingest takes a whole CIK, so
+    #    adding it would put those subadvisors' votes in UBS's mouth: not added.
+    #  - Every other UBS-named trust (UBS Managed Municipal Trust, UBS RMA, UBS Master Series, UBS Index Trust, UBS Mutual Funds Securities Trust, UBS Cashfund,
+    #    A&Q/Eucalyptus/Juniper/Aspen/Enso hedge-fund vehicles) last filed N-PX in 2006-2017: gone.
+    #  - UBS Asset Management Switzerland Inc. (CIK 2044864) and UBS Group AG (1610520) file institutional-manager reports (the combination report above), not fund-trust N-PX.
     voting_scope_notes:
       - "The N-PX is a combination report that also covers UBS Group AG, UBS Asset Management Trust Company, UBS Asset Management Switzerland AG, UBS Asset Management (UK) Ltd. and CIG US (https://www.sec.gov/Archives/edgar/data/861177/000110465926102597/primary_doc.xml); the votes of those managers may follow separate policies and are not split out."
     commitments:
@@ -609,6 +623,10 @@ institutions:
         voting_note: "Joint report covers affiliated BNPP AM managers; filing is say-on-pay votes only. Whether every reporting manager follows the group voting policy was not verified."
         name: "BNP Paribas Asset Management Holding S.A."
         validated: "2026-06-27"
+    # Fund-trust search checked 2026-11-17: NO US fund trust added. The discover-npx candidates are the bank/broker entities (BNP PARIBAS 872786,
+    # FINANCIAL MARKETS 1166588, SECURITIES CORP 1197610) and BNPP AM units that file institutional-manager reports. BNP PARIBAS ASSET MANAGEMENT USA, Inc.
+    # (CIK 1158011, N-PX 0001158011-26-000015, https://www.sec.gov/Archives/edgar/data/1158011/000115801126000015/primary_doc.xml) is a NOTICE report: all
+    # its say-on-pay votes are reported by BNP Paribas Asset Management Holding SA, so it adds no votes. No BNPP-advised registrant filing N-PX was found.
     voting_scope_notes:
       - "The joint N-PX covers votes of former AXA IM-affiliated managers for the period before AXA IM Holding was absorbed on 2025-12-31, and the filing says voting authority may have resided with different affiliated entities (https://www.sec.gov/Archives/edgar/data/1520354/000152035426000042/primary_doc.xml); such votes may not follow the archived BNPP AM policy."
       - "The filing reports say-on-pay (Section 14A) votes only, so it cannot support claims about other proposal types."
