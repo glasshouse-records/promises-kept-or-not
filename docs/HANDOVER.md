@@ -1,7 +1,8 @@
 # Hand-over: what exists, and what only you can do
 
 Written 2026-11-17. Published the same day: the dataset on Zenodo
-(doi:10.5281/zenodo.24321607) and the code at
+(first version doi:10.5281/zenodo.24321607; version 2026-11-17.2,
+adding Capital Group and Dimensional, doi:10.5281/zenodo.24324314) and the code at
 https://github.com/glasshouse-records/promises-kept-or-not, both credited to
 "Glasshouse". Nothing else has been sent or shown to anyone; the drafts below
 are still private.
