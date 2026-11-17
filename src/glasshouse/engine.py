@@ -93,7 +93,8 @@ CREATE TABLE policy_versions (
     authored TEXT,                 -- date the manager's own software wrote
     via TEXT,                      -- wayback | live
     wayback_url TEXT, sha256 TEXT, n_sentences INTEGER,
-    adviser TEXT                   -- whose policy this is (config adviser_key), or NULL
+    adviser TEXT,                  -- whose policy this is (config adviser_key/history), or NULL
+    adviser_key_date TEXT          -- the date that key was resolved on (= captured)
 );
 CREATE TABLE registrants (
     institution_id TEXT, cik TEXT,   -- cik without leading zeros
@@ -207,12 +208,33 @@ def _iso(value, name: str) -> str | None:
 
 
 _CODE = re.compile(r"[A-Z]{2}")
+# the 249 officially assigned ISO 3166-1 alpha-2 codes
+ISO_3166_ALPHA2 = frozenset({
+    "AD", "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR", "AS", "AT", "AU", "AW", "AX",
+    "AZ", "BA", "BB", "BD", "BE", "BF", "BG", "BH", "BI", "BJ", "BL", "BM", "BN", "BO", "BQ",
+    "BR", "BS", "BT", "BV", "BW", "BY", "BZ", "CA", "CC", "CD", "CF", "CG", "CH", "CI", "CK",
+    "CL", "CM", "CN", "CO", "CR", "CU", "CV", "CW", "CX", "CY", "CZ", "DE", "DJ", "DK", "DM",
+    "DO", "DZ", "EC", "EE", "EG", "EH", "ER", "ES", "ET", "FI", "FJ", "FK", "FM", "FO", "FR",
+    "GA", "GB", "GD", "GE", "GF", "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GS",
+    "GT", "GU", "GW", "GY", "HK", "HM", "HN", "HR", "HT", "HU", "ID", "IE", "IL", "IM", "IN",
+    "IO", "IQ", "IR", "IS", "IT", "JE", "JM", "JO", "JP", "KE", "KG", "KH", "KI", "KM", "KN",
+    "KP", "KR", "KW", "KY", "KZ", "LA", "LB", "LC", "LI", "LK", "LR", "LS", "LT", "LU", "LV",
+    "LY", "MA", "MC", "MD", "ME", "MF", "MG", "MH", "MK", "ML", "MM", "MN", "MO", "MP", "MQ",
+    "MR", "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "NA", "NC", "NE", "NF", "NG", "NI",
+    "NL", "NO", "NP", "NR", "NU", "NZ", "OM", "PA", "PE", "PF", "PG", "PH", "PK", "PL", "PM",
+    "PN", "PR", "PS", "PT", "PW", "PY", "QA", "RE", "RO", "RS", "RU", "RW", "SA", "SB", "SC",
+    "SD", "SE", "SG", "SH", "SI", "SJ", "SK", "SL", "SM", "SN", "SO", "SR", "SS", "ST", "SV",
+    "SX", "SY", "SZ", "TC", "TD", "TF", "TG", "TH", "TJ", "TK", "TL", "TM", "TN", "TO", "TR",
+    "TT", "TV", "TW", "TZ", "UA", "UG", "UM", "US", "UY", "UZ", "VA", "VC", "VE", "VG", "VI",
+    "VN", "VU", "WF", "WS", "YE", "YT", "ZA", "ZM", "ZW",
+})      # the 249 officially assigned ISO 3166-1 alpha-2 codes
 
 
 def isin_country(isins) -> str | None:
     """The country code that issued an item's ISIN, or None. `isins` are the raw
     ISINs of every fund line grouped into one item: blanks are ignored, but a
-    malformed prefix or two different prefixes make the item unknown. A wrong
+    malformed prefix (or one that is no ISO 3166-1 country, like the
+    Eurobond XS or EU), or two different prefixes, make the item unknown. A wrong
     country would put a company in the wrong market; an unknown one only leaves
     it out of country filters (and is counted there)."""
     seen = set()
@@ -220,7 +242,7 @@ def isin_country(isins) -> str | None:
         v = (raw or "").strip().upper()
         if not v:
             continue
-        seen.add(v[:2] if _CODE.fullmatch(v[:2]) else None)
+        seen.add(v[:2] if v[:2] in ISO_3166_ALPHA2 else None)
     return seen.pop() if len(seen) == 1 and None not in seen else None
 
 
@@ -288,12 +310,26 @@ def normalize_rules(entry: dict) -> dict:
                        for sid, spec in (entry.get("series_adviser") or {}).items()}}
 
 
+def _valid_day(md) -> str | None:
+    """`md` if it is a real ISO calendar day, else None."""
+    if isinstance(md, str) and _ISO_DAY.fullmatch(md):
+        try:
+            date.fromisoformat(md)
+            return md
+        except ValueError:
+            return None
+    return None
+
+
 def resolve_key(rules: dict | None, series, md) -> str | None:
-    """The adviser group of one vote line. `md` is the ISO meeting date; one
-    that does not parse is resolved by the undated (unbounded) rules only."""
+    """The adviser group of one vote line. `md` is the ISO meeting date. A line
+    whose date does not parse cannot be placed in a dated rule's window: where
+    the series or the registrant has ANY dated rule it resolves to UNDATED (its
+    own group, never paired with a policy) rather than falling to the default,
+    which would be a guess about who voted it."""
     if not rules:
         return None
-    day = md if isinstance(md, str) and _ISO_DAY.fullmatch(md) else None
+    day = _valid_day(md)
 
     def pick(lst):
         for k, lo, hi in lst:
@@ -302,8 +338,42 @@ def resolve_key(rules: dict | None, series, md) -> str | None:
             if day and (lo is None or day >= lo) and (hi is None or day <= hi):
                 return k
         return None
-    return (pick(rules["series"].get((series or "").strip().upper(), []))
-            or pick(rules["history"]) or rules["default"])
+
+    def undated(lst):
+        return not day and any(lo or hi for _k, lo, hi in lst)
+    series_rules = rules["series"].get((series or "").strip().upper(), [])
+    for lst in (series_rules, rules["history"]):
+        hit = pick(lst)
+        if hit:
+            return hit
+        if undated(lst):
+            return UNDATED
+    return rules["default"]
+
+
+def validate_rules(rules: dict, where: str) -> None:
+    """Refuse a rule set that would resolve ambiguously: bounds must be ISO
+    calendar days, `from` <= `until`, and no two rules of one list may cover the
+    same day (the first would silently win). `where` names the registrant or
+    document in the error."""
+    lists = [("adviser_key_history", rules["history"])] + [
+        (f"series {sid}", lst) for sid, lst in rules["series"].items()]
+    for name, lst in lists:
+        spans = []
+        for k, lo, hi in lst:
+            for label, v in (("from", lo), ("until", hi)):
+                if v is not None and _valid_day(v) is None:
+                    raise ValueError(f"{where}, {name}: `{label}` of rule {k!r} must be an "
+                                     f"ISO date YYYY-MM-DD, got {v!r}")
+            if lo and hi and lo > hi:
+                raise ValueError(f"{where}, {name}: rule {k!r} has from {lo} after until {hi} "
+                                 "(it would cover no day; `from` must be before `until`)")
+            spans.append((lo or "0000-00-00", hi or "9999-12-31", k))
+        spans.sort()
+        for (_a, hi1, k1), (lo2, _b, k2) in zip(spans, spans[1:], strict=False):
+            if lo2 <= hi1:
+                raise ValueError(f"{where}, {name}: rules {k1!r} and {k2!r} overlap "
+                                 f"(both cover {lo2}): the first would silently win")
 
 
 def rule_keys(rules: dict | None) -> set[str]:
@@ -314,11 +384,30 @@ def rule_keys(rules: dict | None) -> set[str]:
         k for lst in rules["series"].values() for k, *_ in lst}
 
 
+AUTHORED_LAG_DAYS = 30   # authored this long before first capture: a stretch the archive lacks
+
+
+def _authored_gap(v) -> str | None:
+    """Caveat for a version whose manager-authored date is more than
+    AUTHORED_LAG_DAYS before the day it was first captured: the text may have
+    governed votes cast in between, and no archived text covers them."""
+    a, c = (v["authored"] or "")[:10], v["captured"] or ""
+    if not (_valid_day(a) and _valid_day(c)):
+        return None
+    days = (date.fromisoformat(c) - date.fromisoformat(a)).days
+    if days <= AUTHORED_LAG_DAYS:
+        return None
+    return (f"{v['doc_label']} (adviser {v['adviser'] or 'n/a'}) was authored {a} but first "
+            f"captured {c} ({days} days later): the wording may have been in force before "
+            f"{c}, and votes between {a} and {c} are not covered by an archived text.")
+
+
 def _norm_cik(cik) -> str:
     return str(cik or "").strip().lstrip("0")
 
 
 UNLABELLED = "unlabelled"
+UNDATED = "UNDATED"     # a vote line whose meeting date cannot place it in a dated rule
 EXTERNAL = "EXTERNAL"   # series advised by an outside manager: no archived policy governs it
 
 
@@ -398,17 +487,20 @@ def _ids(groups: dict[tuple, dict]) -> list[tuple[int, dict]]:
     return list(enumerate(first + extra, 1))
 
 
-def _multi_group(led: sqlite3.Connection, rules: dict, doc_adviser: dict) -> dict[str, set]:
+def _multi_group(led: sqlite3.Connection, rules: dict, doc_rules: dict) -> dict[str, set]:
     """The institutions whose votes or policies fall into several adviser groups,
     each with every group key it has (plus UNLABELLED if some line resolves to
     none). Multi-group = vote lines resolve to 2+ distinct keys, OR its policy
     documents carry 2+ distinct keys, OR a document key is none of the
-    registrants' keys. Everything else builds and answers exactly as before."""
+    registrants' keys, OR it has any key at all (registrant or document) and some
+    vote lines resolve to none: those lines are a group of their own and must
+    never be pooled with, or paired to the policy of, a keyed adviser. Everything
+    else builds and answers exactly as before."""
     doc_keys: dict[str, set] = defaultdict(set)
-    for (iid, _label), k in doc_adviser.items():
-        if k:
-            doc_keys[iid].add(k)
-    keyed = [iid for iid, m in rules.items() if any(rule_keys(r) for r in m.values())]
+    for (iid, _label), r in doc_rules.items():
+        doc_keys[iid] |= rule_keys(r)
+    keyed = sorted({iid for iid, m in rules.items() if any(rule_keys(r) for r in m.values())}
+                   | set(doc_keys))
     line_keys: dict[str, set] = defaultdict(set)
     unresolved: set[str] = set()
     if keyed:
@@ -418,13 +510,14 @@ def _multi_group(led: sqlite3.Connection, rules: dict, doc_adviser: dict) -> dic
                 f"""SELECT DISTINCT f.institution_id AS iid, f.cik, v.vote_series AS s, {iso} AS md
                     FROM votes v JOIN filings f ON f.accession = v.accession
                     WHERE v.is_duplicate = 0 AND f.institution_id IN ({marks})""", keyed):
-            k = resolve_key(rules[v["iid"]].get(_norm_cik(v["cik"])), v["s"], v["md"])
+            k = resolve_key(rules.get(v["iid"], {}).get(_norm_cik(v["cik"])), v["s"], v["md"])
             (line_keys[v["iid"]].add(k) if k else unresolved.add(v["iid"]))
     out = {}
     for iid in set(keyed) | set(doc_keys):
         reg_keys = set().union(*(rule_keys(r) for r in rules.get(iid, {}).values()))
         if (len(line_keys[iid]) >= 2 or len(doc_keys[iid]) >= 2
-                or (reg_keys and doc_keys[iid] - reg_keys)):
+                or (reg_keys and doc_keys[iid] - reg_keys)
+                or (iid in unresolved and (reg_keys or doc_keys[iid]))):
             out[iid] = line_keys[iid] | doc_keys[iid] | ({UNLABELLED} if iid in unresolved else set())
     return out
 
@@ -449,15 +542,20 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
     rules = {iid: {_norm_cik(e["cik"]): normalize_rules(e)
                    for e in (inst.get("npx_ciks") or []) if e.get("cik")}
              for iid, inst in institutions.items()}
-    doc_adviser = {(iid, c["label"]): adviser_key(c) for iid, inst in institutions.items()
-                   for c in (inst.get("commitments") or []) if c.get("label")}
+    doc_rules = {(iid, c["label"]): normalize_rules(c) for iid, inst in institutions.items()
+                 for c in (inst.get("commitments") or []) if c.get("label")}
+    for iid, m in rules.items():
+        for cik, r in m.items():
+            validate_rules(r, f"{iid} CIK {cik}")
+    for (iid, label), r in doc_rules.items():
+        validate_rules(r, f"{iid} document {label}")
     led = _ro(ledger_path)
     tmp = engine_path.with_suffix(".building")
     tmp.unlink(missing_ok=True)
     tmp.parent.mkdir(parents=True, exist_ok=True)
     eng = sqlite3.connect(tmp)
     eng.executescript(SCHEMA)
-    split = _multi_group(led, rules, doc_adviser)
+    split = _multi_group(led, rules, doc_rules)
 
     theme_rx = {t: re.compile("|".join(spec["proposal"]), re.IGNORECASE)
                 for t, spec in THEMES.items()}
@@ -535,12 +633,18 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
         sents = sentences(text)
         wb = c["wayback_timestamp"] or ""
         captured = (f"{wb[:4]}-{wb[4:6]}-{wb[6:8]}" if wb else c["retrieval_date"][:10])
-        eng.execute("INSERT INTO policy_versions VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        # The version's key is resolved from the document's history on the day
+        # the text was demonstrably public (`captured`), the same date the
+        # in-force rule uses. The authored date is NOT used: a policy is
+        # routinely written days before it takes effect (VPM's authored
+        # 2026-01-06, effective 2026-01-12), which would key it to the old group.
+        drules = doc_rules.get((c["institution_id"], c["doc_label"]))
+        eng.execute("INSERT INTO policy_versions VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                     (c["id"], c["institution_id"], c["doc_label"], c["url"], captured,
                      (c["doc_created_at"] or "")[:10], "wayback" if wb else "live",
                      f"https://web.archive.org/web/{wb}/{c['url']}" if wb else "",
                      c["sha256"], len(sents),
-                     doc_adviser.get((c["institution_id"], c["doc_label"]))))
+                     resolve_key(drules, None, captured), captured))
         for seq, s in enumerate(sents):
             sid += 1
             eng.execute("INSERT INTO policy_sentences VALUES (?,?,?,?,?,?)",
@@ -637,6 +741,9 @@ class Engine:
             raise ValueError(f"{iid}: adviser {EXTERNAL} (externally advised series) is never "
                              "paired with a policy document: no archived document governs "
                              "those votes")
+        if sc == UNDATED:
+            raise ValueError(f"{iid}: {UNDATED} votes (meeting date unreadable, so the adviser "
+                             "in force cannot be told) are never paired with a policy document")
         if not self.db.execute("SELECT 1 FROM policy_versions WHERE institution_id=? "
                                "AND adviser=?", (iid, sc)).fetchone():
             raise ValueError(f"{iid}: no archived policy for the adviser that cast these votes "
@@ -687,6 +794,10 @@ class Engine:
             out.append(f"{EXTERNAL} votes belong to series advised by an outside manager: "
                        "no archived policy document governs them, so they are never paired "
                        "with one.")
+        if UNDATED in info["known"] and adviser in (None, "", UNDATED):
+            out.append(f"{UNDATED} votes are lines whose meeting date cannot be read on a "
+                       "registrant or series whose adviser changes by date: the adviser in "
+                       "force is unknown, so they are never paired with a policy document.")
         if adviser:
             return out
         return [*out, f"POOLED ADVISERS: {info['institution']}'s funds are voted by different "
@@ -856,7 +967,12 @@ class Engine:
                      "`captured` is the day the text was archived: it proves the wording "
                      "was public by then, not when it was published.",
                      "`authored` is the creation date written by the manager's own "
-                     "software; it corroborates the order of versions, nothing more."])
+                     "software; it corroborates the order of versions, nothing more.",
+                     *(["A version's `adviser` key is resolved from the document's "
+                        "adviser_key_history on its `captured` date (`adviser_key_date`), "
+                        "not its `authored` date: a policy is often written days before it "
+                        "takes effect."] if any(r["adviser"] for r in rows) else []),
+                     *[g for g in (_authored_gap(r) for r in rows) if g]])
 
     def _policy_owner_note(self, iid, adviser) -> list[str]:
         info = self.advisers_of(iid) if iid else None
@@ -972,14 +1088,21 @@ class Engine:
             r["readable"] = True
             r["days_since_capture"] = (datetime.fromisoformat(date)
                                        - datetime.fromisoformat(r["captured"])).days
+        none = not rows
+        result = {"versions": rows, "none_in_force": none,
+                  "reason": ("no readable archived version of the selected document(s) was "
+                             f"captured on or before {date}: the record cannot say what the "
+                             "policy was then") if none else None}
         return _env("policy_in_force", _clean(institution=iid, date=date, adviser=adviser,
-                                              doc_label=doc_label), rows,
+                                              doc_label=doc_label), result,
                     [*self._notes(iid),
-                     "Empty means no readable archived version predates this date — the "
-                     "record cannot say what the policy was then.",
+                     "`none_in_force: true` means no readable archived version predates this "
+                     "date: the record cannot say what the policy was then. That is an "
+                     "absence in the archive, not evidence the manager had no policy.",
                      f"Over ~{GAP_DAYS} `days_since_capture`, later versions probably exist "
                      "that the archive does not hold: do not assert this wording was "
-                     "still current."])
+                     "still current.",
+                     *[g for g in (_authored_gap(r) for r in rows) if g]])
 
     # -- 3. what they did
     def proposals(self, institution=None, theme=None, query=None, company=None, year=None,
@@ -1145,9 +1268,23 @@ class Engine:
                         "in_force_until": None if until.startswith("9999") else until,
                         "window_days": days, "archive_gap": days > GAP_DAYS,
                         "said": said, "did": self._tally(did)})
+        uncovered = []
+        if vers:
+            first = min(v["captured"] for v in vers)
+            join, w, p = self._where(institution=iid, theme=theme,
+                                     query=None if theme else query, adviser=sc)
+            n = self.db.execute(f"SELECT COUNT(*) FROM proposals p {join} WHERE {w} "
+                                "AND p.meeting_date < ?", p + [first]).fetchone()[0]
+            if n:
+                uncovered.append(
+                    f"{n} proposal{'s' if n != 1 else ''} voted"
+                    f"{' by ' + sc if sc else ''} before the first archived text ({first}) "
+                    "are set against no version: the record cannot say what the policy "
+                    "was when they were cast.")
         return _env("say_vs_do", _clean(institution=iid, query=query, theme=theme,
                                         adviser=adviser), out,
-                    [*self._notes(iid),
+                    [*self._notes(iid), *uncovered,
+                     *[g for g in (_authored_gap(v) for v in vers) if g],
                      *([f"Scoped to adviser {sc}: only that adviser's policy documents and "
                         "only votes cast by its funds."] if sc else []),
                      "Each vote is set only against the version public on the meeting date.",
@@ -1254,13 +1391,17 @@ class Engine:
                 "ISIN prefixes are ISO 3166 country codes (GB, not UK); a valid country "
                 "with no votes also gives an empty result."]
 
-    def _dexcluded(self, country, **filters) -> list[str]:
+    def _dexcluded(self, country, *, only_used_by_peers=False, **filters) -> list[str]:
         """Caveats for a country-filtered query: how many items the query's OTHER
         filters matched that had no usable ISIN country (so the filter dropped
-        them), and what the country means."""
+        them), and what the country means. `only_used_by_peers` restricts the
+        count to items director_peers would otherwise have used (a meeting key
+        and a FOR/AGAINST position), so its figure is the true count for it."""
         if country is None:
             return []
         w, p = self._dwhere(**filters)
+        if only_used_by_peers:
+            w += " AND d.meeting_key != '' AND d.position IN ('FOR','AGAINST')"
         n = self.db.execute(
             f"SELECT COUNT(*) FROM director_votes d WHERE {w} AND d.isin_country IS NULL",
             p).fetchone()[0]
@@ -1421,8 +1562,8 @@ class Engine:
                      "`share_of_meetings_with_opposition` before `opposition_rate`.",
                      "Each manager's figures cover only the shared meetings IT voted at.",
                      *self._DIRECTOR_CAVEATS,
-                     *self._dexcluded(country, company=company, year=year, since=since,
-                                      until=until)])
+                     *self._dexcluded(country, only_used_by_peers=True, company=company,
+                                      year=year, since=since, until=until)])
 
     def director_panel(self, institution: str, windows: str, country=None,
                        adviser=None) -> dict:

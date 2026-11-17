@@ -151,8 +151,19 @@ The group is resolved per vote line, not per registrant: a registrant's
 `adviser_key` is its default; `adviser_key_history` (inclusive `from`/`until`
 ISO dates, compared with the MEETING date) and `series_adviser` (per fund
 series, optionally dated) override it, in that order (series rule, then
-history, then default). A meeting date that does not parse resolves by
-undated rules only. An institution is multi-group when its lines resolve to
+history, then default). A meeting date that does not parse, on a series or
+registrant that has any dated rule, resolves to `UNDATED`: its own group, never
+paired with a policy (the adviser in force cannot be told). Rule bounds are
+validated at build (ISO days, `from` <= `until`, no overlaps) and a bad rule
+stops the build. A policy document takes its key the same way, from its own
+`adviser_key_history`, on each version's CAPTURE date (the day the text was
+demonstrably public), not its authored date: a policy is often written days
+before it takes effect (Vanguard's VPM text was authored 2026-01-06, effective
+2026-01-12). Tools say when a version was authored over 30 days before its
+first capture, and how many votes precede an adviser's first archived text.
+Vote lines with no key on record are a group of their own (`unlabelled`)
+whenever the institution has any keyed registrant or document. An institution
+is multi-group when its lines resolve to
 two or more keys, its documents carry two or more keys, or a document's key is
 none of the registrants' keys (a policy that does not govern the votes on
 file: Deutsche's DWS Investment GmbH letter versus US trusts voted by DIMA).

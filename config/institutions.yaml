@@ -460,6 +460,8 @@ institutions:
         adviser_key: "TRPA"
         name: "T. Rowe Price U.S. Equity Research Fund, Inc."
         validated: "2026-06-26"
+    voting_scope_notes:
+      - "Three of the four funds on file are advised by T. Rowe Price Associates (TRPA, guidelines proxy-voting-guidelines-trpa); Capital Appreciation Fund is sub-advised by T. Rowe Price Investment Management (TRPIM), which holds discretionary voting authority and votes under proxy-voting-guidelines-trpim; TRPA and TRPIM run controls preventing sharing of proxy voting decisions (this institution's `notes`)."
     commitments:
       # Canonical TRPA Proxy Voting Guidelines, verified 2026-06-26 (200, pdf).
       - label: proxy-voting-guidelines-trpa

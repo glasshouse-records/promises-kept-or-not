@@ -84,10 +84,13 @@ _VAGUE = re.compile(
     r"slump\w*|tumbl\w*|significant\w*|substantial\w*|marked(ly)?|largely|"
     r"increasingly|roughly|approximately)\b", re.IGNORECASE)
 
-# Governance terms of art, not vague quantities: the phrase names a voting standard.
+# Governance terms of art, not vague quantities: the phrase names a voting STANDARD.
+# Deliberately narrow: "a majority of votes cast by its funds opposed it" and "the
+# majority vote of its funds" assert a proportion of something and need a count.
+# (Inside a verified quotation, any wording passes: quoted spans are removed first.)
 _TERM_OF_ART = re.compile(
-    r"\b(?:supermajority|majority[- ]vot(?:e|es|ing)|majority of (?:the )?votes cast)\b",
-    re.IGNORECASE)
+    r"\b(?:supermajority|majority[- ]vote standards?|majority voting (?:standards?|policy|"
+    r"policies|requirements?)|majority of (?:the )?votes cast standards?)\b", re.IGNORECASE)
 
 STANDING_LIMITATIONS = (
     "Votes are from SEC N-PX filings: US-registered funds only, and only the fund "
@@ -112,11 +115,12 @@ def _quotations(text: str) -> tuple[list[str], str, bool]:
     """(long quotations, the text with every quoted span removed, ok). Curly
     quotes pair with curly, straight with straight, and the two kinds are never
     paired with each other. An odd number of straight marks (an inch sign, a
-    stray quote) cannot be paired without guessing, so ok is False and the
-    caller must reject the text rather than check a guessed span."""
+    stray quote) or a curly quote left without its partner cannot be paired
+    without guessing, so ok is False and the caller must reject the text rather
+    than check a guessed span."""
     quotes = [q for q in _CURLY.findall(text) if len(q) >= _MIN_QUOTE]
     rest = _CURLY.sub(" ", text)
-    ok = rest.count('"') % 2 == 0
+    ok = rest.count('"') % 2 == 0 and "“" not in rest and "”" not in rest
     if ok:
         quotes += [q for q in _STRAIGHT.findall(rest) if len(q) >= _MIN_QUOTE]
         rest = _STRAIGHT.sub(lambda m: " " if len(m.group(1)) >= _MIN_QUOTE else m.group(0),
@@ -125,9 +129,36 @@ def _quotations(text: str) -> tuple[list[str], str, bool]:
 _FACTUAL = re.compile(r"\d|[“\"]")
 
 
+_PATH_TOKEN = re.compile(r"\[[^\]]*\]|[^.\[\]]+")
+
+
 def _dig(obj, path: str):
-    for part in path.split("."):
-        if isinstance(obj, list):
+    """Follow `path` through a tool result. Dict keys and scalar-list positions
+    are plain parts (`overall.for`, `by_year.2024.for`). A list of ROWS is
+    addressed by key, never by position — `[institution=blackrock,adviser=BIS]` —
+    because a rebuild can reorder rows and a positional claim would keep verifying
+    while pointing at a different manager's row. The selector must match exactly
+    one row."""
+    for part in _PATH_TOKEN.findall(path):
+        if part.startswith("["):
+            if not isinstance(obj, list) or not all(isinstance(r, dict) for r in obj):
+                raise KeyError(f"selector {part} needs a list of rows")
+            conds = [c.partition("=") for c in part[1:-1].split(",")]
+            if not part[1:-1] or any(not sep or not k for k, sep, _v in conds):
+                raise KeyError(f"selector {part} must read [key=value,...]")
+            hits = [r for r in obj if all(str(r.get(k)) == v for k, _sep, v in conds)]
+            if len(hits) != 1:
+                raise KeyError(f"selector {part} matches {len(hits)} rows "
+                               f"({'no row' if not hits else 'ambiguous'}): add keys until "
+                               "exactly one row matches")
+            obj = hits[0]
+        elif isinstance(obj, list):
+            if any(isinstance(r, dict) for r in obj):
+                keys = sorted({k for r in obj if isinstance(r, dict) for k in r})[:8]
+                raise KeyError(f"position {part} into a list of rows: row order is not "
+                               "part of the claim and can change on rebuild. Select the row "
+                               f"by key instead, e.g. [institution=blackrock] (row keys: "
+                               f"{', '.join(keys)})")
             obj = obj[int(part)]
         elif isinstance(obj, dict):
             if part not in obj and part.isdigit() and int(part) in obj:
@@ -324,8 +355,9 @@ def verify(draft: dict, eng: engine.Engine | None = None) -> dict:
         qs, rest, paired = _quotations(chunk)
         unquoted_parts.append(rest)
         if not paired:
-            problems.append(f"odd number of straight double quotes in “{chunk[:50]}…”: "
-                            "quotations cannot be paired; use curly quotes “…”")
+            problems.append(f"unpaired quotation marks (an odd number of straight double "
+                            f"quotes, or an unclosed curly quote) in “{chunk[:50]}…”: "
+                            "quotations cannot be paired; close every curly quote “…”")
         vals = quote_values(ids)
         for q in qs:
             nq = engine.norm(q)

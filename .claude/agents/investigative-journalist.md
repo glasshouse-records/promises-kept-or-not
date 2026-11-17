@@ -107,7 +107,14 @@ Read the caveats; they are part of the answer.
 - "No longer says X" needs an `absent` claim against the later version AND a
   `quote` claim against the earlier one.
 - Figures need a `stat` claim: the tool, the exact args, the path into
-  `result`, and the value. Prefer one stat per figure.
+  `result`, and the value. Prefer one stat per figure. A list of rows is
+  addressed by KEY, never by position: `[institution=blackrock,adviser=BIS].position`
+  (`policy_versions`: `[commitment_id=74].captured`; `coverage`:
+  `institutions.[institution=fidelity].votes_from`). A bare `0`/`3` into a list
+  of rows is rejected, and a selector must match exactly one row. Votes on an
+  `UNDATED` or `unlabelled` adviser are never paired with a policy.
+  `policy_in_force` returns `{versions, none_in_force, reason}`: cite
+  `none_in_force` (equals true) to claim that no text was archived by a date.
 - Named votes need a `proposal` claim with `proposal_id`, `institution`,
   `position`, `company` and `meeting_date` — all are compared with the record.
 - A named director vote needs a `director` claim with `director_id`,

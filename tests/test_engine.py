@@ -148,7 +148,7 @@ def test_an_unreadable_capture_is_never_the_policy_in_force(eng):
     """Found by the first agent to use the engine: an empty capture sat between
     two real versions and was returned as 'the policy', so a whole season of
     votes was attributed to a document with no words in it."""
-    got = eng.policy_in_force("alpha", "2024-05-20")["result"]
+    got = eng.policy_in_force("alpha", "2024-05-20")["result"]["versions"]
     assert got and all(v["readable"] for v in got)
     assert got[0]["captured"] == "2023-06-01"
 
@@ -668,10 +668,15 @@ def test_majority_governance_terms_of_art_are_not_vague(eng):
             "That sentence is not in the version archived in 2025. [c2]\n\n"
             "Alpha supported 0 such proposals in 2024. [c3]\n\n")
     tail = "At Exxon Mobil on 2024-05-20 it voted against {} [c4]"
-    for ok in ("a majority vote standard.", "majority voting.", "a majority-vote rule.",
-               "a majority of votes cast.", "a supermajority."):
+    for ok in ("a majority vote standard.", "a majority-vote standard.",
+               "a majority voting standard.", "a majority voting policy.",
+               "a majority voting requirement.", "a majority of votes cast standard.",
+               "a supermajority."):
         assert not any("vague" in p for p in _problems(eng, base + tail.format(ok))), ok
-    for bad in ("the majority of proposals.", "a majority of managers."):
+    for bad in ("the majority of proposals.", "a majority of managers.",
+                "it after a majority of votes cast by its funds opposed the proposal.",
+                "it after the majority vote of its funds went against it.",
+                "majority voting.", "a majority-vote rule."):
         assert any("vague" in p for p in _problems(eng, base + tail.format(bad))), bad
 
 
@@ -880,9 +885,9 @@ def test_policy_tools_return_the_documents_adviser(duo):
 def test_policy_in_force_needs_a_document_or_adviser_for_a_multi_adviser_institution(duo):
     with pytest.raises(ValueError, match="adviser"):
         duo.policy_in_force("delta", "2025-01-01")
-    one = duo.policy_in_force("delta", "2025-01-01", adviser="AAA")["result"]
+    one = duo.policy_in_force("delta", "2025-01-01", adviser="AAA")["result"]["versions"]
     assert [r["doc_label"] for r in one] == ["policy-aaa"]
-    one = duo.policy_in_force("delta", "2025-01-01", doc_label="policy-bbb")["result"]
+    one = duo.policy_in_force("delta", "2025-01-01", doc_label="policy-bbb")["result"]["versions"]
     assert [r["adviser"] for r in one] == ["BBB"]
 
 
@@ -959,14 +964,15 @@ def _lines_ledger(tmp_path, iid, lines, docs=(), name="grp"):
                   " management_recommendation, shares_voted, is_duplicate, vote_series) VALUES"
                   " (?,'EXXON MOBIL','30231G102',?,'Report on Board Diversity','',"
                   "'SECURITY HOLDER',?,'FOR',100,0,?)", (f"ACC-{cik}", date, how, series))
-    for n, (label, text) in enumerate(docs):
+    for n, (label, text, *more) in enumerate(docs):
         f = tmp_path / f"{name}{n}.html"
         f.write_text(text)
+        wb, created = more or ["20240101000000", ""]
         c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date,"
                   " sha256, content_path, content_type, size_bytes, wayback_timestamp,"
-                  " text_sha256) VALUES (?,?,'https://x.example/p.html','2026-01-01',?,?,"
-                  "'text/html',1,'20240101000000',?)", (iid, label, f"s{name}{n}", str(f),
-                                                         f"t{name}{n}"))
+                  " text_sha256, doc_created_at) VALUES (?,?,'https://x.example/p.html',"
+                  "'2026-01-01',?,?,'text/html',1,?,?,?)",
+                  (iid, label, f"s{name}{n}", str(f), wb, f"t{name}{n}", created))
     c.commit()
     c.close()
     return led
@@ -1019,8 +1025,8 @@ def test_resolution_order_and_undated_rules():
     assert f(r, "S9", "2024-06-15") == "S"        # series rule first (case-insensitive id)
     assert f(r, "S9", "2024-07-01") == "H"        # series window over: registrant history
     assert f(r, "S9", "2025-01-01") == "D"        # then the default
-    assert f(r, "S9", "garbage") == "D"           # undated: only unbounded rules apply
-    assert f(r, "S9", None) == "D"
+    assert f(r, "S9", "garbage") == "UNDATED"     # a dated series rule cannot place it
+    assert f(r, "S9", None) == "UNDATED"
     assert f(r, "S8", "garbage") == "U"           # an unbounded series rule applies undated
     assert f(r, "", "2024-01-01") == "H"
     assert f(engine.normalize_rules({"cik": "1"}), "S", "2024-01-01") is None
@@ -1058,7 +1064,7 @@ def test_two_documents_with_different_keys_pair_only_with_their_own(tmp_path):
     r = e.say_vs_do("g", "board diversity", adviser="D1")["result"]
     assert [x["doc_label"] for x in r] == ["pol-a"] and r[0]["did"]["for"] == 1
     assert [x["doc_label"] for x in
-            e.policy_in_force("g", "2025-01-01", adviser="D1")["result"]] == ["pol-a"]
+            e.policy_in_force("g", "2025-01-01", adviser="D1")["result"]["versions"]] == ["pol-a"]
 
 
 def test_external_is_a_group_but_never_pairs_with_a_policy(tmp_path):
@@ -1130,3 +1136,253 @@ def test_split_off_items_are_numbered_after_every_pooled_item(tmp_path):
     assert new[("2024-05-20", "P")] == old["2024-05-20"]
     assert new[("2024-05-21", "P")] == old["2024-05-21"]
     assert new[("2024-05-20", "Q")] > max(old.values())
+
+
+# ------------------------------------------- review batch 2026-11-17 (items 1-8)
+
+SPLIT_HIST = [{"key": "OLD", "until": "2026-01-11"}, {"key": "NEW", "from": "2026-01-12"}]
+
+
+def _split_registry(doc_hist=SPLIT_HIST):
+    return {"g": {"npx_ciks": [{"cik": "71", "adviser_key": "NEW",
+                                "adviser_key_history": SPLIT_HIST}],
+                  "commitments": [{"label": "pol", "adviser_key": "NEW",
+                                   "adviser_key_history": doc_hist}]}}
+
+
+def _split_engine(tmp_path, doc_hist=SPLIT_HIST):
+    led = _lines_ledger(
+        tmp_path, "g", [("71", "S1", "5/20/2025", "FOR"), ("71", "S1", "3/10/2026", "AGAINST")],
+        docs=[("pol", TEXT_A, "20220117000000", ""),
+              ("pol", TEXT_B, "20260716000000", "2026-01-06T09:00:00")])
+    return _build(tmp_path, led, _split_registry(doc_hist))
+
+
+def test_a_documents_key_comes_from_its_history_on_the_capture_date(tmp_path):
+    """Vanguard: the 2022 capture of the VPM-keyed document is the unified pre-split text."""
+    e = _split_engine(tmp_path)
+    rows = e.policy_versions("g")["result"]
+    assert [(r["captured"], r["adviser"]) for r in rows] == [
+        ("2022-01-17", "OLD"), ("2026-07-16", "NEW")]
+    # authored 2026-01-06 is BEFORE the split, yet the text is the NEW adviser's:
+    # the key is dated by the day the text was demonstrably public, and says so
+    assert all(r["adviser_key_date"] == r["captured"] for r in rows)
+    assert any("captured" in c and "key" in c.lower()
+               for c in e.policy_versions("g")["caveats"])
+    old = e.say_vs_do("g", "board diversity", adviser="OLD")["result"]
+    assert [x["in_force_from"] for x in old] == ["2022-01-17"]
+    assert old[0]["did"]["for"] == 1                       # the 2025 vote, not the 2026 one
+    new = e.say_vs_do("g", "board diversity", adviser="NEW")
+    assert [x["in_force_from"] for x in new["result"]] == ["2026-07-16"]
+    assert new["result"][0]["did"]["proposals"] == 0
+
+
+def test_a_policy_authored_long_before_capture_and_uncovered_votes_are_said(tmp_path):
+    e = _split_engine(tmp_path)
+    cav = e.say_vs_do("g", "board diversity", adviser="NEW")["caveats"]
+    assert any("authored 2026-01-06" in c and "first captured 2026-07-16" in c
+               and "not covered" in c for c in cav)
+    assert any("1 proposal" in c and "before the first archived text" in c for c in cav)
+    inf = e.policy_in_force("g", "2026-08-01", adviser="NEW")
+    assert [v["captured"] for v in inf["result"]["versions"]] == ["2026-07-16"]
+    assert any("authored 2026-01-06" in c and "not covered" in c for c in inf["caveats"])
+    # within 30 days of capture: nothing to say
+    near = e.policy_in_force("g", "2023-01-01", adviser="OLD")
+    assert not any("authored" in c for c in near["caveats"])
+
+
+def test_a_document_without_history_still_takes_its_default_key(tmp_path):
+    e = _split_engine(tmp_path, doc_hist=None)
+    assert {r["adviser"] for r in e.policy_versions("g")["result"]} == {"NEW"}
+
+
+def test_policy_in_force_with_nothing_in_force_is_citable(tmp_path):
+    e = _split_engine(tmp_path)
+    r = e.policy_in_force("g", "2025-01-01", adviser="NEW")["result"]
+    assert r["versions"] == [] and r["none_in_force"] is True and r["reason"]
+    full = e.policy_in_force("g", "2025-01-01", adviser="OLD")["result"]
+    assert full["none_in_force"] is False and len(full["versions"]) == 1
+    stat = {"type": "stat", "tool": "policy_in_force", "path": "none_in_force", "equals": True,
+            "args": {"institution": "g", "date": "2025-01-01", "adviser": "NEW"}}
+    assert desk._check(e, stat)[0]
+
+
+# -- item 3: unlabelled lines are a group of their own
+
+def test_lines_with_no_key_are_never_pooled_with_a_keyed_adviser(tmp_path):
+    led = _lines_ledger(tmp_path, "g", [("71", "S1", "05/20/2024", "FOR"),
+                                        ("72", "S2", "05/20/2024", "AGAINST")],
+                        docs=[("pol-a", TEXT_A)])
+    reg = {"g": {"npx_ciks": [{"cik": "71", "adviser_key": "A"}],       # 72 is not in config
+                 "commitments": [{"label": "pol-a", "adviser_key": "A"}]}}
+    e = _build(tmp_path, led, reg)
+    assert _advs(e) == [("A", "FOR"), ("unlabelled", "AGAINST")]
+    info = e.advisers_of("g")
+    assert info["multi"] and info["known"] == ["A"] and info["unlabelled"] == 1
+    a = e.say_vs_do("g", "board diversity", adviser="A")["result"]
+    assert a[0]["did"]["for"] == 1 and a[0]["did"]["against"] == 0
+    with pytest.raises(ValueError, match="no archived policy"):
+        e.say_vs_do("g", "board diversity", adviser="unlabelled")
+
+
+def test_a_keyed_document_alone_makes_unkeyed_votes_a_separate_group(tmp_path):
+    led = _lines_ledger(tmp_path, "g", [("71", "S1", "05/20/2024", "FOR")],
+                        docs=[("pol-a", TEXT_A)])
+    reg = {"g": {"npx_ciks": [{"cik": "71"}],
+                 "commitments": [{"label": "pol-a", "adviser_key": "A"}]}}
+    e = _build(tmp_path, led, reg)
+    assert _advs(e) == [("unlabelled", "FOR")]
+    assert e.advisers_of("g")["multi"]
+    with pytest.raises(ValueError, match="adviser"):
+        e.say_vs_do("g", "board diversity")
+    assert e.say_vs_do("g", "board diversity", adviser="A")["result"][0]["did"]["proposals"] == 0
+
+
+# -- item 4: rule bounds validated; undated lines are UNDATED
+
+@pytest.mark.parametrize("hist,series,needle", [
+    ([{"key": "A", "from": "2025-1-1"}], {}, "CIK 71"),
+    ([{"key": "A", "from": "soon"}], {}, "ISO"),
+    ([{"key": "A", "from": "2025-06-01", "until": "2025-01-01"}], {}, "before"),
+    ([{"key": "A", "until": "2025-06-30"}, {"key": "B", "from": "2025-06-30"}], {}, "overlap"),
+    ([], {"S000009": [{"key": "A", "until": "2025-06-30"},
+                      {"key": "B", "from": "2025-01-01"}]}, "S000009"),
+    ([{"key": "A"}, {"key": "B", "from": "2025-01-01"}], {}, "overlap"),
+])
+def test_bad_rule_bounds_stop_the_build_naming_the_registrant(tmp_path, hist, series, needle):
+    led = _lines_ledger(tmp_path, "g", [("71", "S1", "05/20/2024", "FOR")])
+    entry = {"cik": "71", "adviser_key": "D", "adviser_key_history": hist,
+             "series_adviser": series}
+    with pytest.raises(ValueError, match="g") as ei:
+        _build(tmp_path, led, {"g": {"npx_ciks": [entry]}})
+    assert "71" in str(ei.value) and needle in str(ei.value)
+
+
+def test_bad_document_rule_bounds_stop_the_build_naming_the_document(tmp_path):
+    led = _lines_ledger(tmp_path, "g", [("71", "S1", "05/20/2024", "FOR")])
+    reg = {"g": {"npx_ciks": [{"cik": "71", "adviser_key": "A"}],
+                 "commitments": [{"label": "pol-a", "adviser_key": "A",
+                                  "adviser_key_history": [{"key": "A", "from": "2025/01/01"}]}]}}
+    with pytest.raises(ValueError, match="pol-a"):
+        _build(tmp_path, led, reg)
+
+
+def test_a_line_with_no_parsable_date_on_a_dated_rule_is_undated_and_never_pairs(tmp_path):
+    led = _lines_ledger(tmp_path, "g", [("71", "S1", "05/20/2024", "FOR"),
+                                        ("71", "S1", "TBD", "AGAINST"),
+                                        ("72", "S2", "TBD", "FOR")],
+                        docs=[("pol-a", TEXT_A)])
+    reg = {"g": {"npx_ciks": [
+        {"cik": "71", "adviser_key": "A", "adviser_key_history": [
+            {"key": "A", "until": "2024-12-31"}, {"key": "B", "from": "2025-01-01"}]},
+        {"cik": "72", "adviser_key": "A"}],                     # no dated rule: default holds
+        "commitments": [{"label": "pol-a", "adviser_key": "A"}]}}
+    e = _build(tmp_path, led, reg)
+    got = {(r["adviser"], r["position"]) for r in e.db.execute(
+        "SELECT adviser, position FROM proposals")}
+    assert got == {("A", "FOR"), ("UNDATED", "AGAINST")}      # 72's undated line stays A
+    with pytest.raises(ValueError, match="UNDATED"):
+        e.say_vs_do("g", "board diversity", adviser="UNDATED")
+
+
+def test_resolve_key_undated_rule_table():
+    r = engine.normalize_rules({"adviser_key": "D", "adviser_key_history": [
+        {"key": "H", "until": "2024-12-31"}],
+        "series_adviser": {"S9": [{"key": "S", "from": "2024-06-01", "until": "2024-06-30"}],
+                           "S8": {"key": "U"}}})
+    f = engine.resolve_key
+    assert f(r, "S9", "garbage") == engine.UNDATED
+    assert f(r, "S1", None) == engine.UNDATED                # registrant history is dated
+    assert f(r, "S8", "garbage") == "U"                      # an unbounded rule needs no date
+    assert f(engine.normalize_rules({"adviser_key": "D"}), "S", "garbage") == "D"
+    assert f(r, "S1", "2024-13-45") == engine.UNDATED        # shaped like a date, not one
+
+
+# -- item 5: director_peers count, ISO country codes
+
+def test_peers_excluded_count_is_only_items_peers_would_have_used(tmp_path):
+    led = tmp_path / "l.db"
+    c = ledger.connect(led)
+    for iid in ("a", "b"):
+        c.execute("INSERT INTO institutions (id, display_name) VALUES (?,?)", (iid, iid))
+        c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url,"
+                  " retrieval_date, period_of_report, report_type) VALUES (?,?,?,'N-PX',?,"
+                  "'2026-01-01','06/30/2024','FUND VOTING REPORT')",
+                  (f"ACC-{iid}", "1", iid, f"https://sec.example/{iid}"))
+        for company, cusip, isin in (("ACME", "000000001", "US0000000010"),
+                                     ("NOISIN", "000000002", None),
+                                     ("NOCUSIP", "", None)):
+            c.execute("INSERT INTO votes (accession, issuer_name, cusip, isin, meeting_date,"
+                      " vote_description, category_type, vote_source, how_voted,"
+                      " management_recommendation, shares_voted, is_duplicate) VALUES"
+                      " (?,?,?,?,'05/20/2024','Elect Ann','DIRECTOR ELECTIONS','ISSUER',"
+                      "'FOR','FOR',100,0)", (f"ACC-{iid}", company, cusip, isin))
+    c.commit()
+    c.close()
+    e = _build(tmp_path, led, {})
+    cav = e.director_peers(country="US", min_managers=2)["caveats"]
+    assert any(x.startswith("2 nominee items were excluded") for x in cav), cav
+    # director_record has no meeting-key restriction: a's NOISIN and NOCUSIP both count
+    assert any(x.startswith("2 nominee items were excluded")
+               for x in e.director_record("a", country="US")["caveats"])
+
+
+def test_isin_country_accepts_only_real_iso_codes():
+    assert len(engine.ISO_3166_ALPHA2) == 249
+    for ok in ("US", "GB", "KY", "JP", "DE"):
+        assert engine.isin_country([ok + "0000000010"]) == ok
+    for notcountry in ("XS", "EU", "ZZ", "AN", "QQ", "CS"):
+        assert engine.isin_country([notcountry + "0000000010"]) is None, notcountry
+
+
+# -- items 6, 7: desk
+
+def test_an_unclosed_curly_quote_is_a_problem_like_an_odd_straight_quote(eng):
+    quotes, rest, ok = desk._quotations("He wrote “a long sentence that never closes here.")
+    assert ok is False
+    assert desk._quotations("He wrote “short” and “another one that is long enough to count.”"
+                            )[2] is True
+    body = ("Alpha's 2023 policy said “We expect boards to disclose climate transition plans "
+            "aligned with a 1.5 degree pathway. [c1]\n\n"
+            "That sentence is not in the version archived in 2025. [c2]\n\n"
+            "Alpha supported 0 such proposals in 2024. [c3]\n\n"
+            "At Exxon Mobil on 2024-05-20 it voted against. [c4]")
+    assert any("unclosed curly" in p for p in _problems(eng, body))
+
+
+def test_a_claim_cannot_point_at_a_list_row_by_position(eng):
+    ballot = eng.ballot(eng.proposals(institution="alpha", year=2024
+                                      )["result"]["shown"][0]["proposal_id"])["result"]
+    pid = ballot[0]["proposal_id"]
+    stat = {"type": "stat", "tool": "ballot", "args": {"proposal_id": pid},
+            "equals": ballot[0]["position"]}
+    with pytest.raises(KeyError, match=r"Select the row by key"):
+        desk._check(eng, {**stat, "path": "0.position"})
+    row = next(r for r in ballot if r["institution"] == "alpha")
+    ok, detail = desk._check(eng, {**stat, "path": "[institution=alpha].position",
+                                   "equals": row["position"]})
+    assert ok, detail
+    # a key that matches no row, or several, is refused rather than guessed
+    with pytest.raises(KeyError, match="no row"):
+        desk._check(eng, {**stat, "path": "[institution=nobody].position"})
+    # and verify() reports a positional claim as a failed claim, not a crash
+    d = _draft(eng)
+    d["claims"][2]["check"] = {**stat, "path": "0.position"}
+    assert any(p.startswith("claim c3 failed") and "Select the row by key" in p
+               for p in desk.verify(d, eng)["problems"])
+
+
+def test_dig_selects_list_rows_by_key_and_still_walks_dicts_and_scalar_lists():
+    obj = {"rows": [{"institution": "a", "adviser": "X", "v": 1},
+                    {"institution": "a", "adviser": "Y", "v": 2},
+                    {"institution": "b", "adviser": "X", "v": 3}],
+           "by_year": {2024: {"for": 5}}, "words": ["p", "q"], "dotted": [{"k": "1.5", "v": 9}]}
+    assert desk._dig(obj, "rows.[institution=a,adviser=Y].v") == 2
+    assert desk._dig(obj, "rows[institution=b].v") == 3
+    assert desk._dig(obj, "by_year.2024.for") == 5
+    assert desk._dig(obj, "words.1") == "q"
+    assert desk._dig(obj, "dotted.[k=1.5].v") == 9
+    with pytest.raises(KeyError, match="2 rows"):
+        desk._dig(obj, "rows.[institution=a].v")
+    with pytest.raises(KeyError, match="key"):
+        desk._dig(obj, "rows.0.v")
