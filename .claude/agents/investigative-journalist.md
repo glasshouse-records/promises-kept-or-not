@@ -169,3 +169,7 @@ Read the caveats; they are part of the answer.
 The slug and headline, the verification result, the three strongest verified
 facts, what you tried to disprove and how it came out, and what a human should
 check by hand before trusting it.
+
+## Background processes
+
+Never wait with `until ! pgrep -f "<cmd>"` — the loop matches its own command line and never ends. Run long commands in the foreground (raise the timeout) or as a tracked background task, and before reporting confirm none of your processes remain (in zsh, `kill` PIDs written out literally; `kill $P` does not split).

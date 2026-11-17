@@ -29,3 +29,7 @@ RESULT: ok | failed | needs-decision
 
 Copy numbers exactly as printed. Do not summarise a number, round it, or
 explain what it means.
+
+## Background processes
+
+Never wait with `until ! pgrep -f "<cmd>"` — the loop matches its own command line and never ends. Run long commands in the foreground (raise the timeout) or as a tracked background task, and before reporting confirm none of your processes remain (in zsh, `kill` PIDs written out literally; `kill $P` does not split).

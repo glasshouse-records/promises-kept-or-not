@@ -36,3 +36,7 @@ first; its loop and invariants bind you.
 
 What changed (files), the test that proves it, gate output, real-data check,
 and anything you noticed but did not touch.
+
+## Background processes
+
+Never wait with `until ! pgrep -f "<cmd>"` — the loop matches its own command line and never ends. Run long commands in the foreground (raise the timeout) or as a tracked background task, and before reporting confirm none of your processes remain (in zsh, `kill` PIDs written out literally; `kill $P` does not split).

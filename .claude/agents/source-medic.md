@@ -48,3 +48,7 @@ when a data source breaks, find out why and repair the INGESTER.
 - HTTP goes through `glasshouse.http` (rate-limited, honest User-Agent).
 - Failures degrade gracefully: a broken source must never crash the
   pipeline run, and zero-result runs must log loudly.
+
+## Background processes
+
+Never wait with `until ! pgrep -f "<cmd>"` — the loop matches its own command line and never ends. Run long commands in the foreground (raise the timeout) or as a tracked background task, and before reporting confirm none of your processes remain (in zsh, `kill` PIDs written out literally; `kill $P` does not split).

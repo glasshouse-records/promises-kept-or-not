@@ -35,3 +35,7 @@ Findings ranked by severity, each with file:line, the failure scenario in
 one sentence, and the minimal fix. Separate "must fix before merge" from
 "worth a follow-up". If the diff is clean, say so plainly — do not invent
 problems to seem thorough.
+
+## Background processes
+
+Never wait with `until ! pgrep -f "<cmd>"` — the loop matches its own command line and never ends. Run long commands in the foreground (raise the timeout) or as a tracked background task, and before reporting confirm none of your processes remain (in zsh, `kill` PIDs written out literally; `kill $P` does not split).
