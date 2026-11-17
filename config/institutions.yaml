@@ -20,9 +20,16 @@ institutions:
       # itself (JPMorgan Chase Bank N.A.), and single closed-end/specialty funds
       # — only these two attribute cleanly to JPMAM's US fund voting.
       - cik: "1217286"
+        adviser: "J.P. Morgan Investment Management Inc. (JPMIM); no sub-adviser in this trust"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1217286/000119312526433347/d350863d485bpos.htm"  # 485BPOS filed 2026-10-27; N-CSR 2026-09-08 names no sub-adviser
+        adviser_verified: "2026-11-17"
+        voting_note: "Outside-sub-advised funds such as Behavioral Value (FullerThaler, voting delegated to it) sit in the separate Undiscovered Managers Funds trust, which is not registered here."
         name: "JPMorgan Trust I"
         validated: "2026-06-26"
       - cik: "1303608"
+        adviser: "J.P. Morgan Investment Management Inc. (JPMIM); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1303608/000119312526211596/d115273dncsr.htm"  # N-CSR filed 2026-05-07; sole series is JPMorgan Core Bond Trust (bond fund, little or no equity voting)
+        adviser_verified: "2026-11-17"
         name: "JPMorgan Institutional Trust"
         validated: "2026-06-26"
     commitments:
@@ -222,9 +229,15 @@ institutions:
       # AG/Europe SE (banks), and the stale 2008 hedge-fund "Registered Fund LLC"
       # vehicles.
       - cik: "1229262"
+        adviser: "Goldman Sachs Asset Management, L.P. (files an institutional-manager N-PX for itself, not a fund registrant)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1229262/000119312526375331/primary_doc.xml"  # N-PX filed 2026-08-31, report type Institutional Manager Voting Report
+        adviser_verified: "2026-11-17"
         name: "Goldman Sachs Asset Management, L.P."
         validated: "2026-06-26"
       - cik: "1479026"
+        adviser: "Goldman Sachs Asset Management, L.P. (GSAM); no sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1479026/000119312526434259/d124537d485bpos.htm"  # 485BPOS filed 2026-10-27
+        adviser_verified: "2026-11-17"
         name: "Goldman Sachs ETF Trust"
         validated: "2026-06-26"
     commitments:
@@ -395,6 +408,10 @@ institutions:
       # unambiguous Invesco ETF trust. Invesco fans out across many trusts;
       # this is the ETF vehicle, attribution-safe.
       - cik: "1418144"
+        adviser: "Invesco Capital Management LLC; sub-advisers Invesco Advisers, Inc. and Invesco Management S.A. (affiliates)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1418144/000110465926119957/tm2628303d1_485bpos.htm"  # 485BPOS filed 2026-10-29
+        adviser_verified: "2026-11-17"
+        voting_note: "SAI: the Board delegates proxy voting to the Adviser or Sub-Adviser, as applicable, each voting under its own policies (SAI Appendix A); not confirmed that they are identical to the archived global policy."
         name: "Invesco Actively Managed Exchange-Traded Fund Trust"
         validated: "2026-06-17"
     commitments:
@@ -424,9 +441,15 @@ institutions:
       # Charitable Giving' and the manager entity 'Charles Schwab Investment
       # Management Inc' — only the fund trusts attribute cleanly.
       - cik: "869365"
+        adviser: "Charles Schwab Investment Management, Inc. (Schwab Asset Management); no sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/869365/000088454626000286/c485bpos.htm"  # 485BPOS filed 2026-06-26; SAI: Board delegated proxy voting to Schwab Asset Management
+        adviser_verified: "2026-11-17"
         name: "Schwab Investments"
         validated: "2026-06-17"
       - cik: "857156"
+        adviser: "Charles Schwab Investment Management, Inc. (Schwab Asset Management); no sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/857156/000088454626000169/c485bpos.htm"  # 485BPOS filed 2026-04-28; SAI: Board delegated proxy voting to Schwab Asset Management
+        adviser_verified: "2026-11-17"
         name: "Charles Schwab Family of Funds"
         validated: "2026-06-17"
 
@@ -449,6 +472,10 @@ institutions:
       # the discover noise: stale A&Q/Eucalyptus/Aspen hedge-fund vehicles and
       # 'UBS Financial Services Inc' (the brokerage, not the asset manager).
       - cik: "861177"
+        adviser: "UBS Asset Management (Americas) LLC (files an institutional-manager N-PX, not a fund registrant)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/861177/000110465926102597/primary_doc.xml"  # N-PX filed 2026-08-28, combination report
+        adviser_verified: "2026-11-17"
+        voting_note: "Combination report also covers other UBS managers (UBS Asset Management Trust Company, UBS AM Switzerland AG, UBS AM (UK) Ltd., CIG US); their votes may follow separate policies."
         name: "UBS AM (UBS Asset Management Americas LLC)"
         validated: "2026-06-26"
     commitments:
@@ -481,6 +508,10 @@ institutions:
       # institutional manager (same entity as the 13-F filer). Excluded the BNP
       # Paribas broker-dealer / securities entities.
       - cik: "1520354"
+        adviser: "BNP Paribas Asset Management Holding S.A. (files a joint institutional-manager N-PX for itself and affiliated BNPP AM managers)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1520354/000152035426000042/primary_doc.xml"  # N-PX filed 2026-08-27
+        adviser_verified: "2026-11-17"
+        voting_note: "Joint report covers affiliated BNPP AM managers; filing is say-on-pay votes only. Whether every reporting manager follows the group voting policy was not verified."
         name: "BNP Paribas Asset Management Holding S.A."
         validated: "2026-06-27"
     commitments:
@@ -501,9 +532,16 @@ institutions:
       # Franklin equity complex (Income/Growth/etc.); plus the Franklin ETF Trust.
       # Both unambiguously Franklin-managed, filing N-PX through 2025.
       - cik: "38721"
+        adviser: "Franklin Advisers, Inc. (series: Income, Growth, Utilities, DynaTech); no sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/38721/000113322825012975/fcf-efp18887_ncsr.htm"  # N-CSR filed 2025-12-01; voting delegated to the investment manager per SAI https://www.sec.gov/Archives/edgar/data/38721/000165558926000070/c485bpos.htm
+        adviser_verified: "2026-11-17"
         name: "Franklin Custodian Funds"
         validated: "2026-06-26"
       - cik: "1551895"
+        adviser: "Franklin Advisers, Inc.; N-CSR refers to a subadviser without naming it"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1551895/000113322826008749/fetft-efp24615_ncsr.htm"  # N-CSR filed 2026-06-03; SAI https://www.sec.gov/Archives/edgar/data/1551895/000165558926000971/c485bpos.htm says voting is delegated to Franklin Advisers, Inc.
+        adviser_verified: "2026-11-17"
+        voting_note: "Sub-adviser mention is generic risk wording; no sub-adviser is named for the series seen (Franklin Short Duration U.S. Government ETF)."
         name: "Franklin ETF Trust"
         validated: "2026-06-26"
     commitments:
@@ -526,9 +564,17 @@ institutions:
       # Investments Corp, BNY Mellon Advisors) and single specialty/Alcentra
       # target-term funds; these two are broad, equity-bearing BNY fund families.
       - cik: "318478"
+        adviser: "BNY Mellon Investment Adviser, Inc.; sub-adviser Fayez Sarofim & Co. (outside firm)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/318478/000003014626000183/c485bpos.htm"  # 485BPOS filed 2026-04-28 (SAI: Delegation of Proxy Voting Responsibility)
+        adviser_verified: "2026-11-17"
+        voting_note: "SAI: for sub-advised funds the Sub-Adviser holds discretionary proxy voting and uses its own procedures, so these votes are not cast under the BNY policy archived. Certain bank-holding-company shares are voted by Fiduciary Counselors, Inc."
         name: "BNY Mellon Appreciation Fund, Inc."
         validated: "2026-06-26"
       - cik: "914775"
+        adviser: "BNY Mellon Investment Adviser, Inc.; sub-advisers include Newton Investment Management North America, LLC (BNY affiliate) on series seen"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/914775/000003014626000475/output.htm"  # N-CSR filed 2026-11-03; SAI https://www.sec.gov/Archives/edgar/data/914775/000003014626000070/c485bpos.htm
+        adviser_verified: "2026-11-17"
+        voting_note: "SAI: sub-advised series are voted by the Sub-Adviser under its own procedures; directly advised series by BNYIA. Per-series split not resolved. Certain bank-holding-company shares are voted by Fiduciary Counselors, Inc."
         name: "BNY Mellon Advantage Funds, Inc."
         validated: "2026-06-26"
     commitments:
@@ -600,6 +646,10 @@ institutions:
       # series trusts), NOT Northern Trust; "Bell Bank" and "Northern Capital
       # Management" are unrelated. Only NORTHERN FUNDS attributes to NTAM.
       - cik: "916620"
+        adviser: "Northern Trust Investments, Inc. (NTI); multi-manager series use outside sub-advisers (e.g. Axiom International Investors)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/916620/000119312526188130/d144827d485bpos.htm"  # 485BPOS filed 2026-04-29 (SAI Proxy Voting)
+        adviser_verified: "2026-11-17"
+        voting_note: "SAI: the Trust delegates voting to NTI, which applies the Northern Proxy Voting Policy to all Funds, including multi-manager series."
         name: "Northern Funds"
         validated: "2026-06-27"
     commitments:
