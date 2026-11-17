@@ -1,14 +1,16 @@
-# Scheduler = GitHub Actions ONLY. Files-first; nothing to babysit.
-# These jobs are inert until the repo is pushed to GitHub (publication is
-# currently deferred by the maintainer).
-name: Scheduled runs
+# Manual only. The schedule below is switched OFF: the maintained daily chore
+# is scripts/routine.sh against the real ledger and policy archive. A runner
+# starting from an empty cache would capture into a separate, evictable
+# archive and publish artifacts from a near-empty ledger. Turning a schedule
+# on is an owner decision (docs/HANDOVER.md), not a side effect of pushing.
+name: Scheduled runs (manual only)
 
 on:
-  schedule:
-    - cron: "17 11 * * *"   # daily: enforcement event scan + policy capture
-    - cron: "23 5 * * 0"    # weekly: Wayback backfill for newly-added sources
-    - cron: "31 6 20 2,5,8,11 *"  # quarterly: 13-F (45 days after quarter end)
-    - cron: "45 7 5 9 *"    # annual: N-PX (proxy-season close, filings due Aug 31)
+  # schedule:
+  #   - cron: "17 11 * * *"   # daily: enforcement event scan + policy capture
+  #   - cron: "23 5 * * 0"    # weekly: Wayback backfill for newly-added sources
+  #   - cron: "31 6 20 2,5,8,11 *"  # quarterly: 13-F (45 days after quarter end)
+  #   - cron: "45 7 5 9 *"    # annual: N-PX (proxy-season close, filings due Aug 31)
   workflow_dispatch:
 
 jobs:
