@@ -108,6 +108,22 @@ the say-vs-do analysis described below in three ways, each a correction:
   The director tools accept `country=` (`US`, `US,CA` or `non-US`); items with
   no usable country are excluded then, and the number excluded is stated in
   the result's caveats. `director_record` splits US / non-US / unknown.
+  **Withhold vs abstain is the filer's coding, not ours.** In a US plurality
+  election a withheld vote can be filed as WITHHOLD (counted in `opposed`) or
+  as ABSTAIN, and N-PX does not define the choice; a change of filing agent
+  changed it (BlackRock BIS, US ISINs, January-June: `opposed` 1,216 in 2024
+  against 617 in 2025 while `abstain` went from 166 to 570). The director tools
+  therefore also report `not_supported` = `opposed` + `abstain` and
+  `non_support_rate` = `not_supported` / (`for` + `opposed` + `abstain`); SPLIT
+  and NONE items are in neither, as for `opposed`. A result that lists several
+  periods of one group carries a `CODING SHIFT` caveat, with the abstain counts,
+  whenever the abstain share of `not_supported` differs by more than 15 points
+  between two of them (and one holds at least 30 abstain items): `opposed` is
+  then not comparable across the periods. For comparisons over time use
+  non-support. The desk verifier refuses a draft paragraph that cites `opposed`
+  or `opposition_rate` from such a result without the matching `not_supported`
+  or `non_support_rate` claim. `peers` and `director_peers` accept
+  `institution=` (and `adviser=`) to show one group's row without changing any figure.
 - **Peer comparison is on identical proposals.** `peers` matches the same
   ballot item across managers by company, meeting date and the proposal's
   significant words. Matching is deliberately strict: an unmatched proposal

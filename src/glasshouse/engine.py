@@ -781,6 +781,23 @@ class Engine:
                 f"({', '.join(info['known'])}): pass adviser= (one of them)")
         return self._scope(institution, adviser)
 
+    def _only_group(self, table: dict, institution, adviser) -> dict:
+        """Restrict a peers-type table (keyed `institution` or `institution/ADVISER`) to
+        one group's row(s). `adviser` needs `institution` and is validated like
+        everywhere else; the ranking and the shared set were already computed over
+        ALL managers, so scoping changes what is shown, never the figures."""
+        iid = self._inst(institution)
+        sc = self._scope(iid, adviser)
+        if not iid:
+            return table
+        if sc:
+            keep = {f"{iid}/{sc}"}
+        elif adviser:                      # the group's only adviser: its row is the group
+            keep = {iid}
+        else:
+            keep = {k for k in table if k == iid or k.startswith(f"{iid}/")}
+        return {k: v for k, v in table.items() if k in keep}
+
     def _pooled(self, institution, adviser) -> list[str]:
         """Caveats for a vote answer about an institution: its own scope notes,
         and the pooled-advisers warning for an unscoped multi-group answer."""
@@ -1169,7 +1186,7 @@ class Engine:
                        ["Proposals asking to roll the theme back are excluded."]))
 
     def peers(self, theme=None, query=None, year=None, min_managers: int = 3,
-              since=None, until=None) -> dict:
+              since=None, until=None, institution=None, adviser=None) -> dict:
         """Managers compared on the SAME proposals — the control for 'they just
         faced different ballots'. Only proposals at least `min_managers` voted on."""
         join, w, p = self._where(theme=theme, query=query, year=year, since=since,
@@ -1204,8 +1221,10 @@ class Engine:
                                  if o["shared_proposals"] else None)
         table = dict(sorted(out.items(), key=lambda kv: (kv[1]["support_rate"] is None,
                                                          kv[1]["support_rate"] or 0)))
+        table = self._only_group(table, institution, adviser)
         return _env("peers", _clean(theme=theme, query=query, year=year, since=since,
-                                    until=until, min_managers=min_managers),
+                                    until=until, min_managers=min_managers,
+                                    institution=institution, adviser=adviser),
                     {"shared_proposals": len(shared), "candidate_proposals": len(by_ballot),
                      "managers": table},
                     [*_ENTITY_NOTE,
@@ -1415,19 +1434,52 @@ class Engine:
 
     @staticmethod
     def _dtally(t: dict) -> dict:
+        # `opposed` = AGAINST/WITHHOLD only; its rate is over FOR + AGAINST.
+        # `not_supported` = AGAINST/WITHHOLD + ABSTAIN; its rate is over FOR + AGAINST +
+        # ABSTAIN. SPLIT (funds disagreeing) and NONE are in neither numerator nor
+        # either rate's denominator, exactly as for `opposed`.
         decided = t["FOR"] + t["AGAINST"]
+        ns = t["AGAINST"] + t["ABSTAIN"]
         return {"nominees": t["FOR"] + t["AGAINST"] + t["SPLIT"] + t["ABSTAIN"] + t["NONE"],
                 "for": t["FOR"], "opposed": t["AGAINST"], "split": t["SPLIT"],
                 "abstain": t["ABSTAIN"], "none": t["NONE"],
                 "opposition_rate": round(t["AGAINST"] / decided, 4) if decided else None,
-                "meetings": t["meetings"], "meetings_with_opposition": t["opp_meetings"]}
+                "not_supported": ns,
+                "non_support_rate": (round(ns / (decided + t["ABSTAIN"]), 4)
+                                     if decided + t["ABSTAIN"] else None),
+                "meetings": t["meetings"], "meetings_with_opposition": t["opp_meetings"],
+                "meetings_with_non_support": t["ns_meetings"]}
+
+    @staticmethod
+    def _coding_shift(parts: dict) -> list[str]:
+        """The prominent caveat for a result that lists several periods of one
+        group. `parts` maps a period label to (abstain, not_supported). A filer may
+        record a withheld vote as WITHHOLD (counted in `opposed`) or as ABSTAIN
+        (not), and a change of filing agent changes that. If the abstain share of
+        not_supported moves by more than 15 points between two periods, and one of
+        them holds at least 30 abstain items, `opposed` is not comparable."""
+        shares = {k: a / ns for k, (a, ns) in parts.items() if ns}
+        if len(shares) < 2 or max(a for a, _ in parts.values()) < _CODING_MIN_ABSTAIN:
+            return []
+        if max(shares.values()) - min(shares.values()) <= _CODING_SHIFT_POINTS:
+            return []
+        counts = "; ".join(f"{k}: {a} abstain of {ns} not_supported ({a / ns:.0%})"
+                           for k, (a, ns) in parts.items() if ns)
+        return [f"{CODING_SHIFT}: the filer's coding of withheld votes appears to differ "
+                f"between these periods ({counts}). `opposed` and `opposition_rate` are "
+                "NOT comparable across them: a withheld vote is counted as opposed in one "
+                "and as abstain in another. Compare `not_supported` and `non_support_rate`."]
 
     _DIRECTOR_CAVEATS = [
         "Covers management's nominees only (N-PX source ISSUER, category DIRECTOR "
         "ELECTIONS). Dissident nominees in contested elections are in proposals().",
         "`opposed` = AGAINST or WITHHOLD, share-weighted across the funds on file. "
         "ABSTAIN is counted separately, though in some markets it is the only way to "
-        "oppose a nominee.",
+        "oppose a nominee, and in US plurality elections withhold vs abstain is a filer's "
+        "coding choice in N-PX that the filings do not define: ABSTAIN may be how a filer "
+        "records a withheld vote. `not_supported` = opposed + abstain and "
+        "`non_support_rate` = not_supported / (for + opposed + abstain) are immune to that "
+        "choice; SPLIT and NONE items are in neither figure, as for `opposed`.",
         "The record never says WHY a nominee was opposed: board diversity, "
         "overboarding, pay, attendance and independence all look identical here. "
         "A change in the rate is not evidence about any one reason.",
@@ -1451,12 +1503,15 @@ class Engine:
                 "GROUP BY d.year, d.position", p):
             years[r["year"]][r["position"]] += r["n"]
         for r in self.db.execute(
-                f"""SELECT year, COUNT(*) m, SUM(opp > 0) om FROM (
-                        SELECT d.year, SUM(d.position='AGAINST') opp FROM director_votes d
+                f"""SELECT year, COUNT(*) m, SUM(opp > 0) om, SUM(ns > 0) nm FROM (
+                        SELECT d.year, SUM(d.position='AGAINST') opp,
+                               SUM(d.position IN ('AGAINST','ABSTAIN')) ns
+                        FROM director_votes d
                         WHERE {w} GROUP BY d.year, d.cusip, d.issuer_name, d.meeting_date)
                     GROUP BY year""", p):
             years[r["year"]]["meetings"] = r["m"]
             years[r["year"]]["opp_meetings"] = r["om"] or 0
+            years[r["year"]]["ns_meetings"] = r["nm"] or 0
         return years
 
     _BUCKETS = (("US", "d.isin_country = 'US'"),
@@ -1474,7 +1529,9 @@ class Engine:
         out = {"overall": self._dtally(self._dtotal(w, p)),
                "by_year": {y: self._dtally(t) for y, t in
                            sorted(years.items(), key=lambda kv: kv[0] or 0)}}
-        caveats = [*self._pooled(institution, adviser), *self._DIRECTOR_CAVEATS]
+        caveats = [*self._pooled(institution, adviser), *self._DIRECTOR_CAVEATS,
+                   *self._coding_shift({y: (t["ABSTAIN"], t["AGAINST"] + t["ABSTAIN"])
+                                        for y, t in years.items()})]
         if country is None:
             out["by_country"] = {
                 name: self._dtally(self._dtotal(f"{w} AND {cond}", p))
@@ -1522,37 +1579,48 @@ class Engine:
                                       position=position, adviser=adviser)])
 
     def director_peers(self, year=None, since=None, until=None, company=None,
-                       min_managers: int = 3, country=None) -> dict:
+                       min_managers: int = 3, country=None, institution=None,
+                       adviser=None) -> dict:
         """Managers compared on the SAME shareholder meetings: at how many did
-        each oppose at least one management nominee?"""
+        each oppose at least one management nominee? `institution` (and
+        `adviser`) show only that group's row; the figures are unchanged."""
         w, p = self._dwhere(company=company, year=year, since=since, until=until,
                             country=country)
         per: dict = defaultdict(dict)
         for r in self.db.execute(
                 f"""SELECT d.meeting_key k, {_ENTITY.format('d')} i, SUM(d.position='FOR') f,
-                           SUM(d.position='AGAINST') a
+                           SUM(d.position='AGAINST') a,
+                           SUM(d.position='ABSTAIN') b
                     FROM director_votes d WHERE {w} AND d.meeting_key != ''
                     GROUP BY d.meeting_key, i""", p):
             if r["f"] + r["a"]:
-                per[r["k"]][r["i"]] = (r["f"], r["a"])
+                per[r["k"]][r["i"]] = (r["f"], r["a"], r["b"])
         shared = {k: v for k, v in per.items() if len(v) >= min_managers}
         out: dict = defaultdict(lambda: {"shared_meetings": 0, "meetings_with_opposition": 0,
-                                         "nominees": 0, "opposed": 0})
+                                         "nominees": 0, "opposed": 0, "abstain": 0,
+                                         "meetings_with_non_support": 0})
         for votes in shared.values():
-            for iid, (f, a) in votes.items():
+            for iid, (f, a, b) in votes.items():
                 o = out[iid]
                 o["shared_meetings"] += 1
                 o["meetings_with_opposition"] += a > 0
+                o["meetings_with_non_support"] += a + b > 0
                 o["nominees"] += f + a
                 o["opposed"] += a
+                o["abstain"] += b
         for o in out.values():
             o["opposition_rate"] = round(o["opposed"] / o["nominees"], 4) if o["nominees"] else None
+            o["not_supported"] = o["opposed"] + o["abstain"]
+            den = o["nominees"] + o["abstain"]
+            o["non_support_rate"] = round(o["not_supported"] / den, 4) if den else None
             o["share_of_meetings_with_opposition"] = round(
                 o["meetings_with_opposition"] / o["shared_meetings"], 4)
         table = dict(sorted(out.items(), key=lambda kv: -(kv[1]["opposition_rate"] or 0)))
+        table = self._only_group(table, institution, adviser)
         return _env("director_peers", _clean(year=year, since=since, until=until,
                                              company=company, min_managers=min_managers,
-                                             country=country),
+                                             country=country, institution=institution,
+                                             adviser=adviser),
                     {"shared_meetings": len(shared), "candidate_meetings": len(per),
                      "managers": table},
                     [*_ENTITY_NOTE,
@@ -1560,6 +1628,10 @@ class Engine:
                      "NOT matched one-to-one: filers word them differently, and one may "
                      "file a slate as a single item, so compare "
                      "`share_of_meetings_with_opposition` before `opposition_rate`.",
+                     "`nominees` counts FOR and AGAINST items; `non_support_rate` is "
+                     "`not_supported` over `nominees` + `abstain`. A filer that codes "
+                     "withheld votes as ABSTAIN shows a low `opposition_rate`: compare "
+                     "managers on `non_support_rate` when their `abstain` counts differ.",
                      "Each manager's figures cover only the shared meetings IT voted at.",
                      *self._DIRECTOR_CAVEATS,
                      *self._dexcluded(country, only_used_by_peers=True, company=company,
@@ -1583,9 +1655,9 @@ class Engine:
             raise ValueError("`windows` needs at least two start:end spans, comma-separated")
         per = []
         for a, b in spans:
-            per.append({r["cusip"]: (r["n"], r["o"]) for r in self.db.execute(
+            per.append({r["cusip"]: (r["n"], r["o"], r["b"]) for r in self.db.execute(
                 f"""SELECT d.cusip, SUM(d.position IN ('FOR','AGAINST')) n,
-                          SUM(d.position='AGAINST') o
+                          SUM(d.position='AGAINST') o, SUM(d.position='ABSTAIN') b
                    FROM director_votes d WHERE d.institution_id=? AND d.cusip != ''
                      AND d.meeting_date BETWEEN ? AND ?{cw}{aw} GROUP BY d.cusip""",
                 (iid, a, b, *cp, *ap))
@@ -1595,12 +1667,19 @@ class Engine:
         for (a, b), w in zip(spans, per, strict=True):
             n = sum(w[c][0] for c in panel)
             o = sum(w[c][1] for c in panel)
+            ab = sum(w[c][2] for c in panel)
             out.append({"since": a, "until": b, "companies_voted": len(w),
                         "nominees": n, "opposed": o,
                         "opposition_rate": round(o / n, 4) if n else None,
-                        "companies_with_opposition": sum(1 for c in panel if w[c][1])})
+                        "abstain": ab, "not_supported": o + ab,
+                        "non_support_rate": round((o + ab) / (n + ab), 4) if n + ab else None,
+                        "companies_with_opposition": sum(1 for c in panel if w[c][1]),
+                        "companies_with_non_support": sum(1 for c in panel
+                                                          if w[c][1] + w[c][2])})
         first = {c for c in panel if per[0][c][1]}
         last = {c for c in panel if per[-1][c][1]}
+        ns_first = {c for c in panel if per[0][c][1] + per[0][c][2]}
+        ns_last = {c for c in panel if per[-1][c][1] + per[-1][c][2]}
         excluded = []
         if country is not None:
             ors = " OR ".join("d.meeting_date BETWEEN ? AND ?" for _ in spans)
@@ -1618,8 +1697,13 @@ class Engine:
                     {"companies_in_every_window": len(panel), "windows": out,
                      "opposed_in_first_and_last": len(first & last),
                      "opposed_in_first_only": len(first - last),
-                     "opposed_in_last_only": len(last - first)},
+                     "opposed_in_last_only": len(last - first),
+                     "non_support_in_first_and_last": len(ns_first & ns_last),
+                     "non_support_in_first_only": len(ns_first - ns_last),
+                     "non_support_in_last_only": len(ns_last - ns_first)},
                     [*self._pooled(institution, adviser),
+                     *self._coding_shift({f"{x['since']}:{x['until']}":
+                                          (x["abstain"], x["not_supported"]) for x in out}),
                      "Companies are matched by CUSIP; a company that changed CUSIP or "
                      "filed none drops out of the panel.",
                      "The companies are constant; the nominees and the funds holding "
@@ -1812,6 +1896,10 @@ class Engine:
                     ["Hand-written SQL bypasses the tools' guards. `proposals` is already "
                      "one row per manager per proposal; do not re-weight by n_lines."])
 
+
+CODING_SHIFT = "CODING SHIFT"          # prefix of the caveat desk.py looks for
+_CODING_SHIFT_POINTS = 0.15
+_CODING_MIN_ABSTAIN = 30
 
 # Peers-type tools compare managers: a group with several advisers is several
 # managers, so each adviser is its own entry (`t_rowe_price/TRPA`).

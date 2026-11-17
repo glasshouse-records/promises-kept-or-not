@@ -1386,3 +1386,122 @@ def test_dig_selects_list_rows_by_key_and_still_walks_dicts_and_scalar_lists():
         desk._dig(obj, "rows.[institution=a].v")
     with pytest.raises(KeyError, match="key"):
         desk._dig(obj, "rows.0.v")
+
+
+# ------------------------------------------------- coding shift: withhold vs abstain
+
+@pytest.fixture()
+def shifted(tmp_path):
+    """One manager whose withheld votes are filed as WITHHOLD in 2024 and as
+    ABSTAIN in 2025 (a new filing agent), over the same 40 companies; a second
+    manager that never changes."""
+    led = tmp_path / "ledger.db"
+    c = ledger.connect(led)
+    for iid in ("alpha", "beta"):
+        c.execute("INSERT INTO institutions (id, display_name) VALUES (?,?)",
+                  (iid, iid.title() + " Asset Management"))
+        c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url,"
+                  " retrieval_date, period_of_report, report_type) VALUES (?,?,?,'N-PX',?,"
+                  "'2026-01-01','06/30/2024','FUND VOTING REPORT')",
+                  (f"ACC-{iid}", "1", iid, f"https://sec.example/{iid}"))
+
+    def director(iid, how, n, date, person=None):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date,"
+                  " vote_description, category_type, vote_source, how_voted,"
+                  " management_recommendation, shares_voted, is_duplicate) VALUES"
+                  " (?,?,?,?,?,'DIRECTOR ELECTIONS','ISSUER',?,'FOR',100,0)",
+                  (f"ACC-{iid}", f"CO {n}", f"{n:09d}", date,
+                   f"Elect Director Person {person or n}", how))
+
+    for n in range(40):
+        for year, how in ((2024, "WITHHOLD"), (2025, "ABSTAIN")):
+            director("alpha", how, n, f"05/20/{year}")
+            director("alpha", "FOR", n, f"05/20/{year}", person=n + 100)
+            director("beta", "WITHHOLD", n, f"05/20/{year}")
+            director("beta", "FOR", n, f"05/20/{year}", person=n + 100)
+    c.commit()
+    c.close()
+    out = tmp_path / "engine.db"
+    engine.build(led, out)
+    return engine.Engine(out, led)
+
+
+def _shift(env):
+    return [c for c in env["caveats"] if c.startswith(engine.CODING_SHIFT)]
+
+
+def test_director_record_reports_non_support_beside_opposed(shifted):
+    r = shifted.director_record("alpha")["result"]["by_year"]
+    assert r[2024]["opposed"] == 40 and r[2024]["abstain"] == 0
+    assert r[2025]["opposed"] == 0 and r[2025]["abstain"] == 40
+    for y in (2024, 2025):
+        assert r[y]["not_supported"] == 40 and r[y]["non_support_rate"] == 0.5
+    assert r[2024]["opposition_rate"] == 0.5 and r[2025]["opposition_rate"] == 0.0
+
+
+def test_a_change_of_coding_across_years_is_flagged_with_the_counts(shifted):
+    env = shifted.director_record("alpha")
+    (msg,) = _shift(env)
+    assert "40" in msg and "not_supported" in msg and "NOT comparable" in msg
+    assert not _shift(shifted.director_record("beta"))
+    assert not _shift(shifted.director_record("alpha", since="2025-01-01"))   # one period
+
+
+def test_few_abstentions_do_not_trip_the_coding_guard(eng):
+    assert not _shift(eng.director_record("alpha"))
+
+
+def test_the_abstain_caveat_names_the_us_plurality_point(shifted):
+    text = " ".join(shifted.director_record("beta")["caveats"])
+    assert "only way to oppose" in text and "plurality" in text and "withhold" in text.lower()
+
+
+def test_director_panel_reports_non_support_and_flags_the_shift(shifted):
+    env = shifted.director_panel("alpha", windows="2024-01-01:2024-06-30,2025-01-01:2025-06-30")
+    r = env["result"]
+    w24, w25 = r["windows"]
+    assert w24["opposed"] == 40 and w25["opposed"] == 0
+    assert w24["not_supported"] == w25["not_supported"] == 40
+    assert w24["non_support_rate"] == w25["non_support_rate"] == 0.5
+    assert w24["companies_with_non_support"] == w25["companies_with_non_support"] == 40
+    assert r["non_support_in_first_and_last"] == 40
+    assert _shift(env)
+
+
+def test_director_peers_reports_non_support_and_scopes_to_one_group(shifted):
+    r = shifted.director_peers(year=2025, min_managers=2)["result"]["managers"]
+    assert r["alpha"]["opposed"] == 0 and r["alpha"]["not_supported"] == 40
+    assert r["alpha"]["non_support_rate"] == 0.5 and r["beta"]["non_support_rate"] == 0.5
+    one = shifted.director_peers(year=2025, min_managers=2, institution="alpha")["result"]
+    assert list(one["managers"]) == ["alpha"] and one["shared_meetings"] == 40
+
+
+def test_director_peers_adviser_is_strict(shifted):
+    for kw in ({"adviser": "BIS"}, {"institution": "alpha", "adviser": "BIS"}):
+        with pytest.raises(ValueError):
+            shifted.director_peers(**kw)
+    with pytest.raises(ValueError):
+        shifted.peers(adviser="BIS")
+
+
+def test_peers_scopes_to_one_institution(eng):
+    one = eng.peers(query="climate transition", min_managers=2, institution="gamma")["result"]
+    assert list(one["managers"]) == ["gamma"]
+
+
+def test_the_desk_requires_non_support_beside_opposed_when_coding_shifted(shifted):
+    def claim(cid, path, eq):
+        return {"id": cid, "text": "x", "check": {
+            "type": "stat", "tool": "director_record", "args": {"institution": "alpha"},
+            "path": path, "equals": eq}}
+    base = {"slug": "t", "headline": "Alpha 2024 opposed 40 nominees", "headline_claims": ["c1"],
+            "standfirst": "The record.",
+            "claims": [claim("c1", "by_year.2024.opposed", 40),
+                       claim("c2", "by_year.2024.not_supported", 40)],
+            "limitations": ["One filer.", "Two years."]}
+    bad = desk.verify({**base, "body": "Alpha opposed 40 nominees in 2024. [c1]\n\n"
+                       "Alpha did not support 40 nominees in 2024. [c2]"}, shifted)
+    assert any("c1" in p and "not_supported" in p for p in bad["problems"])
+    good = desk.verify({**base, "body": "Alpha opposed 40 nominees in 2024, and did not "
+                        "support 40. [c1] [c2]"}, shifted)
+    assert not any("not_supported" in p for p in good["problems"])

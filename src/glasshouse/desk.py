@@ -105,6 +105,9 @@ STANDING_LIMITATIONS = (
     "same paragraph cites, but not that a paragraph with none of these is relevant to "
     "the claims it cites: a caveat can sit beside an unrelated claim unchallenged.",
 )
+# path-ending of an opposition figure -> the non-support figures that may stand beside it
+_NON_SUPPORT = {"opposed": ("not_supported", "non_support_rate"),
+                "opposition_rate": ("non_support_rate", "not_supported")}
 _MARK = re.compile(r"\[(c\d+)\]")
 _CURLY = re.compile(r"“([^“”]*)”")
 _STRAIGHT = re.compile(r'"([^"]*)"')
@@ -333,6 +336,43 @@ def verify(draft: dict, eng: engine.Engine | None = None) -> dict:
         for n in unbacked(pt, ids):
             problems.append(f"{n} in “{pt[:50]}…” is not established by the claims "
                             f"that paragraph cites ({', '.join(ids)})")
+
+    # A director rate whose result carries the coding-shift caveat is misleading
+    # alone (a withheld vote is `opposed` in one period, abstain in another): the
+    # same paragraph must cite the matching not_supported / non_support_rate claim.
+    shifted: dict[str, bool] = {}
+
+    def coding_shifted(chk: dict) -> bool:
+        key = json.dumps([chk.get("tool"), chk.get("args", {})], sort_keys=True, default=str)
+        if key not in shifted:
+            try:
+                env = getattr(eng, chk["tool"])(**chk.get("args", {}))
+                shifted[key] = any(str(c).startswith(engine.CODING_SHIFT)
+                                   for c in env.get("caveats", []))
+            except Exception:                 # the claim's own check already reports it
+                shifted[key] = False
+        return shifted[key]
+
+    for para in re.split(r"\n\s*\n", str(draft.get("body", ""))):
+        ids = _MARK.findall(para)
+        stats = {i: (claims[i].get("check") or {}) for i in ids if i in claims}
+        stats = {i: c for i, c in stats.items() if c.get("type") == "stat"}
+        for i, c in stats.items():
+            stem, _, last = str(c.get("path", "")).rpartition(".")
+            want = _NON_SUPPORT.get(last)
+            if (not str(c.get("tool", "")).startswith("director_") or not want
+                    or not coding_shifted(c)):
+                continue
+            if not any(o.get("tool") == c["tool"] and o.get("args", {}) == c.get("args", {})
+                       and str(o.get("path", "")).rpartition(".")[0] == stem
+                       and str(o.get("path", "")).rpartition(".")[2] in want
+                       for o in stats.values()):
+                problems.append(
+                    f"claim {i} cites `{c['path']}`, but the filer's coding of withheld votes "
+                    "differs between periods in this result (see its CODING SHIFT caveat): "
+                    f"`opposed`/`opposition_rate` are not comparable. Cite the matching "
+                    f"`{stem}.{sorted(want)[0]}` (or `{sorted(want)[1]}`) claim in the same "
+                    "paragraph.")
 
     # A quotation must be backed by a quote claim (or a proposal title) that the
     # SAME paragraph cites: a verified quote elsewhere in the piece is no cover.

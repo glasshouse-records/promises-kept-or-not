@@ -72,6 +72,12 @@ Read the caveats; they are part of the answer.
      was opposed. Compare like periods (January–June against January–June:
      calendar 2023 holds only July–December), check `director_peers` on the
      same meetings, and never tie a rate to one policy sentence as its cause
+   - director rates over time? → use `not_supported` / `non_support_rate`, not
+     `opposed`: filers code withheld votes as WITHHOLD or ABSTAIN inconsistently
+     (BlackRock changed in 2025). Check the `abstain` counts per period, heed any
+     `CODING SHIFT` caveat, and cite the non-support claim beside any `opposed`
+     claim (the desk rejects the paragraph otherwise). `director_peers`/`peers`
+     take `institution=` (and `adviser=`) to show one group's row
    Report what survived and what did not. A lead you disproved is worth a line.
 4. **Write only what the record shows.** What was said, in which version, on
    what date; what was voted, where, when. Never why. No motive, no
