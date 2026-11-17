@@ -7,12 +7,17 @@
 cd "$(dirname "$0")/.." || exit 2
 log=data/routine/$(date +%F).log
 mkdir -p data/routine
-step() { echo "== $*" >>"$log"; "$@" >>"$log" 2>&1 || echo "step failed: $*"; }
+: >"$log.errors"
+step() { echo "== $*" >>"$log"; "$@" >>"$log" 2>&1 || echo "step failed: $*" >>"$log.errors"; }
 step .venv/bin/glasshouse ingest commitments
 step .venv/bin/glasshouse ingest enforcement --source fed
 step .venv/bin/glasshouse ingest enforcement --source doj_fcpa
 step .venv/bin/glasshouse integrity
-.venv/bin/glasshouse doctor 2>&1 | grep -E "\[ERR\]" | grep -v "queue:" >"$log.errors"
+# The doctor exits non-zero when it finds errors, so its exit code cannot tell
+# "found problems" from "crashed". A run that printed no verdict line crashed.
+doc=$(.venv/bin/glasshouse doctor 2>&1)
+echo "$doc" | grep -qE "\[(ok |ERR|WRN)\]" || echo "doctor produced no report (crashed?): $(echo "$doc" | tail -1)" >>"$log.errors"
+echo "$doc" | grep -E "\[ERR\]" | grep -v "queue:" >>"$log.errors"
 # A changed policy is news; a capture that failed today is a hole in the one
 # record that cannot be back-filled. Both are surfaced, each once.
 grep -E "^  .*NEW VERSION" "$log" | sort -u

@@ -5,6 +5,7 @@ cd "$(dirname "$0")/.." || exit 2
 fail=0
 run() {
   name=$1; shift
+  [ -x "$1" ] || { echo "FAIL  $name (missing $1)"; fail=1; return; }
   if out=$("$@" 2>&1); then echo "ok    $name"
   else echo "FAIL  $name"; echo "$out" | tail -30; fail=1; fi
 }
@@ -14,6 +15,9 @@ run pytest    .venv/bin/pytest -q -x -p no:cacheprovider
 run integrity .venv/bin/glasshouse integrity
 if [ "$1" = "--full" ]; then
   out=$(.venv/bin/glasshouse doctor 2>&1)
-  echo "$out" | grep -E "^\s*\[(ERR|WRN)\]" || echo "ok    doctor"
+  if ! echo "$out" | grep -qE "\[(ok |ERR|WRN)\]"; then
+    echo "FAIL  doctor (no report)"; echo "$out" | tail -15; fail=1
+  elif echo "$out" | grep -E "^\s*\[ERR\]"; then fail=1
+  else echo "$out" | grep -E "^\s*\[WRN\]"; echo "ok    doctor"; fi
 fi
 exit $fail
