@@ -182,3 +182,43 @@ def test_attempt_and_snapshot_dates_share_one_clock(conn, monkeypatch):
     stamp = conn.execute("SELECT attempted_at FROM capture_attempts").fetchone()[0]
     row = conn.execute("SELECT retrieval_date FROM commitments").fetchone()[0]
     assert stamp[:10] == row == date.today().isoformat()
+
+
+# --- a truncated PDF is never a policy version (T. Rowe TRPA, 2026-11-17) ---
+# pypdf: "Cannot find Root object in pdf" on a download that stopped short. The
+# unreadable-text fallback is byte identity, so a partial file would have been
+# filed as a brand-new version of the policy.
+
+_GOOD_PDF = b"%PDF-1.7\n1 0 obj<<>>endobj\n" + b"x" * 3000 + b"\nstartxref\n116\n%%EOF\n"
+
+
+class _PdfResp(_Resp):
+    def __init__(self, content, declared=None):
+        super().__init__(content, "application/pdf")
+        if declared is not None:
+            self.headers["Content-Length"] = str(declared)
+
+
+def _serve_seq(monkeypatch, responses):
+    it = iter(responses)
+    monkeypatch.setattr(commitments.http, "get", lambda url, **kw: next(it))
+
+
+def test_a_pdf_cut_short_is_a_failed_attempt_not_a_new_version(conn, monkeypatch):
+    cut = _GOOD_PDF[:1500]                       # no %%EOF, shorter than declared
+    _serve_seq(monkeypatch, [_PdfResp(cut, len(_GOOD_PDF))] * 2)
+    assert commitments.fetch_live(conn, _PDF_INSTS) == {}
+    assert [o for o, _ in _attempts(conn)] == ["failed"]
+    assert conn.execute("SELECT COUNT(*) FROM commitments").fetchone()[0] == 0
+
+
+def test_a_pdf_without_end_marker_is_refused_even_without_content_length(conn, monkeypatch):
+    _serve_seq(monkeypatch, [_PdfResp(_GOOD_PDF[:-12])] * 2)
+    assert commitments.fetch_live(conn, _PDF_INSTS) == {}
+    assert conn.execute("SELECT COUNT(*) FROM commitments").fetchone()[0] == 0
+
+
+def test_a_truncated_download_is_retried_once(conn, monkeypatch):
+    _serve_seq(monkeypatch, [_PdfResp(_GOOD_PDF[:1500], len(_GOOD_PDF)),
+                             _PdfResp(_GOOD_PDF, len(_GOOD_PDF))])
+    assert commitments.fetch_live(conn, _PDF_INSTS) == {"alpha/policy": 1}

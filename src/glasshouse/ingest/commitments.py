@@ -77,6 +77,26 @@ def looks_like_error_page(content: bytes, content_type: str = "") -> bool:
     return any(sig in hay for sig in _ERROR_SIGNATURES)
 
 
+def content_is_pdf(content: bytes, content_type: str = "", url: str = "") -> bool:
+    return content.startswith(b"%PDF") or "pdf" in (content_type or "").lower()
+
+
+def pdf_looks_truncated(content: bytes, declared_length: str | None = None) -> bool:
+    """True if a live PDF download stopped short.
+
+    Two independent signs: fewer bytes than the server's Content-Length, or a
+    %PDF file with no %%EOF marker in its tail (every complete PDF ends with
+    one). Seen 2026-11-17 on T. Rowe's TRPA guidelines ("Cannot find Root
+    object in pdf"). Unreadable text falls back to byte identity, so a partial
+    file would otherwise be filed as a new policy version."""
+    try:
+        if declared_length and len(content) < int(declared_length):
+            return True
+    except ValueError:
+        pass
+    return content.startswith(b"%PDF") and b"%%EOF" not in content[-1024:]
+
+
 # --- Version identity -------------------------------------------------------
 # A "version" is a change in what the institution SAYS, not a change in bytes.
 # BNY's policy page is served behind Akamai, whose mPulse beacon carries a
@@ -369,6 +389,26 @@ def fetch_live(conn: sqlite3.Connection, institutions: dict[str, dict]) -> dict[
                 failed += 1
                 continue
             ctype = resp.headers.get("Content-Type", "")
+            if content_is_pdf(resp.content, ctype, url) and pdf_looks_truncated(
+                    resp.content, resp.headers.get("Content-Length")):
+                # One honest retry: a short read is usually transient.
+                try:
+                    resp = http.get(url, timeout=60)
+                except Exception as exc:
+                    logger.warning("%s/%s retry failed: %s", inst_id, label, exc)
+                    log_attempt(conn, inst_id, label, url, "failed", f"fetch failed: {exc}")
+                    failed += 1
+                    continue
+                ctype = resp.headers.get("Content-Type", "")
+                if content_is_pdf(resp.content, ctype, url) and pdf_looks_truncated(
+                        resp.content, resp.headers.get("Content-Length")):
+                    logger.warning("%s/%s: PDF download truncated (%d bytes, declared %s) "
+                                   "— not captured", inst_id, label, len(resp.content),
+                                   resp.headers.get("Content-Length"))
+                    log_attempt(conn, inst_id, label, url, "failed",
+                                f"truncated PDF ({len(resp.content)} bytes)")
+                    failed += 1
+                    continue
             # Soft-404 guard: a .pdf URL answering with HTML is an error page
             # with status 200 (observed live: Vanguard, 2026-06-11). Recording
             # it would forge a phantom policy "version".
