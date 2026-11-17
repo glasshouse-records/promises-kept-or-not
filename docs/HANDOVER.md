@@ -64,11 +64,14 @@ why a manager voted as it did; the filings never do.
 
 ## Known limits (stated in the datasheet too)
 
-- UBS, BNP Paribas and Bank of America: executive-pay votes only on file.
+- UBS, BNP Paribas and Bank of America: executive-pay votes only on file. Checked
+  2026-11-17: none has a US fund trust whose votes it casts itself (UBS's PACE
+  trust is voted mostly by outside sub-advisers), so this cannot be filled.
 - BlackRock: 10 fund series could not be placed under either policy and are
   held apart as unresolved.
-- Policy archive gaps: Vanguard's 2023–2025 editions are missing; several
-  advisers have a single archived version.
+- Policy archive gaps: several advisers have a single archived version, and
+  mid-year amendments between captures may be missing (Vanguard's 2022–2025
+  yearly editions were recovered on 2026-11-17).
 - BNY Mellon, Invesco, Northern Trust, Franklin Templeton, State Street: some
   sub-advised funds whose voting arrangements are not fully verified
   (listed as scope notes on every result).
