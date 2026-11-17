@@ -51,7 +51,20 @@ institutions:
         adviser: "BlackRock Fund Advisors (BFA); affiliate sub-advisers BlackRock International Limited and BlackRock (Singapore) Limited for some series"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/1100663/000119312526389481/d122292d485bpos.htm"  # 485BPOS filed 2026-09-14 (SAI Proxy Voting Policies)
         adviser_verified: "2026-11-17"
-        voting_note: "Board delegates voting to BFA under two policies by series: Index Equity Fund policy (BIS Global Benchmark Policy, the archived one) or the Open-End Active and Fixed Income Index Fund policy (BlackRock Active Investment Stewardship Guidelines, not archived)."
+        voting_note: "Board delegates voting to BFA under two policies by series: Index Equity Fund policy (BIS Global Benchmark Policy, the archived one) or the Open-End Active and Fixed Income Index Fund policy (BlackRock Active Investment Stewardship Guidelines, now also archived). Both policies are effective 2025-01-01; before that one Open-End Fund Proxy Voting Policy covered all funds. Series-by-series assignment read from the policy table in each 485BPOS SAI filed 2025-02-25 to 2026-09-14."
+        adviser_key: "BIS"
+        series_adviser:
+          S000045644: [{key: BIS, until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000048637: [{key: BIS, until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000051261: [{key: BIS, until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000059297: [{key: BIS, until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000075472: [{key: BIS, until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+        # UNRESOLVED from 2025-01-01: series with post-2025 votes that appear in no 2025-26 SAI policy table, so BIS vs BAIS could not be established (see voting_scope_notes).
+          S000004310: [{key: BIS, until: "2024-12-31"}, {key: UNRESOLVED, from: "2025-01-01"}]
+          S000017779: [{key: BIS, until: "2024-12-31"}, {key: UNRESOLVED, from: "2025-01-01"}]
+          S000065014: [{key: BIS, until: "2024-12-31"}, {key: UNRESOLVED, from: "2025-01-01"}]
+          S000075506: [{key: BIS, until: "2024-12-31"}, {key: UNRESOLVED, from: "2025-01-01"}]
+          S000076619: [{key: BIS, until: "2024-12-31"}, {key: UNRESOLVED, from: "2025-01-01"}]
         name: "iShares Trust"
         validated: "2026-06-10"
       # Added 2026-11-16: brand-named INDEX trusts only. Actively managed and
@@ -62,22 +75,37 @@ institutions:
         adviser: "BlackRock Fund Advisors (BFA); affiliate sub-advisers BlackRock International Limited and BlackRock (Singapore) Limited may be appointed"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/930667/000119312526361244/d146002d485bpos.htm"  # 485BPOS filed 2026-08-21
         adviser_verified: "2026-11-17"
-        voting_note: "Same two-policy split as iShares Trust (BIS benchmark policy for index equity funds; BAIS guidelines for active and fixed income index funds)."
+        voting_note: "Same two-policy split as iShares Trust (BIS benchmark policy for index equity funds; BAIS guidelines for active and fixed income index funds), effective 2025-01-01. Series assignment read from the policy table in each 485BPOS SAI filed 2025-02-25 to 2026-08-21."
+        adviser_key: "BIS"
+        series_adviser:
+          S000036906: [{key: BIS, until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000036907: [{key: BIS, until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
         name: "iShares, Inc."
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
       - cik: "1524513"
         adviser: "BlackRock Fund Advisors (BFA); affiliate sub-adviser BlackRock International Limited for some bond series"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/1524513/000119312526064208/d97039d485bpos.htm"  # 485BPOS filed 2026-02-23
         adviser_verified: "2026-11-17"
-        voting_note: "Active and fixed income series follow BlackRock Active Investment Stewardship guidelines, not the archived BIS benchmark principles."
+        voting_note: "Every series in the 2025-02-25, 2025-11-21 and 2026-02-23 SAI policy tables (27 funds) follows the Active and Fixed Income Index policy, i.e. BlackRock Active Investment Stewardship guidelines, from 2025-01-01; before that date the single Open-End Fund Proxy Voting Policy applied."
+        adviser_key: "BAIS"
+        adviser_key_history: [{key: BIS, until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
         name: "iShares U.S. ETF Trust"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
       - cik: "1026144"
         adviser: "BlackRock Advisors, LLC (investment manager); sub-adviser BlackRock Fund Advisors (affiliate)"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/1026144/000119312526177154/d82299d485bpos.htm"  # 485BPOS filed 2026-04-24
         adviser_verified: "2026-11-17"
+        voting_note: "Part I of the SAI marks the Index Equity Fund Proxy Voting Policy (BIS benchmark policy) for both series (MSCI EAFE International Index Fund, Russell 2000 Small-Cap Index Fund) in the 485BPOS filed 2025-04-25 and 2026-04-24."
+        adviser_key: "BIS"
         name: "BlackRock Index Funds, Inc."
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "BAIS and BIS policies for open-end funds are both effective 2025-01-01; before that a single Open-End Fund Proxy Voting Policy (effective 2021-08-01) covered every fund (SAI filed 2024-12-30, https://www.sec.gov/Archives/edgar/data/1100663/000119312524286021/d853591d485bpos.htm; SAI Appendix A, https://www.sec.gov/Archives/edgar/data/1100663/000119312526389481/d122292d485bpos.htm)."
+      - "Series assignment (BIS 253 and BAIS 9 of the 272 series with vote rows) was read from the per-fund policy table of each 485BPOS SAI filed 2025-02-25 to 2026-09-14 and never changed between filings; it is a statement of the 2025-26 position applied back to 2025-01-01."
+      - "Ten series have vote rows but no row in any 2025-26 SAI policy table, so their policy was not established: S000004310 (iShares Core S&P 500 ETF), S000017779, S000035387, S000036005, S000049572, S000065014, S000066851, S000069338, S000075506, S000076619; the five with votes after 2024-12-31 (S000004310, S000017779, S000065014, S000075506, S000076619) are keyed UNRESOLVED from 2025-01-01."
+      - "The BIS archive entry is the Global Principles; the SAI says the BIS Global Benchmark Policy also comprises regional voting guidelines and engagement priorities that are available only on request, so those are not archived (https://www.sec.gov/Archives/edgar/data/1100663/000119312526389481/d122292d485bpos.htm)."
+      - "BAIS guidelines state that fundamental equity portfolio managers receive voting recommendations and may vote differently (https://www.blackrock.com/gls-download/literature/publication/blackrock-active-investment-stewardship-engagement-and-voting-guidelines.pdf, p. 4), so a BAIS-series vote is not necessarily a vote in line with the guidelines."
+      - "Some funds also follow supplemental climate and decarbonization guidelines marked in the same SAI table; those supplements are not archived and not separated here."
     commitments:
       # URLs verified live before being added; rotted URLs are findings too
       # (the non-response ledger will track disappearing policies).
@@ -89,6 +117,22 @@ institutions:
         # Previous URL (verified 2026-06-11, soft-404 since 2026-11-17: 301 to
         # /gls-download/... then 302 to the site error page):
         #   https://www.blackrock.com/corporate/literature/fact-sheet/blk-responsible-investment-engprinciples-global.pdf
+        adviser: "BlackRock Investment Stewardship (BIS): index equity funds from 2025-01-01; every fund before that date"
+        adviser_key: "BIS"
+      # Added 2026-11-17: BlackRock Active Investment Stewardship (BAIS) Global
+      # Engagement and Voting Guidelines, the policy for the Open-End Active and
+      # Fixed Income Index Fund Proxy Voting Policy series (effective 2025-01-01
+      # per the SAI Appendix A of the iShares 485BPOS filings). Verified 2026-11-17:
+      # 200, application/pdf, "Effective as of January 2026" (PDF created 2025-12-19).
+      # The January 2025 edition ("Effective as of January 2025") was served at
+      # https://blackrock.com/corporate/literature/publication/blackrock-active-investment-stewardship-engagement-and-voting-guidelines.pdf
+      # and is in the Wayback Machine (capture 20250118053239); that old path now
+      # serves the current edition, so version history lives in the lineage.
+      - label: active-investment-stewardship-guidelines
+        url: "https://www.blackrock.com/gls-download/literature/publication/blackrock-active-investment-stewardship-engagement-and-voting-guidelines.pdf"
+        adviser: "BlackRock Active Investment Stewardship (BAIS)"
+        adviser_key: "BAIS"
+        adviser_key_history: [{key: BAIS, from: "2025-01-01"}]
 
   vanguard:
     display_name: "The Vanguard Group, Inc."
@@ -100,6 +144,12 @@ institutions:
         adviser_source: "https://www.sec.gov/Archives/edgar/data/36405/000003640526000181/f45032d1.htm"  # 485BPOS filed 2026-04-28 (SAI: advisory services and Proxy Voting)
         adviser_verified: "2026-11-17"
         voting_note: "Voting is split between two Vanguard subsidiaries with separate policies: VCM funds vote under the VCM US policy, VPM funds under the VPM US policy (the one archived as us-proxy-voting-policy). The manager of Total Stock Market's totally held subsidiary votes independently using a proxy advisory firm."
+        adviser_key: "VPM"
+        adviser_key_history: [{key: VANGUARD, until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]
+        series_adviser:
+          S000002839: [{key: VANGUARD, until: "2026-01-11"}, {key: VCM, from: "2026-01-12"}]
+          S000002841: [{key: VANGUARD, until: "2026-01-11"}, {key: VCM, from: "2026-01-12"}]
+          S000002848: [{key: VANGUARD, until: "2026-01-11"}, {key: VCM, from: "2026-01-12"}]
         name: "Vanguard Index Funds"
         validated: "2026-06-11"
       # Added 2026-11-16: brand-named INDEX trusts only. Actively managed and
@@ -111,6 +161,8 @@ institutions:
         adviser_source: "https://www.sec.gov/Archives/edgar/data/862084/000086208426000057/f45033d1.htm"  # 485BPOS filed 2026-04-28
         adviser_verified: "2026-11-17"
         voting_note: "Voted under the VCM US proxy voting policy, not the VPM policy archived as us-proxy-voting-policy."
+        adviser_key: "VCM"
+        adviser_key_history: [{key: VANGUARD, until: "2026-01-11"}, {key: VCM, from: "2026-01-12"}]
         name: "Vanguard Institutional Index Funds"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
       - cik: "857489"
@@ -118,6 +170,8 @@ institutions:
         adviser_source: "https://www.sec.gov/Archives/edgar/data/857489/000119312526077485/f44231d1.htm"  # 485BPOS filed 2026-02-27
         adviser_verified: "2026-11-17"
         voting_note: "Voted under the VCM US proxy voting policy, not the VPM policy archived as us-proxy-voting-policy."
+        adviser_key: "VCM"
+        adviser_key_history: [{key: VANGUARD, until: "2026-01-11"}, {key: VCM, from: "2026-01-12"}]
         name: "Vanguard International Equity Index Funds"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
       - cik: "1021882"
@@ -125,14 +179,28 @@ institutions:
         adviser_source: "https://www.sec.gov/Archives/edgar/data/1021882/000110465926121068/tm2624997d8_ncsr.htm"  # N-CSR filed 2026-11-02; the Vanguard SAI says third-party advisers administer proxy voting for the equity holdings they manage
         adviser_verified: "2026-11-17"
         voting_note: "Explorer Value Fund votes are cast by outside advisers under their own policies, not the VPM policy. Russell index funds are voted under the VPM policy. Bond index series (VCM) rarely vote."
+        adviser_key: "VPM"
+        adviser_key_history: [{key: VANGUARD, until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]
+        series_adviser:
+          S000028087: [{key: EXTERNAL}]
         name: "Vanguard Scottsdale Funds"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
       - cik: "891190"
         adviser: "The Vanguard Group, Inc. through Vanguard Portfolio Management, LLC (VPM) for the S&P 500/400/600 index funds; money market and bond series through VCM; no sub-adviser"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/891190/000110465926121036/tm2624997d2_ncsr.htm"  # N-CSR filed 2026-11-02; series-to-team mapping per Vanguard VPM funds list https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vpm/vpm-funds.pdf
         adviser_verified: "2026-11-17"
+        adviser_key: "VPM"
+        adviser_key_history: [{key: VANGUARD, until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]
         name: "Vanguard Admiral Funds"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Before 2026-01-12 one Vanguard Group policy governed all internally managed funds; Vanguard Portfolio Management Investment Stewardship (VPMIS) and Vanguard Capital Management Investment Stewardship (VCMIS) both launched on 2026-01-12 (VPMIS 2026 annual report, https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vpm/vpmis_2026_annual_report.pdf)."
+      - "Series-to-team mapping comes from Vanguard's two funds lists dated 2026-01-12 (https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vpm/vpm-funds.pdf and https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vcm/vcm-funds.pdf); lists published later could differ, and the date key compares the meeting date, not the date the vote was cast."
+      - "The archive holds one pre-split Vanguard policy capture (Wayback 2022-01-17); the editions in force between 2022 and 2026-01-11 are not archived, so votes in that window are compared against the 2022 text."
+      - "Vanguard Explorer Value Fund (S000028087) is kept apart as EXTERNAL: Vanguard's N-CSR names Ariel Investments, Frontier Capital Management and Wellington Management as its advisers (https://www.sec.gov/Archives/edgar/data/1021882/000110465926121068/tm2624997d8_ncsr.htm) and neither funds list includes it."
+      - "For Total Stock Market Index Fund the manager of its totally held subsidiary votes independently using a proxy advisory firm (SAI p. B-61, https://www.sec.gov/Archives/edgar/data/36405/000003640526000181/f45032d1.htm); it was not verified whether those votes appear in the N-PX lines for S000002848."
+      - "Vanguard Investor Choice (SAI Appendix B, same SAI URL) lets shareholders of listed index funds direct their pro-rata votes under other policies; it was not verified how those votes are reported in the N-PX."
+      - "Bond, money-market and Treasury ETF series on file (S000002233, S000026859-S000026865, S000059555, S000062658, S000090172, S000090173) have no vote rows and both funds lists exclude fixed income funds, so they carry no team key."
     commitments:
       # Vanguard moved stewardship under Vanguard Portfolio Management (VPMIS)
       # in 2026; the old investment-stewardship URL (US_Proxy_Voting.pdf)
@@ -144,6 +212,12 @@ institutions:
       - label: us-proxy-voting-policy
         url: "https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vpm/vpm-proxy-voting-policy-us.pdf"
         adviser: "Vanguard Portfolio Management, LLC (VPM)"
+        # The live copy is VPM's (effective 2026-01-12). The 2022 Wayback capture
+        # in this label's lineage is the unified policy of The Vanguard Group,
+        # Inc. that governed all internally managed funds before VPMIS and VCMIS
+        # launched on 2026-01-12.
+        adviser_key: "VPM"
+        adviser_key_history: [{key: VANGUARD, until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]
       # Added 2026-11-17: the sibling policy for funds advised through Vanguard
       # Capital Management, LLC (Total Stock Market, 500, Extended Market,
       # Institutional Index, international index funds, ...). Listed at
@@ -152,6 +226,8 @@ institutions:
       - label: us-proxy-voting-policy-vcm
         url: "https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vcm/vcm-proxy-voting-policy-us.pdf"
         adviser: "Vanguard Capital Management, LLC (VCM)"
+        adviser_key: "VCM"
+        adviser_key_history: [{key: VCM, from: "2026-01-12"}]
     country: "USA"
     type: "asset_manager"
     aum_usd_tr: 8.7
@@ -197,6 +273,8 @@ institutions:
         adviser_verified: "2026-11-17"
         name: "State Street Institutional Investment Trust"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "SPDR Series Trust policy lets the Adviser delegate voting to a sub-adviser (https://www.sec.gov/Archives/edgar/data/1064642/000119312526458681/d81837d485bpos.htm); the SAI lists a sub-advisory agreement with Nuveen Asset Management, LLC, and the three SPDR Nuveen municipal bond ETFs (S000017327, S000017333, S000028870) may be voted under Nuveen's policy; whether delegation occurred was not verified and they are not keyed apart."
     commitments:
       # SSGA rebranded to "State Street Investment Management" and moved its
       # stewardship library; the old library-content/pdfs/ URL hard-404s.
@@ -414,6 +492,9 @@ institutions:
         voting_note: "SAI: the Board delegates proxy voting to the Adviser or Sub-Adviser, as applicable, each voting under its own policies (SAI Appendix A); not confirmed that they are identical to the archived global policy."
         name: "Invesco Actively Managed Exchange-Traded Fund Trust"
         validated: "2026-06-17"
+    voting_scope_notes:
+      - "The SAI says the Board delegated proxy voting to the Adviser or Sub-Adviser, as applicable, each voting under its own policies in SAI Appendix A (https://www.sec.gov/Archives/edgar/data/1418144/000110465926119957/tm2628303d1_485bpos.htm); it was not verified that those policies match the archived Invesco global policy."
+      - "Invesco Actively Managed Exchange-Traded Fund Trust is the only Invesco registrant on file; Invesco's other fund trusts are not covered."
     commitments:
       # Canonical, archivable policy doc (verified 2026-06-17: 200, application/pdf).
       - label: global-corporate-governance-proxy-voting-policy
@@ -478,6 +559,8 @@ institutions:
         voting_note: "Combination report also covers other UBS managers (UBS Asset Management Trust Company, UBS AM Switzerland AG, UBS AM (UK) Ltd., CIG US); their votes may follow separate policies."
         name: "UBS AM (UBS Asset Management Americas LLC)"
         validated: "2026-06-26"
+    voting_scope_notes:
+      - "The N-PX is a combination report that also covers UBS Group AG, UBS Asset Management Trust Company, UBS Asset Management Switzerland AG, UBS Asset Management (UK) Ltd. and CIG US (https://www.sec.gov/Archives/edgar/data/861177/000110465926102597/primary_doc.xml); the votes of those managers may follow separate policies and are not split out."
     commitments:
       # UBS AM's formal "Proxy Voting Policy and Procedures" (2026 edition),
       # published via ISS's policy repository (repo 254 = UBS). UBS-authored
@@ -514,6 +597,9 @@ institutions:
         voting_note: "Joint report covers affiliated BNPP AM managers; filing is say-on-pay votes only. Whether every reporting manager follows the group voting policy was not verified."
         name: "BNP Paribas Asset Management Holding S.A."
         validated: "2026-06-27"
+    voting_scope_notes:
+      - "The joint N-PX covers votes of former AXA IM-affiliated managers for the period before AXA IM Holding was absorbed on 2025-12-31, and the filing says voting authority may have resided with different affiliated entities (https://www.sec.gov/Archives/edgar/data/1520354/000152035426000042/primary_doc.xml); such votes may not follow the archived BNPP AM policy."
+      - "The filing reports say-on-pay (Section 14A) votes only, so it cannot support claims about other proposal types."
     commitments:
       # BNPP AM Voting Policy 2026, verified 2026-06-27 (200, application/pdf).
       - label: voting-policy
@@ -544,6 +630,8 @@ institutions:
         voting_note: "Sub-adviser mention is generic risk wording; no sub-adviser is named for the series seen (Franklin Short Duration U.S. Government ETF)."
         name: "Franklin ETF Trust"
         validated: "2026-06-26"
+    voting_scope_notes:
+      - "The Franklin ETF Trust N-CSR refers to a subadviser without naming one (https://www.sec.gov/Archives/edgar/data/1551895/000113322826008749/fetft-efp24615_ncsr.htm) while the SAI says voting is delegated to Franklin Advisers, Inc. (https://www.sec.gov/Archives/edgar/data/1551895/000165558926000971/c485bpos.htm); no sub-adviser voting was identified, but the series affected were not established."
     commitments:
       # Franklin Equity Group Proxy Voting Policies & Procedures (franklintempleton.com),
       # verified 2026-06-26 (200, application/pdf).
@@ -577,6 +665,10 @@ institutions:
         voting_note: "SAI: sub-advised series are voted by the Sub-Adviser under its own procedures; directly advised series by BNYIA. Per-series split not resolved. Certain bank-holding-company shares are voted by Fiduciary Counselors, Inc."
         name: "BNY Mellon Advantage Funds, Inc."
         validated: "2026-06-26"
+    voting_scope_notes:
+      - "For sub-advised BNY funds the SAI says the sub-adviser holds discretionary proxy voting and uses its own procedures, so those votes are not cast under the archived BNY policy (https://www.sec.gov/Archives/edgar/data/318478/000003014626000183/c485bpos.htm; Fayez Sarofim & Co. in the Appreciation Fund)."
+      - "BNY Mellon Advantage Funds, Inc. mixes directly advised series (voted by BNY Mellon Investment Adviser) and sub-advised series (voted by the sub-adviser, e.g. Newton Investment Management North America); the per-series split was not established (https://www.sec.gov/Archives/edgar/data/914775/000003014626000070/c485bpos.htm)."
+      - "The same SAIs state that certain bank-holding-company shares are voted by Fiduciary Counselors, Inc. rather than BNY Mellon."
     commitments:
       # BNY has no standalone policy PDF (like Schwab) — its current proxy-voting
       # policy is published as an HTML page on bny.com (verified 2026-06-26:
@@ -599,6 +691,7 @@ institutions:
         adviser: "DWS Investment Management Americas, Inc. (DIMA); no sub-adviser (series: Multi-Asset Conservative, Multi-Asset Moderate, Equity Sector Strategy)"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/926425/000008805326000832/ar083126multi.htm"  # N-CSR filed 2026-10-30; voting delegated to the Advisor per the SAI (see DWS Market Trust source)
         adviser_verified: "2026-11-17"
+        adviser_key: "DIMA"
         name: "Deutsche DWS Asset Allocation Trust"
         validated: "2026-06-27"
       - cik: "888568"
@@ -606,6 +699,7 @@ institutions:
         adviser_source: "https://www.sec.gov/Archives/edgar/data/888568/000008805326000206/ar123125de500p.htm"  # N-CSR filed 2026-03-06; voting: SAI in https://www.sec.gov/Archives/edgar/data/862157/000008805326000323/ddif-20260428.htm says each fund delegates proxy voting to the Advisor (DIMA)
         adviser_verified: "2026-11-17"
         voting_note: "Master portfolio sub-advised by Northern Trust Investments, Inc.; the SAI states proxy voting is delegated to the Advisor (DIMA) under the DWS Americas policy, not to NTI. Northern Trust's own policy (see northern_trust) is not the governing one."
+        adviser_key: "DIMA"
         name: "Deutsche DWS Equity 500 Index Portfolio"
         validated: "2026-06-27"
       - cik: "95603"
@@ -613,6 +707,7 @@ institutions:
         adviser_source: "https://www.sec.gov/Archives/edgar/data/95603/000008805326000561/ddmt-20260727.htm"  # 485BPOS filed 2026-07-27; SAI Part II-I: DWS Americas policy covers DIMA, DBX and RREEF, voted via ISS
         adviser_verified: "2026-11-17"
         voting_note: "RREEF America L.L.C. is a DWS affiliate sub-adviser; the DWS Americas policy expressly covers RREEF, so no separate policy."
+        adviser_key: "DIMA"
         name: "Deutsche DWS Market Trust"
         validated: "2026-06-27"
     commitments:
@@ -621,6 +716,7 @@ institutions:
       - label: corporate-governance-proxy-voting-policy
         url: "https://download.dws.com/download?elib-assetguid=0ed2826429c84ae4b87d95bcbe07077d"
         adviser: "DWS Investment GmbH (Germany); the letter states it is not intended for US-domiciled investees, so it does not govern the US trusts"
+        adviser_key: "DWS_GMBH"
       # US-specific policy that actually governs the three US trusts above: the
       # SAIs say each fund delegates voting to its Advisor (DIMA), which applies
       # "Proxy Voting Policy and Guidelines DWS Americas" (covers DIMA, DBX Advisors,
@@ -630,6 +726,7 @@ institutions:
       - label: proxy-voting-policy-guidelines-dws-americas
         url: "https://download.dws.com/download/asset/e5cb398f-4086-4586-916f-ff5dd6e41348?tenant=DWScom"
         adviser: "DWS Investment Management Americas, Inc. (DIMA), DBX Advisors LLC, RREEF America L.L.C."
+        adviser_key: "DIMA"
 
   northern_trust:
     display_name: "Northern Trust Corporation"
@@ -652,6 +749,8 @@ institutions:
         voting_note: "SAI: the Trust delegates voting to NTI, which applies the Northern Proxy Voting Policy to all Funds, including multi-manager series."
         name: "Northern Funds"
         validated: "2026-06-27"
+    voting_scope_notes:
+      - "The SAI says the Trust delegated voting to Northern Trust Investments, Inc., which applies the Northern Proxy Voting Policy to all Funds (https://www.sec.gov/Archives/edgar/data/916620/000119312526188130/d144827d485bpos.htm), while multi-manager series use outside sub-advisers such as Axiom International Investors; it was not verified from the N-PX that no sub-adviser cast votes."
     commitments:
       # NTAM Proxy Voting Policies, Procedures & Guidelines, verified 2026-06-27
       # (200, application/pdf) from ntam.northerntrust.com.
