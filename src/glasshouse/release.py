@@ -776,8 +776,10 @@ def _readme(pkg: dict, tables: dict, version: str, with_sqlite: bool = False) ->
         *(["- `derived/glasshouse.db` — SQLite; browse with "
            "`datasette derived/glasshouse.db`."] if with_sqlite else []), "",
         "## Cite it",
-        "Status: not yet published; no DOI. Cite only with the version and commit below, and "
-        "say that it is unpublished.", "```", cite, "```", "",
+        "Cite the DOI on the Zenodo record you downloaded these files from, together with "
+        "the version and commit below. Files obtained any other way are an unpublished "
+        "build: cite them with the version and commit only, and say so.",
+        "```", cite, "```", "",
         "## Leads, not findings (read before publishing)",
         "This is a factual compilation — acts, dates, amounts, votes; never motive. "
         "Any say-vs-do gap you derive is a **lead**: theme matching is lexical, so "

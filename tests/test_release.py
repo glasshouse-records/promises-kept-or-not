@@ -527,7 +527,9 @@ def test_bundle_readme_has_no_placeholder_citation(conn, tmp_path):
     release.build_release(conn, root=tmp_path, version="d3", with_parquet=False)
     readme = (tmp_path / "vd3" / "README.md").read_text()
     assert "add release/DOI URL" not in readme and "https://github.com/" not in readme
-    assert "not yet published; no DOI" in readme
+    # True before and after the Zenodo deposit: the bundle cannot know its DOI.
+    assert "not yet published" not in readme
+    assert "DOI on the Zenodo record" in readme and "unpublished build" in readme
 
 
 def test_git_state_names_the_checked_out_commit_and_flags_a_dirty_tree(tmp_path):
