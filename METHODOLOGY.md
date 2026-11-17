@@ -124,6 +124,7 @@ the say-vs-do analysis described below in three ways, each a correction:
   or `opposition_rate` from such a result without the matching `not_supported`
   or `non_support_rate` claim. `peers` and `director_peers` accept
   `institution=` (and `adviser=`) to show one group's row without changing any figure.
+  **Say-on-pay is a third indexed category.** `pay_record` covers management items filed under N-PX category SECTION 14A SAY-ON-PAY VOTES (one row per manager and adviser per ballot item, same grouping, `is_duplicate = 0`, `adviser=`, `country=` and `CODING SHIFT` rules as director votes); say-on-pay *frequency* items (1/2/3 years) are not for/against, so they are excluded from every count and reported only as `frequency_items`.
 - **Peer comparison is on identical proposals.** `peers` matches the same
   ballot item across managers by company, meeting date and the proposal's
   significant words. Matching is deliberately strict: an unmatched proposal

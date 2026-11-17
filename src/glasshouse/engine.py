@@ -82,6 +82,22 @@ CREATE TABLE director_votes (
                                     -- is run); NULL if none, malformed or lines disagree
     adviser        TEXT             -- as proposals.adviser
 );
+CREATE TABLE pay_votes (          -- say-on-pay: management's SECTION 14A items
+    pay_id         INTEGER PRIMARY KEY,
+    institution_id TEXT NOT NULL,
+    issuer_name    TEXT, cusip TEXT,
+    meeting_date   TEXT, year INTEGER,
+    description    TEXT,            -- the ballot line as filed
+    kind           TEXT NOT NULL,   -- approval (FOR/AGAINST) | frequency (1/2/3 years: not for/against)
+    position       TEXT NOT NULL,   -- as director_votes.position
+    n_lines INTEGER, n_for INTEGER, n_against INTEGER, n_other INTEGER,
+    meeting_key    TEXT,
+    accession      TEXT, source_url TEXT, vote_id INTEGER,
+    isin_country   TEXT,
+    adviser        TEXT             -- as proposals.adviser
+);
+CREATE INDEX ix_pay_inst ON pay_votes(institution_id, year);
+CREATE INDEX ix_pay_country ON pay_votes(isin_country);
 CREATE INDEX ix_d_country ON director_votes(isin_country);
 CREATE INDEX ix_d_inst ON director_votes(institution_id, year);
 CREATE INDEX ix_d_meeting ON director_votes(meeting_key);
@@ -419,6 +435,13 @@ def _ro(path: Path) -> sqlite3.Connection:
 
 # --------------------------------------------------------------------- build
 
+# How a say-on-pay FREQUENCY ballot is answered (how often to hold the vote). These
+# are choices among periods, not for/against, so such items are kept apart.
+_FREQ_VOTES = frozenset({"ONE YEAR", "1 YEAR", "TWO YEARS", "2 YEARS", "THREE YEARS",
+                         "3 YEARS", "1.0", "2.0", "3.0"})
+_FREQ_DESC = re.compile(r"frequen|how often|every (one|1|two|2|three|3) years?", re.IGNORECASE)
+
+
 def _grouped(led: sqlite3.Connection, which: str,
              resolvers: dict[str, dict[str, dict]] | None = None) -> dict[tuple, dict]:
     """Collapse fund ballot lines to one decision per (manager, company, meeting,
@@ -452,7 +475,7 @@ def _grouped(led: sqlite3.Connection, which: str,
             seen_adv = legacy.setdefault(lk, [])
             seen_adv.append(adv)
             g = groups[key] = {"row": v, "adviser": adv, "extra": len(seen_adv) > 1, "isins": set(), "for": 0, "against": 0, "abstain": 0, "other": 0,
-                               "n": 0, "with_m": 0, "against_m": 0, "sf": 0.0, "sa": 0.0}
+                               "n": 0, "with_m": 0, "against_m": 0, "sf": 0.0, "sa": 0.0, "freq": 0}
         # N-PX's "management recommendation" element records whether THIS vote
         # went with (FOR) or against (AGAINST) management — not what management
         # recommended. Say-on-pay shows it plainly: FOR/FOR and AGAINST/AGAINST.
@@ -461,6 +484,7 @@ def _grouped(led: sqlite3.Connection, which: str,
         g["with_m"] += mr == "FOR"
         g["against_m"] += mr == "AGAINST"
         hv = (v["how_voted"] or "").strip().upper()
+        g["freq"] += hv in _FREQ_VOTES
         g["n"] += 1
         sh = v["shares_voted"] or 0.0
         if hv == "FOR":
@@ -614,6 +638,25 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
     eng.executemany("INSERT INTO director_votes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", drows)
     del dgroups
 
+    # Management's say-on-pay items (N-PX category SECTION 14A SAY-ON-PAY VOTES), so
+    # pay policy can be set beside pay votes. Frequency items are kept, marked.
+    pgroups = _grouped(led, "v.category_type = 'SECTION 14A SAY-ON-PAY VOTES'", resolvers)
+    prows = []
+    for pid_, g in _ids(pgroups):
+        v = g["row"]
+        md = v["md"] or ""
+        cusip = (v["cusip"] or "").strip().upper()
+        desc = v["d"] or ""
+        prows.append((pid_, v["iid"], v["issuer_name"], cusip, md,
+                      int(md[:4]) if md[:4].isdigit() else None, desc,
+                      "frequency" if g["freq"] or _FREQ_DESC.search(desc) else "approval",
+                      _position(g), g["n"], g["for"], g["against"], g["abstain"] + g["other"],
+                      f"{cusip}|{md}" if cusip and md else "",
+                      v["accession"], v["source_url"] or "", v["id"],
+                      isin_country(g["isins"]), g["adviser"]))
+    eng.executemany("INSERT INTO pay_votes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", prows)
+    del pgroups
+
     # Policy text: one row per distinct TEXT version (earliest capture wins —
     # that is the date the wording is first demonstrably public).
     seen: set[tuple] = set()
@@ -656,6 +699,7 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
         "ballot_lines": sum(g["n"] for g in groups.values()),
         "proposals": len(rows),
         "director_items": len(drows),
+        "pay_items": len(prows),
         "multi_adviser_institutions": ",".join(sorted(split)),
         "policy_versions": len(seen),
         "policy_sentences": sid,
@@ -945,8 +989,9 @@ class Engine:
                      "separate accounts and non-US funds are not here.",
                      "proposals() and its tools cover shareholder-sponsored items only. "
                      "Management's director nominees have their own tools "
-                     "(director_record, director_votes, director_peers). Other management "
-                     "proposals (say-on-pay, auditors) are in the ledger but not indexed.",
+                     "(director_record, director_votes, director_peers). Say-on-pay "
+                     "items are indexed too (pay_record). Other management proposals "
+                     "(auditors, etc.) are in the ledger but not indexed.",
                      "`vote_filings_by_season` counts voting reports on file per N-PX "
                      "season (July to June, named by its end year). A season with fewer "
                      "filings than the one before may be only partly ingested: do not "
@@ -1421,21 +1466,22 @@ class Engine:
             p += c[1]
         return " AND ".join(w), p
 
-    def _unmatched_country(self, country) -> list[str]:
+    def _unmatched_country(self, country, table="director_votes") -> list[str]:
         """A well-formed code that no indexed item carries is almost always a
         wrong code (UK for GB), not a market with no votes: say so, never raise."""
         c = _country(country)
         if not c or not c[1]:
             return []
         known = {r[0] for r in self.db.execute(
-            "SELECT DISTINCT isin_country FROM director_votes WHERE isin_country IS NOT NULL")}
+            f"SELECT DISTINCT isin_country FROM {table} WHERE isin_country IS NOT NULL")}
         if any(code in known for code in c[1]):
             return []
         return [f"`country` {str(country).strip().upper()!r} matches no item in the index. "
                 "ISIN prefixes are ISO 3166 country codes (GB, not UK); a valid country "
                 "with no votes also gives an empty result."]
 
-    def _dexcluded(self, country, *, only_used_by_peers=False, **filters) -> list[str]:
+    def _dexcluded(self, country, *, only_used_by_peers=False, table="director_votes",
+                   noun="nominee", **filters) -> list[str]:
         """Caveats for a country-filtered query: how many items the query's OTHER
         filters matched that had no usable ISIN country (so the filter dropped
         them), and what the country means. `only_used_by_peers` restricts the
@@ -1447,15 +1493,15 @@ class Engine:
         if only_used_by_peers:
             w += " AND d.meeting_key != '' AND d.position IN ('FOR','AGAINST')"
         n = self.db.execute(
-            f"SELECT COUNT(*) FROM director_votes d WHERE {w} AND d.isin_country IS NULL",
+            f"SELECT COUNT(*) FROM {table} d WHERE {w} AND d.isin_country IS NULL",
             p).fetchone()[0]
-        return [f"{n} nominee {'item was' if n == 1 else 'items were'} excluded for lacking an "
+        return [f"{n} {noun} {'item was' if n == 1 else 'items were'} excluded for lacking an "
                 "ISIN with a usable country (missing, malformed, or fund lines that "
                 "disagreed): the country filter cannot say where those companies are.",
                 "`country` is the country that issued the ISIN, not where the company is "
                 "run: Cayman- or Bermuda-registered companies (KY, BM) are non-US here "
                 "even when run from the US.",
-                *self._unmatched_country(country)]
+                *self._unmatched_country(country, table)]
 
     @staticmethod
     def _dtally(t: dict) -> dict:
@@ -1517,25 +1563,25 @@ class Engine:
         "(US, US,CA or non-US) or company=.",
         "Year-to-year change can reflect which companies the funds held."]
 
-    def _dtotal(self, w: str, p: list) -> dict:
-        years = self._dyears(w, p)
+    def _dtotal(self, w: str, p: list, table="director_votes") -> dict:
+        years = self._dyears(w, p, table)
         total: dict = defaultdict(int)
         for t in years.values():
             for k, n in t.items():
                 total[k] += n
         return total
 
-    def _dyears(self, w: str, p: list) -> dict:
+    def _dyears(self, w: str, p: list, table="director_votes") -> dict:
         years: dict = defaultdict(lambda: defaultdict(int))
         for r in self.db.execute(
-                f"SELECT d.year, d.position, COUNT(*) n FROM director_votes d WHERE {w} "
+                f"SELECT d.year, d.position, COUNT(*) n FROM {table} d WHERE {w} "
                 "GROUP BY d.year, d.position", p):
             years[r["year"]][r["position"]] += r["n"]
         for r in self.db.execute(
                 f"""SELECT year, COUNT(*) m, SUM(opp > 0) om, SUM(ns > 0) nm FROM (
                         SELECT d.year, SUM(d.position='AGAINST') opp,
                                SUM(d.position IN ('AGAINST','ABSTAIN')) ns
-                        FROM director_votes d
+                        FROM {table} d
                         WHERE {w} GROUP BY d.year, d.cusip, d.issuer_name, d.meeting_date)
                     GROUP BY year""", p):
             years[r["year"]]["meetings"] = r["m"]
@@ -1576,6 +1622,52 @@ class Engine:
                                               since=since, until=until, country=country,
                                               adviser=adviser),
                     out, caveats)
+
+    _PAY_CAVEATS = [
+        "Covers management's say-on-pay items only (N-PX category SECTION 14A SAY-ON-PAY "
+        "VOTES): advisory votes to approve executive compensation, and non-US remuneration "
+        "report / policy votes the filer filed under that category. Pay votes the filer "
+        "filed under COMPENSATION (equity plans, director fees) are not here.",
+        "`opposed` = AGAINST or WITHHOLD, `abstain` counted apart; `not_supported` = "
+        "opposed + abstain and `non_support_rate` is immune to how a filer codes a "
+        "withheld vote. `opposition_rate` is over for + opposed. SPLIT and NONE items "
+        "are in neither figure. One item per ballot line: funds voting alike count once.",
+        "Say-on-pay FREQUENCY items (how often to hold the vote: 1, 2 or 3 years) are NOT "
+        "for/against votes and are excluded from every count and rate; they are reported "
+        "only as `frequency_items`.",
+        "The record never says WHY pay was opposed. Year-to-year change can reflect which "
+        "companies the funds held. Non-US meetings are included: narrow with country= "
+        "(US, US,CA or non-US) or company=."]
+
+    def pay_record(self, institution: str, company=None, year=None, since=None, until=None,
+                   country=None, adviser=None) -> dict:
+        """How often one manager opposed management's say-on-pay items, by year,
+        counted per ballot item and per meeting (frequency items excluded)."""
+        f = {"institution": institution, "company": company, "year": year,
+             "since": since, "until": until, "country": country, "adviser": adviser}
+        w, p = self._dwhere(**f)
+        wa = f"{w} AND d.kind = 'approval'"
+        years = self._dyears(wa, p, "pay_votes")
+
+        def tally(t: dict) -> dict:
+            o = self._dtally(t)
+            o["items"] = o.pop("nominees")
+            return o
+
+        nfreq = self.db.execute(
+            f"SELECT COUNT(*) FROM pay_votes d WHERE {w} AND d.kind = 'frequency'",
+            p).fetchone()[0]
+        out = {"overall": tally(self._dtotal(wa, p, "pay_votes")),
+               "by_year": {y: tally(t) for y, t in
+                           sorted(years.items(), key=lambda kv: kv[0] or 0)},
+               "frequency_items": nfreq}
+        caveats = [*self._pooled(institution, adviser), *self._PAY_CAVEATS,
+                   *self._coding_shift({y: (t["ABSTAIN"], t["AGAINST"] + t["ABSTAIN"])
+                                        for y, t in years.items()})]
+        if country is not None:
+            caveats += self._dexcluded(country, table="pay_votes", noun="say-on-pay",
+                                       **{k: v for k, v in f.items() if k != "country"})
+        return _env("pay_record", _clean(**f), out, caveats)
 
     def director_votes(self, institution: str, company=None, year=None, position=None,
                        since=None, until=None, limit: int = 60, country=None,
@@ -1941,11 +2033,11 @@ _ENTITY_NOTE = ["An entry written `institution/ADVISER` is one adviser of a grou
 # Tools that report votes (the desk requires `adviser` on a claim from one of
 # these about a multi-adviser institution).
 VOTE_TOOLS = ("proposals", "voting_record", "reversals", "say_vs_do", "director_record",
-              "director_votes", "director_panel")
+              "director_votes", "director_panel", "pay_record")
 
 TOOLS = ("coverage", "policy_versions", "policy_counts", "policy_search", "policy_diff", "policy_in_force",
          "proposals", "voting_record", "peers", "ballot", "fund_votes", "reversals", "say_vs_do", "filers",
-         "director_record", "director_votes", "director_peers", "director_panel",
+         "director_record", "director_votes", "director_peers", "director_panel", "pay_record",
          "company",
          "enforcement", "holdings", "verify_quote", "sql")
 

@@ -80,6 +80,24 @@ def eng(tmp_path):
         director(iid, "FOR", "Election of Directors: John Poe")
     director("alpha", "FOR", "Elect Director Jane Roe", date="05/19/2025")
     director("alpha", "FOR", "Elect Director John Poe", date="05/19/2025")
+
+    def pay(iid, how, desc="Advisory vote to approve named executive officer compensation",
+            date="05/20/2024", dup=0, shares=100, cat="SECTION 14A SAY-ON-PAY VOTES"):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date,"
+                  " vote_description, category_type, vote_source, how_voted,"
+                  " management_recommendation, shares_voted, is_duplicate) VALUES"
+                  " (?,'EXXON MOBIL','30231G102',?,?,?,'ISSUER',?,?,?,?)",
+                  (f"ACC-{iid}", date, desc, cat, how,
+                   "FOR" if how == "FOR" else "AGAINST", shares, dup))
+
+    pay("alpha", "AGAINST")                                    # two funds, one item
+    pay("alpha", "AGAINST")
+    pay("alpha", "AGAINST", dup=1)                             # duplicate: must not count
+    pay("alpha", "FOR", date="05/19/2025")
+    pay("alpha", "ONE YEAR", desc="Advisory vote on the frequency of future advisory votes "
+        "on executive compensation")                           # frequency: not for/against
+    pay("beta", "FOR")
+    pay("gamma", "ABSTAIN", date="05/20/2025")
     c.commit()
     c.close()
     out = tmp_path / "engine.db"
@@ -762,6 +780,14 @@ def _duo_ledger(tmp_path):
     for cik, how in (("0000000011", "FOR"), ("22", "WITHHOLD"), ("33", "FOR"),
                      ("44", "FOR"), ("55", "FOR")):
         vote(cik, how, desc="Elect Director Jane Roe", nominee=True)
+    for cik, how in (("0000000011", "FOR"), ("22", "AGAINST"), ("33", "FOR")):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date,"
+                  " vote_description, category_type, vote_source, how_voted,"
+                  " management_recommendation, shares_voted, is_duplicate) VALUES"
+                  " (?,'EXXON MOBIL','30231G102','05/20/2024',"
+                  "'Advisory vote to approve executive compensation',"
+                  "'SECTION 14A SAY-ON-PAY VOTES','ISSUER',?,?,100,0)",
+                  (f"ACC-{cik}", how, "FOR" if how == "FOR" else "AGAINST"))
     for n, (label, text, iid) in enumerate((("policy-aaa", TEXT_A, "delta"),
                                             ("policy-bbb", TEXT_B, "delta"))):
         f = tmp_path / f"d{n}.html"
@@ -1419,6 +1445,13 @@ def shifted(tmp_path):
             director("alpha", "FOR", n, f"05/20/{year}", person=n + 100)
             director("beta", "WITHHOLD", n, f"05/20/{year}")
             director("beta", "FOR", n, f"05/20/{year}", person=n + 100)
+            for how in ("AGAINST" if year == 2024 else "ABSTAIN",):
+                c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date,"
+                          " vote_description, category_type, vote_source, how_voted,"
+                          " management_recommendation, shares_voted, is_duplicate) VALUES"
+                          " (?,?,?,?,'Advisory vote on executive compensation',"
+                          "'SECTION 14A SAY-ON-PAY VOTES','ISSUER',?,'FOR',100,0)",
+                          ("ACC-alpha", f"CO {n}", f"{n:09d}", f"05/20/{year}", how))
     c.commit()
     c.close()
     out = tmp_path / "engine.db"
@@ -1537,3 +1570,53 @@ def test_policy_counts_gives_a_citable_count_per_document(eng):
 def test_policy_counts_respects_adviser(duo):
     rows = duo.policy_counts("delta", adviser="BBB")["result"]
     assert [r["doc_label"] for r in rows] == ["policy-bbb"]
+
+
+# ---------------------------------------------------------------- say-on-pay
+
+def test_pay_votes_count_per_item_not_per_fund_and_skip_duplicates(eng):
+    r = eng.pay_record("alpha")["result"]["by_year"]
+    assert r[2024]["items"] == 1 and r[2024]["opposed"] == 1 and r[2024]["for"] == 0
+    assert r[2024]["opposition_rate"] == 1.0
+    assert r[2025]["for"] == 1 and r[2025]["opposed"] == 0
+
+
+def test_pay_frequency_items_are_reported_apart_from_for_against(eng):
+    out = eng.pay_record("alpha")
+    assert out["result"]["overall"]["items"] == 2            # frequency not among them
+    assert out["result"]["frequency_items"] == 1
+    assert any("frequency" in c.lower() for c in out["caveats"])
+
+
+def test_pay_votes_stay_out_of_director_and_proposal_indexes(eng):
+    assert eng.director_record("alpha")["result"]["by_year"][2024]["nominees"] == 2
+    n = eng.db.execute("SELECT COUNT(*) FROM proposals WHERE description LIKE '%compensation%'")
+    assert n.fetchone()[0] == 0
+
+
+def test_pay_record_is_registered_as_a_vote_tool():
+    assert "pay_record" in engine.TOOLS and "pay_record" in engine.VOTE_TOOLS
+
+
+def test_pay_record_filters_by_year_and_replays_from_its_args(eng):
+    env = eng.pay_record("alpha", year=2025)
+    assert list(env["result"]["by_year"]) == [2025]
+    assert eng.pay_record(**env["args"])["result"] == env["result"]
+
+
+def test_pay_votes_scope_by_adviser(duo):
+    assert [(r["adviser"], r["position"]) for r in duo.db.execute(
+        "SELECT adviser, position FROM pay_votes WHERE institution_id='delta' "
+        "ORDER BY adviser")] == [("AAA", "FOR"), ("BBB", "AGAINST")]
+    assert duo.pay_record("delta", adviser="AAA")["result"]["overall"]["opposed"] == 0
+    assert duo.pay_record("delta", adviser="BBB")["result"]["overall"]["opposed"] == 1
+    assert any("POOLED ADVISERS" in c for c in duo.pay_record("delta")["caveats"])
+    with pytest.raises(ValueError, match="no adviser"):
+        duo.pay_record("delta", adviser="CCC")
+
+
+def test_pay_record_warns_when_abstain_replaces_against(shifted):
+    env = shifted.pay_record("alpha")
+    assert _shift(env), "abstain recording changed between years: must be flagged"
+    r = env["result"]["by_year"]
+    assert r[2024]["opposed"] == 40 and r[2025]["abstain"] == 40

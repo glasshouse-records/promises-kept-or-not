@@ -34,6 +34,7 @@ Read the caveats; they are part of the answer.
     .venv/bin/glasshouse ask director_record institution=vanguard since=2025-01-01 until=2025-06-30
     .venv/bin/glasshouse ask director_peers since=2025-01-01 until=2025-06-30
     .venv/bin/glasshouse ask director_votes institution=vanguard company=EXXON position=AGAINST
+    .venv/bin/glasshouse ask pay_record institution=vanguard adviser=VCM   # say-on-pay votes by year, like director_record (frequency items excluded; CODING SHIFT applies)
     .venv/bin/glasshouse ask director_panel institution=t_rowe_price windows=2025-01-01:2025-06-30,2026-01-01:2026-06-30
     # director tools take country=US | US,CA | non-US (country that issued the ISIN, not where the company is run); director_record also shows by_country; a code matching no item (UK) warns in caveats: ISIN prefixes are ISO codes, GB not UK
     .venv/bin/glasshouse ask sql query="SELECT ... FROM proposals ..."
