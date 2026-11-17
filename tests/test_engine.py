@@ -1620,3 +1620,20 @@ def test_pay_record_warns_when_abstain_replaces_against(shifted):
     assert _shift(env), "abstain recording changed between years: must be flagged"
     r = env["result"]["by_year"]
     assert r[2024]["opposed"] == 40 and r[2025]["abstain"] == 40
+
+
+@pytest.mark.parametrize("desc", [
+    "Advisory vote on holding the say-on-pay vote for executive officers every year",
+    "Whether shareholders would prefer an advisory vote every one, two or three years",
+    "Advisory vote every two (2) years",
+    "Approve the frequency of future advisory votes",
+])
+def test_pay_frequency_items_are_recognised_in_every_wording(desc):
+    """Review of e19ce3a: Constellium put its frequency question as three yes/no
+    items; 'every year' was counted as a pay approval."""
+    assert engine._FREQ_DESC.search(desc)
+
+
+def test_an_ordinary_say_on_pay_item_is_not_a_frequency_item():
+    assert not engine._FREQ_DESC.search(
+        "Advisory vote to approve the compensation of named executive officers")

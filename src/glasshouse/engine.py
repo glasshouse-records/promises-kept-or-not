@@ -439,7 +439,8 @@ def _ro(path: Path) -> sqlite3.Connection:
 # are choices among periods, not for/against, so such items are kept apart.
 _FREQ_VOTES = frozenset({"ONE YEAR", "1 YEAR", "TWO YEARS", "2 YEARS", "THREE YEARS",
                          "3 YEARS", "1.0", "2.0", "3.0"})
-_FREQ_DESC = re.compile(r"frequen|how often|every (one|1|two|2|three|3) years?", re.IGNORECASE)
+_FREQ_DESC = re.compile(r"frequen|how often|every\s+((one|1|two|2|three|3)\s*(\(\d\)\s*)?)?years?\b"
+                        r"|every\s+(one|1)\s*,\s*(two|2)\s*,?\s*or\s+(three|3)", re.IGNORECASE)
 
 
 def _grouped(led: sqlite3.Connection, which: str,
