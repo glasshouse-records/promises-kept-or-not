@@ -127,7 +127,11 @@ Read the caveats; they are part of the answer.
   `say_vs_do` refuses without `adviser=`; `policy_in_force` needs `adviser=` or
   `doc_label=`; `proposal`/`director` claims must carry the item's `adviser`.
   Without it the verifier fails the claim. A registrant with no adviser on
-  record is unknown: say so rather than assuming.
+  record is unknown: say so rather than assuming. Groups can differ by fund
+  series and change over time (`filers` shows history and series overrides);
+  if `say_vs_do` says no archived policy exists for that adviser, or the
+  adviser is `EXTERNAL`, there is no policy-vs-vote claim to make. Repeat the
+  institution's `voting_scope_notes` caveats in `limitations`.
 - Say "the funds on file", never "X's funds": check `filers` for how few
   registrants stand behind the figure, and put that number in `limitations`.
 - `limitations` needs at least two limits specific to THIS piece (small

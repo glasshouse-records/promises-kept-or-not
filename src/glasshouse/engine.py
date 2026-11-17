@@ -98,8 +98,14 @@ CREATE TABLE policy_versions (
 CREATE TABLE registrants (
     institution_id TEXT, cik TEXT,   -- cik without leading zeros
     adviser TEXT, adviser_name TEXT, adviser_source TEXT, adviser_verified TEXT,
+    rules TEXT,                      -- JSON: the normalised key rules (see normalize_rules)
     PRIMARY KEY (institution_id, cik)
 );
+CREATE TABLE adviser_scope (         -- ONLY multi-group institutions have rows
+    institution_id TEXT, adviser TEXT,   -- every group key (votes and documents); 'unlabelled'
+    PRIMARY KEY (institution_id, adviser)
+);
+CREATE TABLE scope_notes (institution_id TEXT, seq INTEGER, note TEXT);
 CREATE TABLE policy_sentences (
     sentence_id INTEGER PRIMARY KEY,
     commitment_id INTEGER, institution_id TEXT, seq INTEGER, text TEXT, norm TEXT
@@ -255,11 +261,65 @@ def adviser_key(entry: dict) -> str | None:
     return str(k).strip() or None if k else None
 
 
+_ISO_DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def _rule_list(spec) -> list[tuple]:
+    """[(key, from, until)] from one rule dict or a list of them; bounds are
+    inclusive ISO days (YAML may hand us date objects), either may be absent."""
+    out = []
+    for r in ([spec] if isinstance(spec, dict) else spec or []):
+        k = adviser_key(r) if isinstance(r, dict) else None
+        if not k and isinstance(r, dict) and r.get("key"):
+            k = str(r["key"]).strip() or None
+        if k:
+            out.append((k, str(r["from"]) if r.get("from") else None,
+                        str(r["until"]) if r.get("until") else None))
+    return out
+
+
+def normalize_rules(entry: dict) -> dict:
+    """The registrant's key rules, as plain data (stored in the engine so query
+    time resolves exactly as build time did). Resolution order, per vote line:
+    series rule matching the meeting date -> registrant history -> default."""
+    return {"default": adviser_key(entry),
+            "history": _rule_list(entry.get("adviser_key_history")),
+            "series": {str(sid).strip().upper(): _rule_list(spec)
+                       for sid, spec in (entry.get("series_adviser") or {}).items()}}
+
+
+def resolve_key(rules: dict | None, series, md) -> str | None:
+    """The adviser group of one vote line. `md` is the ISO meeting date; one
+    that does not parse is resolved by the undated (unbounded) rules only."""
+    if not rules:
+        return None
+    day = md if isinstance(md, str) and _ISO_DAY.fullmatch(md) else None
+
+    def pick(lst):
+        for k, lo, hi in lst:
+            if lo is None and hi is None:
+                return k
+            if day and (lo is None or day >= lo) and (hi is None or day <= hi):
+                return k
+        return None
+    return (pick(rules["series"].get((series or "").strip().upper(), []))
+            or pick(rules["history"]) or rules["default"])
+
+
+def rule_keys(rules: dict | None) -> set[str]:
+    """Every key a registrant can resolve to."""
+    if not rules:
+        return set()
+    return ({rules["default"]} - {None}) | {k for k, *_ in rules["history"]} | {
+        k for lst in rules["series"].values() for k, *_ in lst}
+
+
 def _norm_cik(cik) -> str:
     return str(cik or "").strip().lstrip("0")
 
 
 UNLABELLED = "unlabelled"
+EXTERNAL = "EXTERNAL"   # series advised by an outside manager: no archived policy governs it
 
 
 def _ro(path: Path) -> sqlite3.Connection:
@@ -271,29 +331,30 @@ def _ro(path: Path) -> sqlite3.Connection:
 # --------------------------------------------------------------------- build
 
 def _grouped(led: sqlite3.Connection, which: str,
-             advisers: dict[str, dict[str, str | None]] | None = None) -> dict[tuple, dict]:
+             resolvers: dict[str, dict[str, dict]] | None = None) -> dict[tuple, dict]:
     """Collapse fund ballot lines to one decision per (manager, company, meeting,
     item), carrying line and share tallies. `which` is a fixed SQL condition
     chosen by build(), never caller input.
 
-    `advisers` maps an institution to {cik: adviser key} ONLY for institutions
-    whose registrants have two or more distinct known advisers. For those the
-    adviser is part of the group key, so lines voted by different advisers (under
-    different policies) are never aggregated into one decision. Every other
-    institution groups exactly as it always did."""
+    `resolvers` maps an institution to {cik: key rules} ONLY for multi-group
+    institutions. For those the resolved key (by registrant, fund series and
+    meeting date) is part of the group key, so lines voted by different advisers
+    (under different policies) are never aggregated into one decision. Every
+    other institution groups exactly as it always did."""
     iso = iso_meeting_date("v.meeting_date")
     groups: dict[tuple, dict] = {}
     legacy: dict[tuple, list] = {}   # the pre-adviser group key -> advisers seen
     for v in led.execute(
         f"""SELECT v.id, f.institution_id AS iid, v.issuer_name, v.cusip, v.isin, {iso} AS md,
                    v.vote_description AS d, v.category_type, v.how_voted, v.shares_voted,
-                   v.management_recommendation AS mr, v.accession, f.source_url, f.cik AS fcik
+                   v.management_recommendation AS mr, v.accession, f.source_url, f.cik AS fcik, v.vote_series AS vseries
             FROM votes v JOIN filings f ON f.accession = v.accession
             WHERE v.is_duplicate = 0 AND {which}
               AND f.institution_id IS NOT NULL"""):
         adv = None
-        if advisers and v["iid"] in advisers:
-            adv = advisers[v["iid"]].get(_norm_cik(v["fcik"])) or UNLABELLED
+        if resolvers and v["iid"] in resolvers:
+            adv = resolve_key(resolvers[v["iid"]].get(_norm_cik(v["fcik"])),
+                              v["vseries"], v["md"]) or UNLABELLED
         key = (v["iid"], adv, (v["cusip"] or "").strip().upper() or v["issuer_name"], v["md"],
                norm(v["d"]))
         g = groups.get(key)
@@ -337,6 +398,37 @@ def _ids(groups: dict[tuple, dict]) -> list[tuple[int, dict]]:
     return list(enumerate(first + extra, 1))
 
 
+def _multi_group(led: sqlite3.Connection, rules: dict, doc_adviser: dict) -> dict[str, set]:
+    """The institutions whose votes or policies fall into several adviser groups,
+    each with every group key it has (plus UNLABELLED if some line resolves to
+    none). Multi-group = vote lines resolve to 2+ distinct keys, OR its policy
+    documents carry 2+ distinct keys, OR a document key is none of the
+    registrants' keys. Everything else builds and answers exactly as before."""
+    doc_keys: dict[str, set] = defaultdict(set)
+    for (iid, _label), k in doc_adviser.items():
+        if k:
+            doc_keys[iid].add(k)
+    keyed = [iid for iid, m in rules.items() if any(rule_keys(r) for r in m.values())]
+    line_keys: dict[str, set] = defaultdict(set)
+    unresolved: set[str] = set()
+    if keyed:
+        iso = iso_meeting_date("v.meeting_date")
+        marks = ",".join("?" * len(keyed))
+        for v in led.execute(
+                f"""SELECT DISTINCT f.institution_id AS iid, f.cik, v.vote_series AS s, {iso} AS md
+                    FROM votes v JOIN filings f ON f.accession = v.accession
+                    WHERE v.is_duplicate = 0 AND f.institution_id IN ({marks})""", keyed):
+            k = resolve_key(rules[v["iid"]].get(_norm_cik(v["cik"])), v["s"], v["md"])
+            (line_keys[v["iid"]].add(k) if k else unresolved.add(v["iid"]))
+    out = {}
+    for iid in set(keyed) | set(doc_keys):
+        reg_keys = set().union(*(rule_keys(r) for r in rules.get(iid, {}).values()))
+        if (len(line_keys[iid]) >= 2 or len(doc_keys[iid]) >= 2
+                or (reg_keys and doc_keys[iid] - reg_keys)):
+            out[iid] = line_keys[iid] | doc_keys[iid] | ({UNLABELLED} if iid in unresolved else set())
+    return out
+
+
 def _position(g: dict) -> str:
     if g["sf"] + g["sa"] > 0:
         return position_from_shares(g["sf"], g["sa"], g["abstain"])
@@ -354,9 +446,9 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
             institutions = registry.load()
         except (OSError, KeyError, AttributeError):
             institutions = {}
-    reg = {iid: {_norm_cik(e["cik"]): adviser_key(e) for e in (inst.get("npx_ciks") or [])
-                 if e.get("cik")} for iid, inst in institutions.items()}
-    split = {iid: m for iid, m in reg.items() if len({k for k in m.values() if k}) >= 2}
+    rules = {iid: {_norm_cik(e["cik"]): normalize_rules(e)
+                   for e in (inst.get("npx_ciks") or []) if e.get("cik")}
+             for iid, inst in institutions.items()}
     doc_adviser = {(iid, c["label"]): adviser_key(c) for iid, inst in institutions.items()
                    for c in (inst.get("commitments") or []) if c.get("label")}
     led = _ro(ledger_path)
@@ -365,17 +457,25 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
     tmp.parent.mkdir(parents=True, exist_ok=True)
     eng = sqlite3.connect(tmp)
     eng.executescript(SCHEMA)
+    split = _multi_group(led, rules, doc_adviser)
 
     theme_rx = {t: re.compile("|".join(spec["proposal"]), re.IGNORECASE)
                 for t, spec in THEMES.items()}
     for iid, inst in institutions.items():
         for e in inst.get("npx_ciks") or []:
             if e.get("cik"):
-                eng.execute("INSERT OR REPLACE INTO registrants VALUES (?,?,?,?,?,?)",
+                r = rules[iid][_norm_cik(e["cik"])]
+                eng.execute("INSERT OR REPLACE INTO registrants VALUES (?,?,?,?,?,?,?)",
                             (iid, _norm_cik(e["cik"]), adviser_key(e),
                              e.get("adviser") or adviser_key(e), e.get("adviser_source"),
-                             str(e["adviser_verified"]) if e.get("adviser_verified") else None))
-    groups = _grouped(led, "v.vote_source = 'SECURITY HOLDER'", split)
+                             str(e["adviser_verified"]) if e.get("adviser_verified") else None,
+                             json.dumps(r) if rule_keys(r) else None))
+        for n, note in enumerate(inst.get("voting_scope_notes") or []):
+            eng.execute("INSERT INTO scope_notes VALUES (?,?,?)", (iid, n, str(note)))
+    for iid, keys in split.items():
+        eng.executemany("INSERT INTO adviser_scope VALUES (?,?)", [(iid, k) for k in sorted(keys)])
+    resolvers = {iid: rules[iid] for iid in split}
+    groups = _grouped(led, "v.vote_source = 'SECURITY HOLDER'", resolvers)
 
     rows, fts = [], []
     for pid, g in _ids(groups):
@@ -401,7 +501,7 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
 
     # Management's director nominees: where board-composition policy is acted on.
     dgroups = _grouped(led, "v.vote_source = 'ISSUER' AND v.category_type = 'DIRECTOR ELECTIONS'",
-                       split)
+                       resolvers)
     drows = []
     for did, g in _ids(dgroups):
         v = g["row"]
@@ -492,17 +592,55 @@ class Engine:
                              f"known ids: {', '.join(sorted(self._names))}")
         return hits[0]
 
+    def _has(self, table: str) -> bool:
+        return bool(self.db.execute("SELECT 1 FROM sqlite_master WHERE name=?",
+                                    (table,)).fetchone())
+
     def advisers_of(self, institution: str) -> dict:
-        """Who votes this institution's registrants: the distinct known adviser
-        keys, how many registrants have none on record, and whether the answer
-        is `multi` (two or more known advisers = separately-voted funds)."""
+        """The adviser groups of an institution: the distinct known keys (votes
+        and policy documents), whether some votes have none on record, and
+        whether the answer is `multi` (two or more groups = separately voted
+        funds or documents that do not govern all the votes)."""
         iid = self._inst(institution)
+        if self._has("adviser_scope"):
+            keys = {r[0] for r in self.db.execute(
+                "SELECT adviser FROM adviser_scope WHERE institution_id=?", (iid,))}
+            if keys:
+                return {"institution": iid, "known": sorted(keys - {UNLABELLED}),
+                        "unlabelled": int(UNLABELLED in keys), "multi": True}
+            rows = self.db.execute("SELECT adviser FROM registrants WHERE institution_id=?",
+                                   (iid,)).fetchall()
+            known = sorted({r["adviser"] for r in rows if r["adviser"]})
+            return {"institution": iid, "known": known,
+                    "unlabelled": sum(1 for r in rows if not r["adviser"]), "multi": False}
         rows = self.db.execute("SELECT adviser FROM registrants WHERE institution_id=?",
-                               (iid,)).fetchall()
+                               (iid,)).fetchall()      # an engine built before series rules
         known = sorted({r["adviser"] for r in rows if r["adviser"]})
         return {"institution": iid, "known": known,
                 "unlabelled": sum(1 for r in rows if not r["adviser"]),
                 "multi": len(known) >= 2}
+
+    def _notes(self, institution) -> list[str]:
+        """The institution's `voting_scope_notes`, verbatim."""
+        if not institution or not self._has("scope_notes"):
+            return []
+        iid = self._inst(institution)
+        return [r[0] for r in self.db.execute(
+            "SELECT note FROM scope_notes WHERE institution_id=? ORDER BY seq", (iid,))]
+
+    def _need_policy(self, iid: str, sc) -> None:
+        """Pairing policy text with one adviser's votes needs a document THAT
+        adviser published: never another group's text as a stand-in."""
+        if not sc or not self.advisers_of(iid)["multi"]:
+            return
+        if sc == EXTERNAL:
+            raise ValueError(f"{iid}: adviser {EXTERNAL} (externally advised series) is never "
+                             "paired with a policy document: no archived document governs "
+                             "those votes")
+        if not self.db.execute("SELECT 1 FROM policy_versions WHERE institution_id=? "
+                               "AND adviser=?", (iid, sc)).fetchone():
+            raise ValueError(f"{iid}: no archived policy for the adviser that cast these votes "
+                             f"({sc}); another adviser's document is not a substitute")
 
     def _scope(self, institution, adviser) -> str | None:
         """Validate `adviser=` for an institution. Returns the key to filter on, or
@@ -537,13 +675,21 @@ class Engine:
         return self._scope(institution, adviser)
 
     def _pooled(self, institution, adviser) -> list[str]:
-        """The caveat for an unscoped answer about a multi-adviser institution."""
-        if not institution or adviser:
+        """Caveats for a vote answer about an institution: its own scope notes,
+        and the pooled-advisers warning for an unscoped multi-group answer."""
+        if not institution:
             return []
+        out = self._notes(institution)
         info = self.advisers_of(institution)
         if not info["multi"]:
-            return []
-        return [f"POOLED ADVISERS: {info['institution']}'s funds are voted by different "
+            return out
+        if EXTERNAL in info["known"] and adviser in (None, "", EXTERNAL):
+            out.append(f"{EXTERNAL} votes belong to series advised by an outside manager: "
+                       "no archived policy document governs them, so they are never paired "
+                       "with one.")
+        if adviser:
+            return out
+        return [*out, f"POOLED ADVISERS: {info['institution']}'s funds are voted by different "
                 f"advisers ({', '.join(info['known'])}) under different voting policies. These "
                 "figures pool separately-voted funds (each adviser's decision is its own item). "
                 "Pass adviser= to scope them, and never set them against one adviser's policy."]
@@ -701,7 +847,7 @@ class Engine:
                     + ("AND adviser=? " if sc else "") + "ORDER BY captured",
                     (iid, sc) if sc else (iid,))]
         return _env("policy_versions", _clean(institution=iid, adviser=adviser), rows,
-                    [*self._policy_owner_note(iid, adviser),
+                    [*self._notes(iid), *self._policy_owner_note(iid, adviser),
                      "`readable: false` is a capture whose text could not be extracted. It "
                      "proves nothing about what the policy said and is never treated as "
                      "the policy in force.",
@@ -743,7 +889,8 @@ class Engine:
         return _env("policy_search", _clean(query=query, institution=institution,
                                             adviser=adviser),
                     [dict(r) for r in rows],
-                    [*(["Hits carry the `adviser` whose policy they are: never pair a hit "
+                    [*self._notes(institution),
+                     *(["Hits carry the `adviser` whose policy they are: never pair a hit "
                         "with votes cast by a different adviser."]
                        if any(r["adviser"] for r in rows) else []),
                      "A sentence missing from a later version may have been reworded, not "
@@ -775,7 +922,8 @@ class Engine:
                     {"from": vs[from_id], "to": vs[to_id],
                      "removed": removed, "added": added,
                      "counts": {"removed": len(removed), "added": len(added)}},
-                    ["`pattern` is a case-insensitive REGEX filter (policy_search's "
+                    [*self._notes(iid),
+                     "`pattern` is a case-insensitive REGEX filter (policy_search's "
                      "`query` is full-text syntax; they differ).",
                      "Footnote renumbering and digit-only changes are ignored.",
                      "Sentence-level diff of extracted PDF text. A sentence that was "
@@ -800,6 +948,7 @@ class Engine:
                 f"{iid} has policies from different advisers ({', '.join(info['known'])}): "
                 "pass adviser= or doc_label= (see policy_versions)")
         sc = self._scope(iid, adviser)
+        self._need_policy(iid, sc)
         extra, xp = "", []
         if sc:
             extra += " AND pv.adviser = ?"
@@ -825,7 +974,8 @@ class Engine:
                                        - datetime.fromisoformat(r["captured"])).days
         return _env("policy_in_force", _clean(institution=iid, date=date, adviser=adviser,
                                               doc_label=doc_label), rows,
-                    ["Empty means no readable archived version predates this date — the "
+                    [*self._notes(iid),
+                     "Empty means no readable archived version predates this date — the "
                      "record cannot say what the policy was then.",
                      f"Over ~{GAP_DAYS} `days_since_capture`, later versions probably exist "
                      "that the archive does not hold: do not assert this wording was "
@@ -965,6 +1115,7 @@ class Engine:
         adviser's votes."""
         iid = self._inst(institution)
         sc = self._need_adviser(iid, adviser, "say_vs_do")
+        self._need_policy(iid, sc)
         vers = [dict(r) for r in self.db.execute(
             "SELECT * FROM policy_versions WHERE institution_id=? AND n_sentences >= ? "
             + ("AND adviser=? " if sc else "") + "ORDER BY captured",
@@ -996,7 +1147,8 @@ class Engine:
                         "said": said, "did": self._tally(did)})
         return _env("say_vs_do", _clean(institution=iid, query=query, theme=theme,
                                         adviser=adviser), out,
-                    [*([f"Scoped to adviser {sc}: only that adviser's policy documents and "
+                    [*self._notes(iid),
+                     *([f"Scoped to adviser {sc}: only that adviser's policy documents and "
                         "only votes cast by its funds."] if sc else []),
                      "Each vote is set only against the version public on the meeting date.",
                      "`archive_gap: true` means no capture for over a year: versions "
@@ -1344,12 +1496,13 @@ class Engine:
         if adviser and adviser != r["adviser"]:
             raise ValueError(f"proposal {proposal_id} was voted by adviser "
                              f"{r['adviser']!r}, not {adviser!r}")
-        mine = None
+        rules = {}                 # cik -> the registrant's key rules (see normalize_rules)
         if r["adviser"]:
-            mine = {x["cik"] for x in self.db.execute(
-                "SELECT cik FROM registrants WHERE institution_id=? AND "
-                + ("adviser=?" if r["adviser"] != UNLABELLED else "adviser IS NULL"),
-                (r["institution_id"], *([r["adviser"]] if r["adviser"] != UNLABELLED else [])))}
+            rules = {x["cik"]: json.loads(x["rules"]) if x["rules"] else
+                     {"default": x["adviser"], "history": [], "series": {}}
+                     for x in self.db.execute(
+                         "SELECT cik, adviser, rules FROM registrants WHERE institution_id=?",
+                         (r["institution_id"],))}
         iso = iso_meeting_date("v.meeting_date")
         lines = []
         names: dict[str, str | None] = {}
@@ -1374,7 +1527,9 @@ class Engine:
                   AND v.vote_source='SECURITY HOLDER' AND {iso}=?
                   AND (v.cusip=? OR v.issuer_name=?)""",
                 (r["institution_id"], r["meeting_date"], r["cusip"], r["issuer_name"])):
-            if mine is not None and _norm_cik(v["cik"]) not in mine:
+            if r["adviser"] and (resolve_key(rules.get(_norm_cik(v["cik"])),
+                                             v["vote_series"], r["meeting_date"])
+                                 or UNLABELLED) != r["adviser"]:
                 continue                       # another adviser's fund, another policy
             if norm(v["vote_description"]) == norm(r["description"]):
                 lines.append({"fund_series": v["vote_series"],
@@ -1390,7 +1545,8 @@ class Engine:
         return _env("fund_votes", _clean(proposal_id=proposal_id, adviser=adviser),
                     {"proposal": self._prop(r), "lines": lines,
                      "shares": {k: tot[k] for k in ("for", "against", "other")}},
-                    ["One fund series can file several lines for one item. Compare the "
+                    [*self._notes(r["institution_id"]),
+                     "One fund series can file several lines for one item. Compare the "
                      "same series across years before saying a manager changed its vote: "
                      "a different mix of funds can move the total on its own."])
 
@@ -1419,8 +1575,13 @@ class Engine:
             r["adviser_name"] = x["adviser_name"] if x and x["adviser"] else None
             r["adviser_source"] = x["adviser_source"] if x else None
             r["adviser_verified"] = x["adviser_verified"] if x else None
+            rl = json.loads(x["rules"]) if x and x["rules"] else None
+            r["adviser_history"] = [{"key": k, "from": lo, "until": hi}
+                                    for k, lo, hi in (rl["history"] if rl else [])]
+            r["series_overrides"] = len(rl["series"]) if rl else 0
+            r["advisers"] = sorted(rule_keys(rl) or ({r["adviser"]} - {None}))
         if sc:
-            rows = [r for r in rows if r["adviser"] == sc]
+            rows = [r for r in rows if sc in r["advisers"]]
         return _env("filers", _clean(institution=iid, adviser=adviser),
                     {"registrants": len(rows), "filers": rows,
                      "name_source": "config/institutions.yaml npx_ciks (the ledger stores "

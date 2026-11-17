@@ -939,3 +939,194 @@ def test_a_free_text_adviser_label_alone_never_splits_a_group(tmp_path):
     assert not e.advisers_of("delta")["multi"]
     assert e.db.execute("SELECT COUNT(*) FROM proposals WHERE institution_id='delta'"
                         ).fetchone()[0] == 1
+
+
+# ------------------------------------------------- series / dated / document keys
+
+def _lines_ledger(tmp_path, iid, lines, docs=(), name="grp"):
+    """One institution; `lines` = (cik, series, 'M/D/YYYY', how); `docs` = (label, text)."""
+    led = tmp_path / f"{name}.db"
+    c = ledger.connect(led)
+    c.execute("INSERT INTO institutions (id, display_name) VALUES (?,?)", (iid, iid.title()))
+    for cik in sorted({ln[0] for ln in lines}):
+        c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url,"
+                  " retrieval_date, period_of_report, report_type) VALUES"
+                  " (?,?,?,'N-PX',?,'2026-01-01','06/30/2024','FUND VOTING REPORT')",
+                  (f"ACC-{cik}", cik, iid, f"https://sec.example/{cik}"))
+    for cik, series, date, how in lines:
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date,"
+                  " vote_description, category_type, vote_source, how_voted,"
+                  " management_recommendation, shares_voted, is_duplicate, vote_series) VALUES"
+                  " (?,'EXXON MOBIL','30231G102',?,'Report on Board Diversity','',"
+                  "'SECURITY HOLDER',?,'FOR',100,0,?)", (f"ACC-{cik}", date, how, series))
+    for n, (label, text) in enumerate(docs):
+        f = tmp_path / f"{name}{n}.html"
+        f.write_text(text)
+        c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date,"
+                  " sha256, content_path, content_type, size_bytes, wayback_timestamp,"
+                  " text_sha256) VALUES (?,?,'https://x.example/p.html','2026-01-01',?,?,"
+                  "'text/html',1,'20240101000000',?)", (iid, label, f"s{name}{n}", str(f),
+                                                         f"t{name}{n}"))
+    c.commit()
+    c.close()
+    return led
+
+
+def _build(tmp_path, led, registry, name="e"):
+    out = tmp_path / f"{name}-engine.db"
+    engine.build(led, out, institutions=registry)
+    return engine.Engine(out, led)
+
+
+def _advs(e, iid="g"):
+    return [(r["adviser"], r["position"]) for r in e.db.execute(
+        "SELECT adviser, position FROM proposals WHERE institution_id=? ORDER BY adviser",
+        (iid,))]
+
+
+def test_a_series_override_splits_a_registrants_lines(tmp_path):
+    led = _lines_ledger(tmp_path, "g", [("71", "S000001", "05/20/2024", "FOR"),
+                                        ("71", "S000002", "05/20/2024", "AGAINST")])
+    reg = {"g": {"npx_ciks": [{"cik": "71", "adviser_key": "P", "series_adviser": {
+        "S000002": {"key": "Q"}}}]}}
+    e = _build(tmp_path, led, reg)
+    assert _advs(e) == [("P", "FOR"), ("Q", "AGAINST")]
+    assert e.advisers_of("g")["multi"]
+    f = e.filers("g")["result"]["filers"][0]
+    assert f["adviser"] == "P" and f["series_overrides"] == 1 and set(f["advisers"]) == {"P", "Q"}
+    assert [r["cik"] for r in e.filers("g", adviser="Q")["result"]["filers"]] == ["71"]
+    pid = e.proposals(institution="g", adviser="Q")["result"]["shown"][0]["proposal_id"]
+    assert [ln["fund_series"] for ln in e.fund_votes(pid)["result"]["lines"]] == ["S000002"]
+
+
+def test_dated_history_switches_on_the_boundary_days_inclusive(tmp_path):
+    led = _lines_ledger(tmp_path, "g", [("71", "S1", "12/31/2025", "FOR"),
+                                        ("71", "S1", "1/1/2026", "AGAINST")])
+    reg = {"g": {"npx_ciks": [{"cik": "71", "adviser_key_history": [
+        {"key": "A", "until": "2025-12-31"}, {"key": "B", "from": "2026-01-01"}]}]}}
+    e = _build(tmp_path, led, reg)
+    got = {r["meeting_date"]: r["adviser"] for r in e.db.execute(
+        "SELECT meeting_date, adviser FROM proposals")}
+    assert got == {"2025-12-31": "A", "2026-01-01": "B"}
+
+
+def test_resolution_order_and_undated_rules():
+    entry = {"adviser_key": "D", "adviser_key_history": [{"key": "H", "until": "2024-12-31"}],
+             "series_adviser": {"s9": [{"key": "S", "from": "2024-06-01", "until": "2024-06-30"}],
+                                "S8": {"key": "U"}}}
+    r = engine.normalize_rules(entry)
+    f = engine.resolve_key
+    assert f(r, "S9", "2024-06-15") == "S"        # series rule first (case-insensitive id)
+    assert f(r, "S9", "2024-07-01") == "H"        # series window over: registrant history
+    assert f(r, "S9", "2025-01-01") == "D"        # then the default
+    assert f(r, "S9", "garbage") == "D"           # undated: only unbounded rules apply
+    assert f(r, "S9", None) == "D"
+    assert f(r, "S8", "garbage") == "U"           # an unbounded series rule applies undated
+    assert f(r, "", "2024-01-01") == "H"
+    assert f(engine.normalize_rules({"cik": "1"}), "S", "2024-01-01") is None
+
+
+DOC_REG = {"g": {"npx_ciks": [{"cik": "71", "adviser_key": "D1"}],
+                 "commitments": [{"label": "pol-x", "adviser_key": "D2"}]}}
+
+
+def test_a_document_key_that_no_registrant_has_makes_a_multi_group_institution(tmp_path):
+    led = _lines_ledger(tmp_path, "g", [("71", "S1", "05/20/2024", "FOR")],
+                        docs=[("pol-x", TEXT_B)])
+    e = _build(tmp_path, led, DOC_REG)
+    info = e.advisers_of("g")
+    assert info["multi"] and info["known"] == ["D1", "D2"]
+    assert _advs(e) == [("D1", "FOR")]
+    with pytest.raises(ValueError, match="adviser"):
+        e.say_vs_do("g", "board diversity")
+    with pytest.raises(ValueError, match="no archived policy for the adviser that cast these votes"):
+        e.say_vs_do("g", "board diversity", adviser="D1")
+    with pytest.raises(ValueError, match="no archived policy for the adviser that cast these votes"):
+        e.policy_in_force("g", "2025-01-01", adviser="D1")
+    ok = e.say_vs_do("g", "board diversity", adviser="D2")["result"]
+    assert [x["doc_label"] for x in ok] == ["pol-x"]
+
+
+def test_two_documents_with_different_keys_pair_only_with_their_own(tmp_path):
+    led = _lines_ledger(tmp_path, "g", [("71", "S1", "05/20/2024", "FOR")],
+                        docs=[("pol-a", TEXT_A), ("pol-b", TEXT_B)])
+    reg = {"g": {"npx_ciks": [{"cik": "71", "adviser_key": "D1"}],
+                 "commitments": [{"label": "pol-a", "adviser_key": "D1"},
+                                 {"label": "pol-b", "adviser_key": "D2"}]}}
+    e = _build(tmp_path, led, reg)
+    assert e.advisers_of("g")["multi"]
+    r = e.say_vs_do("g", "board diversity", adviser="D1")["result"]
+    assert [x["doc_label"] for x in r] == ["pol-a"] and r[0]["did"]["for"] == 1
+    assert [x["doc_label"] for x in
+            e.policy_in_force("g", "2025-01-01", adviser="D1")["result"]] == ["pol-a"]
+
+
+def test_external_is_a_group_but_never_pairs_with_a_policy(tmp_path):
+    led = _lines_ledger(tmp_path, "g", [("71", "S1", "05/20/2024", "FOR"),
+                                        ("71", "S9", "05/20/2024", "AGAINST")],
+                        docs=[("pol-a", TEXT_A)])
+    reg = {"g": {"npx_ciks": [{"cik": "71", "adviser_key": "A", "series_adviser": {
+        "S9": {"key": "EXTERNAL"}}}], "commitments": [{"label": "pol-a", "adviser_key": "A"}]}}
+    e = _build(tmp_path, led, reg)
+    assert _advs(e) == [("A", "FOR"), ("EXTERNAL", "AGAINST")]
+    assert e.voting_record("g", query="board diversity", adviser="EXTERNAL"
+                           )["result"]["overall"]["against"] == 1
+    assert any("EXTERNAL" in c and "never" in c for c in e.voting_record("g")["caveats"])
+    for call in (lambda: e.say_vs_do("g", "board diversity", adviser="EXTERNAL"),
+                 lambda: e.policy_in_force("g", "2025-01-01", adviser="EXTERNAL")):
+        with pytest.raises(ValueError, match="EXTERNAL"):
+            call()
+    assert e.say_vs_do("g", "board diversity", adviser="A")["result"]
+
+
+def test_voting_scope_notes_ride_on_every_vote_and_policy_tool(tmp_path):
+    led = _lines_ledger(tmp_path, "g", [("71", "S1", "05/20/2024", "FOR"),
+                                        ("72", "S2", "05/20/2024", "AGAINST")],
+                        docs=[("pol-a", TEXT_A), ("pol-b", TEXT_B)])
+    note = "NOTE: the DWS letter does not govern these US trusts."
+    reg = {"g": {"voting_scope_notes": [note],
+                 "npx_ciks": [{"cik": "71", "adviser_key": "A"}, {"cik": "72", "adviser_key": "B"}],
+                 "commitments": [{"label": "pol-a", "adviser_key": "A"},
+                                 {"label": "pol-b", "adviser_key": "B"}]}}
+    e = _build(tmp_path, led, reg)
+    envs = [e.voting_record("g"), e.voting_record("g", adviser="A"), e.proposals(institution="g"),
+            e.reversals("g"), e.filers("g"), e.policy_versions("g"),
+            e.policy_search("diversity", institution="g"), e.policy_in_force("g", "2025-01-01",
+                                                                           adviser="A"),
+            e.say_vs_do("g", "board diversity", adviser="A")]
+    for env in envs:
+        assert note in env["caveats"], env["tool"]
+    pid = e.proposals(institution="g", adviser="A")["result"]["shown"][0]["proposal_id"]
+    assert note in e.fund_votes(pid)["caveats"]
+
+
+def test_an_institution_without_keys_builds_identically_with_or_without_notes(tmp_path):
+    led = _lines_ledger(tmp_path, "g", [("71", "S1", "05/20/2024", "FOR"),
+                                        ("72", "S2", "05/20/2024", "AGAINST")],
+                        docs=[("pol-a", TEXT_A)])
+    bare = _build(tmp_path, led, {}, "bare")
+    cfg = _build(tmp_path, led, {"g": {"npx_ciks": [{"cik": "71"}, {"cik": "72"}],
+                                       "commitments": [{"label": "pol-a"}]}}, "cfg")
+    for q in ("SELECT * FROM proposals ORDER BY proposal_id",
+              "SELECT * FROM director_votes ORDER BY director_id",
+              "SELECT commitment_id, adviser FROM policy_versions"):
+        assert [tuple(r) for r in bare.db.execute(q)] == [tuple(r) for r in cfg.db.execute(q)]
+    assert not cfg.advisers_of("g")["multi"]
+    assert not any("POOLED" in c for c in cfg.voting_record("g")["caveats"])
+
+
+def test_split_off_items_are_numbered_after_every_pooled_item(tmp_path):
+    led = _lines_ledger(tmp_path, "g", [("71", "S1", "05/20/2024", "FOR"),
+                                        ("71", "S2", "05/20/2024", "AGAINST"),
+                                        ("71", "S1", "05/21/2024", "FOR")])
+    plain = _build(tmp_path, led, {}, "plain")
+    reg = {"g": {"npx_ciks": [{"cik": "71", "adviser_key": "P",
+                               "series_adviser": {"S2": {"key": "Q"}}}]}}
+    split = _build(tmp_path, led, reg, "split")
+    old = {r["meeting_date"]: r["proposal_id"] for r in plain.db.execute(
+        "SELECT meeting_date, proposal_id FROM proposals")}
+    new = {(r["meeting_date"], r["adviser"]): r["proposal_id"] for r in split.db.execute(
+        "SELECT meeting_date, adviser, proposal_id FROM proposals")}
+    assert new[("2024-05-20", "P")] == old["2024-05-20"]
+    assert new[("2024-05-21", "P")] == old["2024-05-21"]
+    assert new[("2024-05-20", "Q")] > max(old.values())

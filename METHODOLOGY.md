@@ -147,6 +147,22 @@ adviser or document. The draft verifier rejects a vote claim about such an
 institution that does not carry the adviser. Registrants with no `adviser_key`
 are "unknown", not assumed to share anyone's policy.
 
+The group is resolved per vote line, not per registrant: a registrant's
+`adviser_key` is its default; `adviser_key_history` (inclusive `from`/`until`
+ISO dates, compared with the MEETING date) and `series_adviser` (per fund
+series, optionally dated) override it, in that order (series rule, then
+history, then default). A meeting date that does not parse resolves by
+undated rules only. An institution is multi-group when its lines resolve to
+two or more keys, its documents carry two or more keys, or a document's key is
+none of the registrants' keys (a policy that does not govern the votes on
+file: Deutsche's DWS Investment GmbH letter versus US trusts voted by DIMA).
+Pairing tools use only documents keyed to the adviser asked for and refuse,
+rather than fall back to another group's text, when that adviser has none.
+The key `EXTERNAL` marks series advised by an outside manager: a group like
+any other, never paired with any policy document. An institution's
+`voting_scope_notes` are appended verbatim as caveats to its vote and policy
+tool results.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting
