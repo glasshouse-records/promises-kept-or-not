@@ -5,7 +5,7 @@
 # doctor what is wrong. Prints only what needs attention. Exit 0 = nothing to
 # do; exit 1 = a human or the source-medic agent should look at the output.
 cd "$(dirname "$0")/.." || exit 2
-log=data/routine/$(date +%F).log
+log=data/routine/$(date +%F-%H%M%S).log   # one log per run: a 2nd run the same day must not re-report the 1st run's news
 mkdir -p data/routine
 : >"$log.errors"
 step() { echo "== $*" >>"$log"; "$@" >>"$log" 2>&1 || echo "step failed: $*" >>"$log.errors"; }
