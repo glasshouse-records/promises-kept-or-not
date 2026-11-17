@@ -60,7 +60,9 @@ CREATE TABLE proposals (
     themes         TEXT NOT NULL DEFAULT '',   -- ',climate,nature,' form
     oppositional   INTEGER NOT NULL DEFAULT 0, -- asks to ROLL BACK the theme
     ballot_key     TEXT,            -- same proposal across managers
-    accession      TEXT, source_url TEXT, vote_id INTEGER
+    accession      TEXT, source_url TEXT, vote_id INTEGER,
+    adviser        TEXT             -- voting adviser key; NULL unless the institution has
+                                    -- 2+ known advisers (then 'unlabelled' = no adviser on record)
 );
 CREATE INDEX ix_p_inst ON proposals(institution_id, year);
 CREATE INDEX ix_p_ballot ON proposals(ballot_key);
@@ -76,8 +78,9 @@ CREATE TABLE director_votes (
     n_lines INTEGER, n_for INTEGER, n_against INTEGER, n_other INTEGER,
     meeting_key    TEXT,            -- same meeting across managers ('' if no CUSIP)
     accession      TEXT, source_url TEXT, vote_id INTEGER,
-    isin_country   TEXT             -- country that ISSUED the ISIN (not where the company
+    isin_country   TEXT,            -- country that ISSUED the ISIN (not where the company
                                     -- is run); NULL if none, malformed or lines disagree
+    adviser        TEXT             -- as proposals.adviser
 );
 CREATE INDEX ix_d_country ON director_votes(isin_country);
 CREATE INDEX ix_d_inst ON director_votes(institution_id, year);
@@ -89,7 +92,13 @@ CREATE TABLE policy_versions (
     captured TEXT,                 -- ISO date the text was demonstrably public
     authored TEXT,                 -- date the manager's own software wrote
     via TEXT,                      -- wayback | live
-    wayback_url TEXT, sha256 TEXT, n_sentences INTEGER
+    wayback_url TEXT, sha256 TEXT, n_sentences INTEGER,
+    adviser TEXT                   -- whose policy this is (config adviser_key), or NULL
+);
+CREATE TABLE registrants (
+    institution_id TEXT, cik TEXT,   -- cik without leading zeros
+    adviser TEXT, adviser_name TEXT, adviser_source TEXT, adviser_verified TEXT,
+    PRIMARY KEY (institution_id, cik)
 );
 CREATE TABLE policy_sentences (
     sentence_id INTEGER PRIMARY KEY,
@@ -237,6 +246,22 @@ def _registry_names(institution_id: str) -> dict[str, str]:
             if e.get("cik") and e.get("name")}
 
 
+def adviser_key(entry: dict) -> str | None:
+    """The short key naming WHO votes a registrant's shares (or whose policy a
+    document is). Only an explicit `adviser_key` counts: the free-text `adviser`
+    label is documentation, and two spellings of it must never split a group.
+    None = not on record."""
+    k = entry.get("adviser_key")
+    return str(k).strip() or None if k else None
+
+
+def _norm_cik(cik) -> str:
+    return str(cik or "").strip().lstrip("0")
+
+
+UNLABELLED = "unlabelled"
+
+
 def _ro(path: Path) -> sqlite3.Connection:
     conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
@@ -245,24 +270,38 @@ def _ro(path: Path) -> sqlite3.Connection:
 
 # --------------------------------------------------------------------- build
 
-def _grouped(led: sqlite3.Connection, which: str) -> dict[tuple, dict]:
+def _grouped(led: sqlite3.Connection, which: str,
+             advisers: dict[str, dict[str, str | None]] | None = None) -> dict[tuple, dict]:
     """Collapse fund ballot lines to one decision per (manager, company, meeting,
     item), carrying line and share tallies. `which` is a fixed SQL condition
-    chosen by build(), never caller input."""
+    chosen by build(), never caller input.
+
+    `advisers` maps an institution to {cik: adviser key} ONLY for institutions
+    whose registrants have two or more distinct known advisers. For those the
+    adviser is part of the group key, so lines voted by different advisers (under
+    different policies) are never aggregated into one decision. Every other
+    institution groups exactly as it always did."""
     iso = iso_meeting_date("v.meeting_date")
     groups: dict[tuple, dict] = {}
+    legacy: dict[tuple, list] = {}   # the pre-adviser group key -> advisers seen
     for v in led.execute(
         f"""SELECT v.id, f.institution_id AS iid, v.issuer_name, v.cusip, v.isin, {iso} AS md,
                    v.vote_description AS d, v.category_type, v.how_voted, v.shares_voted,
-                   v.management_recommendation AS mr, v.accession, f.source_url
+                   v.management_recommendation AS mr, v.accession, f.source_url, f.cik AS fcik
             FROM votes v JOIN filings f ON f.accession = v.accession
             WHERE v.is_duplicate = 0 AND {which}
               AND f.institution_id IS NOT NULL"""):
-        key = (v["iid"], (v["cusip"] or "").strip().upper() or v["issuer_name"], v["md"],
+        adv = None
+        if advisers and v["iid"] in advisers:
+            adv = advisers[v["iid"]].get(_norm_cik(v["fcik"])) or UNLABELLED
+        key = (v["iid"], adv, (v["cusip"] or "").strip().upper() or v["issuer_name"], v["md"],
                norm(v["d"]))
         g = groups.get(key)
         if g is None:
-            g = groups[key] = {"row": v, "isins": set(), "for": 0, "against": 0, "abstain": 0, "other": 0,
+            lk = (v["iid"], key[2], key[3], key[4])
+            seen_adv = legacy.setdefault(lk, [])
+            seen_adv.append(adv)
+            g = groups[key] = {"row": v, "adviser": adv, "extra": len(seen_adv) > 1, "isins": set(), "for": 0, "against": 0, "abstain": 0, "other": 0,
                                "n": 0, "with_m": 0, "against_m": 0, "sf": 0.0, "sa": 0.0}
         # N-PX's "management recommendation" element records whether THIS vote
         # went with (FOR) or against (AGAINST) management — not what management
@@ -288,14 +327,38 @@ def _grouped(led: sqlite3.Connection, which: str) -> dict[tuple, dict]:
     return groups
 
 
+def _ids(groups: dict[tuple, dict]) -> list[tuple[int, dict]]:
+    """(id, group) pairs. A group that merely splits an older pooled group by
+    adviser is numbered after all the others, so every id outside the
+    multi-adviser institutions is the one earlier builds gave it: drafts in
+    flight cite these ids."""
+    first = [g for g in groups.values() if not g["extra"]]
+    extra = [g for g in groups.values() if g["extra"]]
+    return list(enumerate(first + extra, 1))
+
+
 def _position(g: dict) -> str:
     if g["sf"] + g["sa"] > 0:
         return position_from_shares(g["sf"], g["sa"], g["abstain"])
     return position_from_shares(g["for"], g["against"], g["abstain"])
 
 
-def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
-    """Rebuild the derived index from the ledger. Reads the ledger read-only."""
+def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
+          institutions: dict | None = None) -> dict:
+    """Rebuild the derived index from the ledger. Reads the ledger read-only.
+    `institutions` is the registry (config/institutions.yaml) that says which
+    adviser votes each registrant and whose policy each document is."""
+    if institutions is None:
+        from . import registry
+        try:
+            institutions = registry.load()
+        except (OSError, KeyError, AttributeError):
+            institutions = {}
+    reg = {iid: {_norm_cik(e["cik"]): adviser_key(e) for e in (inst.get("npx_ciks") or [])
+                 if e.get("cik")} for iid, inst in institutions.items()}
+    split = {iid: m for iid, m in reg.items() if len({k for k in m.values() if k}) >= 2}
+    doc_adviser = {(iid, c["label"]): adviser_key(c) for iid, inst in institutions.items()
+                   for c in (inst.get("commitments") or []) if c.get("label")}
     led = _ro(ledger_path)
     tmp = engine_path.with_suffix(".building")
     tmp.unlink(missing_ok=True)
@@ -305,10 +368,17 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
 
     theme_rx = {t: re.compile("|".join(spec["proposal"]), re.IGNORECASE)
                 for t, spec in THEMES.items()}
-    groups = _grouped(led, "v.vote_source = 'SECURITY HOLDER'")
+    for iid, inst in institutions.items():
+        for e in inst.get("npx_ciks") or []:
+            if e.get("cik"):
+                eng.execute("INSERT OR REPLACE INTO registrants VALUES (?,?,?,?,?,?)",
+                            (iid, _norm_cik(e["cik"]), adviser_key(e),
+                             e.get("adviser") or adviser_key(e), e.get("adviser_source"),
+                             str(e["adviser_verified"]) if e.get("adviser_verified") else None))
+    groups = _grouped(led, "v.vote_source = 'SECURITY HOLDER'", split)
 
     rows, fts = [], []
-    for pid, g in enumerate(groups.values(), 1):
+    for pid, g in _ids(groups):
         v = g["row"]
         desc = v["d"] or ""
         themes = [t for t, rx in theme_rx.items() if rx.search(desc)]
@@ -324,15 +394,16 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
                      "," + ",".join(themes) + "," if themes else "",
                      int(is_rollback(desc)),
                      _ballot_key(v["cusip"], v["issuer_name"], md, desc),
-                     v["accession"], v["source_url"] or "", v["id"]))
+                     v["accession"], v["source_url"] or "", v["id"], g["adviser"]))
         fts.append((pid, desc, v["issuer_name"] or ""))
-    eng.executemany("INSERT INTO proposals VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
+    eng.executemany("INSERT INTO proposals VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
     eng.executemany("INSERT INTO proposal_fts(rowid, description, issuer_name) VALUES (?,?,?)", fts)
 
     # Management's director nominees: where board-composition policy is acted on.
-    dgroups = _grouped(led, "v.vote_source = 'ISSUER' AND v.category_type = 'DIRECTOR ELECTIONS'")
+    dgroups = _grouped(led, "v.vote_source = 'ISSUER' AND v.category_type = 'DIRECTOR ELECTIONS'",
+                       split)
     drows = []
-    for did, g in enumerate(dgroups.values(), 1):
+    for did, g in _ids(dgroups):
         v = g["row"]
         md = v["md"] or ""
         cusip = (v["cusip"] or "").strip().upper()
@@ -341,8 +412,8 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
                       g["n"], g["for"], g["against"], g["abstain"] + g["other"],
                       f"{cusip}|{md}" if cusip and md else "",
                       v["accession"], v["source_url"] or "", v["id"],
-                      isin_country(g["isins"])))
-    eng.executemany("INSERT INTO director_votes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", drows)
+                      isin_country(g["isins"]), g["adviser"]))
+    eng.executemany("INSERT INTO director_votes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", drows)
     del dgroups
 
     # Policy text: one row per distinct TEXT version (earliest capture wins —
@@ -364,11 +435,12 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
         sents = sentences(text)
         wb = c["wayback_timestamp"] or ""
         captured = (f"{wb[:4]}-{wb[4:6]}-{wb[6:8]}" if wb else c["retrieval_date"][:10])
-        eng.execute("INSERT INTO policy_versions VALUES (?,?,?,?,?,?,?,?,?,?)",
+        eng.execute("INSERT INTO policy_versions VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                     (c["id"], c["institution_id"], c["doc_label"], c["url"], captured,
                      (c["doc_created_at"] or "")[:10], "wayback" if wb else "live",
                      f"https://web.archive.org/web/{wb}/{c['url']}" if wb else "",
-                     c["sha256"], len(sents)))
+                     c["sha256"], len(sents),
+                     doc_adviser.get((c["institution_id"], c["doc_label"]))))
         for seq, s in enumerate(sents):
             sid += 1
             eng.execute("INSERT INTO policy_sentences VALUES (?,?,?,?,?,?)",
@@ -380,6 +452,7 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH) -> dict:
         "ballot_lines": sum(g["n"] for g in groups.values()),
         "proposals": len(rows),
         "director_items": len(drows),
+        "multi_adviser_institutions": ",".join(sorted(split)),
         "policy_versions": len(seen),
         "policy_sentences": sid,
         "ledger_max_vote_id": led.execute("SELECT MAX(id) FROM votes").fetchone()[0],
@@ -419,12 +492,72 @@ class Engine:
                              f"known ids: {', '.join(sorted(self._names))}")
         return hits[0]
 
+    def advisers_of(self, institution: str) -> dict:
+        """Who votes this institution's registrants: the distinct known adviser
+        keys, how many registrants have none on record, and whether the answer
+        is `multi` (two or more known advisers = separately-voted funds)."""
+        iid = self._inst(institution)
+        rows = self.db.execute("SELECT adviser FROM registrants WHERE institution_id=?",
+                               (iid,)).fetchall()
+        known = sorted({r["adviser"] for r in rows if r["adviser"]})
+        return {"institution": iid, "known": known,
+                "unlabelled": sum(1 for r in rows if not r["adviser"]),
+                "multi": len(known) >= 2}
+
+    def _scope(self, institution, adviser) -> str | None:
+        """Validate `adviser=` for an institution. Returns the key to filter on, or
+        None when no filter applies (none given, or the institution has only one
+        adviser so there is nothing to separate). Strict: an adviser the
+        institution does not have is refused, never ignored."""
+        if adviser in (None, ""):
+            return None
+        if not institution:
+            raise ValueError("`adviser` needs `institution`: advisers belong to one institution")
+        info = self.advisers_of(institution)
+        if info["multi"]:
+            valid = info["known"] + ([UNLABELLED] if info["unlabelled"] else [])
+            if adviser not in valid:
+                raise ValueError(f"{info['institution']} has no adviser {adviser!r}; "
+                                 f"valid: {', '.join(valid)}")
+            return adviser
+        if info["known"] == [adviser] and not info["unlabelled"]:
+            return None
+        raise ValueError(f"{info['institution']} has no adviser {adviser!r} on record; "
+                         f"valid: {', '.join(info['known']) or 'none (no registrant carries one)'}")
+
+    def _need_adviser(self, institution: str, adviser, what: str) -> str | None:
+        """For tools that pair policy text with votes: a multi-adviser institution
+        is refused without `adviser`, because the pairing would be false."""
+        info = self.advisers_of(institution)
+        if info["multi"] and not adviser:
+            raise ValueError(
+                f"{what} pairs policy text with votes, but {info['institution']}'s funds are "
+                f"voted by different advisers under different policies "
+                f"({', '.join(info['known'])}): pass adviser= (one of them)")
+        return self._scope(institution, adviser)
+
+    def _pooled(self, institution, adviser) -> list[str]:
+        """The caveat for an unscoped answer about a multi-adviser institution."""
+        if not institution or adviser:
+            return []
+        info = self.advisers_of(institution)
+        if not info["multi"]:
+            return []
+        return [f"POOLED ADVISERS: {info['institution']}'s funds are voted by different "
+                f"advisers ({', '.join(info['known'])}) under different voting policies. These "
+                "figures pool separately-voted funds (each adviser's decision is its own item). "
+                "Pass adviser= to scope them, and never set them against one adviser's policy."]
+
     def _where(self, *, institution=None, theme=None, query=None, company=None, year=None,
-               position=None, include_rollback=False, since=None, until=None):
+               position=None, include_rollback=False, since=None, until=None, adviser=None):
         w, p, join = ["1=1"], [], ""
         if institution:
             w.append("p.institution_id = ?")
             p.append(self._inst(institution))
+        sc = self._scope(institution, adviser)
+        if sc:
+            w.append("p.adviser = ?")
+            p.append(sc)
         if theme:
             if theme not in THEMES:
                 raise ValueError(f"unknown theme {theme!r}; known: {', '.join(THEMES)}. "
@@ -457,6 +590,7 @@ class Engine:
     @staticmethod
     def _prop(r) -> dict:
         return {"proposal_id": r["proposal_id"], "institution": r["institution_id"],
+                "adviser": r["adviser"],
                 "company": r["issuer_name"], "cusip": r["cusip"],
                 "meeting_date": r["meeting_date"], "proposal": r["description"],
                 "category": r["category"], "voted_vs_management": r["mgmt_rec"],
@@ -507,7 +641,18 @@ class Engine:
                 dyrs = {r["year"]: r["n"] for r in self.db.execute(
                     "SELECT year, COUNT(*) n FROM director_votes WHERE institution_id=? "
                     "GROUP BY year ORDER BY year", (iid,))}
+                adv = {}
+                if self.advisers_of(iid)["multi"]:
+                    for r in self.db.execute(
+                            "SELECT adviser, COUNT(*) n FROM proposals WHERE institution_id=? "
+                            "GROUP BY adviser", (iid,)):
+                        adv[r["adviser"]] = {"shareholder_proposals": r["n"]}
+                    for r in self.db.execute(
+                            "SELECT adviser, COUNT(*) n FROM director_votes WHERE "
+                            "institution_id=? GROUP BY adviser", (iid,)):
+                        adv.setdefault(r["adviser"], {})["director_items"] = r["n"]
                 per.append({"institution": iid, "name": name,
+                            **({"by_adviser": adv, "advisers": sorted(adv)} if adv else {}),
                             "fund_registrants_on_file": reg,
                             "vote_filings_by_season": dict(sorted(
                                 seasons.items(), key=lambda kv: str(kv[0]))),
@@ -539,18 +684,25 @@ class Engine:
                      "`fund_registrants_on_file` is how many of a manager's fund trusts are "
                      "ingested — often a handful of a large complex. Use filers() before "
                      "writing 'X's funds'; say 'the funds on file'.",
-                     "An institution with one policy version has no edit history."])
+                     "An institution with one policy version has no edit history.",
+                     *[f"POOLED ADVISERS: {p['institution']} has separately-voted funds "
+                       f"({', '.join(p['advisers'])}); its totals pool them. See `by_adviser` "
+                       "and pass adviser= to the vote tools."
+                       for p in per if p.get("advisers")]])
 
     # -- 2. what they said
-    def policy_versions(self, institution: str) -> dict:
+    def policy_versions(self, institution: str, adviser=None) -> dict:
         """Every archived version of a manager's policy documents, dated."""
         iid = self._inst(institution)
+        sc = self._scope(iid, adviser)
         rows = [{**dict(r), "readable": r["n_sentences"] >= READABLE_MIN}
                 for r in self.db.execute(
-                    "SELECT * FROM policy_versions WHERE institution_id=? ORDER BY captured",
-                    (iid,))]
-        return _env("policy_versions", {"institution": iid}, rows,
-                    ["`readable: false` is a capture whose text could not be extracted. It "
+                    "SELECT * FROM policy_versions WHERE institution_id=? "
+                    + ("AND adviser=? " if sc else "") + "ORDER BY captured",
+                    (iid, sc) if sc else (iid,))]
+        return _env("policy_versions", _clean(institution=iid, adviser=adviser), rows,
+                    [*self._policy_owner_note(iid, adviser),
+                     "`readable: false` is a capture whose text could not be extracted. It "
                      "proves nothing about what the policy said and is never treated as "
                      "the policy in force.",
                      "Gaps between captures are gaps in the ARCHIVE. Managers revise "
@@ -560,23 +712,41 @@ class Engine:
                      "`authored` is the creation date written by the manager's own "
                      "software; it corroborates the order of versions, nothing more."])
 
-    def policy_search(self, query: str, institution: str | None = None, limit: int = 40) -> dict:
+    def _policy_owner_note(self, iid, adviser) -> list[str]:
+        info = self.advisers_of(iid) if iid else None
+        if info and info["multi"] and not adviser:
+            return [f"Each document belongs to ONE adviser ({', '.join(info['known'])}); see "
+                    "`adviser` on every row. A policy may only be set against votes cast by "
+                    "the adviser that published it."]
+        return []
+
+    def policy_search(self, query: str, institution: str | None = None, limit: int = 40,
+                      adviser=None) -> dict:
         """Full-text search of archived policy sentences. Each hit says which
         version it is in, so presence and absence over time can be read off."""
         w, p = "policy_fts MATCH ?", [query]
         if institution:
             w += " AND s.institution_id = ?"
             p.append(self._inst(institution))
+        sc = self._scope(institution, adviser)
+        if sc:
+            w += " AND pv.adviser = ?"
+            p.append(sc)
         rows = self.db.execute(
             f"""SELECT s.sentence_id, s.commitment_id, s.institution_id, s.text,
-                       pv.doc_label, pv.captured, pv.authored, pv.url, pv.wayback_url
+                       pv.doc_label, pv.captured, pv.authored, pv.url, pv.wayback_url,
+                       pv.adviser
                 FROM policy_fts JOIN policy_sentences s ON s.sentence_id = policy_fts.rowid
                 JOIN policy_versions pv ON pv.commitment_id = s.commitment_id
                 WHERE {w} ORDER BY s.institution_id, pv.captured, s.seq LIMIT ?""",
             p + [limit]).fetchall()
-        return _env("policy_search", {"query": query, "institution": institution},
+        return _env("policy_search", _clean(query=query, institution=institution,
+                                            adviser=adviser),
                     [dict(r) for r in rows],
-                    ["A sentence missing from a later version may have been reworded, not "
+                    [*(["Hits carry the `adviser` whose policy they are: never pair a hit "
+                        "with votes cast by a different adviser."]
+                       if any(r["adviser"] for r in rows) else []),
+                     "A sentence missing from a later version may have been reworded, not "
                      "dropped — check with policy_diff before saying it was removed."])
 
     def policy_diff(self, institution: str, from_id: int, to_id: int,
@@ -618,21 +788,43 @@ class Engine:
                         "version for the rest of the sentence, before writing 'removed'."]
                        if pattern else []))
 
-    def policy_in_force(self, institution: str, date: str) -> dict:
-        """The latest version demonstrably public on `date` (ISO)."""
+    def policy_in_force(self, institution: str, date: str, adviser=None,
+                        doc_label=None) -> dict:
+        """The latest version demonstrably public on `date` (ISO). For an
+        institution whose funds are voted by several advisers, name the document
+        (`doc_label`) or the `adviser`: picking one for you would be a guess."""
         iid = self._inst(institution)
+        info = self.advisers_of(iid)
+        if info["multi"] and not (adviser or doc_label):
+            raise ValueError(
+                f"{iid} has policies from different advisers ({', '.join(info['known'])}): "
+                "pass adviser= or doc_label= (see policy_versions)")
+        sc = self._scope(iid, adviser)
+        extra, xp = "", []
+        if sc:
+            extra += " AND pv.adviser = ?"
+            xp.append(sc)
+        if doc_label:
+            labels = {r[0] for r in self.db.execute(
+                "SELECT DISTINCT doc_label FROM policy_versions WHERE institution_id=?", (iid,))}
+            if doc_label not in labels:
+                raise ValueError(f"{iid} has no document {doc_label!r}; "
+                                 f"documents: {', '.join(sorted(labels))}")
+            extra += " AND pv.doc_label = ?"
+            xp.append(doc_label)
         rows = [dict(r) for r in self.db.execute(
-            """SELECT * FROM policy_versions pv
-               WHERE institution_id=? AND captured <= ? AND n_sentences >= ?
+            f"""SELECT * FROM policy_versions pv
+               WHERE institution_id=? AND captured <= ? AND n_sentences >= ?{extra}
                AND captured = (SELECT MAX(captured) FROM policy_versions
                                WHERE institution_id=pv.institution_id AND n_sentences >= ?
                                  AND doc_label=pv.doc_label AND captured <= ?)""",
-            (iid, date, READABLE_MIN, READABLE_MIN, date))]
+            (iid, date, READABLE_MIN, *xp, READABLE_MIN, date))]
         for r in rows:
             r["readable"] = True
             r["days_since_capture"] = (datetime.fromisoformat(date)
                                        - datetime.fromisoformat(r["captured"])).days
-        return _env("policy_in_force", {"institution": iid, "date": date}, rows,
+        return _env("policy_in_force", _clean(institution=iid, date=date, adviser=adviser,
+                                              doc_label=doc_label), rows,
                     ["Empty means no readable archived version predates this date — the "
                      "record cannot say what the policy was then.",
                      f"Over ~{GAP_DAYS} `days_since_capture`, later versions probably exist "
@@ -641,11 +833,12 @@ class Engine:
 
     # -- 3. what they did
     def proposals(self, institution=None, theme=None, query=None, company=None, year=None,
-                  position=None, include_rollback=False, limit: int = 50) -> dict:
+                  position=None, include_rollback=False, limit: int = 50,
+                  adviser=None) -> dict:
         """List individual proposals and how the manager voted, each cited."""
         join, w, p = self._where(institution=institution, theme=theme, query=query,
                                  company=company, year=year, position=position,
-                                 include_rollback=include_rollback)
+                                 include_rollback=include_rollback, adviser=adviser)
         total = self.db.execute(
             f"SELECT COUNT(*) FROM proposals p {join} WHERE {w}", p).fetchone()[0]
         rows = self.db.execute(
@@ -653,18 +846,20 @@ class Engine:
             "ORDER BY p.meeting_date DESC, p.n_lines DESC LIMIT ?", p + [limit]).fetchall()
         return _env("proposals", _clean(institution=institution, theme=theme, query=query,
                                         company=company, year=year, position=position,
-                                        include_rollback=include_rollback, limit=limit),
+                                        include_rollback=include_rollback, limit=limit,
+                                        adviser=adviser),
                     {"matching": total,
                                                    "shown": [self._prop(r) for r in rows]},
-                    ["SPLIT means the manager's own funds voted both ways on the same item."])
+                    ["SPLIT means the manager's own funds voted both ways on the same item.",
+                     *self._pooled(institution, adviser)])
 
     def voting_record(self, institution: str, theme=None, query=None, company=None,
-                      include_rollback=False, since=None, until=None) -> dict:
+                      include_rollback=False, since=None, until=None, adviser=None) -> dict:
         """One manager's record on a theme or free-text query, by year, counted
         per proposal. `support_rate` = FOR / (FOR + AGAINST)."""
         join, w, p = self._where(institution=institution, theme=theme, query=query,
                                  company=company, include_rollback=include_rollback,
-                                 since=since, until=until)
+                                 since=since, until=until, adviser=adviser)
         rows = self.db.execute(
             f"SELECT p.year, p.position, COUNT(*) n FROM proposals p {join} WHERE {w} "
             "GROUP BY p.year, p.position", p).fetchall()
@@ -677,13 +872,15 @@ class Engine:
                 FROM proposals p {join} WHERE {w}""", p).fetchone()
         return _env("voting_record", _clean(institution=institution, theme=theme, query=query,
                                             company=company, since=since, until=until,
-                                            include_rollback=include_rollback),
+                                            include_rollback=include_rollback,
+                                            adviser=adviser),
                     {"overall": self._tally(rows),
                      "by_year": {y: self._tally(rs) for y, rs in sorted(years.items(),
                                  key=lambda kv: kv[0] or 0)},
                      "against_management": {
                          "count": mr["agm"] or 0, "of": mr["decided"] or 0}},
-                    ["Counts are proposals, not fund ballot lines.",
+                    [*self._pooled(institution, adviser),
+                     "Counts are proposals, not fund ballot lines.",
                      "Position is share-weighted: SPLIT means the minority side carried at "
                      "least 5% of the shares voted. Use fund_votes() to see which funds.",
                      "`since`/`until` take ISO dates for periods finer than a year.",
@@ -705,14 +902,14 @@ class Engine:
         join, w, p = self._where(theme=theme, query=query, year=year, since=since,
                                  until=until)
         rows = self.db.execute(
-            f"SELECT p.ballot_key, p.institution_id, p.position FROM proposals p {join} "
-            f"WHERE {w}", p).fetchall()
+            f"SELECT p.ballot_key, {_ENTITY.format('p')} AS ent, p.position "
+            f"FROM proposals p {join} WHERE {w}", p).fetchall()
         by_ballot, undecided = defaultdict(dict), defaultdict(lambda: defaultdict(int))
         for r in rows:
             if r["position"] in ("FOR", "AGAINST"):
-                by_ballot[r["ballot_key"]][r["institution_id"]] = r["position"]
+                by_ballot[r["ballot_key"]][r["ent"]] = r["position"]
             else:
-                undecided[r["ballot_key"]][r["institution_id"]] += 1
+                undecided[r["ballot_key"]][r["ent"]] += 1
         shared = {k: v for k, v in by_ballot.items() if len(v) >= min_managers}
         out = defaultdict(lambda: {"shared_proposals": 0, "for": 0, "with_majority": 0,
                                    "alone_against": 0, "alone_for": 0,
@@ -738,7 +935,8 @@ class Engine:
                                     until=until, min_managers=min_managers),
                     {"shared_proposals": len(shared), "candidate_proposals": len(by_ballot),
                      "managers": table},
-                    ["Proposals are matched across managers by company, meeting date and "
+                    [*_ENTITY_NOTE,
+                     "Proposals are matched across managers by company, meeting date and "
                      "wording. Matching is strict, so some identical proposals go "
                      "unmatched; no two different proposals are merged.",
                      "Each manager's rate covers only the shared proposals IT voted on, so "
@@ -753,19 +951,27 @@ class Engine:
         if not r:
             raise ValueError(f"no proposal {proposal_id}")
         rows = self.db.execute("SELECT * FROM proposals WHERE ballot_key=? "
-                               "ORDER BY institution_id", (r["ballot_key"],)).fetchall()
-        return _env("ballot", {"proposal_id": proposal_id}, [self._prop(x) for x in rows], [])
+                               "ORDER BY institution_id, adviser", (r["ballot_key"],)).fetchall()
+        return _env("ballot", {"proposal_id": proposal_id}, [self._prop(x) for x in rows],
+                    _ENTITY_NOTE if any(x["adviser"] for x in rows) else [])
 
     # -- 4. say against do
-    def say_vs_do(self, institution: str, query: str, theme: str | None = None) -> dict:
+    def say_vs_do(self, institution: str, query: str, theme: str | None = None,
+                  adviser=None) -> dict:
         """Policy sentences matching `query`, by version, beside the voting
-        record for the period each version was the one in force."""
+        record for the period each version was the one in force. For an
+        institution whose funds are voted by several advisers, `adviser` is
+        required: only that adviser's policy documents are set against only that
+        adviser's votes."""
         iid = self._inst(institution)
+        sc = self._need_adviser(iid, adviser, "say_vs_do")
         vers = [dict(r) for r in self.db.execute(
             "SELECT * FROM policy_versions WHERE institution_id=? AND n_sentences >= ? "
-            "ORDER BY captured", (iid, READABLE_MIN))]
-        last_vote = self.db.execute("SELECT MAX(meeting_date) FROM proposals "
-                                    "WHERE institution_id=?", (iid,)).fetchone()[0]
+            + ("AND adviser=? " if sc else "") + "ORDER BY captured",
+            (iid, READABLE_MIN, *([sc] if sc else [])))]
+        last_vote = self.db.execute(
+            "SELECT MAX(meeting_date) FROM proposals WHERE institution_id=?"
+            + (" AND adviser=?" if sc else ""), (iid, *([sc] if sc else []))).fetchone()[0]
         out = []
         for i, v in enumerate(vers):
             nxt = [x["captured"] for x in vers[i + 1:] if x["doc_label"] == v["doc_label"]]
@@ -776,7 +982,7 @@ class Engine:
                    WHERE policy_fts MATCH ? AND s.commitment_id=? ORDER BY s.seq LIMIT 8""",
                 (query, v["commitment_id"]))]
             join, w, p = self._where(institution=iid, theme=theme,
-                                     query=None if theme else query)
+                                     query=None if theme else query, adviser=sc)
             did = self.db.execute(
                 f"SELECT p.position, COUNT(*) n FROM proposals p {join} WHERE {w} "
                 "AND p.meeting_date >= ? AND p.meeting_date < ? GROUP BY p.position",
@@ -788,8 +994,11 @@ class Engine:
                         "in_force_until": None if until.startswith("9999") else until,
                         "window_days": days, "archive_gap": days > GAP_DAYS,
                         "said": said, "did": self._tally(did)})
-        return _env("say_vs_do", {"institution": iid, "query": query, "theme": theme}, out,
-                    ["Each vote is set only against the version public on the meeting date.",
+        return _env("say_vs_do", _clean(institution=iid, query=query, theme=theme,
+                                        adviser=adviser), out,
+                    [*([f"Scoped to adviser {sc}: only that adviser's policy documents and "
+                        "only votes cast by its funds."] if sc else []),
+                     "Each vote is set only against the version public on the meeting date.",
                      "`archive_gap: true` means no capture for over a year: versions "
                      "almost certainly exist that the archive lacks, so votes late in "
                      "that window are NOT evidence against this wording. Do not build a "
@@ -802,11 +1011,12 @@ class Engine:
                      "it: 'we may consider' binds nothing.",
                      "This shows co-occurrence. It cannot show why a manager voted as it did."])
 
-    def reversals(self, institution: str, theme=None, query=None, company=None) -> dict:
+    def reversals(self, institution: str, theme=None, query=None, company=None,
+                  adviser=None) -> dict:
         """The same proposal at the same company, voted one way one year and the
         other way a later year."""
         join, w, p = self._where(institution=institution, theme=theme, query=query,
-                                 company=company)
+                                 company=company, adviser=adviser)
         rows = self.db.execute(
             f"SELECT p.* FROM proposals p {join} WHERE {w} "
             "AND p.position IN ('FOR','AGAINST') ORDER BY p.meeting_date", p).fetchall()
@@ -816,7 +1026,8 @@ class Engine:
         by_company = defaultdict(list)
         for r in rows:
             who, _date, toks = r["ballot_key"].split("|", 2)
-            by_company[who].append((r, set(toks.split())))
+            # one adviser's vote is never paired with another adviser's
+            by_company[(r["adviser"], who)].append((r, set(toks.split())))
         out = []
         for items in by_company.values():
             for i, (b, tb) in enumerate(items):
@@ -836,8 +1047,9 @@ class Engine:
         out = {"summary": {"pairs": len(out), "for_to_against": f2a,
                            "against_to_for": len(out) - f2a}, "pairs": out}
         return _env("reversals", _clean(institution=institution, theme=theme, query=query,
-                                        company=company), out,
-                    ["Matched on company and the proposal title's significant words. The "
+                                        company=company, adviser=adviser), out,
+                    [*self._pooled(institution, adviser),
+                     "Matched on company and the proposal title's significant words. The "
                      "two proposals can differ in substance or sponsor behind a similar "
                      "title, and the company may have changed what it discloses: read "
                      "both proxy statements before calling this a change of stance.",
@@ -846,11 +1058,15 @@ class Engine:
 
     # -- directors
     def _dwhere(self, *, institution=None, company=None, year=None, since=None, until=None,
-                position=None, country=None):
+                position=None, country=None, adviser=None):
         w, p = ["1=1"], []
         if institution:
             w.append("d.institution_id = ?")
             p.append(self._inst(institution))
+        sc = self._scope(institution, adviser)
+        if sc:
+            w.append("d.adviser = ?")
+            p.append(sc)
         if company:
             w.append("(d.issuer_name LIKE ? OR d.cusip = ?)")
             p += [f"%{company}%", company.upper()]
@@ -955,17 +1171,17 @@ class Engine:
                 ("unknown", "d.isin_country IS NULL"))
 
     def director_record(self, institution: str, company=None, since=None, until=None,
-                        country=None) -> dict:
+                        country=None, adviser=None) -> dict:
         """How often one manager opposed management's board nominees, by year,
         counted per nominee item and per meeting. Without `country`, also split
         into US / non-US / unknown by the country that issued the ISIN."""
         w, p = self._dwhere(institution=institution, company=company, since=since,
-                            until=until, country=country)
+                            until=until, country=country, adviser=adviser)
         years = self._dyears(w, p)
         out = {"overall": self._dtally(self._dtotal(w, p)),
                "by_year": {y: self._dtally(t) for y, t in
                            sorted(years.items(), key=lambda kv: kv[0] or 0)}}
-        caveats = list(self._DIRECTOR_CAVEATS)
+        caveats = [*self._pooled(institution, adviser), *self._DIRECTOR_CAVEATS]
         if country is None:
             out["by_country"] = {
                 name: self._dtally(self._dtotal(f"{w} AND {cond}", p))
@@ -976,25 +1192,29 @@ class Engine:
                 "`overall`; a meeting with items in two groups is counted in both.")
         else:
             caveats += self._dexcluded(country, institution=institution, company=company,
-                                       since=since, until=until)
+                                       since=since, until=until, adviser=adviser)
         return _env("director_record", _clean(institution=institution, company=company,
-                                              since=since, until=until, country=country),
+                                              since=since, until=until, country=country,
+                                              adviser=adviser),
                     out, caveats)
 
     def director_votes(self, institution: str, company=None, year=None, position=None,
-                       since=None, until=None, limit: int = 60, country=None) -> dict:
+                       since=None, until=None, limit: int = 60, country=None,
+                       adviser=None) -> dict:
         """The nominee items behind director_record(), each with its filing."""
         w, p = self._dwhere(institution=institution, company=company, year=year,
                             since=since, until=until, position=position,
-                            country=country)
+                            country=country, adviser=adviser)
         rows = self.db.execute(
             f"SELECT d.* FROM director_votes d WHERE {w} "
             "ORDER BY d.meeting_date DESC, d.issuer_name, d.director_id LIMIT ?",
             [*p, int(limit)]).fetchall()
         return _env("director_votes", _clean(institution=institution, company=company,
                                              year=year, position=position, since=since,
-                                             until=until, limit=limit, country=country),
+                                             until=until, limit=limit, country=country,
+                                             adviser=adviser),
                     [{"director_id": r["director_id"], "institution": r["institution_id"],
+                      "adviser": r["adviser"],
                       "company": r["issuer_name"], "cusip": r["cusip"],
                       "meeting_date": r["meeting_date"], "nominee_item": r["nominee_item"],
                       "position": r["position"],
@@ -1002,10 +1222,11 @@ class Engine:
                                      "against": r["n_against"], "other": r["n_other"]},
                       "accession": r["accession"], "source_url": r["source_url"]}
                      for r in rows],
-                    [*self._DIRECTOR_CAVEATS, f"At most {limit} rows; raise limit= for more.",
+                    [*self._pooled(institution, adviser), *self._DIRECTOR_CAVEATS,
+                     f"At most {limit} rows; raise limit= for more.",
                      *self._dexcluded(country, institution=institution, company=company,
                                       year=year, since=since, until=until,
-                                      position=position)])
+                                      position=position, adviser=adviser)])
 
     def director_peers(self, year=None, since=None, until=None, company=None,
                        min_managers: int = 3, country=None) -> dict:
@@ -1015,10 +1236,10 @@ class Engine:
                             country=country)
         per: dict = defaultdict(dict)
         for r in self.db.execute(
-                f"""SELECT d.meeting_key k, d.institution_id i, SUM(d.position='FOR') f,
+                f"""SELECT d.meeting_key k, {_ENTITY.format('d')} i, SUM(d.position='FOR') f,
                            SUM(d.position='AGAINST') a
                     FROM director_votes d WHERE {w} AND d.meeting_key != ''
-                    GROUP BY d.meeting_key, d.institution_id""", p):
+                    GROUP BY d.meeting_key, i""", p):
             if r["f"] + r["a"]:
                 per[r["k"]][r["i"]] = (r["f"], r["a"])
         shared = {k: v for k, v in per.items() if len(v) >= min_managers}
@@ -1041,7 +1262,8 @@ class Engine:
                                              country=country),
                     {"shared_meetings": len(shared), "candidate_meetings": len(per),
                      "managers": table},
-                    ["Meetings are matched by CUSIP and meeting date. Nominee items are "
+                    [*_ENTITY_NOTE,
+                     "Meetings are matched by CUSIP and meeting date. Nominee items are "
                      "NOT matched one-to-one: filers word them differently, and one may "
                      "file a slate as a single item, so compare "
                      "`share_of_meetings_with_opposition` before `opposition_rate`.",
@@ -1050,11 +1272,14 @@ class Engine:
                      *self._dexcluded(country, company=company, year=year, since=since,
                                       until=until)])
 
-    def director_panel(self, institution: str, windows: str, country=None) -> dict:
+    def director_panel(self, institution: str, windows: str, country=None,
+                       adviser=None) -> dict:
         """The same-companies control: director opposition in each of several
         date windows, restricted to companies the manager voted at in EVERY
         window. `windows` = "2024-01-01:2024-06-30,2025-01-01:2025-06-30"."""
         iid = self._inst(institution)
+        sc = self._scope(iid, adviser)
+        aw, ap = (" AND d.adviser = ?", [sc]) if sc else ("", [])
         cond = _country(country)
         cw, cp = (f" AND {cond[0]}", cond[1]) if cond else ("", [])
         spans = []
@@ -1069,8 +1294,8 @@ class Engine:
                 f"""SELECT d.cusip, SUM(d.position IN ('FOR','AGAINST')) n,
                           SUM(d.position='AGAINST') o
                    FROM director_votes d WHERE d.institution_id=? AND d.cusip != ''
-                     AND d.meeting_date BETWEEN ? AND ?{cw} GROUP BY d.cusip""",
-                (iid, a, b, *cp))
+                     AND d.meeting_date BETWEEN ? AND ?{cw}{aw} GROUP BY d.cusip""",
+                (iid, a, b, *cp, *ap))
                 if r["n"]})
         panel = set(per[0]).intersection(*per[1:])
         out = []
@@ -1088,32 +1313,43 @@ class Engine:
             ors = " OR ".join("d.meeting_date BETWEEN ? AND ?" for _ in spans)
             n = self.db.execute(
                 "SELECT COUNT(*) FROM director_votes d WHERE d.institution_id=? AND "
-                f"d.cusip != '' AND d.isin_country IS NULL AND ({ors})",
-                [iid, *[x for span in spans for x in span]]).fetchone()[0]
+                f"d.cusip != '' AND d.isin_country IS NULL AND ({ors}){aw}",
+                [iid, *[x for span in spans for x in span], *ap]).fetchone()[0]
             excluded = [f"{n} nominee {'item was' if n == 1 else 'items were'} excluded for "
                         "lacking an ISIN with a usable country (missing, malformed, or fund "
                         "lines that disagreed) within these windows.",
-                        self._dexcluded(country, institution=institution)[1],
+                        self._dexcluded(country, institution=institution, adviser=adviser)[1],
                         *self._unmatched_country(country)]
         return _env("director_panel", _clean(institution=institution, windows=windows,
-                                             country=country),
+                                             country=country, adviser=adviser),
                     {"companies_in_every_window": len(panel), "windows": out,
                      "opposed_in_first_and_last": len(first & last),
                      "opposed_in_first_only": len(first - last),
                      "opposed_in_last_only": len(last - first)},
-                    ["Companies are matched by CUSIP; a company that changed CUSIP or "
+                    [*self._pooled(institution, adviser),
+                     "Companies are matched by CUSIP; a company that changed CUSIP or "
                      "filed none drops out of the panel.",
                      "The companies are constant; the nominees and the funds holding "
                      "them are not.",
                      *self._DIRECTOR_CAVEATS, *excluded])
 
-    def fund_votes(self, proposal_id: int) -> dict:
+    def fund_votes(self, proposal_id: int, adviser=None) -> dict:
         """The individual fund lines behind one position: which fund series voted
-        how, with how many shares, from which filing."""
+        how, with how many shares, from which filing. A proposal id already
+        belongs to one adviser; `adviser`, if given, must agree with it."""
         r = self.db.execute("SELECT * FROM proposals WHERE proposal_id=?",
                             (proposal_id,)).fetchone()
         if not r:
             raise ValueError(f"no proposal {proposal_id}")
+        if adviser and adviser != r["adviser"]:
+            raise ValueError(f"proposal {proposal_id} was voted by adviser "
+                             f"{r['adviser']!r}, not {adviser!r}")
+        mine = None
+        if r["adviser"]:
+            mine = {x["cik"] for x in self.db.execute(
+                "SELECT cik FROM registrants WHERE institution_id=? AND "
+                + ("adviser=?" if r["adviser"] != UNLABELLED else "adviser IS NULL"),
+                (r["institution_id"], *([r["adviser"]] if r["adviser"] != UNLABELLED else [])))}
         iso = iso_meeting_date("v.meeting_date")
         lines = []
         names: dict[str, str | None] = {}
@@ -1138,6 +1374,8 @@ class Engine:
                   AND v.vote_source='SECURITY HOLDER' AND {iso}=?
                   AND (v.cusip=? OR v.issuer_name=?)""",
                 (r["institution_id"], r["meeting_date"], r["cusip"], r["issuer_name"])):
+            if mine is not None and _norm_cik(v["cik"]) not in mine:
+                continue                       # another adviser's fund, another policy
             if norm(v["vote_description"]) == norm(r["description"]):
                 lines.append({"fund_series": v["vote_series"],
                               "fund_series_name": series_name(v["vote_series"]),
@@ -1149,14 +1387,14 @@ class Engine:
             hv = (ln["how_voted"] or "").upper()
             tot["for" if hv == "FOR" else "against" if hv in ("AGAINST", "WITHHOLD")
                 else "other"] += ln["shares"] or 0.0
-        return _env("fund_votes", {"proposal_id": proposal_id},
+        return _env("fund_votes", _clean(proposal_id=proposal_id, adviser=adviser),
                     {"proposal": self._prop(r), "lines": lines,
                      "shares": {k: tot[k] for k in ("for", "against", "other")}},
                     ["One fund series can file several lines for one item. Compare the "
                      "same series across years before saying a manager changed its vote: "
                      "a different mix of funds can move the total on its own."])
 
-    def filers(self, institution: str) -> dict:
+    def filers(self, institution: str, adviser=None) -> dict:
         """Which of a manager's fund registrants are on file — how much of the
         manager the vote record actually covers."""
         iid = self._inst(institution)
@@ -1170,17 +1408,31 @@ class Engine:
                FROM filings f WHERE f.institution_id=? AND f.form_type LIKE 'N-PX%'
                GROUP BY f.cik ORDER BY filings DESC""", (iid,))]
         names = _registry_names(iid)
+        reg = {x["cik"]: x for x in self.db.execute(
+            "SELECT * FROM registrants WHERE institution_id=?", (iid,))}
+        sc = self._scope(iid, adviser)
         for r in rows:
-            r["registrant_name"] = names.get(str(r["cik"]).lstrip("0"))
-        return _env("filers", {"institution": iid},
+            k = _norm_cik(r["cik"])
+            r["registrant_name"] = names.get(k)
+            x = reg.get(k)
+            r["adviser"] = (x["adviser"] if x else None) or None
+            r["adviser_name"] = x["adviser_name"] if x and x["adviser"] else None
+            r["adviser_source"] = x["adviser_source"] if x else None
+            r["adviser_verified"] = x["adviser_verified"] if x else None
+        if sc:
+            rows = [r for r in rows if r["adviser"] == sc]
+        return _env("filers", _clean(institution=iid, adviser=adviser),
                     {"registrants": len(rows), "filers": rows,
                      "name_source": "config/institutions.yaml npx_ciks (the ledger stores "
                                     "no registrant names); null = no name on record"},
-                    ["A registrant is one fund trust. Large managers have dozens; this is "
+                    [*self._pooled(iid, adviser),
+                     "A registrant is one fund trust. Large managers have dozens; this is "
                      "the subset ingested. Different registrants of one group can be "
                      "advised by different entities with their own voting policies.",
-                     "Which adviser votes a given fund is NOT in this record: confirm it "
-                     "from the fund's prospectus before attributing a vote to a policy."])
+                     "`adviser` is who votes the fund's shares, from config/institutions.yaml "
+                     "with the prospectus cited in `adviser_source`. null = none on record: "
+                     "confirm it from the fund's prospectus before attributing a vote to a "
+                     "policy."])
 
     # -- 5. context
     def company(self, name: str, year: int | None = None, limit: int = 60) -> dict:
@@ -1258,6 +1510,19 @@ class Engine:
                     ["Hand-written SQL bypasses the tools' guards. `proposals` is already "
                      "one row per manager per proposal; do not re-weight by n_lines."])
 
+
+# Peers-type tools compare managers: a group with several advisers is several
+# managers, so each adviser is its own entry (`t_rowe_price/TRPA`).
+_ENTITY = ("CASE WHEN {0}.adviser IS NULL THEN {0}.institution_id "
+           "ELSE {0}.institution_id || '/' || {0}.adviser END")
+_ENTITY_NOTE = ["An entry written `institution/ADVISER` is one adviser of a group whose funds "
+                "are voted by different advisers under different policies; advisers are "
+                "compared separately, never pooled."]
+
+# Tools that report votes (the desk requires `adviser` on a claim from one of
+# these about a multi-adviser institution).
+VOTE_TOOLS = ("proposals", "voting_record", "reversals", "say_vs_do", "director_record",
+              "director_votes", "director_panel")
 
 TOOLS = ("coverage", "policy_versions", "policy_search", "policy_diff", "policy_in_force",
          "proposals", "voting_record", "peers", "ballot", "fund_votes", "reversals", "say_vs_do", "filers",

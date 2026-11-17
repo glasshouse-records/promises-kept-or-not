@@ -41,6 +41,10 @@ institutions:
     notes: "World's largest asset manager by AUM."
     npx_ciks:
       - cik: "1100663"
+        adviser: "BlackRock Fund Advisors (BFA); affiliate sub-advisers BlackRock International Limited and BlackRock (Singapore) Limited for some series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1100663/000119312526389481/d122292d485bpos.htm"  # 485BPOS filed 2026-09-14 (SAI Proxy Voting Policies)
+        adviser_verified: "2026-11-17"
+        voting_note: "Board delegates voting to BFA under two policies by series: Index Equity Fund policy (BIS Global Benchmark Policy, the archived one) or the Open-End Active and Fixed Income Index Fund policy (BlackRock Active Investment Stewardship Guidelines, not archived)."
         name: "iShares Trust"
         validated: "2026-06-10"
       # Added 2026-11-16: brand-named INDEX trusts only. Actively managed and
@@ -48,12 +52,23 @@ institutions:
       # may be cast by another adviser, and attributing those to this manager
       # is the one error that cannot be tolerated here.
       - cik: "930667"
+        adviser: "BlackRock Fund Advisors (BFA); affiliate sub-advisers BlackRock International Limited and BlackRock (Singapore) Limited may be appointed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/930667/000119312526361244/d146002d485bpos.htm"  # 485BPOS filed 2026-08-21
+        adviser_verified: "2026-11-17"
+        voting_note: "Same two-policy split as iShares Trust (BIS benchmark policy for index equity funds; BAIS guidelines for active and fixed income index funds)."
         name: "iShares, Inc."
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
       - cik: "1524513"
+        adviser: "BlackRock Fund Advisors (BFA); affiliate sub-adviser BlackRock International Limited for some bond series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1524513/000119312526064208/d97039d485bpos.htm"  # 485BPOS filed 2026-02-23
+        adviser_verified: "2026-11-17"
+        voting_note: "Active and fixed income series follow BlackRock Active Investment Stewardship guidelines, not the archived BIS benchmark principles."
         name: "iShares U.S. ETF Trust"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
       - cik: "1026144"
+        adviser: "BlackRock Advisors, LLC (investment manager); sub-adviser BlackRock Fund Advisors (affiliate)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1026144/000119312526177154/d82299d485bpos.htm"  # 485BPOS filed 2026-04-24
+        adviser_verified: "2026-11-17"
         name: "BlackRock Index Funds, Inc."
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
     commitments:
@@ -74,6 +89,10 @@ institutions:
     cik: "0000102909"
     npx_ciks:
       - cik: "36405"
+        adviser: "The Vanguard Group, Inc. through Vanguard Capital Management, LLC (VCM: Total Stock Market, 500, Extended Market index funds) and Vanguard Portfolio Management, LLC (VPM: small/mid/large-cap, growth/value index funds); no outside sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/36405/000003640526000181/f45032d1.htm"  # 485BPOS filed 2026-04-28 (SAI: advisory services and Proxy Voting)
+        adviser_verified: "2026-11-17"
+        voting_note: "Voting is split between two Vanguard subsidiaries with separate policies: VCM funds vote under the VCM US policy, VPM funds under the VPM US policy (the one archived as us-proxy-voting-policy). The manager of Total Stock Market's totally held subsidiary votes independently using a proxy advisory firm."
         name: "Vanguard Index Funds"
         validated: "2026-06-11"
       # Added 2026-11-16: brand-named INDEX trusts only. Actively managed and
@@ -81,15 +100,30 @@ institutions:
       # may be cast by another adviser, and attributing those to this manager
       # is the one error that cannot be tolerated here.
       - cik: "862084"
+        adviser: "The Vanguard Group, Inc. through Vanguard Capital Management, LLC (VCM); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/862084/000086208426000057/f45033d1.htm"  # 485BPOS filed 2026-04-28
+        adviser_verified: "2026-11-17"
+        voting_note: "Voted under the VCM US proxy voting policy, not the VPM policy archived as us-proxy-voting-policy."
         name: "Vanguard Institutional Index Funds"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
       - cik: "857489"
+        adviser: "The Vanguard Group, Inc. through Vanguard Capital Management, LLC (VCM); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/857489/000119312526077485/f44231d1.htm"  # 485BPOS filed 2026-02-27
+        adviser_verified: "2026-11-17"
+        voting_note: "Voted under the VCM US proxy voting policy, not the VPM policy archived as us-proxy-voting-policy."
         name: "Vanguard International Equity Index Funds"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
       - cik: "1021882"
+        adviser: "The Vanguard Group, Inc. through Vanguard Portfolio Management, LLC (VPM) for the Russell index funds; Explorer Value Fund is externally advised by Ariel Investments, Frontier Capital Management and Wellington Management (VPM manages its cash reserves)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1021882/000110465926121068/tm2624997d8_ncsr.htm"  # N-CSR filed 2026-11-02; the Vanguard SAI says third-party advisers administer proxy voting for the equity holdings they manage
+        adviser_verified: "2026-11-17"
+        voting_note: "Explorer Value Fund votes are cast by outside advisers under their own policies, not the VPM policy. Russell index funds are voted under the VPM policy. Bond index series (VCM) rarely vote."
         name: "Vanguard Scottsdale Funds"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
       - cik: "891190"
+        adviser: "The Vanguard Group, Inc. through Vanguard Portfolio Management, LLC (VPM) for the S&P 500/400/600 index funds; money market and bond series through VCM; no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/891190/000110465926121036/tm2624997d2_ncsr.htm"  # N-CSR filed 2026-11-02; series-to-team mapping per Vanguard VPM funds list https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vpm/vpm-funds.pdf
+        adviser_verified: "2026-11-17"
         name: "Vanguard Admiral Funds"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
     commitments:
@@ -102,6 +136,15 @@ institutions:
       # URL's 7 Wayback versions stay in the lineage.
       - label: us-proxy-voting-policy
         url: "https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vpm/vpm-proxy-voting-policy-us.pdf"
+        adviser: "Vanguard Portfolio Management, LLC (VPM)"
+      # Added 2026-11-17: the sibling policy for funds advised through Vanguard
+      # Capital Management, LLC (Total Stock Market, 500, Extended Market,
+      # Institutional Index, international index funds, ...). Listed at
+      # https://corporate.vanguard.com/content/corporatesite/us/en/corp/about-our-funds/proxy-voting-across-funds/vanguard-capital-management.html
+      # (200, application/pdf, effective Jan 2026); fund list: .../pdf/vcm/vcm-funds.pdf
+      - label: us-proxy-voting-policy-vcm
+        url: "https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vcm/vcm-proxy-voting-policy-us.pdf"
+        adviser: "Vanguard Capital Management, LLC (VCM)"
     country: "USA"
     type: "asset_manager"
     aum_usd_tr: 8.7
@@ -119,6 +162,10 @@ institutions:
   state_street:
     npx_ciks:
       - cik: "1064642"
+        adviser: "SSGA Funds Management, Inc. (State Street Investment Management); sub-adviser Nuveen Asset Management (outside firm) for three municipal bond ETFs"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1064642/000119312526383231/d154968dncsr.htm"  # N-CSR filed 2026-09-04; proxy delegation to sub-advisers per the SAI policy in https://www.sec.gov/Archives/edgar/data/1064642/000119312526458681/d81837d485bpos.htm
+        adviser_verified: "2026-11-17"
+        voting_note: "Trust policy lets the Adviser delegate voting to a sub-adviser, which then votes under its own policy; the Nuveen-sub-advised muni ETFs hold bonds so carry few or no equity votes."
         name: "SPDR Series Trust"
         validated: "2026-06-11"
       # Added 2026-11-16: brand-named INDEX trusts only. Actively managed and
@@ -126,12 +173,21 @@ institutions:
       # may be cast by another adviser, and attributing those to this manager
       # is the one error that cannot be tolerated here.
       - cik: "1064641"
+        adviser: "SSGA Funds Management, Inc.; no sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1064641/000119312526096539/d75600dncsr.htm"  # N-CSR filed 2026-03-06
+        adviser_verified: "2026-11-17"
         name: "Select Sector SPDR Trust"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
       - cik: "1168164"
+        adviser: "SSGA Funds Management, Inc.; no sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1168164/000119312525308993/d12804dncsr.htm"  # N-CSR filed 2025-12-05
+        adviser_verified: "2026-11-17"
         name: "SPDR Index Shares Funds"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
       - cik: "1107414"
+        adviser: "SSGA Funds Management, Inc.; no sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1107414/000119312526100469/d105530dncsr.htm"  # N-CSR filed 2026-03-10
+        adviser_verified: "2026-11-17"
         name: "State Street Institutional Investment Trust"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
     commitments:
@@ -243,15 +299,28 @@ institutions:
       # — Garrison/Hanover/etc. — and the Advisor/VIP series are all Fidelity's),
       # filing N-PX through 2025. Attribution-safe: unambiguously Fidelity-managed.
       - cik: "729218"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; no Geode or outside sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/729218/000072921825000112/filing10395.htm"  # 485BPOS filed 2025-12-29; SAI carries the Fidelity Proxy Voting Guidelines
+        adviser_verified: "2026-11-17"
         name: "Fidelity Advisor Series VIII"
         validated: "2026-06-26"
       - cik: "803013"
+        adviser: "Fidelity Management & Research Company LLC (FMR); no sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/803013/000080301326000040/filing13360.htm"  # N-CSR filed 2026-10-23
+        adviser_verified: "2026-11-17"
         name: "Fidelity Garrison Street Trust"
         validated: "2026-06-26"
       - cik: "795422"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; no Geode or outside sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/795422/000079542226000127/filing13319.htm"  # 485BPOS filed 2026-10-27
+        adviser_verified: "2026-11-17"
         name: "Fidelity Advisor Series II"
         validated: "2026-06-26"
       - cik: "927384"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; series are Balanced, Dynamic Capital Appreciation, Growth & Income, Growth Opportunities, Mid Cap, Value Strategies (no Geode)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/927384/000092738426000030/filing11797.htm"  # 485BPOS filed 2026-04-30; series list from N-CSR https://www.sec.gov/Archives/edgar/data/927384/000092738426000005/filing10940.htm
+        adviser_verified: "2026-11-17"
+        voting_note: "Geode (outside firm, own voting policy) sub-advises Fidelity index portfolios such as VIP Index 500, but those sit in other trusts not registered here."
         name: "Variable Insurance Products Fund III (Fidelity VIP)"
         validated: "2026-06-26"
     commitments:
@@ -276,34 +345,42 @@ institutions:
         adviser: "T. Rowe Price Associates, Inc. (no sub-adviser)"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/773485/000199937126004108/nag-485bpos_030126.htm"  # 485BPOS filed 2026-02-25
         adviser_verified: "2026-11-17"
+        adviser_key: "TRPA"
         name: "T. Rowe Price All-Cap Opportunities Fund, Inc."
         validated: "2026-06-26"
       - cik: "793347"
         adviser: "T. Rowe Price Associates, Inc.; sub-adviser T. Rowe Price Investment Management, Inc. (discretionary voting authority)"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/793347/000199937126004099/caf-485bpos_022526.htm"  # 485BPOS filed 2026-02-25
         adviser_verified: "2026-11-17"
+        adviser_key: "TRPIM"
         name: "T. Rowe Price Capital Appreciation Fund, Inc."
         validated: "2026-06-26"
       - cik: "902259"
         adviser: "T. Rowe Price Associates, Inc. (no sub-adviser)"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/902259/000199937126004097/bcg-485bpos_022526.htm"  # 485BPOS filed 2026-02-25
         adviser_verified: "2026-11-17"
+        adviser_key: "TRPA"
         name: "T. Rowe Price Blue Chip Growth Fund, Inc."
         validated: "2026-06-26"
       - cik: "931151"
         adviser: "T. Rowe Price Associates, Inc. (no sub-adviser)"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/931151/000199937126004122/cof-485bpos_022526.htm"  # 485BPOS filed 2026-02-25
         adviser_verified: "2026-11-17"
+        adviser_key: "TRPA"
         name: "T. Rowe Price U.S. Equity Research Fund, Inc."
         validated: "2026-06-26"
     commitments:
       # Canonical TRPA Proxy Voting Guidelines, verified 2026-06-26 (200, pdf).
       - label: proxy-voting-guidelines-trpa
         url: "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/proxy-voting-guidelines-TRPA.pdf"
+        adviser: "T. Rowe Price Associates, Inc."
+        adviser_key: "TRPA"
       # TRPIM publishes its own guidelines; fetched 200 application/pdf 2026-11-17.
       # Applies to TRPIM-managed/sub-advised portfolios (e.g. Capital Appreciation Fund).
       - label: proxy-voting-guidelines-trpim
         url: "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/proxy-voting-guidelines-TRPIM.pdf"
+        adviser: "T. Rowe Price Investment Management, Inc."
+        adviser_key: "TRPIM"
 
   invesco:
     display_name: "Invesco Ltd."
@@ -473,12 +550,23 @@ institutions:
       # Verified 2026-06-27. Clean DWS-managed US fund trusts filing N-PX
       # through 2025 ("DEUTSCHE DWS …" naming). Excluded stale pre-2018 trusts.
       - cik: "926425"
+        adviser: "DWS Investment Management Americas, Inc. (DIMA); no sub-adviser (series: Multi-Asset Conservative, Multi-Asset Moderate, Equity Sector Strategy)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/926425/000008805326000832/ar083126multi.htm"  # N-CSR filed 2026-10-30; voting delegated to the Advisor per the SAI (see DWS Market Trust source)
+        adviser_verified: "2026-11-17"
         name: "Deutsche DWS Asset Allocation Trust"
         validated: "2026-06-27"
       - cik: "888568"
+        adviser: "DWS Investment Management Americas, Inc. (DIMA); day-to-day sub-adviser Northern Trust Investments, Inc. (NTI), an outside firm"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/888568/000008805326000206/ar123125de500p.htm"  # N-CSR filed 2026-03-06; voting: SAI in https://www.sec.gov/Archives/edgar/data/862157/000008805326000323/ddif-20260428.htm says each fund delegates proxy voting to the Advisor (DIMA)
+        adviser_verified: "2026-11-17"
+        voting_note: "Master portfolio sub-advised by Northern Trust Investments, Inc.; the SAI states proxy voting is delegated to the Advisor (DIMA) under the DWS Americas policy, not to NTI. Northern Trust's own policy (see northern_trust) is not the governing one."
         name: "Deutsche DWS Equity 500 Index Portfolio"
         validated: "2026-06-27"
       - cik: "95603"
+        adviser: "DWS Investment Management Americas, Inc. (DIMA); sub-adviser RREEF America L.L.C. (DWS Group affiliate) for DWS RREEF Real Assets Fund"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/95603/000008805326000561/ddmt-20260727.htm"  # 485BPOS filed 2026-07-27; SAI Part II-I: DWS Americas policy covers DIMA, DBX and RREEF, voted via ISS
+        adviser_verified: "2026-11-17"
+        voting_note: "RREEF America L.L.C. is a DWS affiliate sub-adviser; the DWS Americas policy expressly covers RREEF, so no separate policy."
         name: "Deutsche DWS Market Trust"
         validated: "2026-06-27"
     commitments:
@@ -486,6 +574,16 @@ institutions:
       # (200, application/pdf) from dws.com.
       - label: corporate-governance-proxy-voting-policy
         url: "https://download.dws.com/download?elib-assetguid=0ed2826429c84ae4b87d95bcbe07077d"
+        adviser: "DWS Investment GmbH (Germany); the letter states it is not intended for US-domiciled investees, so it does not govern the US trusts"
+      # US-specific policy that actually governs the three US trusts above: the
+      # SAIs say each fund delegates voting to its Advisor (DIMA), which applies
+      # "Proxy Voting Policy and Guidelines DWS Americas" (covers DIMA, DBX Advisors,
+      # RREEF America; votes executed via ISS). Official page
+      # https://www.dws.com/en-us/resources/proxy-voting (redirects to deutsche-am.com);
+      # asset dated 3/31/2026, PDF 200 verified 2026-11-17.
+      - label: proxy-voting-policy-guidelines-dws-americas
+        url: "https://download.dws.com/download/asset/e5cb398f-4086-4586-916f-ff5dd6e41348?tenant=DWScom"
+        adviser: "DWS Investment Management Americas, Inc. (DIMA), DBX Advisors LLC, RREEF America L.L.C."
 
   northern_trust:
     display_name: "Northern Trust Corporation"

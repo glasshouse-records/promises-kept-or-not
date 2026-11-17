@@ -706,3 +706,236 @@ def test_a_quotation_must_be_backed_by_a_claim_that_paragraph_cites(eng):
 
 def test_standing_limitations_say_paragraph_relevance_is_unchecked():
     assert any("relevan" in s.lower() for s in desk.STANDING_LIMITATIONS)
+
+
+# ------------------------------------------------------------ which adviser votes
+
+TEXT_A = ("<html><body><p>Adviser A will support board diversity proposals always. "
+          + "Filler sentence number one is here. " * 8 + "</p></body></html>")
+TEXT_B = ("<html><body><p>Adviser B will oppose board diversity proposals always. "
+          + "Filler sentence number one is here. " * 8 + "</p></body></html>")
+
+REGISTRY = {
+    "delta": {"npx_ciks": [
+        {"cik": "11", "adviser": "Alpha Advisers LLC", "adviser_key": "AAA",
+         "adviser_source": "https://sec.example/11"},
+        {"cik": "22", "adviser": "Beta Investment Mgmt", "adviser_key": "BBB",
+         "adviser_source": "https://sec.example/22"}],
+        "commitments": [{"label": "policy-aaa", "adviser_key": "AAA"},
+                        {"label": "policy-bbb", "adviser_key": "BBB"}]},
+    "solo": {"npx_ciks": [{"cik": "33", "adviser_key": "AAA"},
+                          {"cik": "44", "adviser_key": "AAA"}]},
+}
+
+
+def _duo_ledger(tmp_path):
+    led = tmp_path / "duo.db"
+    c = ledger.connect(led)
+    for iid, ciks in (("delta", ("0000000011", "22")), ("solo", ("33", "44")),
+                      ("other", ("55",))):
+        c.execute("INSERT INTO institutions (id, display_name) VALUES (?,?)",
+                  (iid, iid.title() + " Group"))
+        for cik in ciks:
+            c.execute("INSERT INTO filings (accession, cik, institution_id, form_type,"
+                      " source_url, retrieval_date, period_of_report, report_type) VALUES"
+                      " (?,?,?,'N-PX',?,'2026-01-01','06/30/2024','FUND VOTING REPORT')",
+                      (f"ACC-{cik}", cik, iid, f"https://sec.example/{cik}"))
+
+    def vote(cik, how, desc="Report on Board Diversity", nominee=False):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date,"
+                  " vote_description, category_type, vote_source, how_voted,"
+                  " management_recommendation, shares_voted, is_duplicate) VALUES"
+                  " (?,'EXXON MOBIL','30231G102','05/20/2024',?,?,?,?,'FOR',100,0)",
+                  (f"ACC-{cik}", desc, "DIRECTOR ELECTIONS" if nominee else "",
+                   "ISSUER" if nominee else "SECURITY HOLDER", how))
+
+    vote("0000000011", "FOR")
+    vote("22", "AGAINST")
+    vote("33", "FOR")
+    vote("44", "FOR")
+    vote("55", "FOR")
+    for cik, how in (("0000000011", "FOR"), ("22", "WITHHOLD"), ("33", "FOR"),
+                     ("44", "FOR"), ("55", "FOR")):
+        vote(cik, how, desc="Elect Director Jane Roe", nominee=True)
+    for n, (label, text, iid) in enumerate((("policy-aaa", TEXT_A, "delta"),
+                                            ("policy-bbb", TEXT_B, "delta"))):
+        f = tmp_path / f"d{n}.html"
+        f.write_text(text)
+        c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date,"
+                  " sha256, content_path, content_type, size_bytes, wayback_timestamp,"
+                  " text_sha256) VALUES (?,?,'https://delta.example/p.html','2026-01-01',?,?,"
+                  "'text/html',1,'20240101000000',?)", (iid, label, f"s{n}", str(f), f"t{n}"))
+    c.commit()
+    c.close()
+    return led
+
+
+@pytest.fixture()
+def duo(tmp_path):
+    led = _duo_ledger(tmp_path)
+    out = tmp_path / "duo-engine.db"
+    engine.build(led, out, institutions=REGISTRY)
+    return engine.Engine(out, led)
+
+
+def test_advisers_voting_one_ballot_item_are_separate_rows(duo):
+    rows = duo.db.execute("SELECT adviser, position FROM proposals "
+                          "WHERE institution_id='delta' ORDER BY adviser").fetchall()
+    assert [(r["adviser"], r["position"]) for r in rows] == [("AAA", "FOR"), ("BBB", "AGAINST")]
+    d = duo.db.execute("SELECT adviser, position FROM director_votes "
+                       "WHERE institution_id='delta' ORDER BY adviser").fetchall()
+    assert [(r["adviser"], r["position"]) for r in d] == [("AAA", "FOR"), ("BBB", "AGAINST")]
+
+
+def test_an_institution_with_one_known_adviser_builds_exactly_as_before(tmp_path):
+    led = _duo_ledger(tmp_path)
+    plain = tmp_path / "plain.db"
+    labelled = tmp_path / "labelled.db"
+    engine.build(led, plain, institutions={})
+    engine.build(led, labelled, institutions=REGISTRY)
+    for path in (plain, labelled):
+        e = engine.Engine(path, led)
+        assert e.db.execute("SELECT COUNT(*) FROM proposals WHERE institution_id='solo'"
+                            ).fetchone()[0] == 1
+        assert e.db.execute("SELECT n_lines, position, adviser FROM proposals WHERE "
+                            "institution_id='solo'").fetchone()[:2] == (2, "FOR")
+        assert e.db.execute("SELECT COUNT(*) FROM director_votes WHERE institution_id='solo'"
+                            ).fetchone()[0] == 1
+    ids = [engine.Engine(path, led).db.execute(
+        "SELECT institution_id, proposal_id FROM proposals WHERE institution_id != 'delta' "
+        "ORDER BY institution_id").fetchall() for path in (plain, labelled)]
+    assert [tuple(r) for r in ids[0]] == [tuple(r) for r in ids[1]]   # drafts cite these ids
+    # with no registry at all, even delta pools exactly as it always did
+    e = engine.Engine(plain, led)
+    assert e.db.execute("SELECT COUNT(*) FROM proposals WHERE institution_id='delta'"
+                        ).fetchone()[0] == 1
+
+
+def test_a_pooled_multi_adviser_answer_carries_a_caveat(duo):
+    for env in (duo.voting_record("delta", query="board diversity"),
+                duo.director_record("delta"), duo.director_votes("delta"),
+                duo.proposals(institution="delta"), duo.reversals("delta"),
+                duo.filers("delta")):
+        text = " ".join(env["caveats"])
+        assert "AAA" in text and "BBB" in text and "pool" in text, env["tool"]
+    assert not any("pool separately" in c for c in duo.director_record("solo")["caveats"])
+
+
+def test_the_adviser_filter_scopes_every_vote_tool(duo):
+    aaa = duo.director_record("delta", adviser="AAA")
+    bbb = duo.director_record("delta", adviser="BBB")
+    assert aaa["args"]["adviser"] == "AAA"
+    assert (aaa["result"]["overall"]["for"], aaa["result"]["overall"]["opposed"]) == (1, 0)
+    assert (bbb["result"]["overall"]["for"], bbb["result"]["overall"]["opposed"]) == (0, 1)
+    assert not any("pool separately" in c for c in aaa["caveats"])
+    v = duo.voting_record("delta", query="board diversity", adviser="BBB")
+    assert v["result"]["overall"]["against"] == 1 and v["result"]["overall"]["for"] == 0
+    assert [p["adviser"] for p in duo.proposals(institution="delta",
+                                               adviser="AAA")["result"]["shown"]] == ["AAA"]
+    assert [d["adviser"] for d in duo.director_votes("delta", adviser="BBB")["result"]] == ["BBB"]
+    panel = duo.director_panel("delta", "2024-01-01:2024-06-30,2024-07-01:2024-12-31",
+                               adviser="AAA")
+    assert panel["args"]["adviser"] == "AAA"
+    assert duo.reversals("delta", adviser="AAA")["args"]["adviser"] == "AAA"
+
+
+def test_an_unknown_adviser_is_refused_naming_the_valid_ones(duo):
+    with pytest.raises(ValueError, match="AAA.*BBB"):
+        duo.director_record("delta", adviser="CCC")
+    with pytest.raises(ValueError, match="no adviser"):
+        duo.director_record("other", adviser="AAA")
+    with pytest.raises(ValueError, match="institution"):
+        duo.proposals(adviser="AAA")
+
+
+def test_filers_names_each_registrants_adviser_and_source(duo):
+    by = {r["cik"].lstrip("0"): r for r in duo.filers("delta")["result"]["filers"]}
+    assert by["11"]["adviser"] == "AAA" and by["11"]["adviser_source"] == "https://sec.example/11"
+    assert by["22"]["adviser"] == "BBB"
+    only = duo.filers("delta", adviser="BBB")["result"]["filers"]
+    assert [r["cik"] for r in only] == ["22"]
+
+
+def test_say_vs_do_refuses_a_multi_adviser_institution_without_adviser(duo):
+    with pytest.raises(ValueError, match="adviser"):
+        duo.say_vs_do("delta", "board diversity")
+
+
+def test_say_vs_do_uses_only_the_matching_advisers_policy(duo):
+    r = duo.say_vs_do("delta", "board diversity", adviser="BBB")["result"]
+    assert [x["doc_label"] for x in r] == ["policy-bbb"]
+    assert r[0]["did"]["against"] == 1 and r[0]["did"]["for"] == 0
+    assert all("oppose" in s for s in r[0]["said"])
+
+
+def test_policy_tools_return_the_documents_adviser(duo):
+    vs = {v["doc_label"]: v["adviser"] for v in duo.policy_versions("delta")["result"]}
+    assert vs == {"policy-aaa": "AAA", "policy-bbb": "BBB"}
+    hits = duo.policy_search("diversity", institution="delta")["result"]
+    assert {h["adviser"] for h in hits} == {"AAA", "BBB"}
+    assert {h["adviser"] for h in duo.policy_search("diversity", institution="delta",
+                                                    adviser="AAA")["result"]} == {"AAA"}
+
+
+def test_policy_in_force_needs_a_document_or_adviser_for_a_multi_adviser_institution(duo):
+    with pytest.raises(ValueError, match="adviser"):
+        duo.policy_in_force("delta", "2025-01-01")
+    one = duo.policy_in_force("delta", "2025-01-01", adviser="AAA")["result"]
+    assert [r["doc_label"] for r in one] == ["policy-aaa"]
+    one = duo.policy_in_force("delta", "2025-01-01", doc_label="policy-bbb")["result"]
+    assert [r["adviser"] for r in one] == ["BBB"]
+
+
+def test_peers_list_each_adviser_as_its_own_manager(duo):
+    m = duo.director_peers(min_managers=2)["result"]["managers"]
+    assert {"delta/AAA", "delta/BBB", "solo", "other"} <= set(m)
+    assert "delta" not in m
+    p = duo.peers(query="board diversity", min_managers=2)["result"]["managers"]
+    assert {"delta/AAA", "delta/BBB"} <= set(p) and "delta" not in p
+
+
+def test_fund_votes_for_one_advisers_item_shows_only_that_advisers_funds(duo):
+    pid = duo.proposals(institution="delta", adviser="BBB")["result"]["shown"][0]["proposal_id"]
+    lines = duo.fund_votes(pid)["result"]["lines"]
+    assert [ln["registrant_cik"].lstrip("0") for ln in lines] == ["22"]
+
+
+def test_args_roundtrip_through_call(duo, monkeypatch):
+    env = duo.director_record("delta", adviser="AAA")
+    monkeypatch.setattr(engine, "Engine", lambda: duo)
+    assert engine.call("director_record", **env["args"])["result"] == env["result"]
+
+
+def test_a_draft_stat_on_a_multi_adviser_institution_must_name_the_adviser(duo):
+    unscoped = {"type": "stat", "tool": "director_record", "path": "overall.for",
+                "args": {"institution": "delta"}, "equals": 1}
+    ok, why = desk._check(duo, unscoped)
+    assert not ok and "adviser" in why
+    scoped = {**unscoped, "args": {"institution": "delta", "adviser": "AAA"}}
+    assert desk._check(duo, scoped)[0]
+    refused = {**scoped, "tool": "say_vs_do", "path": "0", "args": {"institution": "delta",
+                                                                     "query": "diversity"}}
+    ok, why = desk._check(duo, refused)
+    assert not ok and "adviser" in why
+
+
+def test_a_draft_vote_claim_must_name_the_adviser_of_the_item(duo):
+    pid = duo.proposals(institution="delta", adviser="BBB")["result"]["shown"][0]["proposal_id"]
+    claim = {"type": "proposal", "proposal_id": pid, "institution": "delta",
+             "position": "AGAINST", "company": "EXXON", "meeting_date": "2024-05-20"}
+    ok, why = desk._check(duo, claim)
+    assert not ok and "adviser" in why
+    assert desk._check(duo, {**claim, "adviser": "BBB"})[0]
+    assert not desk._check(duo, {**claim, "adviser": "AAA"})[0]
+
+
+def test_a_free_text_adviser_label_alone_never_splits_a_group(tmp_path):
+    led = _duo_ledger(tmp_path)
+    out = tmp_path / "lbl.db"
+    labels = {"delta": {"npx_ciks": [{"cik": "11", "adviser": "Alpha Advisers LLC"},
+                                     {"cik": "22", "adviser": "Beta Investment Mgmt"}]}}
+    engine.build(led, out, institutions=labels)
+    e = engine.Engine(out, led)
+    assert not e.advisers_of("delta")["multi"]
+    assert e.db.execute("SELECT COUNT(*) FROM proposals WHERE institution_id='delta'"
+                        ).fetchone()[0] == 1

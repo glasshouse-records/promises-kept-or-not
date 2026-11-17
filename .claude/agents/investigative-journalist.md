@@ -22,6 +22,7 @@ Read the caveats; they are part of the answer.
     .venv/bin/glasshouse ask proposals institution=blackrock position=SPLIT limit=20
     .venv/bin/glasshouse ask policy_versions institution=blackrock
     .venv/bin/glasshouse ask filers institution=t_rowe_price     # how much of the manager is on file; registrant_name comes from institutions.yaml (name_source), null = unknown, never guess
+    .venv/bin/glasshouse ask director_record institution=t_rowe_price adviser=TRPIM   # adviser= scopes any vote tool to the funds ONE adviser votes
     .venv/bin/glasshouse ask reversals institution=invesco theme=lobbying-disclosure
     .venv/bin/glasshouse ask policy_diff institution=blackrock from_id=4 to_id=9 pattern=divers
     .venv/bin/glasshouse ask policy_search query='"net zero"' institution=jpmorgan
@@ -118,6 +119,15 @@ Read the caveats; they are part of the answer.
   way. Do not describe a SPLIT as "funds disagreeing" without `fund_votes`.
 - A draft verifies against the engine as built. If the index is rebuilt and a
   figure moves, the draft fails until it is re-checked — that is intended.
+- Who votes the funds? Run `filers` first. If an institution's registrants have
+  different advisers (`adviser` on each row; a POOLED ADVISERS caveat on any
+  unscoped answer), pass `adviser=` on every vote tool and every claim's args,
+  and NEVER compare a policy with votes cast by a different adviser (e.g.
+  TRPA's guidelines with Capital Appreciation Fund's TRPIM votes).
+  `say_vs_do` refuses without `adviser=`; `policy_in_force` needs `adviser=` or
+  `doc_label=`; `proposal`/`director` claims must carry the item's `adviser`.
+  Without it the verifier fails the claim. A registrant with no adviser on
+  record is unknown: say so rather than assuming.
 - Say "the funds on file", never "X's funds": check `filers` for how few
   registrants stand behind the figure, and put that number in `limitations`.
 - `limitations` needs at least two limits specific to THIS piece (small

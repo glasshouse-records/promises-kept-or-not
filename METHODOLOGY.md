@@ -130,6 +130,23 @@ re-executes each claim against the engine, rejects uncited figures and
 unbacked quotations, and rejects words asserting motive or wrongdoing. A
 verified draft is an unpublished lead; publication remains a human act.
 
+**Which adviser votes.** One institution can hold fund registrants whose
+shares are voted by different advisers under different published policies
+(T. Rowe Price: TRPA and TRPIM, which run controls against sharing proxy
+decisions). `config/institutions.yaml` names the voting adviser per registrant
+(`adviser_key`, with the prospectus cited in `adviser_source`) and the adviser
+that owns each policy document. Only an explicit `adviser_key` separates
+advisers; a free-text `adviser` label alone does not. For an institution with
+two or more known advisers the engine never aggregates lines voted by different
+advisers into one item: each adviser's decision is its own row, peers tools
+list each as `institution/ADVISER`, every vote tool takes `adviser=` (an
+unknown adviser is refused), and an unscoped answer carries a POOLED ADVISERS
+caveat. Tools that pair policy text with votes (`say_vs_do`) refuse without
+`adviser=` and use only that adviser's documents; `policy_in_force` needs the
+adviser or document. The draft verifier rejects a vote claim about such an
+institution that does not carry the adviser. Registrants with no `adviser_key`
+are "unknown", not assumed to share anyone's policy.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting

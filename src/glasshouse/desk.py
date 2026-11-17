@@ -160,14 +160,21 @@ def _check(eng: engine.Engine, check: dict) -> tuple[bool, str]:
     if kind == "stat":
         if check["tool"] in ("sql", "verify_quote"):
             return False, "stat claims must use a guarded tool, not raw sql"
-        res = getattr(eng, check["tool"])(**check.get("args", {}))["result"]
+        a = check.get("args", {})
+        if check["tool"] in engine.VOTE_TOOLS and a.get("institution") and not a.get("adviser"):
+            advs = eng.advisers_of(a["institution"])
+            if advs["multi"]:
+                return False, (f"{advs['institution']}'s funds are voted by different advisers "
+                               f"({', '.join(advs['known'])}): the claim's args must carry "
+                               "`adviser`, or it pools separately-voted funds")
+        res = getattr(eng, check["tool"])(**a)["result"]
         got = _dig(res, check["path"])
         ok = _same(got, check["equals"])
         return ok, f"{check['tool']}→{check['path']} = {got!r}" + (
             "" if ok else f", draft says {check['equals']!r}")
     if kind == "proposal":
         row = eng.db.execute("SELECT institution_id, position, issuer_name, meeting_date,"
-                             " description "
+                             " description, adviser "
                              "FROM proposals WHERE proposal_id=?",
                              (int(check["proposal_id"]),)).fetchone()
         if not row:
@@ -177,6 +184,9 @@ def _check(eng: engine.Engine, check: dict) -> tuple[bool, str]:
         for field in ("company", "meeting_date"):
             if not check.get(field):
                 return False, f"a proposal claim must state `{field}` so the prose is checked"
+        if row["adviser"] and check.get("adviser") != row["adviser"]:
+            return False, (f"this item was voted by adviser {row['adviser']!r}; the claim must "
+                           "carry that `adviser` (see filers)")
         ok = (row["position"] == check["position"].upper()
               and row["institution_id"] == eng._inst(check["institution"])
               and check["company"].lower() in (row["issuer_name"] or "").lower()
@@ -187,13 +197,16 @@ def _check(eng: engine.Engine, check: dict) -> tuple[bool, str]:
                     f"{row['issuer_name']} {row['meeting_date']}")
     if kind == "director":
         row = eng.db.execute("SELECT institution_id, position, issuer_name, meeting_date,"
-                             " nominee_item FROM director_votes WHERE director_id=?",
+                             " nominee_item, adviser FROM director_votes WHERE director_id=?",
                              (int(check["director_id"]),)).fetchone()
         if not row:
             return False, "no such director item"
         for field in ("company", "meeting_date", "nominee"):
             if not check.get(field):
                 return False, f"a director claim must state `{field}` so the prose is checked"
+        if row["adviser"] and check.get("adviser") != row["adviser"]:
+            return False, (f"this item was voted by adviser {row['adviser']!r}; the claim must "
+                           "carry that `adviser` (see filers)")
         ok = (row["position"] == check["position"].upper()
               and row["institution_id"] == eng._inst(check["institution"])
               and check["company"].lower() in (row["issuer_name"] or "").lower()
