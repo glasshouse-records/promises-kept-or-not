@@ -114,6 +114,19 @@ def diagnose(conn: sqlite3.Connection) -> dict:
 
     today = _today()
 
+    # A restored ledger holds the bundle's rows with their ORIGINAL retrieval
+    # dates; none of them is evidence that this machine fetched anything.
+    restored = conn.execute(
+        "SELECT source FROM ingest_runs WHERE source LIKE 'restore:%' "
+        "ORDER BY id DESC LIMIT 1").fetchone()
+    if restored:
+        _, version, mhash = (restored[0].split(":") + ["", ""])[:3]
+        check("ledger:restored", True,
+              f"this ledger is a restore of bundle {version} (manifest {mhash}) and "
+              f"NOT a live ingest; its rows keep the retrieval dates they had when the "
+              f"bundle was made. Source freshness is reported as 'restored, not live' "
+              f"until a live ingest runs.")
+
     # 0. The votes themselves: every rate is computed from them.
     for g in missing_vote_seasons(conn, today):
         check(f"votes:{g['institution']}/{g['cik']}", False,
@@ -129,6 +142,10 @@ def diagnose(conn: sqlite3.Connection) -> dict:
             "SELECT MAX(substr(run_at,1,10)) FROM ingest_runs "
             "WHERE source = ? AND ok = 1", (_AGENCY_SOURCE.get(agency, agency),)).fetchone()
         last = row[0]
+        if not last and restored:
+            check(f"source:{agency}", True,
+                  "restored, not live: no live ingest has run on this ledger")
+            continue
         if not last:
             row = conn.execute(
                 "SELECT MAX(retrieval_date) FROM enforcement_actions "
@@ -152,6 +169,12 @@ def diagnose(conn: sqlite3.Connection) -> dict:
     from .registry import load
     for inst_id, inst in load().items():
         for doc in inst.get("commitments", []):
+            if restored and not conn.execute(
+                    "SELECT 1 FROM capture_attempts WHERE institution_id=? AND doc_label=? "
+                    "LIMIT 1", (inst_id, doc["label"])).fetchone():
+                check(f"commitment-live:{inst_id}/{doc['label']}", True,
+                      "restored, not live: no capture has run on this ledger")
+                continue
             ok, detail, severity = capture_health(conn, inst_id, doc["label"], today)
             check(f"commitment-live:{inst_id}/{doc['label']}", ok, detail, severity)
 

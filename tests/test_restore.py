@@ -153,3 +153,36 @@ def test_engine_builds_from_a_restored_ledger_and_says_policy_text_is_absent(bun
 def _takes_ledger() -> bool:
     import inspect
     return "ledger_path" in inspect.signature(engine.Engine.__init__).parameters
+
+
+def test_doctor_says_a_restored_ledger_is_not_live(bundle, tmp_path, monkeypatch):
+    from datetime import date
+
+    from glasshouse import doctor
+    d, _ = bundle
+    restore.restore(d, tmp_path / "o.db")
+    c = ledger.connect(tmp_path / "o.db")
+    monkeypatch.setattr(doctor, "_today", lambda: date(2026, 11, 17))
+    monkeypatch.setattr("glasshouse.registry.load", lambda: REGISTRY)
+    checks = doctor.diagnose(c)["checks"]
+    first = checks[0]
+    assert first["name"] == "ledger:restored" and first["ok"]
+    assert "restore of bundle vT" in first["detail"] and "NOT a live ingest" in first["detail"]
+    for ch in checks:
+        if ch["name"].startswith(("source:", "commitment-live:")):
+            assert ch["ok"] and ch["severity"] == "info", ch
+            assert "restored, not live" in ch["detail"]
+            assert "last successful ingest" not in ch["detail"]
+    # a live ingest after the restore is judged live again
+    c.execute("INSERT INTO ingest_runs (source, run_at, fetched, inserted, ok) VALUES ('ofac','2026-11-16T00:00:00',0,0,1)")
+    c.commit()
+    ofac = next(x for x in doctor.diagnose(c)["checks"] if x["name"] == "source:OFAC (SDN)")
+    assert "last successful ingest 2026-11-16" in ofac["detail"]
+
+
+def test_doctor_on_a_live_ledger_has_no_restore_line(tmp_path, monkeypatch):
+    from glasshouse import doctor
+    c = ledger.connect(tmp_path / "live.db")
+    monkeypatch.setattr("glasshouse.registry.load", dict)
+    names = [x["name"] for x in doctor.diagnose(c)["checks"]]
+    assert "ledger:restored" not in names
