@@ -10,9 +10,7 @@ abstract: >-
   built for researchers and journalists to find and verify insights. Findings
   are human-gated and the data ships as facts, not accusations.
 authors:
-  # Confirm name / add ORCID + affiliation before publishing.
-  - family-names: Martin
-    given-names: Emanuel
+  - name: "Glasshouse"
 license: CC-BY-4.0
 keywords:
   - proxy voting

@@ -11,9 +11,9 @@ I only need the answers in the box below.
 
 | # | Question | Example answer |
 |---|---|---|
-| 1 | Whose name goes on the dataset? Your real name, or the project name "Glasshouse"? | "My name" / "Project name" |
-| 2 | Should the **code** be public too, or only the **data**? (I recommend both: people can check how every number was made.) | "Both" / "Data only" |
-| 3 | Your GitHub username, once you have one (step A). | `emartin-gh` |
+| 1 | ~~Whose name goes on the dataset?~~ Answered 2026-11-17: the project name, "Glasshouse". | |
+| 2 | ~~Code public too?~~ Answered 2026-11-17: data and code. | |
+| 3 | Your GitHub username, once you have one (step A). | `glasshouse-data` |
 | 4 | The DOI Zenodo gives you (step C). | `10.5281/zenodo.1234567` |
 | 5 | Your explicit "yes, publish" when I show you what will go public. | "yes, push the code" |
 
@@ -70,7 +70,7 @@ form in your browser and stop; you check it and click Publish.
 |---|---|
 | Resource type | Dataset |
 | Title | Glasshouse — institutional accountability evidence dataset (say vs. do) |
-| Creators | your name (Family, Given) or "Glasshouse" (your answer to question 1) |
+| Creators | Glasshouse (type: Organization) |
 | Description | the text below |
 | Version | 2026-11-17 |
 | License | Creative Commons Attribution 4.0 International |
