@@ -72,6 +72,9 @@ why a manager voted as it did; the filings never do.
 - BNY Mellon, Invesco, Northern Trust, Franklin Templeton, State Street: some
   sub-advised funds whose voting arrangements are not fully verified
   (listed as scope notes on every result).
+- A ledger restored from the release bundle (`glasshouse restore`, no SEC ingest)
+  has no policy text and no administrative no-vote lines; the engine says so.
+  Run `ingest commitments --wayback` to get the text.
 - "Country" means the country that issued the security's ISIN.
 
 ## To continue the work

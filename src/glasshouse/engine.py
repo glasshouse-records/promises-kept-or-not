@@ -672,8 +672,10 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
         if ident in seen:
             continue
         seen.add(ident)
-        path = Path(c["content_path"])
-        text = extract_text(path) if path.exists() else ""
+        # '' = no local file (a ledger restored from a release bundle): Path('')
+        # is the current directory, which exists, so test for the string first.
+        path = Path(c["content_path"]) if c["content_path"] else None
+        text = extract_text(path) if path is not None and path.is_file() else ""
         sents = sentences(text)
         wb = c["wayback_timestamp"] or ""
         captured = (f"{wb[:4]}-{wb[4:6]}-{wb[6:8]}" if wb else c["retrieval_date"][:10])
@@ -695,6 +697,8 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
                         (sid, c["id"], c["institution_id"], seq, s, norm(s)))
             eng.execute("INSERT INTO policy_fts(rowid, text) VALUES (?,?)", (sid, s))
 
+    restored = led.execute("SELECT source FROM ingest_runs WHERE source LIKE 'restore:%' "
+                           "ORDER BY id DESC LIMIT 1").fetchone()
     stats = {
         "built_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "ballot_lines": sum(g["n"] for g in groups.values()),
@@ -705,6 +709,7 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
         "policy_versions": len(seen),
         "policy_sentences": sid,
         "ledger_max_vote_id": led.execute("SELECT MAX(id) FROM votes").fetchone()[0],
+        **({"restored_from": restored["source"][len("restore:"):]} if restored else {}),
     }
     eng.executemany("INSERT INTO meta VALUES (?,?)", [(k, str(v)) for k, v in stats.items()])
     eng.commit()
@@ -1022,6 +1027,7 @@ class Engine:
                     (iid, sc) if sc else (iid,))]
         return _env("policy_versions", _clean(institution=iid, adviser=adviser), rows,
                     [*self._notes(iid), *self._policy_owner_note(iid, adviser),
+                     *self._no_text_notes(),
                      "`readable: false` is a capture whose text could not be extracted. It "
                      "proves nothing about what the policy said and is never treated as "
                      "the policy in force.",
@@ -1062,6 +1068,26 @@ class Engine:
                      "`adviser` is null when the document's versions belong to different "
                      "advisers over time; see policy_versions for each one."])
 
+    def _no_text_notes(self, ids=None) -> list[str]:
+        """Say so when archived versions are on record but their wording is not on disk
+        (a ledger restored from a release bundle ships URLs and hashes, not text).
+        `ids` limits the check to those commitment ids; None = any version."""
+        q, p = "SELECT COUNT(*) FROM policy_versions WHERE n_sentences = 0", []
+        if ids:
+            q += f" AND commitment_id IN ({','.join('?' * len(ids))})"
+            p = list(ids)
+        if not self.db.execute(q, p).fetchone()[0]:
+            return []
+        row = self._has("meta") and self.db.execute(
+            "SELECT value FROM meta WHERE key='restored_from'").fetchone()
+        origin = (f"This ledger was restored from release bundle {row[0].split(':')[0]}, "
+                  "which carries policy URLs, hashes and dates but not policy text. "
+                  if row else "")
+        return [f"{origin}Some archived versions have no policy text on disk, so there is no "
+                "wording to search or diff: an empty result here is NOT evidence that a "
+                "policy lacks or dropped a provision. Re-fetch the public text with "
+                "`glasshouse ingest commitments --wayback`, then `glasshouse engine build`."]
+
     def _policy_owner_note(self, iid, adviser) -> list[str]:
         info = self.advisers_of(iid) if iid else None
         if info and info["multi"] and not adviser:
@@ -1093,7 +1119,7 @@ class Engine:
         return _env("policy_search", _clean(query=query, institution=institution,
                                             adviser=adviser),
                     [dict(r) for r in rows],
-                    [*self._notes(institution),
+                    [*self._notes(institution), *self._no_text_notes(),
                      *(["Hits carry the `adviser` whose policy they are: never pair a hit "
                         "with votes cast by a different adviser."]
                        if any(r["adviser"] for r in rows) else []),
@@ -1126,7 +1152,7 @@ class Engine:
                     {"from": vs[from_id], "to": vs[to_id],
                      "removed": removed, "added": added,
                      "counts": {"removed": len(removed), "added": len(added)}},
-                    [*self._notes(iid),
+                    [*self._notes(iid), *self._no_text_notes([from_id, to_id]),
                      "`pattern` is a case-insensitive REGEX filter (policy_search's "
                      "`query` is full-text syntax; they differ).",
                      "Footnote renumbering and digit-only changes are ignored.",

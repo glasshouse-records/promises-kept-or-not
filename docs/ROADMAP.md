@@ -43,7 +43,7 @@ Tick with the date and one line of result.
 - [x] 2026-11-17 DATASHEET numbers are computed at build time; README numbers sourced from commands. (METHODOLOGY still carries a few typed counts — refresh when next edited.)
 - [x] 2026-11-17 Release bundle v2026-11-17 built and checksum-verified, with the adviser map, scope notes, policy versions and two derived tables.
 - [x] 2026-11-17 Datasheet coverage counts shipped rows and states which kinds of vote each manager has; every shipped column has a definition (a build refuses an undefined one); each vote row carries its manager and adviser key. Bundle rebuilt from a clean commit, checksums verified.
-- [ ] A fresh clone cannot build the engine without a full SEC ingest: document the time, or make the engine buildable from the release bundle. *(builder)*
+- [x] 2026-11-17 `glasshouse restore <bundle>` builds the ledger from the release bundle (checksums verified; 5 min 15 s, then `engine build` 2 min 14 s); policy text is not in the bundle and the engine says so. Quickstart B documents it.
 - [x] 2026-11-17 Cold-start test passed: six questions answered correctly from README + bundle alone (2,642 items / 119 not supported matched the engine); the documentation gaps it listed are fixed.
 
 ## 5. Hand-over

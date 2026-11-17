@@ -169,13 +169,45 @@ and `source_url`.
 ## Quickstart B: the evidence engine
 
 The engine reads the ledger (`data/glasshouse.db`, about 3.4 GB on the maintainer's
-disk). A fresh clone has no ledger and cannot rebuild the release. You must ingest
-from SEC EDGAR, which needs network access and a contact string for SEC fair
-access. Use your own; the code does not hide who you are.
+disk). A fresh clone has no ledger. There are two ways to get one.
+
+**Fast path: restore the ledger from the release bundle.** No network, no SEC
+contact string. `glasshouse restore` checks every file against `MANIFEST.sha256`,
+refuses a bundle that does not verify, refuses to overwrite a ledger that already
+holds data, then writes the ledger with the code's own schema:
 
 ```sh
 python3 -m venv .venv && . .venv/bin/activate
-pip install -e ".[dev,release]"
+pip install -e ".[dev,release]"               # the release extra brings pyarrow, which restore needs
+glasshouse restore data/releases/v2026-11-17  # 5 min 15 s on the v2026-11-17 bundle (9.7 M votes)
+glasshouse engine build                       # 2 min 14 s
+glasshouse ask director_record institution=vanguard adviser=VCM
+```
+
+Restore and build were timed on the maintainer's laptop into an empty
+`GLASSHOUSE_DATA_DIR`. What the restored ledger is and is not:
+
+- It holds the bundle's rows only. Votes carry `is_duplicate = 0` because the bundle
+  ships only kept rows. The as-filed duplicates, the `legacy_html` rows and the
+  administrative lines with no vote (`how_voted` empty) are not in it, so a few
+  items the full ledger lists with position `NONE` are absent (Vanguard director
+  items for 2026: 7 `none` restored, 163 in the full ledger; Deutsche Bank / DIMA
+  shareholder proposals: 1,368 matching restored, 1,417 in the full ledger).
+  Every other number in those results matched; ids (`proposal_id`) differ because
+  they are not stable across rebuilds.
+- **Policy text is not in the bundle.** The 89 policy captures are restored with their
+  URLs, hashes and Wayback timestamps, but the engine has no policy sentences:
+  `policy_search` and `policy_diff` return nothing and say so. Re-fetch the public
+  wording with `glasshouse ingest commitments --wayback`, then `glasshouse engine
+  build` again.
+- It is stamped as restored: `ingest_runs` holds one `restore:<bundle>:<hash>` row and
+  `engine build` records `restored_from` in the engine's meta. It is not a live ingest
+  and `glasshouse doctor` will not treat it as one.
+
+**Slow path: ingest from SEC EDGAR.** This needs network access and a contact string
+for SEC fair access. Use your own; the code does not hide who you are.
+
+```sh
 export GLASSHOUSE_CONTACT="your-name-and-your-own-email"   # sent in the User-Agent
 glasshouse init-db                                          # 0.2 s; registers 20 institutions
 glasshouse ingest npx --institution bnp_paribas --max-filings 1   # about 2 s, one small filing
@@ -183,10 +215,9 @@ glasshouse engine build                                     # 0.2 s on that tiny
 glasshouse ask tools                                        # every question the engine answers
 ```
 
-The commands from `init-db` on were run on an empty data directory
-(`GLASSHOUSE_DATA_DIR` moves it); `pip install` was not re-run. A full ledger means
-many large downloads (N-PX exhibits are 65 to 124 MB each); a full ingest was not
-timed. On the full ledger `engine build` took 2 min 4 s. `ingest commitments
+The slow-path commands from `init-db` on were run on an empty data directory
+(`GLASSHOUSE_DATA_DIR` moves it). A full ledger means many large downloads (N-PX
+exhibits are 65 to 124 MB each); a full ingest was not timed. `ingest commitments
 --wayback` fetches the policy archive.
 
 Run `glasshouse ask coverage` first. Real calls on the full ledger (trimmed, reformatted):

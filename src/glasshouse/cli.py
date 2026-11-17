@@ -154,6 +154,26 @@ def cmd_release(args) -> int:
     return 0
 
 
+def cmd_restore(args) -> int:
+    from . import restore
+    try:
+        info = restore.restore(args.bundle)
+    except restore.RestoreError as exc:
+        print(f"  restore refused: {exc}")
+        return 1
+    print(f"  restored bundle {info['version']} (MANIFEST.sha256 verified, "
+          f"{info['manifest_sha256'][:12]}) → {info['ledger']} in {info['seconds']} s")
+    for t, n in info["counts"].items():
+        print(f"    {t:<22} {n:>10,} rows")
+    print("  votes: the bundle holds only kept rows, so every restored vote has "
+          "is_duplicate = 0 (as-filed duplicates and legacy_html rows are not in it).")
+    print("  policy text is NOT in the bundle: commitments keep URLs, hashes and Wayback "
+          "timestamps; re-fetch the wording with `glasshouse ingest commitments --wayback`.")
+    print("  stamped in ingest_runs as 'restore:...': this is not a live ingest.")
+    print("  next: glasshouse engine build")
+    return 0
+
+
 def cmd_investigate(args) -> int:
     from . import investigate
     conn = _conn()
@@ -1168,6 +1188,12 @@ def main(argv: list[str] | None = None) -> int:
                      help="skip proposal_decisions/director_decisions (no engine "
                           "currency check; DATASHEET.md says so)")
     rel.set_defaults(func=cmd_release)
+
+    rs = sub.add_parser("restore", help="create the ledger from a release bundle "
+                        "(verifies MANIFEST.sha256; refuses to overwrite data) so "
+                        "`engine build` works without a full SEC ingest")
+    rs.add_argument("bundle", help="release directory, e.g. data/releases/v2026-11-17")
+    rs.set_defaults(func=cmd_restore)
 
     inv = sub.add_parser("investigate", help="connect SAY↔DO: find managers that "
                          "commit to a theme but vote against it (the finding engine)")
