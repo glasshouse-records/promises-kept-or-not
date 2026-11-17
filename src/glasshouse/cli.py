@@ -1185,7 +1185,7 @@ def main(argv: list[str] | None = None) -> int:
                      help="also bundle a SQLite browse view (≈doubles size; "
                           "CSV/Parquet are the canonical formats)")
     rel.add_argument("--no-derived", action="store_true",
-                     help="skip proposal_decisions/director_decisions (no engine "
+                     help="skip the derived tables (no engine "
                           "currency check; DATASHEET.md says so)")
     rel.set_defaults(func=cmd_release)
 

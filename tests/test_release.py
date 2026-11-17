@@ -563,3 +563,30 @@ def test_datapackage_records_git_state(conn, tmp_path, monkeypatch):
     assert pkg["git_commit"] == "f" * 7
     assert "dirty" in (d / "DATASHEET.md").read_text().split("\n")[2]
     assert "working tree was dirty" in (d / "README.md").read_text()
+
+
+def test_pay_decisions_ships_both_kinds_with_every_column_defined(conn, tmp_path):
+    for desc, how in (("ADVISORY VOTE ON EXECUTIVE COMPENSATION", "FOR"),
+                      ("FREQUENCY OF ADVISORY VOTE ON EXECUTIVE COMPENSATION", "ONE YEAR")):
+        conn.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, "
+                     "vote_description, how_voted, shares_voted, is_duplicate, vote_source, "
+                     "category_type) VALUES ('ACC-1','TESLA','88160R101','2025-06-01',?,?,5,0,"
+                     "'ISSUER','SECTION 14A SAY-ON-PAY VOTES')", (desc, how))
+    conn.commit()
+    ep = _build_engine(conn, tmp_path)
+    release.build_release(conn, root=tmp_path, version="n8", with_parquet=False,
+                          engine_path=ep, institutions=REGISTRY)
+    d = tmp_path / "vn8"
+    rows = _read_csv(d / "facts" / "pay_decisions.csv")
+    assert {r["kind"] for r in rows} == {"approval", "frequency"}
+    assert all(r["accession"] and r["source_url"] for r in rows)
+    pkg = json.loads((d / "datapackage.json").read_text())
+    res = next(r for r in pkg["resources"] if r["name"] == "pay_decisions")
+    assert res["derived"] and res["rowCount"] == len(rows)
+    assert {f["name"] for f in res["schema"]["fields"]} == set(release.PAY_COLS)
+    assert "frequency" in res["description"] and "opposition" in res["description"]
+    assert "pay_decisions" in (d / "DATASHEET.md").read_text()
+    assert "facts/pay_decisions.csv" in (d / "MANIFEST.sha256").read_text()
+    release.build_release(conn, root=tmp_path, version="n9", with_parquet=False,
+                          engine_path=ep, institutions=REGISTRY, no_derived=True)
+    assert not list((tmp_path / "vn9" / "facts").glob("pay_decisions*"))

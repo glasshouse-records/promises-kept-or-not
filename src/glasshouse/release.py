@@ -166,6 +166,10 @@ DIRECTOR_COLS = ["director_id", "institution_id", "issuer_name", "cusip", "meeti
                  "year", "nominee_item", "position", "n_lines", "n_for", "n_against",
                  "n_other", "meeting_key", "adviser_key", "accession", "source_url",
                  "vote_id", "isin_country"]
+PAY_COLS = ["pay_id", "institution_id", "issuer_name", "cusip", "meeting_date", "year",
+            "description", "kind", "position", "n_lines", "n_for", "n_against", "n_other",
+            "meeting_key", "adviser_key", "accession", "source_url", "vote_id",
+            "isin_country"]
 
 # Verbatim excerpts of METHODOLOGY.md ("The evidence engine"); tests pin that each
 # is still a substring of it (whitespace-collapsed), so this text cannot drift.
@@ -188,6 +192,10 @@ METHODOLOGY_DIRECTORS = (
     "its fund lines. That is the country that *issued the ISIN*, not where the "
     "company is run (a Cayman-registered company is `KY`); it is NULL where no line "
     "has an ISIN, the prefix is malformed, or the lines disagree.",
+)
+METHODOLOGY_PAY = (
+    "say-on-pay *frequency* items (1/2/3 years) are not for/against, so they are "
+    "excluded from every count and reported only as `frequency_items`.",
 )
 
 NEW_TABLES: dict[str, dict] = {
@@ -252,6 +260,29 @@ NEW_TABLES: dict[str, dict] = {
         "position": "FOR | AGAINST (incl. WITHHOLD) | ABSTAIN | SPLIT | NONE",
         "n_lines": "ballot lines folded in", "n_for": "lines FOR", "n_against": "lines AGAINST or WITHHOLD",
         "n_other": "lines ABSTAIN or with another code", "meeting_key": "same meeting across managers (CUSIP|date)",
+        "adviser_key": "voting adviser group; same semantics as proposal_decisions",
+        "accession": "→ filings.accession", "source_url": "EDGAR source",
+        "vote_id": "→ votes.id of a representative line",
+        "isin_country": "country that ISSUED the ISIN (not where the company is run); "
+                        "NULL if none, malformed or lines disagree"},
+    "pay_decisions": {"_": "DERIVED. One row per management say-on-pay item (N-PX category "
+        "SECTION 14A SAY-ON-PAY VOTES) per manager and adviser, rebuilt from `votes` by "
+        "src/glasshouse/engine.py. Not a ledger table. Both kinds are shipped: `approval` "
+        "items are FOR/AGAINST; `frequency` items (1, 2 or 3 years) are NOT for/against, so "
+        "exclude kind = 'frequency' from any opposition count or rate.",
+        "pay_id": "engine row id; not stable across rebuilds",
+        "institution_id": "→ institutions.id", "issuer_name": "company voted on, as filed",
+        "cusip": "security CUSIP, as filed",
+        "meeting_date": "meeting date, ISO YYYY-MM-DD", "year": "meeting year",
+        "description": "the ballot line as filed",
+        "kind": "approval = a FOR/AGAINST vote on pay; frequency = a say-on-pay frequency "
+                "item (1/2/3 years), where `position` and n_for/n_against do not mean "
+                "support or opposition: exclude it from opposition counts",
+        "position": "FOR | AGAINST (incl. WITHHOLD) | ABSTAIN | SPLIT | NONE (share-weighted); "
+                    "not a for/against when kind = frequency",
+        "n_lines": "ballot lines folded in", "n_for": "lines FOR", "n_against": "lines AGAINST or WITHHOLD",
+        "n_other": "lines ABSTAIN or with another code (frequency choices land here)",
+        "meeting_key": "same meeting across managers (CUSIP|date)",
         "adviser_key": "voting adviser group; same semantics as proposal_decisions",
         "accession": "→ filings.accession", "source_url": "EDGAR source",
         "vote_id": "→ votes.id of a representative line",
@@ -375,7 +406,7 @@ def check_engine_current(conn: sqlite3.Connection, eng: sqlite3.Connection) -> i
         raise StaleEngineError(
             f"engine index is stale: it covers votes up to id {row[0] if row else None}, the "
             f"ledger's max vote id is {cur}. Run `glasshouse engine build`, or pass "
-            "--no-derived to ship without proposal_decisions/director_decisions.")
+            "--no-derived to ship without the derived tables.")
     return int(cur) if cur is not None else 0
 
 
@@ -416,7 +447,7 @@ CODE_LISTS_MD = """\
 - `ABSTAIN`: abstained. Whether a withheld director vote is filed as WITHHOLD or ABSTAIN is the filer's coding choice.
 - Anything else, as filed (frequency votes `ONE YEAR`, `1 YEAR`, `TWO YEARS`, `THREE YEARS`; `TAKE NO ACTION`; `DO NOT VOTE`; `NONE`; `Not Applicable`): the engine counts these lines as "other": in no FOR, AGAINST or ABSTAIN tally. A filed `NONE` is a `how_voted` value; the position `NONE` below is something else.
 
-`position` (`proposal_decisions`, `director_decisions`) is one decision per manager and adviser
+`position` (`proposal_decisions`, `director_decisions`, `pay_decisions`) is one decision per manager and adviser
 for one item, folded from its fund lines and weighted by `shares_voted` (by line count where no
 shares were filed):
 
@@ -502,7 +533,7 @@ def _derived_extra(pkg: dict, datasheet: str, notes: dict) -> str:
         "with another adviser's policy, produces false results.**", "",
         "- One institution's registrants can be voted by different advisers under "
         "different policies. Group votes by `adviser_key` "
-        "(`proposal_decisions`, `director_decisions` and the shipped `votes`, which carries "
+        "(`proposal_decisions`, `director_decisions`, `pay_decisions` and the shipped `votes`, which carries "
         "the key resolved from `voting_advisers` by registrant CIK, `vote_series` and meeting "
         "date).",
         "- A policy version (`policy_versions`) applies only to votes with the SAME "
@@ -525,8 +556,8 @@ def _derived_extra(pkg: dict, datasheet: str, notes: dict) -> str:
         warn += [f"Derived tables were built from an engine index covering ledger votes up to "
                  f"id {notes['ledger_max_vote_id']} (equal to the ledger's maximum at build).", ""]
     else:
-        warn += ["**This bundle was built with `--no-derived`: `proposal_decisions` and "
-                 "`director_decisions` are NOT included.**", ""]
+        warn += ["**This bundle was built with `--no-derived`: `proposal_decisions`, "
+                 "`director_decisions` and `pay_decisions` are NOT included.**", ""]
     # `votes` ships two columns the ledger table does not have: document them in its section.
     i = datasheet.index("### `votes`")
     j = datasheet.index("\n\n", i)
@@ -626,11 +657,15 @@ def _build(conn, eng, root, version, with_parquet, with_sqlite, no_derived, max_
                             for c in PROPOSAL_COLS], PROPOSAL_COLS, "proposal_id")
         d_fn = _engine_rows(eng, "director_votes", [c if c != "adviser_key" else "adviser"
                             for c in DIRECTOR_COLS], DIRECTOR_COLS, "director_id")
+        y_fn = _engine_rows(eng, "pay_votes", [c if c != "adviser_key" else "adviser"
+                            for c in PAY_COLS], PAY_COLS, "pay_id")
         extra += [
             ("proposal_decisions", PROPOSAL_COLS, p_fn,
              eng.execute("SELECT COUNT(*) FROM proposals").fetchone()[0]),
             ("director_decisions", DIRECTOR_COLS, d_fn,
-             eng.execute("SELECT COUNT(*) FROM director_votes").fetchone()[0])]
+             eng.execute("SELECT COUNT(*) FROM director_votes").fetchone()[0]),
+            ("pay_decisions", PAY_COLS, y_fn,
+             eng.execute("SELECT COUNT(*) FROM pay_votes").fetchone()[0])]
     for name, cols, rows, n in extra:
         fn = rows if callable(rows) else (lambda r=rows: iter(r))
         n = len(rows) if n is None else n
@@ -659,11 +694,12 @@ def _build(conn, eng, root, version, with_parquet, with_sqlite, no_derived, max_
                "description": spec["_"],
                "schema": {"fields": [{"name": k, "description": v}
                                      for k, v in spec.items() if k != "_"]}}
-        if name in ("proposal_decisions", "director_decisions"):
+        if name in ("proposal_decisions", "director_decisions", "pay_decisions"):
             res["derived"] = True
             res["derivation"] = ("Rebuilt from `votes` by src/glasshouse/engine.py "
                                  "(`glasshouse engine build`); not a ledger table.")
             res["methodology"] = list(METHODOLOGY_PROPOSALS if name == "proposal_decisions"
+                                      else METHODOLOGY_PAY if name == "pay_decisions"
                                       else METHODOLOGY_DIRECTORS)
         pkg["resources"].append(res)
     for res in pkg["resources"]:                      # attach real paths + hashes
