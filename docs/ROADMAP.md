@@ -20,7 +20,7 @@ Tick with the date and one line of result.
 - [x] 2026-11-17 Votes are kept apart by the adviser that cast them, per fund series and by date; policy-vote pairing is refused across advisers. All 38 registrants' advisers verified from SEC filings (Vanguard split 2026-01-12, BlackRock 2025-01-01).
 - [x] 2026-11-17 Review findings fixed: policy versions keyed by date, unlabelled and undated lines held apart, claims select rows by key, stricter wording and quote lints.
 - [x] 2026-11-17 Director tools report non-support (against + abstain) and warn on a coding shift; BlackRock's 2025 filings record withheld votes as abstain.
-- [ ] Coding-shift warning misses small counts (JPMorgan abstain 60 → 40 → 0). *(builder)*
+- [x] Coding-shift warning misses small counts (JPMorgan abstain 60 → 40 → 0). *(2026-11-17: also warns when abstain vanishes — ≥30 in one period, 0 in another with ≥30 not_supported; six drafts still verify)*
 - [ ] Say-on-pay votes are on file for every manager but not indexed; index them as a third category so pay policy can be set beside pay votes. *(builder, then reviewer)*
 - [ ] UBS, BNP Paribas, Bank of America hold pay votes only: find their US fund trusts that file full N-PX reports. *(source-medic)*
 - [ ] A tool that returns how many versions of a document are archived (drafts cannot cite a count today). *(builder)*

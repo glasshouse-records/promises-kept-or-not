@@ -1505,3 +1505,16 @@ def test_the_desk_requires_non_support_beside_opposed_when_coding_shifted(shifte
     good = desk.verify({**base, "body": "Alpha opposed 40 nominees in 2024, and did not "
                         "support 40. [c1] [c2]"}, shifted)
     assert not any("not_supported" in p for p in good["problems"])
+
+
+def test_coding_shift_flags_abstain_that_disappears_even_when_its_share_is_small():
+    # JPMorgan: abstain 60 -> 40 -> 0 out of ~1,000 not_supported. The share moves
+    # only 6 points, but a category that vanishes entirely is a recording change.
+    parts = {"2023": (60, 1000), "2024": (40, 900), "2025": (0, 800)}
+    assert engine.Engine._coding_shift(parts)[0].startswith(engine.CODING_SHIFT)
+
+
+def test_coding_shift_stays_quiet_on_small_steady_abstain():
+    assert engine.Engine._coding_shift({"2023": (60, 1000), "2024": (45, 900)}) == []
+    # too few abstain items anywhere to read a recording change into
+    assert engine.Engine._coding_shift({"2023": (5, 1000), "2024": (0, 900)}) == []

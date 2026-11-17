@@ -1457,11 +1457,15 @@ class Engine:
         record a withheld vote as WITHHOLD (counted in `opposed`) or as ABSTAIN
         (not), and a change of filing agent changes that. If the abstain share of
         not_supported moves by more than 15 points between two periods, and one of
-        them holds at least 30 abstain items, `opposed` is not comparable."""
+        them holds at least 30 abstain items, `opposed` is not comparable. So too
+        when abstain vanishes: one period holds at least 30 abstain items and
+        another, with at least 30 not_supported, holds none (a category that
+        disappears is a recording change even when its share was small)."""
         shares = {k: a / ns for k, (a, ns) in parts.items() if ns}
         if len(shares) < 2 or max(a for a, _ in parts.values()) < _CODING_MIN_ABSTAIN:
             return []
-        if max(shares.values()) - min(shares.values()) <= _CODING_SHIFT_POINTS:
+        vanished = any(a == 0 and ns >= _CODING_MIN_ABSTAIN for a, ns in parts.values())
+        if not vanished and max(shares.values()) - min(shares.values()) <= _CODING_SHIFT_POINTS:
             return []
         counts = "; ".join(f"{k}: {a} abstain of {ns} not_supported ({a / ns:.0%})"
                            for k, (a, ns) in parts.items() if ns)
