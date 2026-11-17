@@ -222,3 +222,21 @@ def test_a_truncated_download_is_retried_once(conn, monkeypatch):
     _serve_seq(monkeypatch, [_PdfResp(_GOOD_PDF[:1500], len(_GOOD_PDF)),
                              _PdfResp(_GOOD_PDF, len(_GOOD_PDF))])
     assert commitments.fetch_live(conn, _PDF_INSTS) == {"alpha/policy": 1}
+
+
+def test_backfill_retry_of_a_known_unreadable_pdf_does_not_warn(caplog):
+    """An archived capture that was already unreadable (T. Rowe Wayback row 62,
+    cut at 1 MiB) was re-tried by the backfill on every run and warned daily:
+    a permanent false alarm. A fresh capture that fails must still warn."""
+    import logging
+
+    from glasshouse.ingest import commitments
+    broken = b"%PDF-1.7 truncated"
+    with caplog.at_level(logging.WARNING, logger="glasshouse.ingest.commitments"):
+        assert commitments.version_identity(broken, "application/pdf", "u", quiet=True)[1] == ""
+    ours = [r for r in caplog.records if r.name == "glasshouse.ingest.commitments"]
+    assert not ours
+    caplog.clear()
+    with caplog.at_level(logging.WARNING, logger="glasshouse.ingest.commitments"):
+        commitments.version_identity(broken, "application/pdf", "u")
+    assert any("extraction failed" in r.getMessage() for r in caplog.records)

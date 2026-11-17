@@ -123,7 +123,7 @@ def html_to_text(raw: str) -> str:
     return re.sub(r"\s+", " ", txt).strip()
 
 
-def policy_text(content: bytes, content_type: str = "", url: str = "") -> str:
+def policy_text(content: bytes, content_type: str = "", url: str = "", quiet: bool = False) -> str:
     """The readable policy text of a snapshot, or '' if it can't be read.
 
     An empty return is deliberate and load-bearing: callers must fall back to
@@ -140,7 +140,8 @@ def policy_text(content: bytes, content_type: str = "", url: str = "") -> str:
             reader = PdfReader(BytesIO(content))
             text = "\n".join((page.extract_text() or "") for page in reader.pages)
         except Exception as exc:
-            logger.warning("policy-text extraction failed (%s): %s", url, exc)
+            (logger.debug if quiet else logger.warning)(
+                "policy-text extraction failed (%s): %s", url, exc)
             return ""
         return re.sub(r"\s+", " ", text).strip()
     raw = content.decode("utf-8", "replace")
@@ -151,11 +152,12 @@ def policy_text(content: bytes, content_type: str = "", url: str = "") -> str:
     return re.sub(r"\s+", " ", raw).strip()
 
 
-def version_identity(content: bytes, content_type: str = "", url: str = "") -> tuple[str, str]:
+def version_identity(content: bytes, content_type: str = "", url: str = "",
+                     quiet: bool = False) -> tuple[str, str]:
     """(raw_sha256, text_sha256). text_sha256 is '' when the text could not be
     read or is too short to trust — the caller then dedupes on bytes."""
     raw_sha = hashlib.sha256(content).hexdigest()
-    text = policy_text(content, content_type, url)
+    text = policy_text(content, content_type, url, quiet=quiet)
     if len(text) < _MIN_TEXT:
         return raw_sha, ""
     return raw_sha, hashlib.sha256(text.encode()).hexdigest()
@@ -319,7 +321,8 @@ def backfill_text_hashes(conn: sqlite3.Connection) -> int:
         _raw, text_sha = version_identity(
             content,
             row["content_type"] if isinstance(row, sqlite3.Row) else row[2],
-            row["url"] if isinstance(row, sqlite3.Row) else row[3])
+            row["url"] if isinstance(row, sqlite3.Row) else row[3],
+            quiet=True)                   # a re-try of an archived row: it warned when captured
         if not text_sha:
             continue                      # unreadable: stays on byte identity
         conn.execute("UPDATE commitments SET text_sha256=? WHERE id=?",
