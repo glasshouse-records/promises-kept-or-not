@@ -1226,3 +1226,102 @@ institutions:
         url: "https://www.dimensional.com/chmedia/428704/source/download/summary-of-standard-proxy-voting-guidelines.pdf"
         adviser: "Dimensional Fund Advisors LP"
         adviser_key: "DFA"
+
+  wellington:
+    display_name: "Wellington Management Group LLP"
+    short_name: "Wellington"
+    cik: "0000902219"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Wellington Management Group LLP (13-F filer; the advisory arm Wellington Management Company LLP files N-PX as an institutional manager, CIK 1633863). Wellington has no fund trust of its own: it votes proxies as sub-adviser for funds sitting in other brands' trusts, added 2026-11-17 per series. aum_usd_tr left 0 (firm AUM not verified from an official source), so it carries no weight in AUM-weighted metrics."
+    npx_ciks:
+      # Added 2026-11-17 (Wellington follow-up). Hartford trusts whose funds are sub-advised by Wellington Management Company LLP. Only a series whose OWN
+      # SAI says Wellington Management is its (sole) sub-adviser, under an SAI proxy-voting section that delegates all proxy voting to the sub-adviser, is
+      # keyed WELLINGTON; every other series (Schroders-sub-advised, funds of funds voted by HFMC, multi-adviser) stays unlabelled, never guessed.
+      - cik: "1053425"
+        adviser: "Hartford Funds Management Company, LLC (HFMC) is the investment manager; Wellington Management Company LLP is sub-adviser and votes the proxies of the series keyed WELLINGTON below; other series not attributed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1053425/000119312526154562/d947144d485bpos.htm"  # 485BPOS filed 2026-04-14; SAI PROXY VOTING POLICY AND PROCEDURES: HFMC delegated authority to vote all proxies to the sub-adviser
+        adviser_verified: "2026-11-17"
+        voting_note: "Series keyed WELLINGTON: the SAI states the series' sub-adviser is Wellington Management (only) and that proxy voting authority is delegated to the sub-adviser, whose policy (Wellington Global Proxy Policy and Procedures) is reproduced in the SAI. All other series are left unlabelled."
+        series_adviser:
+          S000003205: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Balanced HLS Fund; SAI 0001193125-26-154562 filed 2026-04-14
+          S000003206: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Healthcare HLS Fund; SAI 0001193125-26-154562 filed 2026-04-14
+          S000003213: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford International Opportunities HLS Fund; SAI 0001193125-26-154562 filed 2026-04-14
+          S000003215: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford MidCap HLS Fund; SAI 0001193125-26-154562 filed 2026-04-14
+          S000003216: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Capital Appreciation HLS Fund; SAI 0001193125-26-154562 filed 2026-04-14
+          S000003218: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Ultrashort Bond HLS Fund; SAI 0001193125-26-154562 filed 2026-04-14
+          S000003220: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Small Company HLS Fund; SAI 0001193125-26-154562 filed 2026-04-14
+          S000003221: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Stock HLS Fund; SAI 0001193125-26-154562 filed 2026-04-14
+          S000003222: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Total Return Bond HLS Fund; SAI 0001193125-26-154562 filed 2026-04-14
+          S000003224: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Disciplined Equity HLS Fund; SAI 0001193125-26-154562 filed 2026-04-14
+          S000003225: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Dividend and Growth HLS Fund; SAI 0001193125-26-154562 filed 2026-04-14
+          S000084804: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Small Cap Growth HLS Fund; SAI 0001193125-26-154562 filed 2026-04-14
+        name: "Hartford Series Fund, Inc."
+        validated: "2026-11-17"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1006415"
+        adviser: "Hartford Funds Management Company, LLC (HFMC) is the investment manager; Wellington Management Company LLP is sub-adviser and votes the proxies of the series keyed WELLINGTON below; other series not attributed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1006415/000119312526074898/d109173d485bpos.htm"  # 485BPOS filed 2026-02-26; SAI PROXY VOTING POLICY AND PROCEDURES: HFMC delegated authority to vote all proxies to the sub-adviser
+        adviser_verified: "2026-11-17"
+        voting_note: "Series keyed WELLINGTON: the SAI states the series' sub-adviser is Wellington Management (only) and that proxy voting authority is delegated to the sub-adviser, whose policy (Wellington Global Proxy Policy and Procedures) is reproduced in the SAI. All other series are left unlabelled."
+        series_adviser:
+          S000003571: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Multi-Asset Income Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003572: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Floating Rate Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003576: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Healthcare Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003580: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford High Yield Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003584: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Inflation Plus Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003585: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford International Growth Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003586: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford International Opportunities Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003588: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford MidCap Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003589: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford MidCap Value Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003592: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Small Cap Value Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003596: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Short Duration Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003597: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Small Company Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003604: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Capital Appreciation Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003605: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Total Return Bond Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003609: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Core Equity Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003610: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Dividend and Growth Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000003611: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Equity Income Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000012949: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Balanced Income Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000017746: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Municipal Opportunities Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000017747: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Strategic Income Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000022584: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford International Equity Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000029045: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Real Asset Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000029046: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford International Value Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000032809: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Emerging Markets Local Debt Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000032810: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Emerging Markets Equity Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000032811: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford World Bond Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000049412: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Sustainable Municipal Bond Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000049413: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Municipal Short Duration Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000053012: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Climate Opportunities Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000055770: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Global Impact Fund; SAI 0001193125-26-074898 filed 2026-02-26
+          S000076486: [{key: WELLINGTON, from: "2025-07-01"}]  # Hartford Dynamic Bond Fund; SAI 0001193125-26-074898 filed 2026-02-26
+        name: "Hartford Mutual Funds, Inc."
+        validated: "2026-11-17"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "49905"
+        adviser: "Hartford Funds Management Company, LLC (HFMC) is the investment manager; Wellington Management Company LLP is sub-adviser and votes the proxies of the series keyed WELLINGTON below; other series not attributed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/49905/000119312526074912/d107520d485bpos.htm"  # 485BPOS filed 2026-02-26; SAI PROXY VOTING POLICY AND PROCEDURES: HFMC delegated authority to vote all proxies to the sub-adviser
+        adviser_verified: "2026-11-17"
+        voting_note: "Series keyed WELLINGTON: the SAI states the series' sub-adviser is Wellington Management (only) and that proxy voting authority is delegated to the sub-adviser, whose policy (Wellington Global Proxy Policy and Procedures) is reproduced in the SAI. All other series are left unlabelled."
+        series_adviser:
+          S000004013: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Growth Opportunities Fund; SAI 0001193125-26-074912 filed 2026-02-26
+          S000004014: [{key: WELLINGTON, from: "2025-07-01"}]  # The Hartford Small Cap Growth Fund; SAI 0001193125-26-074912 filed 2026-02-26
+        name: "Hartford Mutual Funds II, Inc."
+        validated: "2026-11-17"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Wellington votes the proxies of the Hartford series keyed WELLINGTON (45: all 12 Hartford Series Fund HLS funds, 31 Hartford Mutual Funds series, 2 Hartford Mutual Funds II series) per each series' own SAI, which states Wellington Management is the fund's sub-adviser and that HFMC delegated proxy voting to the sub-adviser; keyed from 2025-07-01 (the N-PX period of the SAIs read), earlier meetings stay unlabelled."
+      - "Left unlabelled, not attributed: Hartford Schroders series (Schroder Investment Management North America is sub-adviser), the Funds of Funds (Conservative, Moderate and Moderately Aggressive Allocation, Checks and Balances: HFMC votes underlying-fund proxies), Hybrid and Credit Opportunities (not named with Wellington in the SAI), and other Hartford trusts or older filings not read. Unlabelled lines are not asserted to be voted by anyone."
+      - "Vanguard: only Vanguard Explorer Value Fund (S000028087, Vanguard Scottsdale Funds) is a tracked Vanguard series with Wellington as one of several outside advisers; it stays EXTERNAL (Ariel, Frontier and Wellington each vote their own sleeve and no sleeve split is in the N-PX). Vanguard's Wellington-managed trusts (Windsor, Wellington Fund, Wellesley Income) and John Hancock series are not tracked and their SAIs were not read, so nothing is keyed."
+      - "The Wellington Management Co LLP N-PX filers (CIK 1633863 and affiliates) are institutional-manager reports and are not ingested here; the sub-advised fund votes appear in the Hartford trusts' own N-PX, so ingesting both would count the same ballots twice."
+    commitments:
+      # Verified 2026-11-17 (200, application/pdf), linked from https://www.wellington.com/en/sustainability/stewardship-and-esg-integration
+      # ("Global proxy voting policy and procedures"; the file name carries Sept 2023, the edition reproduced in the Hartford SAI appendix).
+      - label: global-proxy-policy-and-procedures
+        url: "https://www.wellington.com/content/dam/wellington/pdf/en/global-proxy-policy-and-procedures-final-sept-2023.pdf"
+        adviser: "Wellington Management Company LLP"
+        adviser_key: "WELLINGTON"
+      # Verified 2026-11-17 (200, application/pdf), same page. Year-named; re-point it when Wellington publishes the next edition.
+      - label: proxy-voting-guidelines-2026
+        url: "https://www.wellington.com/content/dam/wellington/pdf/en/2026-proxy-voting-guidelines.pdf"
+        adviser: "Wellington Management Company LLP"
+        adviser_key: "WELLINGTON"
