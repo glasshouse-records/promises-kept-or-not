@@ -58,6 +58,8 @@ fund trusts are on file, often a small part of a large manager.
 | Deutsche Bank (DWS) | DIMA | 2024-26 | all kinds | 3 | 2 (from 2026-06-27) | One archived letter is DWS Investment GmbH's, not the US trusts' adviser |
 | Northern Trust | none keyed | 2024-26 | all kinds | 1 | 4 (from 2024-05-14) | Multi-manager series use outside sub-advisers |
 | Charles Schwab Trust | none keyed | 2024-26 | all kinds | 2 | 0 | No policy archived |
+| Capital Group (American Funds) | none keyed | 2024-26 | all kinds | 20 (19 file votes) | 2 (from 2025-04-05) | CRMC votes all 20 trusts; its equity divisions are not separated in the filings |
+| Dimensional | none keyed | 2024-26 | all kinds | 3 | 2 (from 2025-12-28) | 2025 and 2026 reports of two trusts stop at exactly 500,000 records in the SEC file itself: counts are lower bounds |
 | UBS | none keyed | 2024-26 | pay only | 1 | 2 (from 2024-06-11) | Combined report for several UBS entities |
 | BNP Paribas AM | none keyed | 2024-26 | pay only | 1 | 4 (from 2024-04-21) | Ex-AXA IM votes may not follow the archived policy |
 | Bank of America | none | 2024-26 | pay only, 30 lines | 1 | 0 | Not a fund manager; holdings and enforcement only |
