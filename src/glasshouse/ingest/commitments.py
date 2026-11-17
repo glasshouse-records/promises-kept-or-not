@@ -411,6 +411,31 @@ def wayback_history(url: str, limit: int = 50) -> list[dict]:
     return [dict(zip(header, r)) for r in entries]
 
 
+def _wayback_one(conn: sqlite3.Connection, inst_id: str, label: str, url: str,
+                 max_versions: int) -> int:
+    """Archive the distinct Wayback versions of one address; returns new count."""
+    n_new = 0
+    try:
+        history = wayback_history(url, limit=max_versions)
+    except Exception as exc:
+        logger.warning("%s/%s wayback history failed: %s", inst_id, label, exc)
+        return 0
+    for snap in history:
+        ts = snap["timestamp"]
+        raw_url = f"https://web.archive.org/web/{ts}id_/{url}"
+        try:
+            resp = http.get(raw_url, timeout=120)
+        except Exception as exc:
+            logger.warning("wayback %s@%s fetch failed: %s", label, ts, exc)
+            continue
+        if record_snapshot(conn, inst_id, label, url, resp.content,
+                           snap.get("mimetype", ""), wayback_timestamp=ts,
+                           retrieval_date=date.today().isoformat()):
+            n_new += 1
+            logger.info("%s/%s: archived wayback version %s", inst_id, label, ts)
+    return n_new
+
+
 def fetch_wayback(conn: sqlite3.Connection, institutions: dict[str, dict],
                   max_versions: int = 10) -> int:
     """Ingest distinct historical versions of every configured commitment doc.
@@ -421,25 +446,11 @@ def fetch_wayback(conn: sqlite3.Connection, institutions: dict[str, dict],
     n_new = 0
     for inst_id, inst in institutions.items():
         for doc in inst.get("commitments", []):
-            label, url = doc["label"], doc["url"]
-            try:
-                history = wayback_history(url, limit=max_versions)
-            except Exception as exc:
-                logger.warning("%s/%s wayback history failed: %s", inst_id, label, exc)
-                continue
-            for snap in history:
-                ts = snap["timestamp"]
-                raw_url = f"https://web.archive.org/web/{ts}id_/{url}"
-                try:
-                    resp = http.get(raw_url, timeout=120)
-                except Exception as exc:
-                    logger.warning("wayback %s@%s fetch failed: %s", label, ts, exc)
-                    continue
-                if record_snapshot(conn, inst_id, label, url, resp.content,
-                                   snap.get("mimetype", ""), wayback_timestamp=ts,
-                                   retrieval_date=date.today().isoformat()):
-                    n_new += 1
-                    logger.info("%s/%s: archived wayback version %s", inst_id, label, ts)
+            label = doc["label"]
+            # The current address first, then any earlier addresses the
+            # publisher used (`former_urls`); same label, so one lineage.
+            for url in [doc["url"], *doc.get("former_urls", [])]:
+                n_new += _wayback_one(conn, inst_id, label, url, max_versions)
     return n_new
 
 

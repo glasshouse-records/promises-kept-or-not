@@ -206,7 +206,7 @@ institutions:
     voting_scope_notes:
       - "Before 2026-01-12 one Vanguard Group policy governed all internally managed funds; Vanguard Portfolio Management Investment Stewardship (VPMIS) and Vanguard Capital Management Investment Stewardship (VCMIS) both launched on 2026-01-12 (VPMIS 2026 annual report, https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vpm/vpmis_2026_annual_report.pdf)."
       - "Series-to-team mapping comes from Vanguard's two funds lists dated 2026-01-12 (https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vpm/vpm-funds.pdf and https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vcm/vcm-funds.pdf); lists published later could differ, and the date key compares the meeting date, not the date the vote was cast."
-      - "The archive holds one pre-split Vanguard policy capture (Wayback 2022-01-17); the editions in force between 2022 and 2026-01-11 are not archived, so votes in that window are compared against the 2022 text."
+      - "The archive holds four pre-split Vanguard policy captures (Wayback 2022-01-17, 2023-01-28, 2024-03-03, 2025-02-09, the Feb 2023/2024/2025 editions); any amendment between those captures is not archived, so votes in that window are compared against the nearest earlier edition on file."
       - "Vanguard Explorer Value Fund (S000028087) is kept apart as EXTERNAL: Vanguard's N-CSR names Ariel Investments, Frontier Capital Management and Wellington Management as its advisers (https://www.sec.gov/Archives/edgar/data/1021882/000110465926121068/tm2624997d8_ncsr.htm) and neither funds list includes it."
       - "For Total Stock Market Index Fund the manager of its totally held subsidiary votes independently using a proxy advisory firm (SAI p. B-61, https://www.sec.gov/Archives/edgar/data/36405/000003640526000181/f45032d1.htm); it was not verified whether those votes appear in the N-PX lines for S000002848."
       - "Vanguard Investor Choice (SAI Appendix B, same SAI URL) lets shareholders of listed index funds direct their pro-rata votes under other policies; it was not verified how those votes are reported in the N-PX."
@@ -228,6 +228,15 @@ institutions:
         # launched on 2026-01-12.
         adviser_key: "VPM"
         adviser_key_history: [{key: VANGUARD, until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]
+        # Earlier addresses of the unified Vanguard Group policy (verified by
+        # title and text in the Wayback captures 2023-01-28, 2024-03-03 and
+        # 2025-02-09: "Proxy voting policy for U.S. portfolio companies",
+        # effective Feb 2023 / Feb 2024 / Feb 2025). Walked by
+        # `glasshouse ingest commitments --wayback`; keyed VANGUARD by the history above.
+        former_urls:
+          - "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/us_proxy_voting_2023.pdf"
+          - "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/us_proxy_voting_policy_2024.pdf"
+          - "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/us_proxy_voting_policy_2025.pdf"
       # Added 2026-11-17: the sibling policy for funds advised through Vanguard
       # Capital Management, LLC (Total Stock Market, 500, Extended Market,
       # Institutional Index, international index funds, ...). Listed at
