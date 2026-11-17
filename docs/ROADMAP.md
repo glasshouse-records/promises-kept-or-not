@@ -17,13 +17,16 @@ Tick with the date and one line of result.
 - [x] 2026-11-17 `country=` on the director tools (country that issued the ISIN); Vanguard Jan–Jun 2026 splits sum to the overall 79,430.
 - [ ] `country=` with a code no item carries (e.g. UK instead of GB) returns empty without a warning. *(builder)*
 - [x] 2026-11-17 T. Rowe Price advisers verified from each fund's 485BPOS (filed 2026-02-25): three funds are TRPA-voted; Capital Appreciation (CIK 793347) is TRPIM-voted. TRPIM's own guidelines now captured.
-- [ ] Engine: `adviser` on registrants and on policy documents; `adviser=` filter on vote tools; a caveat whenever an institution's registrants are voted by different advisers; `say_vs_do`/`policy_in_force` must not pair a policy with another adviser's votes. *(builder, then reviewer)*
-- [ ] Verifier and tool faults reported by the three investigations (quote pairing, "majority vote", registrant and series names, unknown country code). *(builder — running)*
-- [ ] Skeptical review of the engine + desk as they now stand. *(glasshouse-reviewer)*
+- [x] 2026-11-17 Votes are kept apart by the adviser that cast them, per fund series and by date; policy-vote pairing is refused across advisers. All 38 registrants' advisers verified from SEC filings (Vanguard split 2026-01-12, BlackRock 2025-01-01).
+- [ ] Review findings on the above (a policy version keyed to the wrong adviser by date, unlabelled lines, row-position claims, quote and wording lints). *(builder — running)*
+- [ ] BlackRock: 10 fund series could not be placed under either policy and are held as UNRESOLVED (includes iShares Core S&P 500 ETF). *(source-medic)*
+- [ ] Policy editions missing from the archive for advisers whose votes are on file (Vanguard 2022–2026 unified editions; VPM text Jan–Jul 2026). Wayback backfill. *(clerk runs `ingest commitments --wayback`, medic if it fails)*
+- [x] 2026-11-17 Six verifier and tool faults from the investigations fixed (quote pairing, registrant and series names, unknown country code).
+- [x] 2026-11-17 Skeptical review of the day's diff: one high, two medium findings; scripts fixed, the rest with the builder.
 
 ## 3. Show what the instrument can do (verified drafts in `data/desk/`)
-- [ ] T. Rowe Price board-composition wording vs director votes — verified 47/47 on 2026-11-16 but its vote figures include the TRPIM-voted fund; redo scoped to the three TRPA funds once `adviser=` exists. *(journalist)*
-- [x] 2026-11-17 Deutsche/DWS US trusts: climate support 44 of 51 → 12 of 32 → 3 of 22 over three seasons, lobbying steady; same funds, same companies. VERIFIED. Open for a human: proposal sponsors, which adviser votes the trusts.
+- [x] 2026-11-17 T. Rowe Price Associates: board-diversity rule reworded in the version captured 2026-03-09; opposition to US nominees flat (3.51%, 4.53%, 4.5%). VERIFIED 84/84, scoped to the three TRPA-voted funds. The pooled draft is in `data/desk/superseded/`.
+- [x] 2026-11-17 Deutsche/DWS US trusts: climate support 44 of 51 → 12 of 32 → 3 of 22 over three seasons, lobbying steady; same funds, same companies. VERIFIED. Re-verified with the US adviser and its own policy. Open for a human: proposal sponsors; confirm DIMA votes the Equity 500 Index Portfolio.
 - [ ] BlackRock global principles: what left the text between 2025-09-30 and 2026-06-11. *(journalist)*
 - [x] 2026-11-17 Fidelity October 2026 guidelines: two long-standing sentences removed, poison-pill and supermajority rules softened, burn-rate limits added. VERIFIED 48/48.
 - [ ] UBS policy: what changed between the 2024 document and the one dated 2026-05-15. *(journalist)*
