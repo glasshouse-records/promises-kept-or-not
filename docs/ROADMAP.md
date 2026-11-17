@@ -41,6 +41,7 @@ Tick with the date and one line of result.
 - [x] 2026-11-17 Capital Group follow-ups: 17 more trusts added, all with N-CSR naming CRMC as adviser and SAI/prospectus on proxy procedures (US Equity Fund, 12 Capital Group ETFs, ETF Trust I, US Small & Mid Cap, Central Fund Series I/II, Completion Fund Series); 55,458 vote rows ingested (Central I/II file notice reports only, 0 votes).
 - [ ] Capital Group left out: Fixed Income ETF Trust (CIK 1870117, bond-only), KKR (plus) ETFs (CIKs 2040315, 2040318, 2078301, sub-advised), Portfolio Series (1537151) and the bond-only American Funds trusts; read each SAI for the voting adviser before adding. *(source-medic)*
 - [ ] Dimensional master funds (CIK 896162, 896163) and the Sustainability/Social guideline pairing by series. *(source-medic)*
+- [ ] Dated policy text from SAI appendices: Geode's and Wellington's policies have no Wayback history (first captured 2026-11-17, so no vote can be paired yet), but each fund SAI on EDGAR reproduces the policy with a filing date. Design: archive the SAI appendix as a policy version dated by the SAI's filing date, with version identity on the extracted policy section only (whole-SAI hashes change on every filing). Brainstorm, then test-first. *(builder, after design)*
 - [x] 2026-11-17 Six verifier and tool faults from the investigations fixed (quote pairing, registrant and series names, unknown country code).
 - [x] 2026-11-17 Skeptical review of the day's diff: one high, two medium findings; scripts fixed, the rest with the builder.
 
