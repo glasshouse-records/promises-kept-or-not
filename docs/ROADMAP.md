@@ -24,7 +24,7 @@ Tick with the date and one line of result.
 - [ ] Say-on-pay votes are on file for every manager but not indexed; index them as a third category so pay policy can be set beside pay votes. *(builder, then reviewer)*
 - [ ] UBS, BNP Paribas, Bank of America hold pay votes only: find their US fund trusts that file full N-PX reports. *(source-medic)*
 - [x] A tool that returns how many versions of a document are archived (drafts cannot cite a count today). *(2026-11-17: `policy_counts`, one row per document — versions, readable_versions, first/last capture; cite `[doc_label=…].versions`)*
-- [ ] BlackRock: 10 fund series could not be placed under either policy and are held as UNRESOLVED (includes iShares Core S&P 500 ETF). *(source-medic)*
+- [x] 2026-11-17 BlackRock: re-checked all 10 unplaced series against 45 iShares Trust SAIs; none can be keyed (Core S&P 500 ETF has its own voting-choice policy; the rest are named in no 2025-26 SAI), so all stay UNRESOLVED with the reason on record.
 - [ ] Policy editions missing from the archive for advisers whose votes are on file (Vanguard 2023–2025 unified editions; VPM text Jan–Jul 2026). Backfill on 2026-11-17 recovered 9 versions but only looks up each document's current address; earlier addresses must be found. *(source-medic)*
 - [x] 2026-11-17 Six verifier and tool faults from the investigations fixed (quote pairing, registrant and series names, unknown country code).
 - [x] 2026-11-17 Skeptical review of the day's diff: one high, two medium findings; scripts fixed, the rest with the builder.

@@ -60,6 +60,16 @@ institutions:
           S000059297: [{key: BIS, until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
           S000075472: [{key: BIS, until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
         # UNRESOLVED from 2025-01-01: series with post-2025 votes that appear in no 2025-26 SAI policy table, so BIS vs BAIS could not be established (see voting_scope_notes).
+        # Re-checked 2026-11-17 against all 45 iShares Trust (CIK 1100663) 485BPOS filings of 2025-02-25..2026-09-14: none names any of the four closed series below.
+        #  S000004310 iShares Core S&P 500 ETF: it has its OWN Proxy Voting Policy (Appendix A-1 of 485BPOS 0001193125-26-318131, filed 2026-07-27,
+        #    https://www.sec.gov/Archives/edgar/data/1100663/000119312626318131/d132601d485bpos.htm). Effective 2025-01-01, a voting-choice program: eligible
+        #    shareholders pick BIS Global Benchmark or one of seven third-party policies (Egan-Jones, Glass Lewis, ISS); BIS is only the default for non-electing
+        #    shares. The other iShares SAIs (e.g. 0001193125-26-064179) exclude it from the index-equity BIS policy. A single BIS key would mislabel the
+        #    third-party-policy shares, so it stays UNRESOLVED.
+        #  S000017779 (International Developed Property), S000065014 (Future Cloud 5G and Tech), S000075506 (Emergent Food and AgTech), S000076619 (MSCI Water
+        #    Management): no 2025-26 SAI names them, so no filing states a policy. Last votes 2025-04-30 / 2025-08-20 / 2025-06-18 / 2025-08-15. IDAT, IVEG and IWTR
+        #    were liquidated 2025-08-21 (BlackRock product-update release of 2025-06-13); that is context, not a policy statement.
+        #  S000035387, S000049572, S000066851, S000069338 (no votes after 2024-12-31) and S000036005 (iShares, Inc., CIK 930667, no votes after 2024-12-31) are not keyed past 2024.
           S000004310: [{key: BIS, until: "2024-12-31"}, {key: UNRESOLVED, from: "2025-01-01"}]
           S000017779: [{key: BIS, until: "2024-12-31"}, {key: UNRESOLVED, from: "2025-01-01"}]
           S000065014: [{key: BIS, until: "2024-12-31"}, {key: UNRESOLVED, from: "2025-01-01"}]
@@ -102,7 +112,7 @@ institutions:
     voting_scope_notes:
       - "BAIS and BIS policies for open-end funds are both effective 2025-01-01; before that a single Open-End Fund Proxy Voting Policy (effective 2021-08-01) covered every fund (SAI filed 2024-12-30, https://www.sec.gov/Archives/edgar/data/1100663/000119312524286021/d853591d485bpos.htm; SAI Appendix A, https://www.sec.gov/Archives/edgar/data/1100663/000119312526389481/d122292d485bpos.htm)."
       - "Series assignment (BIS 253 and BAIS 9 of the 272 series with vote rows) was read from the per-fund policy table of each 485BPOS SAI filed 2025-02-25 to 2026-09-14 and never changed between filings; it is a statement of the 2025-26 position applied back to 2025-01-01."
-      - "Ten series have vote rows but no row in any 2025-26 SAI policy table, so their policy was not established: S000004310 (iShares Core S&P 500 ETF), S000017779, S000035387, S000036005, S000049572, S000065014, S000066851, S000069338, S000075506, S000076619; the five with votes after 2024-12-31 (S000004310, S000017779, S000065014, S000075506, S000076619) are keyed UNRESOLVED from 2025-01-01."
+      - "Ten series have vote rows but no row in any 2025-26 SAI policy table, so their policy was not established: S000004310 (iShares Core S&P 500 ETF), S000017779, S000035387, S000036005, S000049572, S000065014, S000066851, S000069338, S000075506, S000076619; the five with votes after 2024-12-31 (S000004310, S000017779, S000065014, S000075506, S000076619) are keyed UNRESOLVED from 2025-01-01. Re-checked 2026-11-17 across all 45 iShares Trust 485BPOS filings of 2025-02-25 to 2026-09-14: iShares Core S&P 500 ETF has its own Proxy Voting Policy (485BPOS 0001193125-26-318131) under which eligible shareholders choose BIS or a third-party policy, so no single key is correct; the other nine are named in no 2025-26 SAI, three of them (IDAT, IVEG, IWTR) were liquidated 2025-08-21 and S000017779 is not confirmed either way, so they stay UNRESOLVED."
       - "The BIS archive entry is the Global Principles; the SAI says the BIS Global Benchmark Policy also comprises regional voting guidelines and engagement priorities that are available only on request, so those are not archived (https://www.sec.gov/Archives/edgar/data/1100663/000119312526389481/d122292d485bpos.htm)."
       - "BAIS guidelines state that fundamental equity portfolio managers receive voting recommendations and may vote differently (https://www.blackrock.com/gls-download/literature/publication/blackrock-active-investment-stewardship-engagement-and-voting-guidelines.pdf, p. 4), so a BAIS-series vote is not necessarily a vote in line with the guidelines."
       - "Some funds also follow supplemental climate and decarbonization guidelines marked in the same SAI table; those supplements are not archived and not separated here."
