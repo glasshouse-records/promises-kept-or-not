@@ -73,16 +73,46 @@ DATA_DICTIONARY: dict[str, dict] = {
 _ISO = iso_meeting_date("v.meeting_date")
 
 
+# The kinds of vote a shipped line can be, in display order. Computed from the
+# filed N-PX fields (vote_source, category_type), never from our own matching.
+_KINDS = ("shareholder_proposals", "director_elections", "say_on_pay", "management_other")
+_KIND_SQL = ("CASE WHEN IFNULL(v.vote_source,'')='SECURITY HOLDER' THEN 'shareholder_proposals' "
+             "WHEN IFNULL(v.category_type,'')='DIRECTOR ELECTIONS' THEN 'director_elections' "
+             "WHEN IFNULL(v.category_type,'')='SECTION 14A SAY-ON-PAY VOTES' THEN 'say_on_pay' "
+             "ELSE 'management_other' END")
+_KIND_LABEL = {"shareholder_proposals": "shareholder proposals",
+               "director_elections": "director elections", "say_on_pay": "say-on-pay",
+               "management_other": "other management proposals"}
+
+
+def _kinds_note(kinds: list[str]) -> str:
+    if not kinds:
+        return "no votes shipped"
+    names = [_KIND_LABEL[k] for k in kinds]
+    if len(kinds) == 1:
+        return (f"{names[0]} votes only: the shipped votes for this institution do not "
+                "include the other kinds of vote, so this is not its full voting record")
+    return "shipped vote kinds: " + ", ".join(names)
+
+
 def coverage(conn: sqlite3.Connection) -> list[dict]:
-    """Honest per-institution coverage — what's actually in the dataset, so a
-    consumer knows the boundaries (a partial snapshot stated as partial)."""
+    """Honest per-institution coverage of the rows that SHIP. Every vote figure
+    is computed over publish.PUBLIC_TABLES['votes'] (the very filter the release
+    applies), so it equals the row count of the emitted votes file. Counting the
+    raw ledger published 3,809,093 BlackRock lines beside 3,669,405 shipped."""
     rows = []
+    shipped_votes = f"(SELECT * FROM votes {PUBLIC_TABLES['votes']})"
     for inst in conn.execute("SELECT id, display_name FROM institutions ORDER BY id"):
         npx = conn.execute(
             f"SELECT COUNT(DISTINCT f.accession) n, MIN({_ISO}) lo, "
             f"MAX({_ISO}) hi, COUNT(*) rows FROM filings f "
-            "JOIN votes v ON v.accession=f.accession "
-            "WHERE f.institution_id=? AND v.is_duplicate=0", (inst["id"],)).fetchone()
+            f"JOIN {shipped_votes} v ON v.accession=f.accession "
+            "WHERE f.institution_id=?", (inst["id"],)).fetchone()
+        by_kind = {r["k"]: r["n"] for r in conn.execute(
+            f"SELECT {_KIND_SQL} k, COUNT(*) n FROM filings f "
+            f"JOIN {shipped_votes} v ON v.accession=f.accession "
+            "WHERE f.institution_id=? GROUP BY k", (inst["id"],))}
+        kinds = [k for k in _KINDS if by_kind.get(k)]
         hold = conn.execute(
             "SELECT COUNT(*) FROM holdings h JOIN filings f ON f.accession=h.accession "
             "WHERE f.institution_id=?", (inst["id"],)).fetchone()[0]
@@ -108,6 +138,8 @@ def coverage(conn: sqlite3.Connection) -> list[dict]:
             "institution": inst["display_name"],
             "npx_filings": npx["n"] or 0, "votes": npx["rows"] or 0,
             "vote_dates": f"{npx['lo']} → {npx['hi']}" if npx["lo"] else "—",
+            "vote_kinds": kinds, "vote_kinds_note": _kinds_note(kinds),
+            "votes_by_kind": {k: by_kind[k] for k in kinds},
             "holdings": hold, "policy_versions": docs,
             "policies_self_dated": dated})
     return rows
@@ -174,10 +206,14 @@ def build_datasheet(conn: sqlite3.Connection) -> str:
         "## Provenance guarantees",
         *[f"- {g}" for g in pkg["provenance_guarantees"]],
         "", "## Coverage (what is actually in this snapshot — partial by design)",
-        "", "| Institution | N-PX filings | votes | vote dates | holdings | policy versions |",
-        "|---|--:|--:|---|--:|--:|",
+        "", "Every figure below counts the rows shipped in `facts/` (the release filter is "
+        "applied first: de-duplicated, validated, cast votes only), not the working ledger.",
+        "", "| Institution | N-PX filings | votes | vote dates | kinds of votes shipped "
+        "| holdings | policy versions |",
+        "|---|--:|--:|---|---|--:|--:|",
         *[f"| {r['institution']} | {r['npx_filings']} | {r['votes']:,} | {r['vote_dates']} "
-          f"| {r['holdings']:,} | {r['policy_versions']} |" for r in cov],
+          f"| {r['vote_kinds_note']} | {r['holdings']:,} | {r['policy_versions']} |"
+          for r in cov],
         "", "_Institutions in the registry but not yet ingested are omitted — "
         "absence here means no data, not a clean record._", "",
         "## Tables", "",

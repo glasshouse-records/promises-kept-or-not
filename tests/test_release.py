@@ -352,3 +352,65 @@ def test_methodology_excerpts_are_verbatim():
     doc = re.sub(r"\s+", " ", (Path(__file__).parent.parent / "METHODOLOGY.md").read_text())
     for t in release.METHODOLOGY_PROPOSALS + release.METHODOLOGY_DIRECTORS:
         assert re.sub(r"\s+", " ", t) in doc, t
+
+
+def _coverage_fixture(conn):
+    """Rows the release filter EXCLUDES, plus two institutions with different
+    kinds of votes held, so the coverage must describe the shipped rows."""
+    conn.execute("INSERT INTO institutions (id, display_name, cik) "
+                 "VALUES ('ubs','UBS Group','0000000009')")
+    conn.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
+                 "retrieval_date) VALUES ('ACC-U','9','ubs','N-PX','https://e','2026-06-11')")
+
+    def vote(acc, src, cat, how, md, dup=0):
+        conn.execute(
+            "INSERT INTO votes (accession, issuer_name, how_voted, shares_voted, is_duplicate, "
+            "vote_source, category_type, meeting_date) VALUES (?,?,?,?,?,?,?,?)",
+            (acc, "CO", how, 10, dup, src, cat, md))
+    # shipped for BlackRock: a shareholder proposal and a director election
+    vote("ACC-1", "SECURITY HOLDER", "ENVIRONMENT OR CLIMATE", "FOR", "2025-05-01")
+    vote("ACC-1", "ISSUER", "DIRECTOR ELECTIONS", "FOR", "2025-06-01")
+    # excluded: unvalidated legacy row, administrative no-vote row (both with EARLY dates)
+    vote("ACC-1", "legacy_html", "COMPENSATION", "FOR", "2019-01-01")
+    vote("ACC-1", "ISSUER", "COMPENSATION", "", "2018-01-01")
+    # UBS: say-on-pay only, plus an excluded legacy row
+    vote("ACC-U", "", "SECTION 14A SAY-ON-PAY VOTES", "FOR", "2025-03-01")
+    vote("ACC-U", "legacy_html", "DIRECTOR ELECTIONS", "FOR", "2017-01-01")
+    conn.commit()
+
+
+def test_coverage_counts_describe_shipped_rows_not_ledger_rows(conn, tmp_path):
+    _coverage_fixture(conn)
+    release.build_release(conn, root=tmp_path, version="cov",
+                          with_parquet=False, with_sqlite=False)
+    d = tmp_path / "vcov"
+    shipped = _read_csv(d / "facts" / "votes.csv")
+    filings = {r["accession"]: r["institution_id"] for r in _read_csv(d / "facts" / "filings.csv")}
+    per: dict = {}
+    for r in shipped:
+        per[filings[r["accession"]]] = per.get(filings[r["accession"]], 0) + 1
+    cov = {r["institution"]: r for r in json.loads((d / "COVERAGE.json").read_text())}
+    assert cov["BlackRock Inc."]["votes"] == per["blackrock"] == 3   # 1 fixture + 2 above
+    assert cov["UBS Group"]["votes"] == per["ubs"] == 1
+    # the excluded rows' dates must not leak into the published range
+    assert cov["BlackRock Inc."]["vote_dates"].startswith("2025-05-01")
+    assert cov["UBS Group"]["vote_dates"] == "2025-03-01 → 2025-03-01"
+    sheet = (d / "DATASHEET.md").read_text()
+    assert "| BlackRock Inc. | 1 | 3 |" in sheet
+    assert "2018" not in cov["BlackRock Inc."]["vote_dates"]
+
+
+def test_coverage_states_which_kinds_of_votes_are_shipped(conn, tmp_path):
+    _coverage_fixture(conn)
+    release.build_release(conn, root=tmp_path, version="kinds",
+                          with_parquet=False, with_sqlite=False)
+    d = tmp_path / "vkinds"
+    cov = {r["institution"]: r for r in json.loads((d / "COVERAGE.json").read_text())}
+    assert cov["UBS Group"]["vote_kinds"] == ["say_on_pay"]
+    assert cov["UBS Group"]["vote_kinds_note"].startswith("say-on-pay votes only")
+    br = cov["BlackRock Inc."]
+    assert br["vote_kinds"] == ["shareholder_proposals", "director_elections", "management_other"]
+    assert "only" not in br["vote_kinds_note"]
+    assert br["votes_by_kind"]["shareholder_proposals"] == 1
+    sheet = (d / "DATASHEET.md").read_text()
+    assert "say-on-pay votes only" in sheet
