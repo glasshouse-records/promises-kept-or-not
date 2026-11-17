@@ -111,7 +111,7 @@ the say-vs-do analysis described below in three ways, each a correction:
   **Withhold vs abstain is the filer's coding, not ours.** In a US plurality
   election a withheld vote can be filed as WITHHOLD (counted in `opposed`) or
   as ABSTAIN, and N-PX does not define the choice; a change of filing agent
-  changed it (BlackRock BIS, US ISINs, January-June: `opposed` 1,216 in 2024
+  changed it (BlackRock BIS, US ISINs, calendar years: `opposed` 1,216 in 2024
   against 617 in 2025 while `abstain` went from 166 to 570). The director tools
   therefore also report `not_supported` = `opposed` + `abstain` and
   `non_support_rate` = `not_supported` / (`for` + `opposed` + `abstain`); SPLIT
