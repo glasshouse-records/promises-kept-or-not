@@ -15,7 +15,7 @@ Tick with the date and one line of result.
 
 ## 2. Close the known instrument gaps
 - [x] 2026-11-17 `country=` on the director tools (country that issued the ISIN); Vanguard Jan–Jun 2026 splits sum to the overall 79,430.
-- [ ] `country=` with a code no item carries (e.g. UK instead of GB) returns empty without a warning. *(builder)*
+- [x] 2026-11-17 `country=` with a code no item carries now explains itself (GB, not UK).
 - [x] 2026-11-17 T. Rowe Price advisers verified from each fund's 485BPOS (filed 2026-02-25): three funds are TRPA-voted; Capital Appreciation (CIK 793347) is TRPIM-voted. TRPIM's own guidelines now captured.
 - [x] 2026-11-17 Votes are kept apart by the adviser that cast them, per fund series and by date; policy-vote pairing is refused across advisers. All 38 registrants' advisers verified from SEC filings (Vanguard split 2026-01-12, BlackRock 2025-01-01).
 - [x] 2026-11-17 Review findings fixed: policy versions keyed by date, unlabelled and undated lines held apart, claims select rows by key, stricter wording and quote lints.
