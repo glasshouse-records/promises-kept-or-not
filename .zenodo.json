@@ -1,10 +1,10 @@
 {
   "title": "Glasshouse — institutional accountability evidence dataset (say vs. do)",
-  "description": "<p>A public-interest dataset recording the gap between what major financial institutions publicly commit to (archived proxy-voting / stewardship policies) and what they actually do (SEC N-PX proxy votes, 13-F / N-PORT holdings), alongside the enforcement record. Built for researchers, journalists, and advocacy organizations to consume, verify, and cite.</p><p>This version covers 14 systemic asset managers with full say+do coverage (~91% of tracked voting AUM): BlackRock, Vanguard, State Street, Fidelity, J.P. Morgan Asset Management, Goldman Sachs Asset Management, BNY, Invesco, UBS Asset Management, T. Rowe Price, Franklin Templeton, DWS, Northern Trust, and BNP Paribas Asset Management. ~3.36M de-duplicated proxy votes span the 2023-2025 meeting years (with earlier years for some filers).</p><p>Every record carries a source URL and retrieval date; votes are de-duplicated (filter is_duplicate = 0); enforcement rows carry a resolution_type from a closed legal enum (a deferred-prosecution agreement is not a conviction; a docket is an allegation, not a finding). Coverage is partial by design and stated honestly in DATASHEET.md / COVERAGE.json. The bundle is independently verifiable via MANIFEST.sha256.</p>",
+  "description": "<p>Glasshouse is a public, machine-readable record of what large asset managers say about how they vote their funds' shares (archived proxy-voting and stewardship policies, with dates) and how those funds actually voted (SEC Form N-PX), with 13-F holdings and a public enforcement record alongside.</p><p>This version holds 9,684,226 fund vote lines from meetings between 1 July 2023 and 30 June 2026, filed by fund trusts of 16 financial institutions. For 13 of them (BlackRock, Vanguard, State Street, Fidelity, J.P. Morgan, Goldman Sachs, BNY, Invesco, T. Rowe Price, Franklin Templeton, DWS, Northern Trust, Charles Schwab) every kind of vote is on file for the fund trusts held; for UBS, BNP Paribas and Bank of America only executive-pay (say-on-pay) votes are on file. The fund trusts held are often a small part of a large manager: this is not a complete record of any manager's voting. It also holds 71 dated versions of 14 managers' policy documents (hashes, dates and archive links; no policy text), 580,106 13-F holding rows and 14,887 enforcement actions.</p><p>Votes are attributed to the adviser that cast them, not the brand: where one group's funds are voted by different advisers under different policies (BlackRock, Vanguard, T. Rowe Price, DWS) every vote carries an adviser_key, and a policy may only be compared with votes of the same key. Three derived tables give one row per manager per ballot item (shareholder proposals, director elections, say-on-pay). Every column and code is defined in DATASHEET.md; coverage and known gaps are stated in COVERAGE.json; every file is checksummed in MANIFEST.sha256.</p><p>The dataset records facts from public filings. It makes no finding of wrongdoing about anyone.</p>",
   "upload_type": "dataset",
   "access_right": "open",
   "license": "cc-by-4.0",
-  "version": "2026-06-27",
+  "version": "2026-11-17",
   "language": "eng",
   "keywords": [
     "proxy voting",
@@ -23,5 +23,5 @@
       "name": "Martin, Emanuel"
     }
   ],
-  "notes": "Code: MIT. Data: CC-BY-4.0. Before publishing, set creators.name (Family, Given), add \"orcid\" and \"affiliation\" if available, and confirm the version label matches the release directory (release/v<DATE>)."
+  "notes": "Code: MIT. Data: CC-BY-4.0. Built from code commit recorded in DATASHEET.md."
 }
