@@ -1637,3 +1637,8 @@ def test_pay_frequency_items_are_recognised_in_every_wording(desc):
 def test_an_ordinary_say_on_pay_item_is_not_a_frequency_item():
     assert not engine._FREQ_DESC.search(
         "Advisory vote to approve the compensation of named executive officers")
+
+
+def test_coverage_lists_pay_items_per_institution_without_frequency(eng):
+    row = next(r for r in eng.coverage()["result"]["institutions"] if r["institution"] == "alpha")
+    assert row["pay_items_by_year"] == {2024: 1, 2025: 1}

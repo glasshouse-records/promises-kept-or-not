@@ -965,6 +965,9 @@ class Engine:
                 dyrs = {r["year"]: r["n"] for r in self.db.execute(
                     "SELECT year, COUNT(*) n FROM director_votes WHERE institution_id=? "
                     "GROUP BY year ORDER BY year", (iid,))}
+                pyrs = {r["year"]: r["n"] for r in self.db.execute(
+                    "SELECT year, COUNT(*) n FROM pay_votes WHERE institution_id=? "
+                    "AND kind='approval' GROUP BY year ORDER BY year", (iid,))}
                 adv = {}
                 if self.advisers_of(iid)["multi"]:
                     for r in self.db.execute(
@@ -975,12 +978,17 @@ class Engine:
                             "SELECT adviser, COUNT(*) n FROM director_votes WHERE "
                             "institution_id=? GROUP BY adviser", (iid,)):
                         adv.setdefault(r["adviser"], {})["director_items"] = r["n"]
+                    for r in self.db.execute(
+                            "SELECT adviser, COUNT(*) n FROM pay_votes WHERE "
+                            "institution_id=? AND kind='approval' GROUP BY adviser", (iid,)):
+                        adv.setdefault(r["adviser"], {})["pay_items"] = r["n"]
                 per.append({"institution": iid, "name": name,
                             **({"by_adviser": adv, "advisers": sorted(adv)} if adv else {}),
                             "fund_registrants_on_file": reg,
                             "vote_filings_by_season": dict(sorted(
                                 seasons.items(), key=lambda kv: str(kv[0]))),
                             "director_items_by_year": dyrs,
+                            "pay_items_by_year": pyrs,
                             "proposals_by_year": yrs,
                             "shareholder_proposals": v["n"],
                             "votes_from": v["lo"], "votes_to": v["hi"],
