@@ -48,7 +48,7 @@ fund trusts are on file, often a small part of a large manager.
 | BlackRock | BIS, BAIS, UNRESOLVED | 2024-26 | all kinds | 4 | 13: 12 of the BIS principles + 1 of the BAIS guidelines (from 2019-08-06) | BIS/BAIS split from 2025-01-01; 10 series cannot be placed (UNRESOLVED), incl. iShares Core S&P 500, whose shareholders choose BIS or a third-party policy from 2025 |
 | Vanguard | VANGUARD, VPM, VCM, EXTERNAL | 2024-26 | all kinds | 5 | 8 (from 2022-01-17) | Teams split 2026-01-12; four pre-split editions (2022, 2023, 2024, 2025) cover 2022 to 2026-01-11 |
 | State Street | none keyed | 2024-26 | all kinds | 4 | 7 (from 2020-09-29) | 3 SPDR Nuveen muni ETFs may follow Nuveen's policy |
-| Fidelity | none keyed | 2024-26 | all kinds | 4 | 6 (from 2023-04-16) | |
+| Fidelity | GEODE, unlabelled | 2024-26 | all kinds | 7 | 7: 6 FMR (from 2023-04-16) + 1 Geode | 55 index series (Concord Street, Salem Street, VIP II) keyed GEODE from 2025-07-01, where the series' own SAI gives only Geode's voting policy; all other lines unlabelled, never paired with a policy |
 | JPMorgan | none keyed | 2024-26 | all kinds | 2 | 6 (from 2021-01-25) | |
 | Goldman Sachs | none keyed | 2024-26 | all kinds | 2 | 2 (from 2022-10-31) | |
 | BNY | none keyed | 2024-26 | all kinds | 2 | 1 (2025-07-18) | Sub-advised funds vote under the sub-adviser's own rules |
@@ -58,7 +58,7 @@ fund trusts are on file, often a small part of a large manager.
 | Deutsche Bank (DWS) | DIMA | 2024-26 | all kinds | 3 | 2 (from 2026-06-27) | One archived letter is DWS Investment GmbH's, not the US trusts' adviser |
 | Northern Trust | none keyed | 2024-26 | all kinds | 1 | 4 (from 2024-05-14) | Multi-manager series use outside sub-advisers |
 | Charles Schwab Trust | none keyed | 2024-26 | all kinds | 2 | 0 | No policy archived |
-| Capital Group (American Funds) | none keyed | 2024-26 | all kinds | 20 (19 file votes) | 2 (from 2025-04-05) | CRMC votes all 20 trusts; its equity divisions are not separated in the filings |
+| Capital Group (American Funds) | none keyed | 2024-26 | all kinds | 37 (34 file votes) | 2 (from 2025-04-05) | CRMC votes all 37 trusts (American Funds and Capital Group ETFs); its equity divisions are not separated in the filings |
 | Dimensional | none keyed | 2024-26 | all kinds | 3 | 2 (from 2025-12-28) | 2025 and 2026 reports of two trusts stop at exactly 500,000 records in the SEC file itself: counts are lower bounds |
 | UBS | none keyed | 2024-26 | pay only | 1 | 2 (from 2024-06-11) | Combined report for several UBS entities |
 | BNP Paribas AM | none keyed | 2024-26 | pay only | 1 | 4 (from 2024-04-21) | Ex-AXA IM votes may not follow the archived policy |
