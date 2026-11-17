@@ -1518,3 +1518,22 @@ def test_coding_shift_stays_quiet_on_small_steady_abstain():
     assert engine.Engine._coding_shift({"2023": (60, 1000), "2024": (45, 900)}) == []
     # too few abstain items anywhere to read a recording change into
     assert engine.Engine._coding_shift({"2023": (5, 1000), "2024": (0, 900)}) == []
+
+
+def test_policy_counts_gives_a_citable_count_per_document(eng):
+    rows = eng.policy_counts("alpha")["result"]
+    vs = eng.policy_versions("alpha")["result"]
+    by = {r["doc_label"]: r for r in rows}
+    assert set(by) == {v["doc_label"] for v in vs}
+    for label, r in by.items():
+        mine = [v for v in vs if v["doc_label"] == label]
+        assert r["versions"] == len(mine)
+        assert r["readable_versions"] == sum(v["readable"] for v in mine)
+        assert r["first_captured"] == min(v["captured"] for v in mine)
+        assert r["last_captured"] == max(v["captured"] for v in mine)
+    assert "policy_counts" in engine.TOOLS
+
+
+def test_policy_counts_respects_adviser(duo):
+    rows = duo.policy_counts("delta", adviser="BBB")["result"]
+    assert [r["doc_label"] for r in rows] == ["policy-bbb"]

@@ -116,7 +116,8 @@ Read the caveats; they are part of the answer.
   `result`, and the value. Prefer one stat per figure. A list of rows is
   addressed by KEY, never by position: `[institution=blackrock,adviser=BIS].position`
   (`policy_versions`: `[commitment_id=74].captured`; `coverage`:
-  `institutions.[institution=fidelity].votes_from`). A bare `0`/`3` into a list
+  `institutions.[institution=fidelity].votes_from`; a count of archived versions
+  comes from `policy_counts`: `[doc_label=proxy-voting-guidelines-trpim].versions`). A bare `0`/`3` into a list
   of rows is rejected, and a selector must match exactly one row. Votes on an
   `UNDATED` or `unlabelled` adviser are never paired with a policy.
   `policy_in_force` returns `{versions, none_in_force, reason}`: cite

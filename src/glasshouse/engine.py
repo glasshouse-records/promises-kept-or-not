@@ -991,6 +991,31 @@ class Engine:
                         "takes effect."] if any(r["adviser"] for r in rows) else []),
                      *[g for g in (_authored_gap(r) for r in rows) if g]])
 
+    def policy_counts(self, institution: str, adviser=None) -> dict:
+        """How many versions of each policy document the archive holds — one row
+        per document, so a draft can cite a count (`[doc_label=…].versions`)."""
+        pv = self.policy_versions(institution, adviser)
+        by: dict = {}
+        for v in pv["result"]:
+            r = by.setdefault(v["doc_label"], {
+                "doc_label": v["doc_label"], "institution_id": v["institution_id"],
+                "adviser": v["adviser"], "versions": 0, "readable_versions": 0,
+                "first_captured": v["captured"], "last_captured": v["captured"]})
+            r["versions"] += 1
+            r["readable_versions"] += bool(v["readable"])
+            r["first_captured"] = min(r["first_captured"], v["captured"])
+            r["last_captured"] = max(r["last_captured"], v["captured"])
+            if r["adviser"] != v["adviser"]:
+                r["adviser"] = None          # a document whose owner changed
+        return _env("policy_counts", pv["args"], sorted(by.values(), key=lambda r: r["doc_label"]),
+                    ["A count of versions HELD in the archive, not of versions the manager "
+                     "published: gaps between captures are versions we do not hold.",
+                     "`versions` counts every capture with distinct text, including "
+                     "unreadable ones; cite `readable_versions` for versions whose wording "
+                     "is on file.",
+                     "`adviser` is null when the document's versions belong to different "
+                     "advisers over time; see policy_versions for each one."])
+
     def _policy_owner_note(self, iid, adviser) -> list[str]:
         info = self.advisers_of(iid) if iid else None
         if info and info["multi"] and not adviser:
@@ -1918,7 +1943,7 @@ _ENTITY_NOTE = ["An entry written `institution/ADVISER` is one adviser of a grou
 VOTE_TOOLS = ("proposals", "voting_record", "reversals", "say_vs_do", "director_record",
               "director_votes", "director_panel")
 
-TOOLS = ("coverage", "policy_versions", "policy_search", "policy_diff", "policy_in_force",
+TOOLS = ("coverage", "policy_versions", "policy_counts", "policy_search", "policy_diff", "policy_in_force",
          "proposals", "voting_record", "peers", "ballot", "fund_votes", "reversals", "say_vs_do", "filers",
          "director_record", "director_votes", "director_peers", "director_panel",
          "company",
