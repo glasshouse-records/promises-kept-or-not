@@ -21,7 +21,14 @@ keywords:
   - shareholder voting
   - ESG accountability
   - financial transparency
-# Version is the latest built bundle (data/releases/v2026-11-17). It is NOT yet
-# published: add date-released and the DOI when the Zenodo deposit exists
-# (Zenodo mints the DOI on upload).
 version: "2026-11-17"
+date-released: "2026-11-17"
+doi: 10.5281/zenodo.24321607
+repository-code: "https://github.com/glasshouse-records/promises-kept-or-not"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.24321607
+    description: "This version (2026-11-17)"
+  - type: doi
+    value: 10.5281/zenodo.24321606
+    description: "All versions (concept DOI)"

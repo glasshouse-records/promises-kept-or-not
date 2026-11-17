@@ -11,8 +11,10 @@ On top sit an evidence engine (`glasshouse ask`, cited queries) and a checker
 (`glasshouse desk verify`, which re-runs every claim in a draft). The dataset is
 the product.
 
-**Status, 2026-11-17:** unpublished. No public repository, no DOI. The release
-bundle exists on the maintainer's disk (`data/releases/v2026-11-17/`, gitignored).
+**Status, 2026-11-17:** published. Data: Zenodo,
+[doi:10.5281/zenodo.24321607](https://doi.org/10.5281/zenodo.24321607) (this version;
+all versions: [10.5281/zenodo.24321606](https://doi.org/10.5281/zenodo.24321606)).
+Code: <https://github.com/glasshouse-records/promises-kept-or-not>.
 The `findings` table is empty: no claim has passed human review. Drafts in
 `data/desk/` are unpublished leads; they are not in the release or this repo.
 
@@ -277,14 +279,20 @@ quotations not in the archived text, and words that assert motive or wrongdoing.
 
 ## Status, citing, corrections, licence
 
-Unpublished; no DOI. Once a Zenodo deposit exists, cite its concept DOI with the
-version and commit in the bundle's `DATASHEET.md` (today: "Glasshouse evidence
-dataset, v0.1.0 (commit 44958db), 2026-11-17", not citable as published).
-Metadata: `CITATION.cff`. Steps: [docs/PUBLISHING.md](docs/PUBLISHING.md); open
-work: [docs/ROADMAP.md](docs/ROADMAP.md).
+Cite the version you used:
 
-Corrections: send the maintainer the table, the row and the primary-source link
-(no public tracker yet). They are applied in a new release and listed in
+> Glasshouse (2026). *Glasshouse — institutional accountability evidence dataset
+> (say vs. do)*, version 2026-11-17 [Data set]. Zenodo.
+> https://doi.org/10.5281/zenodo.24321607
+
+To refer to the dataset in general (every version), use
+https://doi.org/10.5281/zenodo.24321606. The bundle's `DATASHEET.md` records the
+code commit that built it. Metadata: `CITATION.cff`. Steps for a new version:
+[docs/PUBLISHING.md](docs/PUBLISHING.md); open work: [docs/ROADMAP.md](docs/ROADMAP.md).
+
+Corrections: open an issue at
+<https://github.com/glasshouse-records/promises-kept-or-not/issues> with the table,
+the row and the primary-source link. They are applied in a new release and listed in
 [CHANGELOG.md](CHANGELOG.md). Unverified items: [PENDING_VERIFICATION.md](PENDING_VERIFICATION.md).
 
 Leads, not findings: any say-versus-do gap you derive is a lead. Check the proposal

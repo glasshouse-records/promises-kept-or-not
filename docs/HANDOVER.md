@@ -1,7 +1,10 @@
 # Hand-over: what exists, and what only you can do
 
-Written 2026-11-17. Everything below is on this laptop only. Nothing has been
-published, pushed, sent, or shown to anyone.
+Written 2026-11-17. Published the same day: the dataset on Zenodo
+(doi:10.5281/zenodo.24321607) and the code at
+https://github.com/glasshouse-records/promises-kept-or-not, both credited to
+"Glasshouse". Nothing else has been sent or shown to anyone; the drafts below
+are still private.
 
 ## What exists
 
@@ -38,10 +41,9 @@ why a manager voted as it did; the filings never do.
 
 ## What only you can do, in order
 
-1. **Decide whether to publish the dataset.** The runbook is
-   `docs/PUBLISHING.md`. The safest form is the bundle on Zenodo (free, gives a
-   citable DOI): public records, no characterisation. Before you do, read the
-   bundle's `DATASHEET.md` once.
+1. ~~Decide whether to publish the dataset.~~ Done 2026-11-17 (Zenodo +
+   GitHub). For each new version follow `docs/PUBLISHING.md`; every push or
+   upload still needs your yes.
 2. **Decide about the policy documents.** The bundle ships dates, links and
    fingerprints of each policy version, not the documents. Shipping the
    managers' full texts is a copyright question; I have left it out.

@@ -106,6 +106,8 @@ Description to paste:
 
 ## Step D: done
 
+**Completed 2026-11-17.** Data: https://doi.org/10.5281/zenodo.24321607 · Code: https://github.com/glasshouse-records/promises-kept-or-not
+
 Once the DOI is in, I add it to the README and citation file. The dataset is then
 public, citable and checkable. The next step, offering it to researchers,
 journalists or organisations, is a separate decision I'll bring to you.

@@ -55,6 +55,6 @@ Tick with the date and one line of result.
 - Allow the daily routine to be scheduled (the app refused it on 2026-11-17); until then `scripts/routine.sh` runs only when a session runs it.
 - Decide the 175 old pending findings (recommendation: reject all, with a note that they come from the superseded line-level analysis).
 - Whether the release ships the managers' policy documents themselves (copyright) or only dates, links and fingerprints (current).
-- Publish: Zenodo deposit and/or GitHub push — runbook in [PUBLISHING.md](PUBLISHING.md).
+- [x] Publish: done 2026-11-17 — Zenodo doi:10.5281/zenodo.24321607 (all versions 10.5281/zenodo.24321606), code at github.com/glasshouse-records/promises-kept-or-not.
 - Whether any manager is asked for comment on a draft, and by whom.
 - Who the finished dataset is offered to (a co-signer or host organisation).
