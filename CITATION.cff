@@ -23,6 +23,7 @@ keywords:
   - shareholder voting
   - ESG accountability
   - financial transparency
-# Set the version/date/DOI on each release (Zenodo mints the DOI on upload).
-version: "2026-06-29"
-date-released: "2026-06-29"
+# Version is the latest built bundle (data/releases/v2026-11-17). It is NOT yet
+# published: add date-released and the DOI when the Zenodo deposit exists
+# (Zenodo mints the DOI on upload).
+version: "2026-11-17"
