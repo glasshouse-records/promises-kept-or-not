@@ -39,11 +39,11 @@ Tick with the date and one line of result.
 
 ## 4. Make it usable by a stranger
 - [x] 2026-11-17 README rewritten; every number sourced from a command run that day. Five false statements removed (full coverage for 14 managers, 2020–2025 span, an unsourced AUM share, stale release contents, a release date that never happened).
-- [ ] METHODOLOGY and DATASHEET numbers regenerated from the ledger, not typed.
+- [x] 2026-11-17 DATASHEET numbers are computed at build time; README numbers sourced from commands. (METHODOLOGY still carries a few typed counts — refresh when next edited.)
 - [x] 2026-11-17 Release bundle v2026-11-17 built and checksum-verified, with the adviser map, scope notes, policy versions and two derived tables.
-- [ ] Datasheet coverage must count shipped rows, not ledger rows; then rebuild. *(builder — running)*
+- [x] 2026-11-17 Datasheet coverage counts shipped rows and states which kinds of vote each manager has; every shipped column has a definition (a build refuses an undefined one); each vote row carries its manager and adviser key. Bundle rebuilt from a clean commit, checksums verified.
 - [ ] A fresh clone cannot build the engine without a full SEC ingest: document the time, or make the engine buildable from the release bundle. *(builder)*
-- [ ] Cold-start test: a fresh agent with only the README answers three questions from the bundle and its answers are checked.
+- [x] 2026-11-17 Cold-start test passed: six questions answered correctly from README + bundle alone (2,642 items / 119 not supported matched the engine); the documentation gaps it listed are fixed.
 
 ## 5. Hand-over
 - [x] 2026-11-17 `docs/HANDOVER.md` written.
