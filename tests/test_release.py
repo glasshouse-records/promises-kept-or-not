@@ -11,10 +11,12 @@ import csv
 import gzip
 import hashlib
 import json
+import re
+from pathlib import Path
 
 import pytest
 
-from glasshouse import ledger, outreach, publish, release, review
+from glasshouse import engine, ledger, outreach, publish, release, review
 from glasshouse.contradictions import ContradictionCandidate
 from glasshouse.ledger import EnforcementAction
 
@@ -58,6 +60,42 @@ def conn(tmp_path, monkeypatch):
               "VALUES ('t','m','p','s','k',?)", (SECRET_LLM,))
     c.commit()
     return c
+
+
+REGISTRY = {"blackrock": {
+    "display_name": "BlackRock Inc.",
+    "voting_scope_notes": ["Some series are voted by an affiliate sub-adviser."],
+    "npx_ciks": [
+        {"cik": "0000000001", "name": "iShares Trust", "adviser": "BlackRock Fund Advisors",
+         "adviser_source": "https://www.sec.gov/Archives/x.htm", "adviser_verified": "2026-11-17",
+         "adviser_key": "BIS",
+         "series_adviser": {"S000000001": [{"key": "BIS", "until": "2024-12-31"},
+                                           {"key": "BAIS", "from": "2025-01-01"}]}},
+        {"cik": "0000000002", "name": "No Source Fund", "adviser_key": "BIS"},
+    ],
+    "commitments": [{"label": "stewardship", "adviser_key": "BIS"}],
+}}
+
+
+def _build_engine(conn, tmp_path, name="engine.db"):
+    path = Path(conn.execute("PRAGMA database_list").fetchone()[2])
+    ep = tmp_path / name
+    engine.build(path, ep, REGISTRY)
+    return ep
+
+
+@pytest.fixture(autouse=True)
+def _fresh_engine(monkeypatch, tmp_path_factory):
+    """Old tests mutate the ledger then build; give each build a current engine."""
+    orig = release.build_release
+
+    def wrapper(conn, root=None, version=None, **kw):
+        if "engine_path" not in kw:
+            d = tmp_path_factory.mktemp("eng")
+            kw["engine_path"] = _build_engine(conn, d)
+            kw.setdefault("institutions", REGISTRY)
+        return orig(conn, root, version, **kw)
+    monkeypatch.setattr(release, "build_release", wrapper)
 
 
 def _read_csv(path):
@@ -191,3 +229,126 @@ def test_release_parquet_when_pyarrow_available(conn, tmp_path):
     pf = d / "facts" / "votes.parquet"
     assert pf.exists()
     assert pq.read_table(pf).num_rows == 1  # deduped
+
+
+def _commitment(conn):
+    conn.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
+                 "sha256, text_sha256, content_path, content_type, size_bytes, "
+                 "wayback_timestamp, doc_created_at) VALUES ('blackrock','stewardship',"
+                 "'https://x/p.pdf','2025-01-01',?,?,'/Users/op/secret/path.pdf',"
+                 "'application/pdf',9,'20250102030405','2024-12-20T00:00:00')",
+                 ("b" * 64, "c" * 64))
+    conn.commit()
+
+
+def test_new_tables_present_with_expected_rows(conn, tmp_path):
+    _commitment(conn)
+    ep = _build_engine(conn, tmp_path)
+    release.build_release(conn, root=tmp_path, version="n1", with_parquet=False,
+                          engine_path=ep, institutions=REGISTRY)
+    d = tmp_path / "vn1" / "facts"
+    va = _read_csv(d / "voting_advisers.csv")
+    # default + 2 series rules for the sourced registrant; the unsourced one is omitted
+    assert [(r["series_id"], r["adviser_key"], r["from"], r["until"]) for r in va] == [
+        ("", "BIS", "", ""), ("S000000001", "BIS", "", "2024-12-31"),
+        ("S000000001", "BAIS", "2025-01-01", "")]
+    assert all(r["adviser_source"].startswith("https://") for r in va)
+    assert va[0]["adviser"] == "BlackRock Fund Advisors" and va[2]["adviser"] == ""
+    assert _read_csv(d / "voting_scope_notes.csv") == [
+        {"institution": "blackrock",
+         "note": "Some series are voted by an affiliate sub-adviser."}]
+    pv = _read_csv(d / "policy_versions.csv")
+    assert len(pv) == 1
+    assert pv[0]["adviser_key"] == "BIS" and pv[0]["captured"] == "2025-01-02"
+    assert pv[0]["authored"] == "2024-12-20" and pv[0]["text_sha256"] == "c" * 64
+    assert pv[0]["wayback_timestamp"] == "20250102030405" and pv[0]["source_url"] == "https://x/p.pdf"
+    pkg = json.loads((tmp_path / "vn1" / "datapackage.json").read_text())
+    names = {r["name"]: r for r in pkg["resources"]}
+    for n in ("voting_advisers", "voting_scope_notes", "policy_versions",
+              "proposal_decisions", "director_decisions"):
+        assert n in names and len(names[n]["sha256"]) == 64
+        assert names[n]["rowCount"] == len(_read_csv(d / f"{n}.csv"))
+    assert names["proposal_decisions"]["derived"] and names["director_decisions"]["derived"]
+    assert not names["policy_versions"].get("derived")
+    assert pkg["engine"]["ledger_max_vote_id"] == conn.execute(
+        "SELECT MAX(id) FROM votes").fetchone()[0]
+    sheet = (tmp_path / "vn1" / "DATASHEET.md").read_text()
+    assert "Before you compare a policy with votes" in sheet
+    assert sheet.index("Before you compare") < sheet.index("## Provenance guarantees")
+    assert "UNRESOLVED" in sheet and "EXTERNAL" in sheet and "UNDATED" in sheet
+    assert "issued the ISIN" in sheet.replace("ISSUED", "issued")
+    assert "DERIVED" in sheet and "src/glasshouse/engine.py" in sheet
+    assert "1 voting rule(s) have no source URL" in sheet     # computed, not hardcoded
+
+
+def test_derived_tables_carry_adviser_key_and_provenance(conn, tmp_path):
+    conn.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, "
+                 "vote_description, how_voted, shares_voted, is_duplicate, vote_source, "
+                 "category_type) VALUES ('ACC-1','TESLA','88160R101','2025-06-01',"
+                 "'REPORT ON CLIMATE','FOR',5,0,'SECURITY HOLDER','x')")
+    conn.commit()
+    ep = _build_engine(conn, tmp_path)
+    release.build_release(conn, root=tmp_path, version="n2", with_parquet=False,
+                          engine_path=ep, institutions=REGISTRY)
+    rows = _read_csv(tmp_path / "vn2" / "facts" / "proposal_decisions.csv")
+    assert rows and "adviser_key" in rows[0] and "adviser" not in rows[0]
+    assert all(r["accession"] and r["source_url"] for r in rows)
+
+
+def test_policy_versions_ships_no_text_or_paths(conn, tmp_path):
+    _commitment(conn)
+    ep = _build_engine(conn, tmp_path)
+    release.build_release(conn, root=tmp_path, version="n3", with_parquet=False,
+                          engine_path=ep, institutions=REGISTRY)
+    cols = next(csv.reader(open(tmp_path / "vn3" / "facts" / "policy_versions.csv")))
+    assert not {"text", "content_path", "path", "sentences"} & set(cols)
+    blob = b"".join(p.read_bytes() for p in (tmp_path / "vn3").rglob("*") if p.is_file())
+    assert b"/Users/op/secret" not in blob
+
+
+def test_stale_engine_is_refused_and_no_derived_overrides(conn, tmp_path):
+    ep = _build_engine(conn, tmp_path)
+    conn.execute("INSERT INTO votes (accession, issuer_name, how_voted, shares_voted, "
+                 "is_duplicate) VALUES ('ACC-1','NEWER','FOR',1,0)")
+    conn.commit()
+    with pytest.raises(release.StaleEngineError, match="stale"):
+        release.build_release(conn, root=tmp_path, version="n4", with_parquet=False,
+                              engine_path=ep, institutions=REGISTRY)
+    assert not (tmp_path / "vn4").exists()
+    release.build_release(conn, root=tmp_path, version="n4", with_parquet=False,
+                          engine_path=ep, institutions=REGISTRY, no_derived=True)
+    d = tmp_path / "vn4"
+    assert not list((d / "facts").glob("proposal_decisions*"))
+    assert not list((d / "facts").glob("director_decisions*"))
+    assert (d / "facts" / "policy_versions.csv").exists()
+    assert "built with `--no-derived`" in (d / "DATASHEET.md").read_text()
+    pkg = json.loads((d / "datapackage.json").read_text())
+    assert pkg["derived_tables_included"] is False
+    assert "proposal_decisions" not in {r["name"] for r in pkg["resources"]}
+
+
+def test_missing_engine_is_refused(conn, tmp_path):
+    with pytest.raises(release.StaleEngineError, match="not found"):
+        release.build_release(conn, root=tmp_path, version="n5", with_parquet=False,
+                              engine_path=tmp_path / "nope.db", institutions=REGISTRY)
+
+
+def test_manifest_covers_new_files(conn, tmp_path):
+    release.build_release(conn, root=tmp_path, version="n6", with_parquet=False)
+    d = tmp_path / "vn6"
+    listed = {ln.split("  ", 1)[1] for ln in (d / "MANIFEST.sha256").read_text().splitlines()}
+    for n in ("voting_advisers", "voting_scope_notes", "policy_versions",
+              "proposal_decisions", "director_decisions"):
+        assert f"facts/{n}.csv" in listed
+
+
+def test_release_does_not_write_ledger(conn, tmp_path):
+    before = conn.total_changes
+    release.build_release(conn, root=tmp_path, version="n7", with_parquet=False)
+    assert conn.total_changes == before
+
+
+def test_methodology_excerpts_are_verbatim():
+    doc = re.sub(r"\s+", " ", (Path(__file__).parent.parent / "METHODOLOGY.md").read_text())
+    for t in release.METHODOLOGY_PROPOSALS + release.METHODOLOGY_DIRECTORS:
+        assert re.sub(r"\s+", " ", t) in doc, t

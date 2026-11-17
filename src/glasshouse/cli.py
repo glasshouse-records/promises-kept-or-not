@@ -133,9 +133,14 @@ def cmd_export(_args) -> int:
 def cmd_release(args) -> int:
     from . import release
     conn = _conn()
-    info = release.build_release(conn, version=args.version,
-                                 with_parquet=not args.no_parquet,
-                                 with_sqlite=args.with_sqlite)
+    try:
+        info = release.build_release(conn, version=args.version,
+                                     with_parquet=not args.no_parquet,
+                                     with_sqlite=args.with_sqlite,
+                                     no_derived=args.no_derived)
+    except release.StaleEngineError as exc:
+        print(f"  release refused: {exc}")
+        return 1
     print(f"  release v{info['version']} → {info['dir']}")
     print(f"  {info['file_count']} files · {info['bytes'] / 1e6:.1f} MB · "
           f"formats: {', '.join(info['formats'])}")
@@ -1159,6 +1164,9 @@ def main(argv: list[str] | None = None) -> int:
     rel.add_argument("--with-sqlite", action="store_true",
                      help="also bundle a SQLite browse view (≈doubles size; "
                           "CSV/Parquet are the canonical formats)")
+    rel.add_argument("--no-derived", action="store_true",
+                     help="skip proposal_decisions/director_decisions (no engine "
+                          "currency check; DATASHEET.md says so)")
     rel.set_defaults(func=cmd_release)
 
     inv = sub.add_parser("investigate", help="connect SAY↔DO: find managers that "
