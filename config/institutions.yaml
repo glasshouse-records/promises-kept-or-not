@@ -437,11 +437,102 @@ institutions:
         voting_note: "Geode (outside firm, own voting policy) sub-advises Fidelity index portfolios such as VIP Index 500, but those sit in other trusts not registered here."
         name: "Variable Insurance Products Fund III (Fidelity VIP)"
         validated: "2026-06-26"
+      # Added 2026-11-17 (Geode follow-up). Trusts holding Fidelity index series sub-advised by Geode Capital Management. Only a series whose OWN SAI's
+      # PROXY VOTING GUIDELINES section is Geode's voting policy (and carries no Fidelity Proxy Voting Guidelines) is keyed GEODE; every other series of
+      # the trust, and any series whose SAI could not be located or carries both policies, is left unlabelled (not on record), never guessed.
+      # Evidence window starts 2025-07-01 (the N-PX period of the SAIs read); earlier meetings stay unlabelled.
+      - cik: "819118"
+        adviser: "Fidelity Management & Research Company LLC (FMR) is the manager; Geode Capital Management, LLC (Geode) is sub-adviser and votes the proxies of the index series keyed GEODE below; other series not attributed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/819118/000081911826000072/filing11589.htm"  # 485BPOS filed 2026-04-24 (other series: 0000819118-25-000470, -26-000018, -26-000137)
+        adviser_verified: "2026-11-17"
+        voting_note: "Series keyed GEODE: the series' own SAI proxy-voting section is Geode's Voting Policies (Geode retains voting responsibility), with no Fidelity Proxy Voting Guidelines. All other series of this trust are left unlabelled (voted by FMR under the Fidelity guidelines per their SAIs where read, but not keyed here)."
+        series_adviser:
+          S000006021: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Extended Market Index Fund; SAI 0000819118-26-000072 filed 2026-04-24
+          S000006023: [{key: GEODE, from: "2025-07-01"}]  # Fidelity International Index Fund; SAI 0000819118-26-000072 filed 2026-04-24
+          S000006026: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Total Market Index Fund; SAI 0000819118-26-000072 filed 2026-04-24
+          S000006027: [{key: GEODE, from: "2025-07-01"}]  # Fidelity 500 Index Fund; SAI 0000819118-26-000072 filed 2026-04-24
+          S000055366: [{key: GEODE, from: "2025-07-01"}]  # Fidelity NASDAQ Composite Index Fund; SAI 0000819118-26-000018 filed 2026-01-26
+          S000056363: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Flex 500 Index Fund; SAI 0000819118-26-000072 filed 2026-04-24
+          S000062806: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Series International Index Fund; SAI 0000819118-25-000470 filed 2025-12-29
+          S000063103: [{key: GEODE, from: "2025-07-01"}]  # Fidelity ZERO Extended Market Index Fund; SAI 0000819118-25-000470 filed 2025-12-29
+          S000063104: [{key: GEODE, from: "2025-07-01"}]  # Fidelity ZERO Large Cap Index Fund; SAI 0000819118-25-000470 filed 2025-12-29
+          S000063105: [{key: GEODE, from: "2025-07-01"}]  # Fidelity ZERO International Index Fund; SAI 0000819118-25-000470 filed 2025-12-29
+          S000063106: [{key: GEODE, from: "2025-07-01"}]  # Fidelity ZERO Total Market Index Fund; SAI 0000819118-25-000470 filed 2025-12-29
+          S000065248: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Series Total Market Index Fund; SAI 0000819118-26-000072 filed 2026-04-24
+          S000071895: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI International Small Cap Index Fund; SAI 0000819118-25-000470 filed 2025-12-29
+          S000071896: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI Japan Stock Index Fund; SAI 0000819118-25-000470 filed 2025-12-29
+          S000085736: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI Canada Equity Index Fund; SAI 0000819118-25-000470 filed 2025-12-29
+          S000085737: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI Global ex U.S. Low Volatility Index Fund; SAI 0000819118-25-000470 filed 2025-12-29
+          S000093535: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Flex Large Cap Focused Index Fund; SAI 0000819118-26-000072 filed 2026-04-24
+          S000105447: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Series Canada Index Fund; SAI 0000819118-26-000137 filed 2026-06-25
+          S000105448: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Series Developed Markets ex North America ex Hong Kong Index Fund; SAI 0000819118-26-000137 filed 2026-06-25
+          S000105449: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Series Emerging Markets ex China Index Fund; SAI 0000819118-26-000137 filed 2026-06-25
+        name: "Fidelity Concord Street Trust"
+        validated: "2026-11-17"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "35315"
+        adviser: "Fidelity Management & Research Company LLC (FMR) is the manager; Geode Capital Management, LLC (Geode) is sub-adviser and votes the proxies of the index series keyed GEODE below; other series not attributed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/35315/000003531526000594/filing13126.htm"  # 485BPOS filed 2026-09-24 (other series: 0000035315-25-001299, -26-000470, -26-000387, -26-000167, -25-001009, -25-000629)
+        adviser_verified: "2026-11-17"
+        voting_note: "Series keyed GEODE: the series' own SAI proxy-voting section is Geode's Voting Policies (Geode retains voting responsibility), with no Fidelity Proxy Voting Guidelines. All other series of this trust are left unlabelled (voted by FMR under the Fidelity guidelines per their SAIs where read, but not keyed here)."
+        series_adviser:
+          S000026422: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Series Global ex U.S. Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000033635: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Emerging Markets Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000033636: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Global ex U.S. Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000033639: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Real Estate Index Fund; SAI 0000035315-26-000594 filed 2026-09-24
+          S000042625: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Series Large Cap Value Index Fund; SAI 0000035315-26-000167 filed 2026-03-27
+          S000049309: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI U.S. Low Volatility Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000049310: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI International Low Volatility Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000050321: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI Small-Mid Cap Momentum Index Fund; SAI 0000035315-26-000594 filed 2026-09-24
+          S000051137: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI U.S. Quality Index Fund; SAI 0000035315-26-000594 filed 2026-09-24
+          S000051993: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI Real Estate Index Fund; SAI 0000035315-26-000594 filed 2026-09-24
+          S000051994: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI U.S. Large Cap Index Fund; SAI 0000035315-26-000594 filed 2026-09-24
+          S000051995: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI Emerging Markets Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000051996: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI International Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000054097: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Total International Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000056275: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI U.S. Momentum Index Fund; SAI 0000035315-26-000594 filed 2026-09-24
+          S000056355: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Flex International Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000057365: [{key: GEODE, from: "2025-07-01"}]  # Fidelity International Sustainability Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000057366: [{key: GEODE, from: "2025-07-01"}]  # Fidelity U.S. Sustainability Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000059762: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI International Value Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000059763: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI U.S. Value Index Fund; SAI 0000035315-26-000594 filed 2026-09-24
+          S000063743: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI Emerging Markets Low Volatility Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000065748: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Mid Cap Growth Index Fund; SAI 0000035315-26-000470 filed 2026-08-25
+          S000065749: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Mid Cap Value Index Fund; SAI 0000035315-26-000470 filed 2026-08-25
+          S000065750: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Small Cap Growth Index Fund; SAI 0000035315-26-000470 filed 2026-08-25
+          S000065751: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Small Cap Value Index Fund; SAI 0000035315-26-000470 filed 2026-08-25
+          S000068373: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI Emerging Markets Value Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000068374: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI International Momentum Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000068375: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI International Quality Index Fund; SAI 0000035315-25-001299 filed 2025-12-29
+          S000093536: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Flex International Focused Index Fund; SAI 0000035315-25-000629 filed 2025-07-11
+          S000093537: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Flex Mid Cap Focused Index Fund; SAI 0000035315-26-000387 filed 2026-06-24
+          S000093538: [{key: GEODE, from: "2025-07-01"}]  # Fidelity Flex Small Cap Focused Index Fund; SAI 0000035315-26-000387 filed 2026-06-24
+          S000095828: [{key: GEODE, from: "2025-07-01"}]  # Fidelity SAI Emerging Markets Momentum Index Fund; SAI 0000035315-25-001009 filed 2025-10-22
+        name: "Fidelity Salem Street Trust"
+        validated: "2026-11-17"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "831016"
+        adviser: "Fidelity Management & Research Company LLC (FMR) is the manager; Geode Capital Management, LLC (Geode) is sub-adviser and votes the proxies of the index series keyed GEODE below; other series not attributed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/831016/000083101626000031/filing11791.htm"  # 485BPOS filed 2026-04-20; the SAI for Extended Market Index, International Index and Total Market Index Portfolios
+        adviser_verified: "2026-11-17"
+        voting_note: "Series keyed GEODE: the series' own SAI proxy-voting section is Geode's Voting Policies (Geode retains voting responsibility), with no Fidelity Proxy Voting Guidelines. All other series of this trust are left unlabelled (voted by FMR under the Fidelity guidelines per their SAIs where read, but not keyed here)."
+        series_adviser:
+          S000061712: [{key: GEODE, from: "2025-07-01"}]  # VIP Extended Market Index Portfolio; SAI 0000831016-26-000031 filed 2026-04-20
+          S000061713: [{key: GEODE, from: "2025-07-01"}]  # VIP International Index Portfolio; SAI 0000831016-26-000031 filed 2026-04-20
+          S000061714: [{key: GEODE, from: "2025-07-01"}]  # VIP Total Market Index Portfolio; SAI 0000831016-26-000031 filed 2026-04-20
+        name: "Variable Insurance Products Fund II (Fidelity VIP)"
+        validated: "2026-11-17"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Geode Capital Management votes the proxies of the Fidelity index series keyed GEODE (Concord Street Trust, Salem Street Trust, VIP Fund II), per each series' own SAI; the keyed series start 2025-07-01. Left unlabelled, not attributed: VIP Index 500 Portfolio (its SAI is shared with actively managed portfolios and prints both the Fidelity and Geode policies without separating series), Fidelity Strategic Real Return Fund (SAI prints both), and series whose own SAI could not be located (Fidelity Mid Cap Index, Small Cap Index, Large Cap Growth Index, Series Large Cap Growth Index, Flex Mid Cap Index, Flex Small Cap Index). Unlabelled Fidelity lines are not asserted to be voted by FMR."
     commitments:
       # Canonical current policy, verified 2026-06-26 (200, application/pdf):
       # "Full Proxy Voting Guidelines for Fidelity Funds Advised by FMRCo or FDS".
       - label: full-proxy-voting-guidelines-fmrco
         url: "https://www.fidelity.com/bin-public/060_www_fidelity_com/documents/Full-Proxy-Voting-Guidelines-for-Fidelity-Funds-Advised-by-FMRCo-or-FDS.pdf"
+      # Added 2026-11-17 (200, application/pdf), linked from https://www.geodecapital.com/info. The file name carries the year
+      # ("Geode Proxy Voting Policy - 2026.pdf"); re-point it when Geode publishes the next edition.
+      - label: geode-proxy-voting-policy
+        url: "https://www.geodecapital.com/hubfs/Geode%20Proxy%20Voting%20Policy%20-%202026.pdf"
+        adviser: "Geode Capital Management, LLC"
+        adviser_key: "GEODE"
 
   t_rowe_price:
     display_name: "T. Rowe Price (group: TRPA advisory + TRPIM 13-F filer)"
