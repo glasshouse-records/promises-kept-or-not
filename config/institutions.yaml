@@ -1566,10 +1566,44 @@ institutions:
         adviser_key_history: [{key: CMIA, from: "2023-08-01"}]
         name: "Columbia ETF Trust II"
         validated: "2026-11-18"
+      # Second pass, 2026-11-18: two variable-insurance trusts and two closed-end funds. Same delegation sentence, same dated registrant-level rule.
+      - cik: "815425"
+        adviser: "Columbia Management Investment Advisers, LLC (the Investment Manager); some series sub-advised, voting delegated to the Investment Manager"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/815425/000119312523117412/d460135d485bpos.htm"  # 485BPOS filed 2023-04-26, SAI dated 2023-05-01; same sentence in -24-112060, -25-098950, -26-179636 (SAI dated 2026-05-01)
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: the Funds delegated proxy voting to the Investment Manager (CMIA), including Funds managed by subadvisers. Pyrford International is listed only as a FORMER subadviser of the Registrant in the 2023-2025 SAIs, so no series needs the Pyrford carve-out."
+        adviser_key_history: [{key: CMIA, from: "2023-05-01"}]
+        name: "Columbia Funds Variable Insurance Trust"
+        validated: "2026-11-18"
+      - cik: "929521"
+        adviser: "Columbia Management Investment Advisers, LLC (the Investment Manager), from the SAI dated 2026-05-01; before that Columbia Wanger Asset Management, LLC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/929521/000119312526179394/d10686d485bpos.htm"  # 485BPOS filed 2026-04-27, SAI dated 2026-05-01 (Columbia Variable Portfolio - Acorn / Acorn International, formerly Wanger Acorn / Wanger International)
+        adviser_verified: "2026-11-18"
+        voting_note: "Registered as Wanger Advisors Trust until 2025: its 2023, 2024 and April 2025 SAIs (0001193125-23-121352, -24-104542, -25-095486) define the Investment Manager as Columbia Wanger Asset Management, LLC (CWAM), to which proxy voting was delegated, so those meetings are NOT keyed CMIA. The SAI dated 2026-05-01 (0001193125-26-179394) says CMIA became the Investment Manager on 2025-07-07 and the Funds delegated proxy voting to the Investment Manager; keyed from that SAI's date. 2025-07-07 to 2026-04-30 stays unlabelled."
+        adviser_key_history: [{key: CMIA, from: "2026-05-01"}]
+        name: "Columbia Funds Variable Series Trust"
+        validated: "2026-11-18"
+      - cik: "99614"
+        adviser: "Columbia Management Investment Advisers, LLC (the Investment Manager); closed-end fund, no subadviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/99614/000168386323001735/f24561d1.htm"  # N-CSR filed 2023-03-03, Item 7 prints the proxy voting policy; Investment Manager defined as CMIA
+        adviser_verified: "2026-11-18"
+        voting_note: "N-CSR Item 7: the Funds delegated proxy voting to the Investment Manager (CMIA). Keyed from the filing date of the earliest N-CSR read."
+        adviser_key_history: [{key: CMIA, from: "2023-03-03"}]
+        name: "Tri-Continental Corporation"
+        validated: "2026-11-18"
+      - cik: "1471420"
+        adviser: "Columbia Management Investment Advisers, LLC (the Investment Manager); closed-end fund, no subadviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1471420/000168386323001719/f24592d1.htm"  # N-CSR filed 2023-03-03, Item 7 prints the proxy voting policy; Investment Manager defined as CMIA
+        adviser_verified: "2026-11-18"
+        voting_note: "N-CSR Item 7: the Funds delegated proxy voting to the Investment Manager (CMIA). Keyed from the filing date of the earliest N-CSR read."
+        adviser_key_history: [{key: CMIA, from: "2023-03-03"}]
+        name: "Columbia Seligman Premium Technology Growth Fund, Inc."
+        validated: "2026-11-18"
     voting_scope_notes:
       - "Keyed CMIA, per trust, from the effective date of the earliest SAI read (2023-03-01 to 2023-08-01): Columbia Funds Series Trust I (773757), Series Trust II (1352280), Columbia Funds Series Trust (1097519), Columbia Acorn Trust (2110), Columbia ETF Trust I (1551950) and Columbia ETF Trust II (1450501). Each trust's SAI says the Funds delegated proxy voting to Columbia Management Investment Advisers, LLC, including Funds managed by subadvisers, in every edition read (2023 to 2026). Earlier meetings stay unlabelled; SAIs from before 2023 were not read."
       - "Columbia Pyrford International Stock Fund (S000074123, Series Trust II) is kept out of CMIA (EXTERNAL, not paired with any policy) until 2026-04-30: the Corporate Governance Guidelines printed in the SAI carried the endnote that they do not apply to Pyrford International Limited through the March 1, 2026 SAIs, so who voted its proxies is unclear; the SAI dated May 1, 2026 drops the note and the series is keyed CMIA from 2026-05-01."
-      - "Not ingested, not keyed: Columbia Funds Variable Series Trust (929521), Columbia Funds Variable Insurance Trust (815425) and other trusts that file N-PX under the Columbia name; their SAIs were not read. The Columbia Management Investment Advisers, LLC and Columbia Advisory Partners institutional-manager N-PX (CIK 1233991, 1808179) are not ingested here: fund votes appear in the trusts' own N-PX, so ingesting both would count the same ballots twice. Closed-end Columbia funds (e.g. Seligman Premium Technology Growth, Tri-Continental) were not looked at."
+      - "Second pass (2026-11-18): Columbia Funds Variable Insurance Trust (815425, keyed CMIA from the SAI dated 2023-05-01, accession 0001193125-23-117412), Columbia Funds Variable Series Trust (929521, keyed CMIA only from the SAI dated 2026-05-01, accession 0001193125-26-179394: until 2025-07-07 it was Wanger Advisors Trust with Columbia Wanger Asset Management as Investment Manager, so earlier meetings stay unlabelled) and the closed-end Tri-Continental Corporation (99614) and Columbia Seligman Premium Technology Growth Fund (1471420), keyed from the N-CSR filed 2023-03-03 (0001683863-23-001735, -23-001719; Item 7 prints the same delegation). No series was keyed EXTERNAL: the Variable Insurance Trust SAIs name Pyrford only as a former subadviser, and every SAI says the Investment Manager votes for subadvised Funds too."
+      - "Not ingested, not keyed: other trusts that file N-PX under the Columbia name; the Columbia Management Investment Advisers, LLC and Columbia Advisory Partners institutional-manager N-PX (CIK 1233991, 1808179) are not ingested here: fund votes appear in the trusts' own N-PX, so ingesting both would count the same ballots twice. Columbia Seligman Communications & Information Fund (709146) has no filings."
       - "Policy text: the Corporate Governance Guidelines (CGG) are the document that states voting stances (board, compensation, audit, shareholder rights, ESG, voting matters), and are the one archived: from docs.columbiathreadneedle.com (the global Columbia Threadneedle file, dated March 2025 on its cover; the US site columbiathreadneedleus.com hosts no policy document) and as printed in SAI Appendix B ('Corporate Governance Guidelines' / 'Corporate Governance Guidelines and Proxy Voting Principles'), dated by EDGAR filing date. The 'Responsible Investment Proxy Voting Policy' (process, governance, conflicts; it names Columbia Management Investment Advisers, LLC as a covered entity) is a separate procedural document and is not archived. The SAI text is of the Series Trust I filings only, its page footers (which carry the SAI date) are removed."
     commitments:
       # Verified 2026-11-18 (200, application/pdf, honest client) at the official Columbia Threadneedle documents host, linked from the Responsible Investment pages.
