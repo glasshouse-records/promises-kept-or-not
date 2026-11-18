@@ -1504,3 +1504,86 @@ institutions:
           strip_patterns:
             - 'Statement of Additional Information – [A-Za-z]+ \d{1,2} ?, \d{4} B-\d+'
             - 'Table of Contents'
+
+  nuveen:
+    display_name: "Nuveen (Nuveen Asset Management, LLC; Nuveen Fund Advisors, LLC; TIAA-CREF Investment Management, LLC; Teachers Advisors, LLC)"
+    short_name: "Nuveen / TIAA"
+    cik: "0001521019"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Nuveen, the investment management arm of TIAA (Teachers Insurance and Annuity Association of America). CIK 1521019 is Nuveen Asset Management, LLC (NAM), which files N-PX only as an institutional manager. Added 2026-11-18. aum_usd_tr left 0 (firm AUM not verified from an official source), so it carries no weight in AUM-weighted metrics."
+    npx_ciks:
+      # Added 2026-11-18. Every trust's SAI says its proxies are voted under the "Nuveen Proxy Voting Policies" (Guidelines) attached as an appendix, and the policy
+      # (2026 edition) says it applies to Nuveen associates acting for NAM and TCIM. One key, NUVEEN, names that policy; the voting entity per trust is in each voting_note.
+      # The rule is DATED (`from` = the effective date of the earliest SAI read that says so; SAIs from before 2023 were not read); earlier meetings stay unlabelled.
+      - cik: "1013881"
+        adviser: "Nuveen Fund Advisors, LLC (adviser) delegated proxy voting to Nuveen Asset Management, LLC (sub-adviser to each fund)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1013881/000119312523264748/d558853d485bpos.htm"  # 485BPOS filed 2023-10-27, SAI dated 2023-10-31; same sentence in 0001193125-24-244560, -25-252146, -26-435756
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies: each Fund delegated authority to the Adviser, which delegated to the Sub-Adviser (Nuveen Asset Management, LLC), voting under the Nuveen Proxy Voting Guidelines printed in the appendix."
+        adviser_key_history: [{key: NUVEEN, from: "2023-10-31"}]
+        name: "Nuveen Investment Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API (discover-npx)
+      - cik: "1041673"
+        adviser: "Nuveen Fund Advisors, LLC (adviser) delegated proxy voting to Nuveen Asset Management, LLC (sub-adviser), except the Winslow-sub-advised series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1041673/000119312523264749/d453506d485bpos.htm"  # 485BPOS filed 2023-10-27, SAI dated 2023-10-31; same sentence in 0001193125-24-244563, -25-252149, -26-435759
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies: the Fund(s) delegated to the Adviser, which delegated to the Sub-Adviser (Nuveen Asset Management, LLC), voting under the Nuveen Proxy Voting Guidelines. Exception: the SAI of the Winslow-sub-advised fund (0001193125-23-283905, -24-266865, -25-301185) says Winslow Capital Management, LLC adopted its own proxy voting policy and votes under it; that series is kept EXTERNAL."
+        adviser_key_history: [{key: NUVEEN, from: "2023-10-31"}]
+        series_adviser:
+          S000025526: [{key: EXTERNAL, from: "2023-11-30"}]   # Nuveen Winslow Large-Cap Growth ESG Fund; sub-adviser Winslow Capital Management, LLC votes under its own policy: SAI dated 2023-11-30 in 0001193125-23-283905 (filed 2023-11-28), reaffirmed -24-266865, -25-301185
+        name: "Nuveen Investment Trust II"
+        validated: "2026-11-18"
+      - cik: "1071336"
+        adviser: "Nuveen Fund Advisors, LLC (adviser) delegated proxy voting to Nuveen Asset Management, LLC (sub-adviser to each fund)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1071336/000119312523305806/d436373d485bpos.htm"  # 485BPOS filed 2023-12-29, SAI dated 2023-12-29; same sentence in 0001193125-24-285447, -25-332187
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies: each Fund delegated authority to the Adviser, which delegated to Nuveen Asset Management, LLC, voting under the Nuveen Proxy Voting Guidelines. Mostly debt funds (few proxies)."
+        adviser_key_history: [{key: NUVEEN, from: "2023-12-29"}]
+        name: "Nuveen Investment Trust III"
+        validated: "2026-11-18"
+      - cik: "1084380"
+        adviser: "Teachers Advisors, LLC (Advisors), to which the Board delegated proxy voting; from 2026-08-01 Nuveen Fund Advisors, LLC delegating to Nuveen Asset Management, LLC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1084380/000093041323000461/c105358_485bpos-ixbrl.htm"  # 485BPOS filed 2023-02-23 (prospectuses dated 2023-03-01); same sentence in 0000930413-23-001905, -23-002205, -24-000737, -24-002175, -24-002836, -25-000765, -25-001574, -25-002260, -25-003075, -26-000561, -26-001231, -26-002200; 0000930413-26-002989 (2026-09-25) names Nuveen Fund Advisors then NAM
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy voting policies: the Trust's Board delegated to Advisors (Teachers Advisors, LLC) responsibility for voting proxies in accordance with the Nuveen Proxy Voting Policies attached as an Appendix; the 2026-09-25 SAI says Nuveen Fund Advisors, which delegated to Nuveen Asset Management (investment adviser changed 2026-08-01)."
+        adviser_key_history: [{key: NUVEEN, from: "2023-03-01"}]
+        name: "TIAA-CREF Funds"
+        validated: "2026-11-18"
+      - cik: "1068204"
+        adviser: "Teachers Advisors, LLC (Advisors), to which the Board delegated proxy voting"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1068204/000093041323001262/c106115_485bpos-ixbrl.htm"  # 485BPOS filed 2023-04-20 (prospectuses dated 2023-05-01); same sentence in 0000930413-24-001545, -25-001565, -26-001207
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy voting policies: the Trust's Board delegated to Advisors responsibility for voting proxies in accordance with the Nuveen Proxy Voting Policies attached as an Appendix."
+        adviser_key_history: [{key: NUVEEN, from: "2023-05-01"}]
+        name: "TIAA-CREF Life Funds"
+        validated: "2026-11-18"
+      - cik: "777535"
+        adviser: "TIAA-CREF Investment Management, LLC (TCIM), to which the Board delegated proxy voting"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/777535/000093041323001406/c105938_485bpos-ixbrl.htm"  # 485BPOS filed 2023-04-27, SAI dated 2023-05-01; same sentence in 0000930413-24-001427, -25-001506, -26-001336
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy voting policies: the Board delegated to TCIM responsibility for voting the Accounts' proxies in accordance with the Nuveen Proxy Voting Policies attached as an Appendix."
+        adviser_key_history: [{key: NUVEEN, from: "2023-05-01"}]
+        name: "College Retirement Equities Fund"
+        validated: "2026-11-18"
+    voting_scope_notes:
+      - "Keyed NUVEEN, per trust, from the effective date of the earliest SAI read: Nuveen Investment Trust (1013881) and II (1041673) 2023-10-31, Nuveen Investment Trust III (1071336) 2023-12-29, TIAA-CREF Funds (1084380) 2023-03-01, TIAA-CREF Life Funds (1068204) and College Retirement Equities Fund (777535) 2023-05-01. Each trust's SAI says the funds' proxies are voted under the Nuveen Proxy Voting Policies printed in its appendix, by Nuveen Asset Management (Nuveen trusts), Teachers Advisors (TIAA-CREF Funds and Life Funds, until the investment adviser changed on 2026-08-01) or TIAA-CREF Investment Management (CREF). The policy says it applies to both NAM and TCIM, so one key names the policy. Earlier meetings stay unlabelled; SAIs from before 2023 were not read."
+      - "Not keyed to Nuveen: the Winslow-sub-advised series of Nuveen Investment Trust II (Nuveen Winslow Large-Cap Growth ESG Fund): its SAI says Winslow Capital Management, LLC adopted its own proxy voting policy and votes under it (EXTERNAL, not paired with any policy)."
+      - "Not ingested, not keyed: the Nuveen municipal closed-end and multistate funds (e.g. CIK 1020661, 1090116, 1195737, 892992, 1450445, 1478888; they hold bonds and have almost no votes), TIAA Separate Account VA-1 (923524), and the Nuveen Asset Management (1521019), Nuveen Fund Advisors (1311016) and TIAA-CREF Investment Management (887793) institutional-manager N-PX, because fund votes appear in the trusts' own N-PX and ingesting both would count the same ballots twice. The three SPDR Nuveen muni ETFs in the State Street trust are not attributed here."
+      - "Policy text: nuveen.com and documents.nuveen.com block requests that identify themselves honestly (\"Your request was blocked\"), so no website copy is archived (see METHODOLOGY source-access notes). The only dated text is the SAI route: the Nuveen Proxy Voting Policy, Guidelines and Conflicts of Interest Policy as printed in the Nuveen Investment Trust SAI (archived as nuveen-proxy-voting-policy-as-printed-in-sai, dated by EDGAR filing date). The printed page numbers are stripped. The other trusts print the same document in their own SAIs but are not read for versions (a second source would add dates only)."
+    commitments:
+      - label: nuveen-proxy-voting-policy-as-printed-in-sai
+        adviser: "Nuveen Asset Management, LLC; TIAA-CREF Investment Management, LLC"
+        adviser_key: "NUVEEN"
+        sai_appendix:
+          cik: "0001013881"
+          forms: ["485BPOS"]
+          since: "2023-01-01"
+          # The 485BPOS holds two SAIs and prints the appendix twice (APPENDIX B, then APPENDIX A): identical text, so accepted as identical copies.
+          # Each copy ends at the next SAI's footer code ("MAI-NWQ-1023P", "MAI-NIV-1023P"), so the literal prefix is the end marker.
+          start: "NUVEEN PROXY VOTING POLICY"
+          end: ["MAI-"]
+          allow_identical_copies: true
+          strip_patterns:
+            - '\b[AB]- \d{1,2}\b'

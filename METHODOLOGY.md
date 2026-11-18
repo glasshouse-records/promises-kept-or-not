@@ -224,6 +224,16 @@ Investment Management's Equity Proxy Voting Policy instead, which names
 Parametric as a covered affiliate but is a different document and is not
 filed under Parametric's key. Re-check the website if a sanctioned path appears.
 
+Nuveen / TIAA (added 2026-11-18): nuveen.com and documents.nuveen.com answer
+requests that identify themselves honestly with "Your request was blocked"
+(probed earlier; Glasshouse does not change its identification to get in), so
+no website copy of the Nuveen Proxy Voting Policy is archived. The sanctioned
+path used is the SAI route: the Nuveen Investment Trust SAI prints the Nuveen
+Proxy Voting Policy, Guidelines and Conflicts of Interest Policy as an appendix
+(label `nuveen-proxy-voting-policy-as-printed-in-sai`; the filing prints it
+twice, once per SAI, and both copies must be identical; printed page numbers
+are removed). Re-check the website if a sanctioned path appears.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting
