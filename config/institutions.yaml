@@ -1828,3 +1828,237 @@ institutions:
           allow_identical_copies: true
           strip_patterns:
             - '\b[AB]- \d{1,2}\b'
+
+  mfs:
+    display_name: "MFS Investment Management (Massachusetts Financial Services Company)"
+    short_name: "MFS"
+    cik: "0000912938"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Massachusetts Financial Services Company (MFS), Boston, a Sun Life Financial company. CIK 912938 is Massachusetts Financial Services Co /MA/, which files the 13-F and also acts as filer agent for its own funds. Added 2026-11-18. aum_usd_tr left 0 (firm AUM not verified from an official source), so it carries no weight in AUM-weighted metrics."
+    npx_ciks:
+      # Added 2026-11-18. MFS's own US fund registrants that file N-PX vote tables. Every trust's SAI says "MFS votes proxies on behalf of the Fund pursuant to the proxy
+      # voting policies and procedures set forth in APPENDIX E", and no series names an outside sub-adviser (the SAIs mention only a 2018 tactical-overlay subadvisor in
+      # Trust XV's performance footnote, MFS Global Real Estate's exemptive-order boilerplate "a subadvisor did not manage any portion of the fund's assets", and
+      # former UBS / Sun Capital advisers). `from` is the SAI cover date of the earliest SAI read (2022 for every trust except the 2025 ETF trust); SAIs from before the
+      # year read were not opened, earlier meetings stay unlabelled. No series is EXTERNAL.
+      - cik: "798244"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/798244/000110465922130355/tm2228231d1_485bpos.htm"  # 485BPOS filed 2022-12-28, SAI dated 2022-12-29; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-12-29"}]
+        name: "MFS Series Trust I"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "798250"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/798250/000110465922039196/tm225916-1_485bposseq1.htm"  # 485BPOS filed 2022-03-29, SAI dated 2022-03-30; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-03-30"}]
+        name: "MFS Series Trust II"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "225604"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/225604/000110465922064985/tm2211381d1_485bpos.htm"  # 485BPOS filed 2022-05-26, SAI dated 2022-05-31; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-05-31"}]
+        name: "MFS Series Trust III"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "63068"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/63068/000110465922130387/tm2228237d1_485bpos.htm"  # 485BPOS filed 2022-12-28, SAI dated 2022-12-29; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-12-29"}]
+        name: "MFS Series Trust IV"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "200489"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/200489/000110465922008148/tm221932d1_485bpos.htm"  # 485BPOS filed 2022-01-27, SAI dated 2022-01-28; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-01-28"}]
+        name: "MFS Series Trust V"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "863032"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/863032/000110465922027120/tm224736d1_485bpos.htm"  # 485BPOS filed 2022-02-25, SAI dated 2022-02-28; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-02-28"}]
+        name: "MFS Series Trust VI"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "318874"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/318874/000110465922121548/tm2228123d1_485bpos.htm"  # 485BPOS filed 2022-11-23, SAI dated 2022-11-28; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-11-28"}]
+        name: "MFS Series Trust VII"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "819673"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/819673/000110465922027104/tm224737d1_485bpos.htm"  # 485BPOS filed 2022-02-25, SAI dated 2022-02-28; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-02-28"}]
+        name: "MFS Series Trust VIII"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "63075"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/63075/000110465922027100/tm225032d1_485bpos.htm"  # 485BPOS filed 2022-02-25, SAI dated 2022-02-28; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-02-28"}]
+        name: "MFS Series Trust IX"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "783740"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/783740/000110465922027109/tm224744d1_485bpos.htm"  # 485BPOS filed 2022-02-25, SAI dated 2022-02-28; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-02-28"}]
+        name: "MFS Series Trust X"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "911637"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/911637/000110465922008134/tm221929d1_485bpos.htm"  # 485BPOS filed 2022-01-27, SAI dated 2022-01-28; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-01-28"}]
+        name: "MFS Series Trust XI"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1330967"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1330967/000110465922094295/tm2222655d1_485bpos.htm"  # 485BPOS filed 2022-08-25, SAI dated 2022-08-26; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-08-26"}]
+        name: "MFS Series Trust XII"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "356349"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/356349/000110465922074594/tm2215765d1_485bpos.htm"  # 485BPOS filed 2022-06-27, SAI dated 2022-06-28; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-06-28"}]
+        name: "MFS Series Trust XIII"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "764719"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/764719/000110465922027112/tm225010d1_485bpos.htm"  # 485BPOS filed 2022-02-25, SAI dated 2022-02-28; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-02-28"}]
+        name: "MFS Series Trust XV"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "63067"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/63067/000110465922110473/tm2227758d1_485bpos.htm"  # 485BPOS filed 2022-10-21, SAI dated 2022-10-24; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-10-24"}]
+        name: "MFS Series Trust XVI"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "867969"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/867969/000110465922110470/tm2227768d1_485bpos.htm"  # 485BPOS filed 2022-10-21, SAI dated 2022-10-24; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-10-24"}]
+        name: "MFS Series Trust XVII"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "918571"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/918571/000110465922051863/tm228595d1_485bpos.htm"  # 485BPOS filed 2022-04-28, SAI dated 2022-04-29; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-04-29"}]
+        name: "MFS Variable Insurance Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "719269"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/719269/000110465922051818/tm228603d1_485bpos.htm"  # 485BPOS filed 2022-04-28, SAI dated 2022-04-29; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-04-29"}]
+        name: "MFS Variable Insurance Trust II"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1065698"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1065698/000110465922051788/tm228606d1_485bpos.htm"  # 485BPOS filed 2022-04-28, SAI dated 2022-04-29; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-04-29"}]
+        name: "MFS Variable Insurance Trust III"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "63091"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/63091/000110465922051907/tm2211001d1_485bpos.htm"  # 485BPOS filed 2022-04-28, SAI dated 2022-04-29; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-04-29"}]
+        name: "Massachusetts Investors Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "63090"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/63090/000110465922039203/tm225921-1_485bposseq1.htm"  # 485BPOS filed 2022-03-29, SAI dated 2022-03-30; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2022-03-30"}]
+        name: "Massachusetts Investors Growth Stock Fund"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "2018846"
+        adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/2018846/000174177325002554/c485bpos.htm"  # 485BPOS filed 2025-06-26, SAI dated 2025-06-27; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'MFS votes proxies on behalf of the Fund pursuant to the proxy voting policies and procedures set forth in APPENDIX E' (MFS Proxy Voting Policies and Procedures); no series is shown with an outside voter. Keyed from the SAI cover date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: MFS, from: "2025-06-27"}]
+        name: "MFS Active Exchange Traded Funds Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "851170"
+        adviser: "Massachusetts Financial Services Company (MFS); closed-end bond fund, no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/851170/000168386323000177/f24055d1.htm"  # N-CSR filed 2023-01-19; later N-CSR not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "N-CSR shareholder report ('Proxy Voting Policies and Information'): 'MFS votes proxies on behalf of the fund pursuant to proxy voting policies and procedures', and Item 7 attaches them (Ex-99.PROXYPOL). Keyed from the filing date of the earliest N-CSR read. Bond fund: its few votes are restructuring ballots."
+        adviser_key_history: [{key: MFS, from: "2023-01-19"}]
+        name: "MFS Charter Income Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "833021"
+        adviser: "Massachusetts Financial Services Company (MFS); closed-end bond fund, no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/833021/000168386323000165/f24036d1.htm"  # N-CSR filed 2023-01-19; later N-CSR not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "N-CSR shareholder report ('Proxy Voting Policies and Information'): 'MFS votes proxies on behalf of the fund pursuant to proxy voting policies and procedures', and Item 7 attaches them (Ex-99.PROXYPOL). Keyed from the filing date of the earliest N-CSR read. Bond fund: its few votes are restructuring ballots."
+        adviser_key_history: [{key: MFS, from: "2023-01-19"}]
+        name: "MFS Intermediate High Income Fund"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed MFS, per registrant, from the SAI cover date of the earliest SAI read (each registrant's own first 485BPOS of 2022, or 2025-06-27 for the MFS Active Exchange Traded Funds Trust, whose first SAI is 2025-06-26): Series Trusts I (798244) and IV (63068) 2022-12-29, II (798250) and Massachusetts Investors Growth Stock Fund (63090) 2022-03-30, III (225604) 2022-05-31, V (200489) and XI (911637) 2022-01-28, VI (863032), VIII (819673), IX (63075), X (783740) and XV (764719) 2022-02-28, VII (318874) 2022-11-28, XII (1330967) 2022-08-26, XIII (356349) 2022-06-28, XVI (63067) and XVII (867969) 2022-10-24, Variable Insurance Trusts I-III (918571, 719269, 1065698) and Massachusetts Investors Trust (63091) 2022-04-29. The two closed-end bond funds (MFS Charter Income Trust 851170, MFS Intermediate High Income Fund 833021) are keyed from their N-CSR filed 2023-01-19. Earlier meetings stay unlabelled. Votes cast by MFS for the MFS Series Trust XIV money-market portfolio and similar are not separated."
+      - "Not ingested, not keyed: MFS Municipal Series Trust (751656), MFS High Income Municipal Trust (845606), Investment Grade Municipal Trust (847411), High Yield Municipal Trust (809844) and the MFS Series Trust XIV money-market portfolio (1392417): they hold municipal bonds or money-market instruments, so their N-PX carry no equity votes (the 2025 filings hold one or a few bond-issuer or money-market-fund ballots). The MFS Institutional / LLC private vehicles and the 2023-08 legacy-HTML N-PX are not ingested. 13-F holdings (CIK 912938) not ingested here."
+      - "Policy text: the MFS Proxy Voting Policies and Procedures, from mfs.com (a PDF on the official site that answers honest clients with 200) and, under a separate label, as printed in Appendix E of the Series Trust I SAI. Each December 485BPOS carries a supplement that restates Appendix E for the coming 1 January and also prints the edition then in force in the SAI itself, so a filing holds two different editions; only the restated supplement (heading plus 'restated in its entirety as follows') is read, which dates each edition to the December filing that announced it (2022-12-28 for 1 January 2023, 2023-12-28, 2024-12-26, 2025-12-29). The edition of 1 January 2022 and earlier is not archived. Footers (supplement code and date, page numbers) are stripped."
+    commitments:
+      # Verified 2026-11-18 (200, application/pdf, honest client, Last-Modified 2026-11-17, PDF title '2026 Proxy Voting Policies and Procedures', dated January 1, 2026).
+      # The PDF sits under mfs.com's /microsites/meridian/ path; the policy page itself (mfs.com ... /proxy-voting.html) links no PDF in its markup, so this is the only direct copy found.
+      - label: proxy-voting-policies-and-procedures
+        url: "https://www.mfs.com/content/dam/mfs-enterprise/microsites/meridian/proxy_voting_procedures.pdf"
+        adviser: "Massachusetts Financial Services Company"
+        adviser_key: "MFS"
+      # The same policy as restated in the December 485BPOS supplement of Series Trust I, dated by EDGAR filing date. Separate label from the website PDF
+      # (different formatting would invent alternating versions). The lead-in sentence and the footer ("MULTI-SAI-SUP-I-122925 8", page numbers) are stripped.
+      - label: mfs-proxy-voting-policies-as-printed-in-sai
+        adviser: "Massachusetts Financial Services Company"
+        adviser_key: "MFS"
+        sai_appendix:
+          cik: "0000798244"
+          forms: ["485BPOS"]
+          since: "2022-01-01"
+          start:
+            - "restated in its entirety as follows: APPENDIX E – PROXY VOTING POLICIES AND PROCEDURES MASSACHUSETTS FINANCIAL SERVICES COMPANY PROXY VOTING POLICIES AND PROCEDURES"
+            - "restated in its entirety as follows: APPENDIX E - PROXY VOTING POLICIES AND PROCEDURES MASSACHUSETTS FINANCIAL SERVICES COMPANY PROXY VOTING POLICIES AND PROCEDURES"
+          end: ["Statement of Additional Information December"]
+          strip_patterns:
+            - '^restated in its entirety as follows: APPENDIX E [–-] PROXY VOTING POLICIES AND PROCEDURES'
+            - '(?:\b\d{1,2} )?MULTI-SAI-SUP-I-\d{6}(?: \d{1,2}\b)?'

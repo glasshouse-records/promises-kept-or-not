@@ -249,6 +249,25 @@ Proxy Voting Policy, Guidelines and Conflicts of Interest Policy as an appendix
 twice, once per SAI, and both copies must be identical; printed page numbers
 are removed). Re-check the website if a sanctioned path appears.
 
+MFS (added 2026-11-18): mfs.com answers requests that identify themselves
+honestly (200 on the home page and on the policy page; probed 2026-11-18), so it
+is not a blocked source. The policy page itself links no PDF in its markup; the
+direct copy found is `.../content/dam/mfs-enterprise/microsites/meridian/proxy_voting_procedures.pdf`
+(200, application/pdf, dated January 1, 2026), archived as
+`proxy-voting-policies-and-procedures`. Other mfs.com paths seen in search
+results (`.../mfscom/news/proxy_voting_procedures.pdf`, the older US insights
+page) answer 404 and are not relied on. The dated SAI route is archived under a
+separate label, `mfs-proxy-voting-policies-as-printed-in-sai`: each December
+485BPOS of MFS Series Trust I restates Appendix E for the coming 1 January in a
+supplement and also prints the edition then in force in the SAI itself, so a
+filing holds two different editions. Only the restated supplement is read (the
+heading must be preceded by "restated in its entirety as follows"), which dates
+each edition to the December filing that announced it; the supplement code and
+page numbers ("MULTI-SAI-SUP-I-122925 8") are removed because they carry the
+SAI's own date. The edition of 1 January 2022 and earlier is not archived. The
+municipal trusts and the money-market trust file N-PX with no equity votes and
+are not ingested.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting
