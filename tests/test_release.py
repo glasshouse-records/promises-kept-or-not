@@ -592,3 +592,13 @@ def test_pay_decisions_ships_both_kinds_with_every_column_defined(conn, tmp_path
     release.build_release(conn, root=tmp_path, version="n9", with_parquet=False,
                           engine_path=ep, institutions=REGISTRY, no_derived=True)
     assert not list((tmp_path / "vn9" / "facts").glob("pay_decisions*"))
+
+
+def test_policy_versions_docs_name_sai_filing_dates():
+    """SAI-printed versions are dated by the EDGAR filing date, not a Wayback
+    capture or our fetch; the datasheet must say so or readers misread them."""
+    from glasshouse.release import NEW_TABLES
+    cols = NEW_TABLES["policy_versions"]
+    assert "filing date" in cols["captured"]
+    assert "SAI" in cols["captured"]
+    assert "live fetch" not in cols["wayback_timestamp"] or "SAI" in cols["wayback_timestamp"]

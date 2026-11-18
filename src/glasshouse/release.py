@@ -224,8 +224,10 @@ NEW_TABLES: dict[str, dict] = {
                        "NULL = not on record",
         "adviser_key_date": "date the key was resolved on (= captured)",
         "authored": "date the manager's own software wrote the file (PDF metadata); '' if none",
-        "captured": "ISO date the text was demonstrably public (Wayback capture or our fetch)",
-        "wayback_timestamp": "Wayback capture timestamp; '' = live fetch",
+        "captured": "ISO date the text was demonstrably public: the Wayback capture, our "
+                    "fetch, or, for labels ending '-as-printed-in-sai', the EDGAR filing date "
+                    "of the earliest fund SAI printing this text (source_url is that SAI)",
+        "wayback_timestamp": "Wayback capture timestamp; '' = live fetch or an SAI on EDGAR",
         "source_url": "the document's URL", "text_sha256": "hash of the extracted text; '' if unreadable",
         "file_sha256": "hash of the file bytes",
         "readable": "1 if text was extracted from the file, else 0"},
