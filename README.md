@@ -20,15 +20,15 @@ The `findings` table is empty: no claim has passed human review. Drafts in
 
 ## What is in it
 
-Figures below are from the release `v2026-11-17.3` (its `DATASHEET.md` and
+Figures below are from the release `v2026-11-18` (its `DATASHEET.md` and
 `COVERAGE.json` are authoritative). Counts drift; the commands print current ones.
 
 | Layer | Table(s) | What it holds, honestly |
 |---|---|---|
-| Archived policy versions | `commitments`, `policy_versions` | 99 captures of 17 managers' proxy-voting documents, 78 distinct text versions (56 from Wayback, 22 our own fetch). Hashes, dates, URLs; no policy text. Dated by the capture day (text was public by then). 76 of 78 also carry the date the manager's own software wrote the file. Gaps exist. |
-| Proxy votes | `votes`, `fund_series`, `voting_advisers`, `voting_scope_notes` | US-registered funds only, from N-PX. Meeting dates 2023-07-01 to 2026-06-30 (three N-PX seasons, named 2024, 2025, 2026: July to June, named by end year). 15,206,245 vote lines after removing duplicates. Only the funds on file, not whole firms. |
-| Director votes (DERIVED) | `director_decisions` | 1,437,444 rows: one per director-nominee item per manager and adviser. Rebuilt from `votes` by `glasshouse engine build`. |
-| Shareholder proposals (DERIVED) | `proposal_decisions` | 83,517 rows: one per (manager, adviser, company, meeting, proposal). Same rebuild. Other management items (auditors, pay) are in `votes` but not here. |
+| Archived policy versions | `commitments`, `policy_versions` | 119 captures of 20 managers' proxy-voting documents, 98 distinct text versions (56 from Wayback, 23 our own fetch, 19 printed in fund SAIs on EDGAR). Hashes, dates, URLs; no policy text. Dated by the capture day, or for SAI-printed text by the SAI's filing date (text was public by then). 77 of the 79 non-SAI versions also carry the date the manager's own software wrote the file. Gaps exist. |
+| Proxy votes | `votes`, `fund_series`, `voting_advisers`, `voting_scope_notes` | US-registered funds only, from N-PX. Meeting dates 2023-07-01 to 2026-06-30 (three N-PX seasons, named 2024, 2025, 2026: July to June, named by end year). 16,742,083 vote lines after removing duplicates. Only the funds on file, not whole firms. |
+| Director votes (DERIVED) | `director_decisions` | 1,714,755 rows: one per director-nominee item per manager and adviser. Rebuilt from `votes` by `glasshouse engine build`. |
+| Shareholder proposals (DERIVED) | `proposal_decisions` | 98,391 rows: one per (manager, adviser, company, meeting, proposal). Same rebuild. Other management items (auditors, pay) are in `votes` but not here. |
 | Holdings | `holdings` | 580,106 rows from 13-F (long US equity only) and two N-PORT filings. Mostly one quarter (2026-03-31). BlackRock also has 2023-06-30 to 2024-06-30; Vanguard 2025-09-30 to 2026-03-31. A snapshot, not a time series. |
 | Enforcement record | `enforcement_actions` | 14,887 rows. 12,533 are OFAC sanctions designations (names on a list, not findings about any manager). 236 are curated snapshots. 489 are `unverified`. 30 are `allegation` (dockets). Each row has a `resolution_type` from a closed list. |
 | Findings | `findings` | 0 rows. |
@@ -48,7 +48,7 @@ fund trusts are on file, often a small part of a large manager.
 | BlackRock | BIS, BAIS, UNRESOLVED | 2024-26 | all kinds | 4 | 13: 12 of the BIS principles + 1 of the BAIS guidelines (from 2019-08-06) | BIS/BAIS split from 2025-01-01; 10 series cannot be placed (UNRESOLVED), incl. iShares Core S&P 500, whose shareholders choose BIS or a third-party policy from 2025 |
 | Vanguard | VANGUARD, VPM, VCM, EXTERNAL | 2024-26 | all kinds | 5 | 8 (from 2022-01-17) | Teams split 2026-01-12; four pre-split editions (2022, 2023, 2024, 2025) cover 2022 to 2026-01-11 |
 | State Street | none keyed | 2024-26 | all kinds | 4 | 7 (from 2020-09-29) | 3 SPDR Nuveen muni ETFs may follow Nuveen's policy |
-| Fidelity | GEODE, unlabelled | 2024-26 | all kinds | 7 | 7: 6 FMR (from 2023-04-16) + 1 Geode | 55 index series (Concord Street, Salem Street, VIP II) keyed GEODE from 2025-07-01, where the series' own SAI gives only Geode's voting policy; all other lines unlabelled, never paired with a policy |
+| Fidelity | GEODE, unlabelled | 2024-26 | all kinds | 7 | 10: 6 FMR (from 2023-04-16) + 1 Geode website copy + 3 Geode SAI-printed (from 2024-04-24) | 55 index series (Concord Street, Salem Street, VIP II) keyed GEODE from 2025-07-01, where the series' own SAI gives only Geode's voting policy; all other lines unlabelled, never paired with a policy |
 | JPMorgan | none keyed | 2024-26 | all kinds | 2 | 6 (from 2021-01-25) | |
 | Goldman Sachs | none keyed | 2024-26 | all kinds | 2 | 2 (from 2022-10-31) | |
 | BNY | none keyed | 2024-26 | all kinds | 2 | 1 (2025-07-18) | Sub-advised funds vote under the sub-adviser's own rules |
@@ -60,7 +60,7 @@ fund trusts are on file, often a small part of a large manager.
 | Charles Schwab Trust | none keyed | 2024-26 | all kinds | 2 | 0 | No policy archived |
 | Capital Group (American Funds) | none keyed | 2024-26 | all kinds | 37 (34 file votes) | 2 (from 2025-04-05) | CRMC votes all 37 trusts (American Funds and Capital Group ETFs); its equity divisions are not separated in the filings |
 | Dimensional | none keyed | 2024-26 | all kinds | 3 | 2 (from 2025-12-28) | 2025 and 2026 reports of two trusts stop at exactly 500,000 records in the SEC file itself: counts are lower bounds |
-| Wellington (via Hartford Funds) | WELLINGTON, unlabelled | 2024-26 | all kinds | 3 Hartford trusts | 2 (from 2026-11-17) | Wellington has no fund trust of its own; 45 Hartford series whose SAI names Wellington as sole sub-adviser are keyed WELLINGTON from 2025-07-01; Schroders-advised series, funds of funds and earlier meetings stay unlabelled |
+| Wellington (via Hartford Funds) | WELLINGTON, unlabelled | 2024-26 | all kinds | 3 Hartford trusts | 5: 2 website copies (2026-11-17) + 3 SAI-printed (from 2023-04-13) | Wellington has no fund trust of its own; 45 Hartford series whose SAI names Wellington as sole sub-adviser are keyed WELLINGTON from 2025-07-01; Schroders-advised series, funds of funds and earlier meetings stay unlabelled |
 | Parametric (via Eaton Vance) | PARAMETRIC, unlabelled | 2024-26 | all kinds | 2 Eaton Vance trusts | 3 (from 2023-10-26, text printed in a fund SAI) | Parametric has no fund trust of its own; 6 series whose SAI names Parametric as sub-adviser with voting delegated to it are keyed PARAMETRIC from 2024-11-01 to 2025-07-01; Eaton Vance-voted series and Morgan Stanley ETF Trust stay unlabelled; its website blocks honest clients, so no website policy copy |
 | Columbia Threadneedle | CMIA, unlabelled | 2024-26 | all kinds | 6 Columbia trusts | 7: 1 website copy (2026-11-18) + 6 printed in a fund SAI (from 2023-02-27) | Columbia Management Investment Advisers votes every series, sub-advised included, per each trust's SAI; keyed from each trust's earliest SAI read (2023-03-01 to 2023-08-01); Pyrford International Stock Fund stays EXTERNAL until 2026-04-30; archived policy is the Corporate Governance Guidelines (the document with the voting stances); variable-insurance trusts not covered |
 | Nuveen / TIAA | NUVEEN, unlabelled | 2024-26 | all kinds | 6 trusts | 4 (from 2023-10-27, text printed in a fund SAI) | Nuveen Investment Trust, II, III (Nuveen Asset Management), TIAA-CREF Funds and Life Funds (Teachers Advisors) and College Retirement Equities Fund (TIAA-CREF Investment Management) vote under the Nuveen Proxy Voting Policies; keyed from each trust's earliest SAI read (2023-03-01 to 2023-12-29); the Winslow-sub-advised series stays EXTERNAL; muni closed-end funds not covered; nuveen.com blocks honest clients, so the policy is the text printed in a fund SAI |
@@ -111,7 +111,7 @@ No network needed once you hold the bundle; it is not downloadable yet. Nothing
 here assumes any library is installed. Check the files with the shell alone:
 
 ```sh
-cd data/releases/v2026-11-17.3
+cd data/releases/v2026-11-18
 shasum -a 256 -c MANIFEST.sha256 | grep -vc OK   # Linux: sha256sum -c ... ; prints 0 when every file is OK
 ```
 
