@@ -6,7 +6,9 @@ adding Capital Group and Dimensional, doi:10.5281/zenodo.24324314;
 version 2026-11-17.3, adding Geode-voted Fidelity index series, Wellington via
 Hartford and 17 more Capital Group trusts, doi:10.5281/zenodo.24326076;
 version 2026-11-18, adding Nuveen/TIAA, Columbia, Parametric and 19 SAI-printed
-policy versions, doi:10.5281/zenodo.24329615) and the code at
+policy versions, doi:10.5281/zenodo.24329615;
+version 2026-11-18.2, adding Dimensional master funds and dated Standard/Social/
+Sustainability guidelines plus four Columbia registrants, doi:10.5281/zenodo.24339801) and the code at
 https://github.com/glasshouse-records/promises-kept-or-not, both credited to
 "Glasshouse". Nothing else has been sent or shown to anyone; the drafts below
 are still private.

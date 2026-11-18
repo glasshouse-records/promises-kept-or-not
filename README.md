@@ -12,7 +12,7 @@ On top sit an evidence engine (`glasshouse ask`, cited queries) and a checker
 the product.
 
 **Status, 2026-11-18:** published. Data: Zenodo,
-[doi:10.5281/zenodo.24329615](https://doi.org/10.5281/zenodo.24329615) (latest version, 2026-11-18;
+[doi:10.5281/zenodo.24339801](https://doi.org/10.5281/zenodo.24339801) (latest version, 2026-11-18.2;
 all versions: [10.5281/zenodo.24321606](https://doi.org/10.5281/zenodo.24321606)).
 Code: <https://github.com/glasshouse-records/promises-kept-or-not>.
 The `findings` table is empty: no claim has passed human review. Drafts in
@@ -20,15 +20,15 @@ The `findings` table is empty: no claim has passed human review. Drafts in
 
 ## What is in it
 
-Figures below are from the release `v2026-11-18` (its `DATASHEET.md` and
+Figures below are from the release `v2026-11-18.2` (its `DATASHEET.md` and
 `COVERAGE.json` are authoritative). Counts drift; the commands print current ones.
 
 | Layer | Table(s) | What it holds, honestly |
 |---|---|---|
-| Archived policy versions | `commitments`, `policy_versions` | 119 captures of 20 managers' proxy-voting documents, 98 distinct text versions (56 from Wayback, 23 our own fetch, 19 printed in fund SAIs on EDGAR). Hashes, dates, URLs; no policy text. Dated by the capture day, or for SAI-printed text by the SAI's filing date (text was public by then). 77 of the 79 non-SAI versions also carry the date the manager's own software wrote the file. Gaps exist. |
-| Proxy votes | `votes`, `fund_series`, `voting_advisers`, `voting_scope_notes` | US-registered funds only, from N-PX. Meeting dates 2023-07-01 to 2026-06-30 (three N-PX seasons, named 2024, 2025, 2026: July to June, named by end year). 16,742,083 vote lines after removing duplicates. Only the funds on file, not whole firms. |
-| Director votes (DERIVED) | `director_decisions` | 1,714,755 rows: one per director-nominee item per manager and adviser. Rebuilt from `votes` by `glasshouse engine build`. |
-| Shareholder proposals (DERIVED) | `proposal_decisions` | 98,391 rows: one per (manager, adviser, company, meeting, proposal). Same rebuild. Other management items (auditors, pay) are in `votes` but not here. |
+| Archived policy versions | `commitments`, `policy_versions` | 131 captures of 20 managers' proxy-voting documents, 110 distinct text versions (56 from Wayback, 25 our own fetch, 29 printed in fund SAIs on EDGAR). Hashes, dates, URLs; no policy text. Dated by the capture day, or for SAI-printed text by the SAI's filing date (text was public by then). 79 of the 81 non-SAI versions also carry the date the manager's own software wrote the file. Gaps exist. |
+| Proxy votes | `votes`, `fund_series`, `voting_advisers`, `voting_scope_notes` | US-registered funds only, from N-PX. Meeting dates 2023-07-01 to 2026-06-30 (three N-PX seasons, named 2024, 2025, 2026: July to June, named by end year). 17,267,886 vote lines after removing duplicates. Only the funds on file, not whole firms. |
+| Director votes (DERIVED) | `director_decisions` | 1,862,856 rows: one per director-nominee item per manager and adviser. Rebuilt from `votes` by `glasshouse engine build`. |
+| Shareholder proposals (DERIVED) | `proposal_decisions` | 108,738 rows: one per (manager, adviser, company, meeting, proposal). Same rebuild. Other management items (auditors, pay) are in `votes` but not here. |
 | Holdings | `holdings` | 580,106 rows from 13-F (long US equity only) and two N-PORT filings. Mostly one quarter (2026-03-31). BlackRock also has 2023-06-30 to 2024-06-30; Vanguard 2025-09-30 to 2026-03-31. A snapshot, not a time series. |
 | Enforcement record | `enforcement_actions` | 14,887 rows. 12,533 are OFAC sanctions designations (names on a list, not findings about any manager). 236 are curated snapshots. 489 are `unverified`. 30 are `allegation` (dockets). Each row has a `resolution_type` from a closed list. |
 | Findings | `findings` | 0 rows. |
@@ -59,7 +59,7 @@ fund trusts are on file, often a small part of a large manager.
 | Northern Trust | none keyed | 2024-26 | all kinds | 1 | 4 (from 2024-05-14) | Multi-manager series use outside sub-advisers |
 | Charles Schwab Trust | none keyed | 2024-26 | all kinds | 2 | 0 | No policy archived |
 | Capital Group (American Funds) | none keyed | 2024-26 | all kinds | 37 (34 file votes) | 2 (from 2025-04-05) | CRMC votes all 37 trusts (American Funds and Capital Group ETFs); its equity divisions are not separated in the filings |
-| Dimensional | DFA, DFA_SOCIAL, DFA_SUSTAINABILITY | 2024-26 | all kinds | 5 (3 trusts + 2 master funds) | 10: 2 Standard + 2 Social/Sustainability website copies (2026-11-18) + 6 printed in a fund SAI (from 2024-02-28) | Master funds (CIK 896162, 896163) added: the feeder SAIs say the Advisor votes for them; 5 Social and 10 Sustainability series (incl. 4 ETFs) keyed to their own guideline text from the SAI that split them (2024-02-28), never paired with the Standard text; 2025 and 2026 reports of two trusts stop at exactly 500,000 records in the SEC file itself: counts are lower bounds |
+| Dimensional | DFA, DFA_SOCIAL, DFA_SUSTAINABILITY | 2024-26 | all kinds | 5 (3 trusts + 2 master funds) | 14: 2 Standard + 2 Social/Sustainability website copies + 10 printed in a fund SAI (Standard from 2023-02-28, Social/Sustainability from 2024-02-28) | Master funds (CIK 896162, 896163) added: the feeder SAIs say the Advisor votes for them; 5 Social and 10 Sustainability series (incl. 4 ETFs) keyed to their own guideline text from the SAI that split them (2024-02-28), never paired with the Standard text; 2025 and 2026 reports of two trusts stop at exactly 500,000 records in the SEC file itself: counts are lower bounds |
 | Wellington (via Hartford Funds) | WELLINGTON, unlabelled | 2024-26 | all kinds | 3 Hartford trusts | 5: 2 website copies (2026-11-17) + 3 SAI-printed (from 2023-04-13) | Wellington has no fund trust of its own; 45 Hartford series whose SAI names Wellington as sole sub-adviser are keyed WELLINGTON from 2025-07-01; Schroders-advised series, funds of funds and earlier meetings stay unlabelled |
 | Parametric (via Eaton Vance) | PARAMETRIC, unlabelled | 2024-26 | all kinds | 2 Eaton Vance trusts | 3 (from 2023-10-26, text printed in a fund SAI) | Parametric has no fund trust of its own; 6 series whose SAI names Parametric as sub-adviser with voting delegated to it are keyed PARAMETRIC from 2024-11-01 to 2025-07-01; Eaton Vance-voted series, Morgan Stanley ETF Trust, Eaton Vance Series/Investment/Variable Trusts and Series Fund, Calvert and Innovator ETFs (adviser votes, reviewed 2026-11-18) stay unlabelled; its website blocks honest clients, so no website policy copy |
 | Columbia Threadneedle | CMIA, unlabelled | 2024-26 | all kinds | 10 Columbia registrants (6 trusts, 2 variable-insurance trusts, 2 closed-end funds) | 7: 1 website copy (2026-11-18) + 6 printed in a fund SAI (from 2023-02-27) | Columbia Management Investment Advisers votes every series, sub-advised included, per each trust's SAI; keyed from each trust's earliest SAI read (2023-03-01 to 2023-08-01); Pyrford International Stock Fund stays EXTERNAL until 2026-04-30; Variable Insurance Trust keyed from 2023-05-01, closed-end Tri-Continental and Seligman Premium Technology from 2023-03-03, Variable Series Trust (Wanger Advisors Trust until 2025, Columbia Wanger voted) only from 2026-05-01; archived policy is the Corporate Governance Guidelines (the document with the voting stances) |
@@ -111,7 +111,7 @@ No network needed once you hold the bundle; it is not downloadable yet. Nothing
 here assumes any library is installed. Check the files with the shell alone:
 
 ```sh
-cd data/releases/v2026-11-18
+cd data/releases/v2026-11-18.2
 shasum -a 256 -c MANIFEST.sha256 | grep -vc OK   # Linux: sha256sum -c ... ; prints 0 when every file is OK
 ```
 
@@ -288,8 +288,8 @@ quotations not in the archived text, and words that assert motive or wrongdoing.
 Cite the version you used:
 
 > Glasshouse (2026). *Glasshouse — institutional accountability evidence dataset
-> (say vs. do)*, version 2026-11-18 [Data set]. Zenodo.
-> https://doi.org/10.5281/zenodo.24329615
+> (say vs. do)*, version 2026-11-18.2 [Data set]. Zenodo.
+> https://doi.org/10.5281/zenodo.24339801
 
 To refer to the dataset in general (every version), use
 https://doi.org/10.5281/zenodo.24321606. The bundle's `DATASHEET.md` records the
