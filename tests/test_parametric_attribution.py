@@ -85,3 +85,24 @@ def test_policy_document_is_keyed_and_sai_sourced():
         assert d["adviser_key"] == "PARAMETRIC"
         assert label.endswith("-as-printed-in-sai")   # the website blocks honest clients: SAI route only
         assert d["sai_appendix"]["start"] and d["sai_appendix"]["end"]
+
+
+# Reviewed 2026-11-18 and deliberately NOT keyed PARAMETRIC: their own SAIs delegate proxy
+# voting to the investment adviser (Eaton Vance, CRM or Innovator), not to the sub-adviser.
+REVIEWED_NOT_PARAMETRIC = {
+    "102818": "Eaton Vance Series Trust",
+    "779991": "Eaton Vance Investment Trust",
+    "1121746": "Eaton Vance Variable Trust",
+    "1552324": "Eaton Vance Series Fund",
+    "743773": "Calvert Variable Trust",
+    "1415726": "Innovator ETFs Trust",
+}
+
+
+def test_reviewed_trusts_are_not_keyed_and_are_documented():
+    keyed = {str(e["cik"]) for e in PA["npx_ciks"]}
+    notes = " ".join(PA["voting_scope_notes"])
+    for cik, name in REVIEWED_NOT_PARAMETRIC.items():
+        assert cik not in keyed, f"{name}: its SAI delegates voting to the adviser, not Parametric"
+        assert f"CIK {cik}" in notes, f"{name}: the review must be documented in voting_scope_notes"
+    assert "Calvert Variable Trust" in notes and "CRM votes proxies" in notes
