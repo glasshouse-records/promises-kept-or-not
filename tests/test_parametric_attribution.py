@@ -34,10 +34,30 @@ def test_every_rule_is_dated():
     n = 0
     for cik in TRUSTS:
         for sid, rules in _entry(cik)["series_adviser"].items():
-            assert sid.startswith("S") and len(rules) == 1
-            assert rules[0]["key"] == "PARAMETRIC" and rules[0]["from"]
+            assert sid.startswith("S") and rules[0]["key"] == "PARAMETRIC" and rules[0]["from"]
+            assert all(r["key"] in ("PARAMETRIC", "PARAMETRIC_MSIM") for r in rules)
             n += 1
     assert n == 6
+
+
+def test_msim_policy_period_is_not_paired_with_parametric_policy():
+    """From the effective date of a 2026 SAI that prints the MSIM Equity policy, the
+    voter is still Parametric but the key has no policy document, so no pairing."""
+    rules = engine.normalize_rules(_entry("745463"))
+    for sid, last_own, first_msim in [("S000032773", "2026-04-30", "2026-05-01"),
+                                      ("S000012701", "2026-05-31", "2026-06-01"),
+                                      ("S000028355", "2026-05-31", "2026-06-01"),
+                                      ("S000056237", "2026-05-31", "2026-06-01")]:
+        assert engine.resolve_key(rules, sid, last_own) == "PARAMETRIC"
+        assert engine.resolve_key(rules, sid, first_msim) == "PARAMETRIC_MSIM"
+    # no 2026 SAI was found for Dividend Income and the Nov 2025 SAI of Tax-Managed EM still prints Parametric's policy
+    assert engine.resolve_key(rules, "S000044370", "2026-06-30") == "PARAMETRIC"
+    ts2 = engine.normalize_rules(_entry("74663"))
+    assert engine.resolve_key(ts2, "S000002405", "2026-06-30") == "PARAMETRIC"
+
+
+def test_msim_key_has_no_policy_document():
+    assert all(d["adviser_key"] == "PARAMETRIC" for d in PA["commitments"])
 
 
 def test_series_resolve_only_from_evidence_window():
