@@ -18,6 +18,7 @@ findings*, not findings.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
 import sqlite3
@@ -128,6 +129,66 @@ def bound_body(text: str, body: dict | None) -> str | None:
     if not end:
         return None
     return t[start.start():end.end()]
+
+
+# Spacing around a trademark sign never changes meaning ("Investments®" vs
+# "Investments ®", or a superscript marker that survived extraction).
+_TM = re.compile(r"\s*(?:\{sup\}|<sup>)?\s*([\u00ae\u2122\u00a9])(?:\s*(?:\{/sup\}|</sup>))?",
+                 re.IGNORECASE)
+_MIN_IDENTITY_CHARS = 200      # below this, extraction is untrustworthy: identity is the bytes
+
+
+def identity_text(text: str) -> str:
+    """The text a policy version's identity is made of: whitespace-normalised, with
+    no whitespace before a trademark sign."""
+    return _TM.sub(r"\1", re.sub(r"\s+", " ", text or "").strip())
+
+
+def identity_of_text(text: str, sha256: str) -> str:
+    """'text:<sha256 of the identity text>', or 'raw:<file sha256>' when the text
+    is empty or too short to trust (never merge unreadable captures)."""
+    t = identity_text(text)
+    if len(t) < _MIN_IDENTITY_CHARS:
+        return "raw:" + sha256
+    return "text:" + hashlib.sha256(t.encode()).hexdigest()
+
+
+_AUTO = object()
+
+
+def commitment_identity(institution_id: str, doc_label: str, content_path: str,
+                        text_sha256: str, sha256: str, spec=_AUTO) -> str:
+    """THE version identity of an archived capture, shared by the engine, release,
+    site, dataset, newsroom and timeline. Text is bounded by the label's `body`
+    spec (unreadable if the markers miss). With no local file (a ledger restored
+    from a release bundle) it falls back to the ledger's recorded text hash."""
+    path = Path(content_path) if content_path else None
+    if path is None or not path.is_file():
+        return "text:" + text_sha256 if text_sha256 else "raw:" + sha256
+    if spec is _AUTO:
+        spec = body_spec(institution_id, doc_label)
+    text = extract_text(path)
+    if spec:
+        text = (bound_body(text, spec) if text else None) or ""
+    elif not text.strip() and text_sha256:
+        return "text:" + text_sha256      # file unreadable here, but ingest read it
+    return identity_of_text(text, sha256)
+
+
+def distinct_versions(conn, where: str = "1=1", params: tuple = (),
+                      newest_first: bool = False) -> list[tuple[str, sqlite3.Row]]:
+    """(identity, first row) per distinct policy version among live commitments,
+    in id order (or newest first)."""
+    out, seen = [], set()
+    order = "DESC" if newest_first else "ASC"
+    for r in conn.execute(f"SELECT * FROM commitments WHERE superseded=0 AND ({where}) "
+                          f"ORDER BY id {order}", params):
+        ident = commitment_identity(r["institution_id"], r["doc_label"], r["content_path"],
+                                    r["text_sha256"], r["sha256"])
+        if ident not in seen:
+            seen.add(ident)
+            out.append((ident, r))
+    return out
 
 
 _BODY_SPECS: dict | None = None
@@ -429,7 +490,8 @@ def find_commitment_vote_contradictions(
         seen: set[str] = set()
         kept = []
         for d in vs:
-            ident = d["text_sha256"] or "raw:" + d["sha256"]
+            ident = commitment_identity(d["institution_id"], d["doc_label"],
+                                       d["content_path"], d["text_sha256"], d["sha256"])
             if ident in seen:
                 continue
             seen.add(ident)

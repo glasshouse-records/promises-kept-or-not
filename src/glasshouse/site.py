@@ -22,6 +22,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from . import timeline
+from .contradictions import distinct_versions
 from .http import DATA_DIR
 
 SITE_DIR = DATA_DIR / "_site"
@@ -901,10 +902,8 @@ def _write_institution_feeds(conn, out_dir, insts, findings) -> None:
                 f"<id>urn:glasshouse:finding:{_e(p['accession'])}:{_e(p['cusip'])}:{_e(p['theme'])}</id>"
                 f"<updated>{now}</updated><content type='text'>VERIFIED FINDING. "
                 f"{_e(p['commitment_quote'][:200])} | N-PX {_e(p['accession'])}</content></entry>")
-        for d in conn.execute(
-                "SELECT doc_label, sha256, retrieval_date FROM commitments "
-                "WHERE institution_id=? AND superseded=0 GROUP BY CASE WHEN text_sha256='' THEN 'raw:'||sha256 ELSE text_sha256 END "
-                "ORDER BY id DESC LIMIT 10", (r["id"],)):
+        for _ident, d in distinct_versions(conn, "institution_id=?", (r["id"],),
+                                           newest_first=True)[:10]:
             entries.append(
                 f"<entry><title>Policy version: {_e(d['doc_label'])}</title>"
                 f"<id>urn:glasshouse:doc:{_e(d['sha256'][:16])}</id>"
@@ -1035,12 +1034,12 @@ def _build_institution(conn, out_dir, r, findings) -> int:
                      f"left, support pulls right.</p>"
                      f"<div class='card r'>{_butterfly(stances)}</div>")
 
-    docs = conn.execute(
-        """SELECT doc_label, sha256, wayback_timestamp,
-                  COALESCE(NULLIF(wayback_timestamp,''), NULLIF(public_by,''), retrieval_date) AS version
-           FROM commitments WHERE institution_id=? AND superseded=0
-           GROUP BY CASE WHEN text_sha256='' THEN 'raw:'||sha256 ELSE text_sha256 END ORDER BY version""",
-        (inst_id,)).fetchall()
+    docs = sorted(
+        ({"doc_label": d["doc_label"], "sha256": d["sha256"],
+          "wayback_timestamp": d["wayback_timestamp"],
+          "version": d["wayback_timestamp"] or d["public_by"] or d["retrieval_date"]}
+         for _i, d in distinct_versions(conn, "institution_id=?", (inst_id,))),
+        key=lambda d: d["version"])
     if docs:
         versions = []
         for d in docs:

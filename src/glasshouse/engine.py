@@ -30,7 +30,6 @@ source_url) that `verify.py` resolves when it checks a draft.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import re
@@ -39,7 +38,13 @@ from collections import defaultdict
 from datetime import UTC, date, datetime
 from pathlib import Path
 
-from .contradictions import THEMES, bound_body, extract_text, proposal_is_oppositional
+from .contradictions import (
+    THEMES,
+    bound_body,
+    extract_text,
+    identity_of_text,
+    proposal_is_oppositional,
+)
 from .http import DATA_DIR
 from .ledger import DB_PATH, iso_meeting_date
 
@@ -690,21 +695,15 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
         text = extract_text(path) if path is not None and path.is_file() else ""
         spec = body_specs.get((c["institution_id"], c["doc_label"]))
         if spec:
-            # Identity is the bounded body, not the page. A capture whose markers
-            # do not match is unreadable: raw identity, no sentences, logged.
+            # Bounded to the policy body. A capture whose markers do not match
+            # is unreadable: raw identity, no sentences, logged.
             body = bound_body(text, spec) if text else None
             if body is None:
                 logger.warning("%s/%s capture %s: body markers not found; treated as "
                                "unreadable", c["institution_id"], c["doc_label"], c["id"])
-                text = ""
-                ident = (c["institution_id"], c["doc_label"], "raw:" + c["sha256"])
-            else:
-                text = body
-                ident = (c["institution_id"], c["doc_label"],
-                         "body:" + hashlib.sha256(body.encode()).hexdigest())
-        else:
-            ident = (c["institution_id"], c["doc_label"],
-                     c["text_sha256"] or "raw:" + c["sha256"])
+            text = body or ""
+        # Identity is the (bounded, normalised) text, shared with release/site/dataset.
+        ident = (c["institution_id"], c["doc_label"], identity_of_text(text, c["sha256"]))
         if ident in seen:
             continue
         seen.add(ident)

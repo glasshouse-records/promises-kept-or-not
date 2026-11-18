@@ -35,6 +35,7 @@ from datetime import date
 from pathlib import Path
 
 from . import dataset, ledger, publish, registry
+from .contradictions import commitment_identity
 from .http import DATA_DIR
 
 RELEASES_DIR = DATA_DIR / "releases"
@@ -228,7 +229,7 @@ NEW_TABLES: dict[str, dict] = {
                     "fetch, or, for labels ending '-as-printed-in-sai', the EDGAR filing date "
                     "of the earliest fund SAI printing this text (source_url is that SAI)",
         "wayback_timestamp": "Wayback capture timestamp; '' = live fetch or an SAI on EDGAR",
-        "source_url": "the document's URL", "text_sha256": "hash of the extracted text; '' if unreadable (for a label with a `body` span, the whole page: versions are grouped by the bounded policy text, see METHODOLOGY)",
+        "source_url": "the document's URL", "text_sha256": "SHA-256 of the text the version identity uses: the extracted text (for a label with a `body` span, only that span), whitespace-normalised with no whitespace before a trademark sign; '' if unreadable",
         "file_sha256": "hash of the file bytes",
         "readable": "1 if text was extracted from the file, else 0"},
     "proposal_decisions": {"_": "DERIVED. One row per (manager, adviser, company, meeting, "
@@ -416,12 +417,17 @@ def policy_versions_rows(conn: sqlite3.Connection, eng: sqlite3.Connection) -> l
     out = []
     for p in eng.execute("SELECT * FROM policy_versions ORDER BY institution_id, doc_label, "
                          "captured, commitment_id"):
-        c = conn.execute("SELECT text_sha256, wayback_timestamp, sha256 FROM commitments "
+        c = conn.execute("SELECT institution_id, doc_label, content_path, text_sha256, "
+                         "wayback_timestamp, sha256 FROM commitments "
                          "WHERE id=?", (p["commitment_id"],)).fetchone()
+        ident = (commitment_identity(c["institution_id"], c["doc_label"], c["content_path"],
+                                     c["text_sha256"], c["sha256"]) if c else "")
+        # The identity hash the version is grouped by; '' when unreadable (raw identity).
+        ident_hash = ident[len("text:"):] if ident.startswith("text:") else ""
         out.append((p["commitment_id"], p["institution_id"], p["doc_label"], p["adviser"],
                     p["adviser_key_date"], p["authored"] or "", p["captured"],
                     (c["wayback_timestamp"] if c else "") or "", p["url"],
-                    (c["text_sha256"] if c else "") or "", p["sha256"],
+                    ident_hash, p["sha256"],
                     int((p["n_sentences"] or 0) > 0)))
     return out
 

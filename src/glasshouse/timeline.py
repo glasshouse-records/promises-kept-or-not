@@ -31,6 +31,7 @@ from pathlib import Path
 from .contradictions import (
     THEMES,
     capture_text,
+    commitment_identity,
     commitment_is_discretionary,
     commitment_is_oppositional,
     commitment_sentences,
@@ -69,7 +70,8 @@ def policy_versions(conn: sqlite3.Connection, inst_id: str) -> list[dict]:
     # of one BNY document into this lineage. text_sha256 is '' only when the
     # text could not be read — then bytes are all we have.
     def ident(r) -> str:
-        return r["text_sha256"] or "raw:" + r["sha256"]
+        return commitment_identity(inst_id, r["doc_label"], r["content_path"],
+                                   r["text_sha256"], r["sha256"])
 
     # Dedupe CONSECUTIVE identical content within one lineage only. A version
     # whose content REAPPEARS later (removed, then restored) must survive, or

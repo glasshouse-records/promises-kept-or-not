@@ -68,3 +68,50 @@ def test_without_body_the_whole_page_is_the_identity(tmp_path):
     e = _build(tmp_path, [("20240101000000", _page("a")), ("20250101000000", _page("b"))], body=None)
     # fixture text_sha256 values differ ("t0", "t1"): two versions, as before
     assert len(e.policy_versions("acme")["result"]) == 2
+
+
+# ---- trademark spacing and the shared identity helper ----------------------
+
+def test_identity_text_ignores_spacing_before_trademark_signs():
+    from glasshouse.contradictions import identity_text
+    base = identity_text("American Century Investments® family")
+    for variant in ("American Century Investments ® family",
+                    "American Century Investments  \n® family",
+                    "American Century Investments {sup}®{/sup} family",
+                    "American Century Investments<sup> ®</sup> family"):
+        assert identity_text(variant) == base, variant
+    assert identity_text("Acme ™ and Beta ©") == identity_text("Acme™ and Beta©")
+    assert identity_text("a b") != identity_text("ab")      # ordinary spacing still counts
+
+
+def test_trademark_spacing_alone_is_not_a_version_on_any_label(tmp_path):
+    pad = " Filler policy sentence goes here. " * 10
+    e = _build(tmp_path, [("20240101000000", "<p>Investments® family." + pad + "</p>"),
+                          ("20250101000000", "<p>Investments ® family." + pad + "</p>")],
+               body=None)
+    assert len(e.policy_versions("acme")["result"]) == 1
+
+
+def test_every_surface_counts_versions_through_the_one_helper(tmp_path):
+    from glasshouse import dataset
+    pad = " Filler policy sentence goes here. " * 10
+    e = _build(tmp_path, [("20240101000000", "<p>Investments® family." + pad + "</p>"),
+                          ("20250101000000", "<p>Investments ® family." + pad + "</p>")],
+               body=None)
+    row = [r for r in dataset.coverage(e.ledger) if r["institution"] == "Acme"]
+    assert row and row[0]["policy_versions"] == 1
+    from glasshouse.contradictions import distinct_versions
+    assert len(distinct_versions(e.ledger, "institution_id=?", ("acme",))) == 1
+
+
+def test_release_ships_the_identity_hash(tmp_path):
+    import hashlib
+
+    from glasshouse import release
+    from glasshouse.contradictions import identity_text
+    from glasshouse.ingest.commitments import html_to_text
+    page = _page("nav one")
+    e = _build(tmp_path, [("20240101000000", page)], body=None)
+    rows = release.policy_versions_rows(e.ledger, e.db)
+    want = hashlib.sha256(identity_text(html_to_text(page)).encode()).hexdigest()
+    assert rows[0][9] == want             # text_sha256 column
