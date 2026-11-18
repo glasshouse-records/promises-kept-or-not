@@ -2160,6 +2160,10 @@ institutions:
         url: "https://www.americancentury.com/about/proxy-voting-policies/"
         adviser: "American Century Investment Management, Inc."
         adviser_key: "AMERICAN_CENTURY"
+        # Version identity is the policy body only, not the page: navigation and trademark spacing ("Investments®" vs "Investments ®") changed between captures.
+        body:
+          start: 'American Century Investment Management, Inc\. \(the .Advis'
+          end: 'Electronic records will be kept of all votes made\.'
       # The same policy as printed in the Mutual Funds SAI (Appendix E), dated by EDGAR filing date. Separate label from the website copy (different formatting
       # would invent alternating versions). Page numbers "E-6" are stripped; the section stops at the SAI back cover.
       - label: american-century-proxy-voting-policies-as-printed-in-sai

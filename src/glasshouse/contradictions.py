@@ -112,6 +112,56 @@ def extract_text(pdf_path: Path) -> str:
     return text
 
 
+def bound_body(text: str, body: dict | None) -> str | None:
+    """The policy body of a capture: from the start of the first `start` match to
+    the end of the first `end` match after it, whitespace-normalised. No `body`
+    spec returns the text unchanged. None means UNREADABLE: a marker did not
+    match, so the span cannot be known. Never the full page in its place (page
+    navigation is not policy; a menu change would otherwise be a phantom version)."""
+    if not body:
+        return text
+    t = re.sub(r"\s+", " ", text or "").strip()
+    start = re.search(body["start"], t)
+    if not start:
+        return None
+    end = re.compile(body["end"]).search(t, start.start())
+    if not end:
+        return None
+    return t[start.start():end.end()]
+
+
+_BODY_SPECS: dict | None = None
+
+
+def body_spec(institution_id: str, doc_label: str) -> dict | None:
+    """The `body` key of a commitment label in config/institutions.yaml, if any."""
+    global _BODY_SPECS
+    if _BODY_SPECS is None:
+        from . import registry
+        try:
+            reg = registry.load()
+        except (OSError, KeyError, AttributeError):
+            reg = {}
+        _BODY_SPECS = {(i, c["label"]): c["body"] for i, inst in reg.items()
+                       for c in (inst.get("commitments") or []) if c.get("label") and c.get("body")}
+    return _BODY_SPECS.get((institution_id, doc_label))
+
+
+def capture_text(institution_id: str, doc_label: str, path: Path) -> str:
+    """extract_text of a capture, bounded to the policy body where the label
+    configures one. '' (unreadable) if its markers do not match."""
+    text = extract_text(path)
+    spec = body_spec(institution_id, doc_label)
+    if not spec or not text:
+        return text
+    body = bound_body(text, spec)
+    if body is None:
+        logger.warning("%s/%s %s: body markers not found; treated as unreadable",
+                       institution_id, doc_label, path.name)
+        return ""
+    return body
+
+
 # Commitment-strength scoring: a quotable SAY-side sentence is one where the
 # institution binds ITSELF to something. First-person commitment verbs score
 # up; definitional/illustrative phrasing ("examples include", "such as") and
@@ -393,7 +443,8 @@ def find_commitment_vote_contradictions(
     def theme_quote(doc_row, theme: str, pats: dict) -> str | None:
         ck = (doc_row["content_path"], theme)
         if ck not in quote_cache:
-            text = extract_text(Path(doc_row["content_path"]))
+            text = capture_text(doc_row["institution_id"], doc_row["doc_label"],
+                                Path(doc_row["content_path"]))
             qs = commitment_sentences(text, pats["commitment"]) if text else []
             qs = [q for q in qs if is_binding_commitment(q)
                   and not commitment_is_discretionary(q)

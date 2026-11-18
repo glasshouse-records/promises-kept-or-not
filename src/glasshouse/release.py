@@ -228,7 +228,7 @@ NEW_TABLES: dict[str, dict] = {
                     "fetch, or, for labels ending '-as-printed-in-sai', the EDGAR filing date "
                     "of the earliest fund SAI printing this text (source_url is that SAI)",
         "wayback_timestamp": "Wayback capture timestamp; '' = live fetch or an SAI on EDGAR",
-        "source_url": "the document's URL", "text_sha256": "hash of the extracted text; '' if unreadable",
+        "source_url": "the document's URL", "text_sha256": "hash of the extracted text; '' if unreadable (for a label with a `body` span, the whole page: versions are grouped by the bounded policy text, see METHODOLOGY)",
         "file_sha256": "hash of the file bytes",
         "readable": "1 if text was extracted from the file, else 0"},
     "proposal_decisions": {"_": "DERIVED. One row per (manager, adviser, company, meeting, "

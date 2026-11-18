@@ -34,10 +34,10 @@ from pathlib import Path
 from .contradictions import (
     THEMES,
     _yyyymmdd,
+    capture_text,
     commitment_is_discretionary,
     commitment_is_oppositional,
     commitment_sentences,
-    extract_text,
     is_binding_commitment,
     proposal_is_oppositional,
     score_commitment_sentence,
@@ -119,7 +119,7 @@ def _commitment_for(conn: sqlite3.Connection, inst_id: str, commitment_pats: lis
         cp = r["content_path"]
         if not cp or not Path(cp).exists():
             continue
-        text = extract_text(Path(cp))
+        text = capture_text(inst_id, r["doc_label"], Path(cp))
         if not text:
             continue
         qs = [q for q in commitment_sentences(text, pats)

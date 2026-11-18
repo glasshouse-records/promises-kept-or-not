@@ -30,10 +30,10 @@ from pathlib import Path
 
 from .contradictions import (
     THEMES,
+    capture_text,
     commitment_is_discretionary,
     commitment_is_oppositional,
     commitment_sentences,
-    extract_text,
     is_binding_commitment,
     score_commitment_sentence,
 )
@@ -140,7 +140,8 @@ def institution_timeline(conn: sqlite3.Connection, inst_id: str) -> dict:
         valid: list[tuple[dict, str]] = []
         for v in vs:
             cp = v["content_path"]
-            text = extract_text(Path(cp)) if cp and Path(cp).exists() else ""
+            text = (capture_text(inst_id, v["doc_label"], Path(cp))
+                    if cp and Path(cp).exists() else "")
             if len(text) < MIN_TEXT_CHARS:
                 continue  # extraction failure / error page — never a diff side
             valid.append((v, text))

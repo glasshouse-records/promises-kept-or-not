@@ -37,7 +37,7 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 
 from . import investigate, registry, timeline
-from .contradictions import extract_text
+from .contradictions import capture_text
 from .http import DATA_DIR
 
 NEWSROOM_DIR = DATA_DIR / "newsroom"
@@ -261,7 +261,7 @@ def _desk_ledger(conn: sqlite3.Connection, s: dict) -> dict:
     for r in conn.execute("SELECT content_path FROM commitments WHERE institution_id=? "
                           "AND doc_label=? AND superseded=0", (s["institution_id"], s["doc_label"])):
         p = Path(r["content_path"])
-        if p.exists() and norm(s["quote"]) in norm(extract_text(p)):
+        if p.exists() and norm(s["quote"]) in norm(capture_text(s["institution_id"], s["doc_label"], p)):
             quote_ok = True
             break
     if not quote_ok:

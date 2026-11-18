@@ -208,6 +208,8 @@ whitespace and (for Wellington) printed page numbers; identical text in later
 filings is the same version. If a start heading is not found cleanly, or the end
 heading does not follow it, that filing yields nothing (a multi-SAI filing that
 prints the section several times is accepted only when every copy is identical).
+
+A website HTML page whose navigation or trademark spacing changes between captures would mint phantom versions if the whole page were the text. A commitment label may therefore carry `body: {start, end}` (config/institutions.yaml): the policy text is the span from the first `start` match to the first `end` match after it, whitespace-normalised, and version identity, sentences and quote checks use only that span. A capture where either marker does not match is unreadable (never a new version, never the full page) and is logged. Currently used for American Century's website page. The ledger's `text_sha256` for such a label still hashes the whole page; the engine's `policy_versions` groups by the bounded text.
 Filings that cannot be extracted are therefore missing versions, not guesses;
 a policy edit between two extracted filings is dated to the later one's
 filing, so the version in force may have been public earlier than shown.

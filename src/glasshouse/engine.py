@@ -30,16 +30,20 @@ source_url) that `verify.py` resolves when it checks a draft.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
 import re
 import sqlite3
 from collections import defaultdict
 from datetime import UTC, date, datetime
 from pathlib import Path
 
-from .contradictions import THEMES, extract_text, proposal_is_oppositional
+from .contradictions import THEMES, bound_body, extract_text, proposal_is_oppositional
 from .http import DATA_DIR
 from .ledger import DB_PATH, iso_meeting_date
+
+logger = logging.getLogger(__name__)
 
 ENGINE_PATH = DATA_DIR / "engine.db"
 
@@ -569,6 +573,17 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
              for iid, inst in institutions.items()}
     doc_rules = {(iid, c["label"]): normalize_rules(c) for iid, inst in institutions.items()
                  for c in (inst.get("commitments") or []) if c.get("label")}
+    # Optional per-label `body: {start, end}` regexes bounding the policy text of an
+    # HTML page whose navigation would otherwise mint phantom versions.
+    body_specs = {}
+    for iid, inst in institutions.items():
+        for c in inst.get("commitments") or []:
+            b = c.get("body")
+            if c.get("label") and b:
+                if not (isinstance(b, dict) and b.get("start") and b.get("end")):
+                    raise ValueError(f"{iid} document {c['label']}: body needs start and end")
+                re.compile(b["start"]), re.compile(b["end"])      # bad regex stops the build
+                body_specs[(iid, c["label"])] = {"start": b["start"], "end": b["end"]}
     for iid, m in rules.items():
         for cik, r in m.items():
             validate_rules(r, f"{iid} CIK {cik}")
@@ -669,14 +684,30 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
            ORDER BY COALESCE(NULLIF(substr(wayback_timestamp,1,8),''),
                              NULLIF(replace(public_by,'-',''),''),
                              replace(retrieval_date,'-','')), id"""):
-        ident = (c["institution_id"], c["doc_label"], c["text_sha256"] or "raw:" + c["sha256"])
-        if ident in seen:
-            continue
-        seen.add(ident)
         # '' = no local file (a ledger restored from a release bundle): Path('')
         # is the current directory, which exists, so test for the string first.
         path = Path(c["content_path"]) if c["content_path"] else None
         text = extract_text(path) if path is not None and path.is_file() else ""
+        spec = body_specs.get((c["institution_id"], c["doc_label"]))
+        if spec:
+            # Identity is the bounded body, not the page. A capture whose markers
+            # do not match is unreadable: raw identity, no sentences, logged.
+            body = bound_body(text, spec) if text else None
+            if body is None:
+                logger.warning("%s/%s capture %s: body markers not found; treated as "
+                               "unreadable", c["institution_id"], c["doc_label"], c["id"])
+                text = ""
+                ident = (c["institution_id"], c["doc_label"], "raw:" + c["sha256"])
+            else:
+                text = body
+                ident = (c["institution_id"], c["doc_label"],
+                         "body:" + hashlib.sha256(body.encode()).hexdigest())
+        else:
+            ident = (c["institution_id"], c["doc_label"],
+                     c["text_sha256"] or "raw:" + c["sha256"])
+        if ident in seen:
+            continue
+        seen.add(ident)
         sents = sentences(text)
         wb = c["wayback_timestamp"] or ""
         captured = (f"{wb[:4]}-{wb[4:6]}-{wb[6:8]}" if wb
