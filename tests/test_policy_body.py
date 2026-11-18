@@ -114,4 +114,93 @@ def test_release_ships_the_identity_hash(tmp_path):
     e = _build(tmp_path, [("20240101000000", page)], body=None)
     rows = release.policy_versions_rows(e.ledger, e.db)
     want = hashlib.sha256(identity_text(html_to_text(page)).encode()).hexdigest()
-    assert rows[0][9] == want             # text_sha256 column
+    assert rows[0][10] == want            # identity_sha256 column
+    assert rows[0][9] == "t0"             # text_sha256 stays the ledger's own hash
+
+
+# ---- the persisted identity ---------------------------------------------------
+
+PAD = " Filler policy sentence goes here. " * 10
+
+
+def _row(c, n, path, identity="", wb="2024010100000"):
+    c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, sha256,"
+              " content_path, content_type, size_bytes, wayback_timestamp, text_sha256,"
+              " identity_sha256) VALUES ('acme','page','https://acme.example/p','2026-01-01',"
+              "?,?,'text/html',1,?,'ledgerhash',?)",
+              (f"sha{n}", path, f"2024010{n}000000", identity))
+
+
+def test_identity_survives_a_ledger_with_no_files(tmp_path):
+    led = tmp_path / "ledger.db"
+    c = ledger.connect(led)
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('acme','Acme')")
+    _row(c, 1, "", "i" * 64)
+    _row(c, 2, "", "i" * 64)          # same identity: one version
+    _row(c, 3, "", "j" * 64)          # another identity: a second
+    _row(c, 4, "", "")                # neither identity nor file: unreadable
+    c.commit()
+    out = tmp_path / "e.db"
+    engine.build(led, out, institutions={"acme": {"commitments": [{"label": "page"}]}})
+    vs = engine.Engine(out, led).policy_versions("acme")["result"]
+    assert len(vs) == 3
+    from glasshouse.contradictions import distinct_versions
+    assert len(distinct_versions(c)) == 3
+    unreadable = [v for v in vs if v["captured"] == "2024-01-04"]
+    assert len(unreadable) == 1
+
+
+def test_record_snapshot_stores_the_identity_and_backfill_is_idempotent(tmp_path, monkeypatch):
+    from glasshouse.contradictions import identity_text
+    from glasshouse.ingest import commitments as cm
+    monkeypatch.setattr(cm, "COMMITMENTS_DIR", tmp_path / "arch")
+    c = ledger.connect(tmp_path / "l.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('acme','Acme')")
+    html = _page("nav", POLICY).encode()
+    assert cm.record_snapshot(c, "acme", "page", "https://acme.example/p", html, "text/html")
+    got = c.execute("SELECT identity_sha256 FROM commitments").fetchone()[0]
+    import hashlib
+
+    from glasshouse.ingest.commitments import html_to_text
+    assert got == hashlib.sha256(identity_text(html_to_text(html.decode())).encode()).hexdigest()
+    c.execute("UPDATE commitments SET identity_sha256=''")
+    assert cm.backfill_identity_hashes(c) == 1
+    assert c.execute("SELECT identity_sha256 FROM commitments").fetchone()[0] == got
+    assert cm.backfill_identity_hashes(c) == 0
+
+
+def test_restore_keeps_version_counts(tmp_path):
+    pytest = __import__("pytest")
+    pytest.importorskip("pyarrow")
+    from glasshouse import release, restore
+    led = tmp_path / "src.db"
+    c = ledger.connect(led)
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('acme','Acme')")
+    for n, ident in ((1, "i" * 64), (2, "i" * 64), (3, "j" * 64)):
+        f = tmp_path / f"f{n}.html"
+        f.write_text("x")
+        _row(c, n, str(f), ident)
+    c.commit()
+    reg = {"acme": {"commitments": [{"label": "page"}]}}
+    eng = tmp_path / "e.db"
+    engine.build(led, eng, institutions=reg)
+    before = len(engine.Engine(eng, led).policy_versions("acme")["result"])
+    release.build_release(c, root=tmp_path / "rel", version="T", no_derived=True,
+                          engine_path=eng, institutions=reg)
+    restore.restore(tmp_path / "rel" / "vT", tmp_path / "out" / "glasshouse.db")
+    out = tmp_path / "out" / "glasshouse.db"
+    eng2 = tmp_path / "e2.db"
+    engine.build(out, eng2, institutions=reg)
+    assert len(engine.Engine(eng2, out).policy_versions("acme")["result"]) == before == 2
+
+
+def test_body_spec_raises_when_the_registry_cannot_load(monkeypatch):
+    import pytest
+
+    from glasshouse import contradictions, registry
+    monkeypatch.setattr(contradictions, "_BODY_SPECS", None)
+    def boom():
+        raise OSError("no registry")
+    monkeypatch.setattr(registry, "load", boom)
+    with pytest.raises(OSError):
+        contradictions.body_spec("acme", "page")

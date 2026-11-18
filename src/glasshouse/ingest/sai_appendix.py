@@ -32,6 +32,7 @@ import statistics
 from datetime import date
 
 from .. import http
+from ..contradictions import identity_hash_from_file
 from . import commitments as cm
 from . import edgar
 
@@ -153,9 +154,10 @@ def record_version(conn: sqlite3.Connection, institution_id: str, doc_label: str
     conn.execute(
         "INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, sha256, "
         "content_path, content_type, size_bytes, wayback_timestamp, text_sha256, "
-        "public_by, via) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+        "public_by, via, identity_sha256) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (institution_id, doc_label, url, retrieval_date or date.today().isoformat(), sha,
-         str(dest), "text/plain", len(data), "", text_sha, filing_date, VIA))
+         str(dest), "text/plain", len(data), "", text_sha, filing_date, VIA,
+         identity_hash_from_file(institution_id, doc_label, dest)))
     conn.commit()
     return True
 

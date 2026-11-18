@@ -223,6 +223,12 @@ CREATE TABLE IF NOT EXISTS commitments (
     -- (Akamai mPulse) carry a per-request token, so raw sha256 changes
     -- on every fetch of an unchanged policy. '' = text unreadable.
     text_sha256       TEXT NOT NULL DEFAULT '',
+    -- THE version identity: SHA-256 of the identity text (the label's `body` span
+    -- if configured, whitespace-normalised, no whitespace before a trademark
+    -- sign). Derived from the stored file at ingest / by backfill; '' = the
+    -- text is unreadable. Ships in the release so a restored ledger (no files)
+    -- reproduces the same version count.
+    identity_sha256   TEXT NOT NULL DEFAULT '',
     -- What the DOCUMENT says about its own authorship, written by the
     -- manager's own software. Independent of both our hash and the Wayback
     -- timestamp. Corroboration only: a creation date is not a publication
@@ -333,7 +339,8 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE commitments ADD COLUMN text_sha256 "
                      "TEXT NOT NULL DEFAULT ''")
         conn.commit()
-    for col in ("doc_created_at", "doc_modified_at", "doc_producer", "public_by", "via"):
+    for col in ("doc_created_at", "doc_modified_at", "doc_producer", "public_by", "via",
+                "identity_sha256"):
         if col not in ccols:
             conn.execute(f"ALTER TABLE commitments ADD COLUMN {col} "
                          "TEXT NOT NULL DEFAULT ''")

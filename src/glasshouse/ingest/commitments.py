@@ -28,6 +28,7 @@ from html import unescape
 from pathlib import Path
 
 from .. import http
+from ..contradictions import identity_hash_from_file
 
 logger = logging.getLogger(__name__)
 
@@ -286,14 +287,33 @@ def record_snapshot(conn: sqlite3.Connection, institution_id: str, doc_label: st
     conn.execute(
         "INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
         "sha256, content_path, content_type, size_bytes, wayback_timestamp, "
-        "text_sha256, doc_created_at, doc_modified_at, doc_producer) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "text_sha256, doc_created_at, doc_modified_at, doc_producer, identity_sha256) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (institution_id, doc_label, url, retrieval_date or date.today().isoformat(),
          sha, str(dest), content_type, len(content), wayback_timestamp, text_sha,
-         origin["doc_created_at"], origin["doc_modified_at"], origin["doc_producer"]),
+         origin["doc_created_at"], origin["doc_modified_at"], origin["doc_producer"],
+         identity_hash_from_file(institution_id, doc_label, dest)),
     )
     conn.commit()
     return True
+
+
+def backfill_identity_hashes(conn: sqlite3.Connection) -> int:
+    """Derive commitments.identity_sha256 from the stored files for rows that lack it.
+    Deterministic and idempotent; it derives a column, it edits no fact. Unreadable
+    captures (and rows whose file is gone) stay ''. Returns rows filled."""
+    filled = 0
+    for row in conn.execute("SELECT id, institution_id, doc_label, content_path "
+                            "FROM commitments WHERE identity_sha256 = ''").fetchall():
+        path = Path(row["content_path"]) if row["content_path"] else None
+        if path is None or not path.is_file():
+            continue
+        h = identity_hash_from_file(row["institution_id"], row["doc_label"], path)
+        if h:
+            conn.execute("UPDATE commitments SET identity_sha256=? WHERE id=?", (h, row["id"]))
+            filled += 1
+    conn.commit()
+    return filled
 
 
 def backfill_text_hashes(conn: sqlite3.Connection) -> int:
@@ -379,6 +399,7 @@ def fetch_live(conn: sqlite3.Connection, institutions: dict[str, dict]) -> dict[
     a document whose capture failed is absent from it, warned about in the
     log, and recorded as a failed attempt for the doctor to find."""
     backfill_text_hashes(conn)   # history must be comparable before we compare
+    backfill_identity_hashes(conn)
     new_versions: dict[str, int] = {}
     failed = 0
     for inst_id, inst in institutions.items():

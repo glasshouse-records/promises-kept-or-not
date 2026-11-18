@@ -42,7 +42,7 @@ from .contradictions import (
     THEMES,
     bound_body,
     extract_text,
-    identity_of_text,
+    identity_hash,
     proposal_is_oppositional,
 )
 from .http import DATA_DIR
@@ -683,7 +683,7 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
     seen: set[tuple] = set()
     sid = 0
     for c in led.execute(
-        """SELECT id, institution_id, doc_label, url, sha256, text_sha256, content_path,
+        """SELECT id, institution_id, doc_label, url, sha256, identity_sha256, content_path,
                   wayback_timestamp, retrieval_date, doc_created_at, public_by, via
            FROM commitments WHERE superseded=0
            ORDER BY COALESCE(NULLIF(substr(wayback_timestamp,1,8),''),
@@ -696,14 +696,19 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
         spec = body_specs.get((c["institution_id"], c["doc_label"]))
         if spec:
             # Bounded to the policy body. A capture whose markers do not match
-            # is unreadable: raw identity, no sentences, logged.
+            # is unreadable: no sentences, logged.
             body = bound_body(text, spec) if text else None
-            if body is None:
+            if body is None and text:
                 logger.warning("%s/%s capture %s: body markers not found; treated as "
                                "unreadable", c["institution_id"], c["doc_label"], c["id"])
             text = body or ""
-        # Identity is the (bounded, normalised) text, shared with release/site/dataset.
-        ident = (c["institution_id"], c["doc_label"], identity_of_text(text, c["sha256"]))
+        # Identity: the persisted hash first; else computed from the bounded text; else
+        # unreadable. Never the raw bytes. Shared with release/site/dataset/newsroom.
+        ih = c["identity_sha256"] or identity_hash(text)
+        if not ih:
+            logger.warning("%s/%s capture %s: no identity hash and no readable text; "
+                           "treated as unreadable", c["institution_id"], c["doc_label"], c["id"])
+        ident = (c["institution_id"], c["doc_label"], "text:" + ih if ih else "unreadable:" + c["sha256"])
         if ident in seen:
             continue
         seen.add(ident)

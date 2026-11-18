@@ -144,35 +144,46 @@ def identity_text(text: str) -> str:
     return _TM.sub(r"\1", re.sub(r"\s+", " ", text or "").strip())
 
 
-def identity_of_text(text: str, sha256: str) -> str:
-    """'text:<sha256 of the identity text>', or 'raw:<file sha256>' when the text
-    is empty or too short to trust (never merge unreadable captures)."""
+def identity_hash(text: str) -> str:
+    """SHA-256 of the identity text, or '' when the text is empty or too short to
+    trust (an unreadable capture never shares an identity)."""
     t = identity_text(text)
-    if len(t) < _MIN_IDENTITY_CHARS:
-        return "raw:" + sha256
-    return "text:" + hashlib.sha256(t.encode()).hexdigest()
+    return hashlib.sha256(t.encode()).hexdigest() if len(t) >= _MIN_IDENTITY_CHARS else ""
 
 
 _AUTO = object()
 
 
-def commitment_identity(institution_id: str, doc_label: str, content_path: str,
-                        text_sha256: str, sha256: str, spec=_AUTO) -> str:
-    """THE version identity of an archived capture, shared by the engine, release,
-    site, dataset, newsroom and timeline. Text is bounded by the label's `body`
-    spec (unreadable if the markers miss). With no local file (a ledger restored
-    from a release bundle) it falls back to the ledger's recorded text hash."""
-    path = Path(content_path) if content_path else None
-    if path is None or not path.is_file():
-        return "text:" + text_sha256 if text_sha256 else "raw:" + sha256
+def identity_hash_from_file(institution_id: str, doc_label: str, path: Path,
+                            spec=_AUTO) -> str:
+    """The identity hash of a stored capture ('' if unreadable): the text bounded by
+    the label's `body` spec (unreadable if its markers miss)."""
     if spec is _AUTO:
         spec = body_spec(institution_id, doc_label)
     text = extract_text(path)
     if spec:
         text = (bound_body(text, spec) if text else None) or ""
-    elif not text.strip() and text_sha256:
-        return "text:" + text_sha256      # file unreadable here, but ingest read it
-    return identity_of_text(text, sha256)
+    return identity_hash(text)
+
+
+def commitment_identity(institution_id: str, doc_label: str, content_path: str,
+                        identity_sha256: str, sha256: str, spec=_AUTO) -> str:
+    """THE version identity of an archived capture, shared by the engine, release,
+    site, dataset, newsroom and timeline: the persisted `identity_sha256` first;
+    only if that is empty AND a local file exists, computed from the file. Never
+    the raw bytes and never the whole-page ledger text hash: a capture with
+    neither is 'unreadable:<sha>' (its own row, never merged, never a readable
+    version) and is logged."""
+    if identity_sha256:
+        return "text:" + identity_sha256
+    path = Path(content_path) if content_path else None
+    if path is not None and path.is_file():
+        h = identity_hash_from_file(institution_id, doc_label, path, spec)
+        if h:
+            return "text:" + h
+    logger.warning("%s/%s capture %s: no identity hash and no readable local text; "
+                   "treated as unreadable", institution_id, doc_label, sha256[:12])
+    return "unreadable:" + sha256
 
 
 def distinct_versions(conn, where: str = "1=1", params: tuple = (),
@@ -184,7 +195,7 @@ def distinct_versions(conn, where: str = "1=1", params: tuple = (),
     for r in conn.execute(f"SELECT * FROM commitments WHERE superseded=0 AND ({where}) "
                           f"ORDER BY id {order}", params):
         ident = commitment_identity(r["institution_id"], r["doc_label"], r["content_path"],
-                                    r["text_sha256"], r["sha256"])
+                                    r["identity_sha256"], r["sha256"])
         if ident not in seen:
             seen.add(ident)
             out.append((ident, r))
@@ -199,10 +210,7 @@ def body_spec(institution_id: str, doc_label: str) -> dict | None:
     global _BODY_SPECS
     if _BODY_SPECS is None:
         from . import registry
-        try:
-            reg = registry.load()
-        except (OSError, KeyError, AttributeError):
-            reg = {}
+        reg = registry.load()      # a failed load must raise, never fall back to whole pages
         _BODY_SPECS = {(i, c["label"]): c["body"] for i, inst in reg.items()
                        for c in (inst.get("commitments") or []) if c.get("label") and c.get("body")}
     return _BODY_SPECS.get((institution_id, doc_label))
@@ -476,7 +484,7 @@ def find_commitment_vote_contradictions(
     # All commitment versions, grouped by document and sorted oldest→newest.
     versions: dict[tuple[str, str], list[sqlite3.Row]] = {}
     for d in conn.execute(
-        f"""SELECT c.institution_id, c.doc_label, c.url, c.sha256, c.text_sha256,
+        f"""SELECT c.institution_id, c.doc_label, c.url, c.sha256, c.identity_sha256,
                   c.content_path,
                   {VERSION_DATE_SQL} AS version
            FROM commitments c WHERE c.superseded=0"""):
@@ -491,7 +499,7 @@ def find_commitment_vote_contradictions(
         kept = []
         for d in vs:
             ident = commitment_identity(d["institution_id"], d["doc_label"],
-                                       d["content_path"], d["text_sha256"], d["sha256"])
+                                       d["content_path"], d["identity_sha256"], d["sha256"])
             if ident in seen:
                 continue
             seen.add(ident)

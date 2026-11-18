@@ -120,9 +120,13 @@ DATA_DICTIONARY: dict[str, dict] = {
         "content_type": "HTTP content type of the file when fetched",
         "wayback_timestamp": "'' = live fetch, else Wayback Machine capture timestamp",
         "size_bytes": "file size in bytes",
-        "text_sha256": "SHA-256 of the extracted text (the identity of a policy version); "
-                       "'' if no text could be extracted (edgar-sai: hash of the section text "
-                       "with all whitespace removed)",
+        "text_sha256": "SHA-256 of the raw extracted text as captured; '' if no text could "
+                       "be extracted (edgar-sai: hash of the section text with all whitespace "
+                       "removed). NOT the version identity: see identity_sha256",
+        "identity_sha256": "SHA-256 of the text a policy version is identified by: the "
+                           "label's configured `body` span if any, whitespace-normalised, no "
+                           "whitespace before a trademark sign (see METHODOLOGY); '' = "
+                           "unreadable. Captures sharing it are one version",
         "doc_created_at": "creation date written inside the PDF by the manager's own software; "
                           "'' if none",
         "doc_modified_at": "modification date written inside the PDF; '' if none",

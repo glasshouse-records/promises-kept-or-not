@@ -132,8 +132,8 @@ def test_self_dated_count_uses_the_same_denominator_as_versions(tmp_path):
         c.execute(
             "INSERT INTO commitments (institution_id, doc_label, url, retrieval_date,"
             " sha256, content_path, content_type, size_bytes, wayback_timestamp,"
-            " text_sha256, doc_created_at) VALUES ('blk','p','https://x/p.pdf',"
-            "'2026-01-01',?,?,'application/pdf',8,?,'SAMETEXT','2020-12-08T00:00:00')",
+            " text_sha256, identity_sha256, doc_created_at) VALUES ('blk','p','https://x/p.pdf',"
+            "'2026-01-01',?,?,'application/pdf',8,?,'SAMETEXT','SAMETEXT','2020-12-08T00:00:00')",
             (hashlib.sha256(f"{i}".encode()).hexdigest(), str(doc), f"2020010{i+1}000000"))
     c.commit()
     row = next(r for r in dataset.coverage(c) if r["institution"] == "BlackRock")

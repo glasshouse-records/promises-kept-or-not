@@ -59,7 +59,7 @@ def policy_versions(conn: sqlite3.Connection, inst_id: str) -> list[dict]:
     document lineage. Version date = wayback timestamp when present, else the
     retrieval date."""
     rows = conn.execute(
-        """SELECT doc_label, url, sha256, text_sha256, content_path, wayback_timestamp,
+        """SELECT doc_label, url, sha256, identity_sha256, content_path, wayback_timestamp,
                   CASE WHEN wayback_timestamp != '' THEN substr(wayback_timestamp, 1, 8)
                        WHEN public_by != '' THEN replace(public_by, '-', '')
                        ELSE replace(substr(retrieval_date, 1, 10), '-', '') END AS version
@@ -67,11 +67,11 @@ def policy_versions(conn: sqlite3.Connection, inst_id: str) -> list[dict]:
            ORDER BY doc_label, version, wayback_timestamp, id""", (inst_id,))
     # Identity is the POLICY TEXT, never the bytes: a CDN beacon token changes
     # the sha256 on every fetch of an unchanged policy, which put ten "versions"
-    # of one BNY document into this lineage. text_sha256 is '' only when the
-    # text could not be read — then bytes are all we have.
+    # of one BNY document into this lineage. identity_sha256 is the
+    # persisted text identity; an unreadable capture stays its own row.
     def ident(r) -> str:
         return commitment_identity(inst_id, r["doc_label"], r["content_path"],
-                                   r["text_sha256"], r["sha256"])
+                                   r["identity_sha256"], r["sha256"])
 
     # Dedupe CONSECUTIVE identical content within one lineage only. A version
     # whose content REAPPEARS later (removed, then restored) must survive, or

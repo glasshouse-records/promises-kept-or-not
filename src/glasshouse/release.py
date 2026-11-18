@@ -158,7 +158,8 @@ VOTING_ADVISERS_COLS = ["institution", "registrant_cik", "registrant_name", "ser
                         "adviser_verified"]
 POLICY_VERSIONS_COLS = ["commitment_id", "institution", "doc_label", "adviser_key",
                         "adviser_key_date", "authored", "captured", "wayback_timestamp",
-                        "source_url", "text_sha256", "file_sha256", "readable"]
+                        "source_url", "text_sha256", "identity_sha256", "file_sha256",
+                        "readable"]
 PROPOSAL_COLS = ["proposal_id", "institution_id", "issuer_name", "cusip", "meeting_date",
                  "year", "description", "category", "mgmt_rec", "position", "n_lines",
                  "n_for", "n_against", "n_other", "themes", "oppositional", "ballot_key",
@@ -229,7 +230,13 @@ NEW_TABLES: dict[str, dict] = {
                     "fetch, or, for labels ending '-as-printed-in-sai', the EDGAR filing date "
                     "of the earliest fund SAI printing this text (source_url is that SAI)",
         "wayback_timestamp": "Wayback capture timestamp; '' = live fetch or an SAI on EDGAR",
-        "source_url": "the document's URL", "text_sha256": "SHA-256 of the text the version identity uses: the extracted text (for a label with a `body` span, only that span), whitespace-normalised with no whitespace before a trademark sign; '' if unreadable",
+        "source_url": "the document's URL", "text_sha256": "SHA-256 of the raw extracted text as captured (the ledger's own hash; "
+                       "for a label with a `body` span, the whole page). In releases before "
+                       "2026-11-18.3 this column held the version identity: use identity_sha256",
+        "identity_sha256": "SHA-256 of the text the version identity uses: the extracted text "
+                           "(for a label with a `body` span, only that span), whitespace-"
+                           "normalised, no whitespace before a trademark sign; '' if unreadable. "
+                           "Two rows with the same identity_sha256 are one version",
         "file_sha256": "hash of the file bytes",
         "readable": "1 if text was extracted from the file, else 0"},
     "proposal_decisions": {"_": "DERIVED. One row per (manager, adviser, company, meeting, "
@@ -418,16 +425,17 @@ def policy_versions_rows(conn: sqlite3.Connection, eng: sqlite3.Connection) -> l
     for p in eng.execute("SELECT * FROM policy_versions ORDER BY institution_id, doc_label, "
                          "captured, commitment_id"):
         c = conn.execute("SELECT institution_id, doc_label, content_path, text_sha256, "
+                         "identity_sha256, "
                          "wayback_timestamp, sha256 FROM commitments "
                          "WHERE id=?", (p["commitment_id"],)).fetchone()
         ident = (commitment_identity(c["institution_id"], c["doc_label"], c["content_path"],
-                                     c["text_sha256"], c["sha256"]) if c else "")
-        # The identity hash the version is grouped by; '' when unreadable (raw identity).
+                                     c["identity_sha256"], c["sha256"]) if c else "")
+        # The identity hash the version is grouped by; '' when unreadable.
         ident_hash = ident[len("text:"):] if ident.startswith("text:") else ""
         out.append((p["commitment_id"], p["institution_id"], p["doc_label"], p["adviser"],
                     p["adviser_key_date"], p["authored"] or "", p["captured"],
                     (c["wayback_timestamp"] if c else "") or "", p["url"],
-                    ident_hash, p["sha256"],
+                    (c["text_sha256"] if c else "") or "", ident_hash, p["sha256"],
                     int((p["n_sentences"] or 0) > 0)))
     return out
 
