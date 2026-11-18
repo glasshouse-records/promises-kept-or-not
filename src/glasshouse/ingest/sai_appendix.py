@@ -66,7 +66,8 @@ def _all_positions(hay: str, needle: str) -> list[int]:
 
 def extract_section(text: str, start: str, end: str | list[str],
                     allow_identical_copies: bool = False,
-                    strip_page_numbers: bool = False) -> str | None:
+                    strip_page_numbers: bool = False,
+                    strip_patterns: list[str] | None = None) -> str | None:
     """The normalised text from `start` up to (not including) the first `end`
     that follows it, or None when it cannot be extracted without guessing.
     `end` may list alternatives (editions differ in what follows the policy);
@@ -74,7 +75,11 @@ def extract_section(text: str, start: str, end: str | list[str],
 
     A multi-fund filing can print the same appendix once per SAI. With
     `allow_identical_copies` several start markers are accepted ONLY if every
-    copy extracts to exactly the same text; any disagreement gives None."""
+    copy extracts to exactly the same text; any disagreement gives None.
+
+    `strip_patterns` (opt-in regexes) delete running page furniture that carries
+    the SAI's own date (Columbia: "Statement of Additional Information - March 1,
+    2023 B-2"), which would otherwise make every filing a new "edition"."""
     text, start = normalise(text), normalise(start)
     ends = [normalise(e) for e in ([end] if isinstance(end, str) else end)]
     if not start or not all(ends):
@@ -88,6 +93,8 @@ def extract_section(text: str, start: str, end: str | list[str],
         if not found:
             return None
         sec = text[s:min(found)].strip()
+        for pat in strip_patterns or []:
+            sec = re.sub(r"\s+", " ", re.sub(pat, " ", sec)).strip()
         if strip_page_numbers:
             sec = _PAGE_NUMBER.sub("", sec).strip()
         sections.add(sec)
@@ -157,7 +164,8 @@ def ingest_filings(conn: sqlite3.Connection, institution_id: str, doc_label: str
                    filings: list[dict], start: str, end: str | list[str],
                    allow_identical_copies: bool = False,
                    strip_page_numbers: bool = False,
-                   flagged: list[str] | None = None) -> int:
+                   flagged: list[str] | None = None,
+                   strip_patterns: list[str] | None = None) -> int:
     """Extract and record each filing ({accession, filing_date, url, text} or
     a pre-extracted `section`), oldest first. Returns rows added or moved.
 
@@ -171,7 +179,7 @@ def ingest_filings(conn: sqlite3.Connection, institution_id: str, doc_label: str
         section = f.get("section")
         if section is None:
             section = extract_section(f["text"], start, end, allow_identical_copies,
-                                      strip_page_numbers)
+                                      strip_page_numbers, strip_patterns)
         if section is None:
             logger.info("%s/%s: no clean section in %s (%s); nothing recorded",
                         institution_id, doc_label, f["accession"], f["url"])
@@ -216,11 +224,14 @@ def fetch_sai_appendices(conn: sqlite3.Connection, institutions: dict[str, dict]
                 found.sort(key=lambda f: (f.filing_date, f.accession_number))
                 copies = bool(cfg.get("allow_identical_copies"))
                 pages = bool(cfg.get("strip_page_numbers"))
+                patterns = [str(p) for p in cfg.get("strip_patterns") or []]
                 # A filing is immutable: skip those already read under THESE settings
                 # (changing them re-reads everything).
+                # strip_patterns joins the signature only when set, so every existing
+                # label keeps its signature (and is not re-read).
                 sig = hashlib.sha256(json.dumps(
                     [EXTRACTION_VERSION, cfg["start"], cfg["end"], copies, pages]
-                ).encode()).hexdigest()[:16]
+                    + ([patterns] if patterns else [])).encode()).hexdigest()[:16]
                 have = {r[0] for r in conn.execute(
                     "SELECT url FROM capture_attempts WHERE institution_id=? AND doc_label=? "
                     "AND outcome='unchanged' AND detail=?", (inst_id, label, "sai-read:" + sig))}
@@ -245,12 +256,12 @@ def fetch_sai_appendices(conn: sqlite3.Connection, institutions: dict[str, dict]
                     batch.append({"accession": f.accession_number, "filing_date": f.filing_date,
                                   "url": url,
                                   "section": extract_section(cm.html_to_text(raw), cfg["start"],
-                                                             cfg["end"], copies, pages)})
+                                                             cfg["end"], copies, pages, patterns)})
                     urls.append(url)
                 flagged: list[str] = []
                 n = ingest_filings(conn, inst_id, label,
                                    [b for b in batch if b["section"] is not None],
-                                   cfg["start"], cfg["end"], copies, pages, flagged)
+                                   cfg["start"], cfg["end"], copies, pages, flagged, patterns)
                 for b in batch:
                     if b["section"] is None:
                         logger.info("%s/%s: no clean section in %s (%s); nothing recorded",

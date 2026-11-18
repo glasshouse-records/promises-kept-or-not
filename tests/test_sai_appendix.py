@@ -271,3 +271,16 @@ def test_outlier_is_a_warning_and_a_distinct_outcome_the_doctor_reports(conn, ca
     conn.execute("INSERT INTO capture_attempts (institution_id, doc_label, url, attempted_at,"
                  " outcome) VALUES ('wel','wel-sai','https://sec/big.htm','x','unchanged')")
     assert doctor.sai_needs_review(conn) == []
+
+
+def test_strip_patterns_remove_dated_page_footers_only_when_configured():
+    """Columbia prints 'Statement of Additional Information - <SAI date> B-3' at every page foot:
+    the SAI date alone would make every filing look like a new policy edition."""
+    pats = [r"Statement of Additional Information – [A-Za-z]+ \d{1,2} ?, \d{4} B-\d+", r"Table of Contents"]
+    body = ("We vote against overboarded directors. Statement of Additional Information – March 1, 2023 B-2 "
+            "Table of Contents Re-election is annual.")
+    moved = body.replace("March 1, 2023", "October 1 , 2026").replace("B-2", "B-7")
+    assert "March 1, 2023" in sai.extract_section(doc(body), START, END)   # off by default
+    a = sai.extract_section(doc(body), START, END, strip_patterns=pats)
+    b = sai.extract_section(doc(moved), START, END, strip_patterns=pats)
+    assert a == b and "Statement of Additional" not in a and "Re-election is annual." in a

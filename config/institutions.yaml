@@ -1413,3 +1413,94 @@ institutions:
           start: "PARAMETRIC PORTFOLIO ASSOCIATES LLC PROXY VOTING POLICIES AND PROCEDURES"
           end: "PART C - OTHER INFORMATION"
           strip_page_numbers: true
+
+  columbia:
+    display_name: "Columbia Threadneedle Investments (Columbia Management Investment Advisers, LLC; Ameriprise Financial)"
+    short_name: "Columbia Threadneedle"
+    cik: "0001233991"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Columbia Management Investment Advisers, LLC (CMIA), the US investment manager of the Columbia funds, an Ameriprise Financial company (CIK 1233991 files N-PX only as an institutional manager). Added 2026-11-18. aum_usd_tr left 0 (firm AUM not verified from an official source), so it carries no weight in AUM-weighted metrics."
+    npx_ciks:
+      # Added 2026-11-18. Every trust's SAI (checked in each trust's own 485BPOS editions from 2023 to 2026) says: "The Funds have delegated to the Investment Manager
+      # the responsibility to vote proxies relating to portfolio securities held by the Funds, including Funds managed by subadvisers", the Investment Manager
+      # being Columbia Management Investment Advisers, LLC. So CMIA is the voter for every series of these trusts, sub-advised ones included. The rule is DATED
+      # (`from` = the effective date of the earliest SAI read that says so, SAIs from before 2023 were not read); earlier meetings stay unlabelled.
+      # Exception: the Corporate Governance Guidelines the SAI appendix prints carried the endnote "The following guidelines do not apply to Pyrford International
+      # Ltd./Limited" in every edition up to the March 1, 2026 SAIs; Columbia Pyrford International Stock Fund (S000074123, Series Trust II) is therefore not keyed CMIA before 2026-05-01.
+      - cik: "773757"
+        adviser: "Columbia Management Investment Advisers, LLC (the Investment Manager); some series sub-advised, voting delegated to the Investment Manager"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/773757/000119312523049988/d883223d485bpos.htm"  # 485BPOS filed 2023-02-27, SAI dated 2023-03-01; same sentence in 0001193125-23-242132 (2023-10-01), -24-045990, -24-224255, -25-035963, -25-214321, -26-073727, -26-400243
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: the Funds delegated proxy voting to the Investment Manager (CMIA), including Funds managed by subadvisers; the Board reviews CMIA's administration annually."
+        adviser_key_history: [{key: CMIA, from: "2023-03-01"}]
+        name: "Columbia Funds Series Trust I"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API (discover-npx)
+      - cik: "1352280"
+        adviser: "Columbia Management Investment Advisers, LLC (the Investment Manager); some series sub-advised, voting delegated to the Investment Manager"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1352280/000119312523050004/d434592d485bpos.htm"  # 485BPOS filed 2023-02-27, SAI dated 2023-03-01; same sentence in -24-045939, -25-035986, -26-073845, -26-400260 (2026-10-01)
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: the Funds delegated proxy voting to the Investment Manager (CMIA), including Funds managed by subadvisers. Columbia Pyrford International Stock Fund (S000074123) is carved out until 2026-05-01: the Guidelines printed in the SAIs through March 1, 2026 (0001193125-26-073845) say they do not apply to Pyrford International Limited; the SAI dated May 1, 2026 (0001193125-26-172113, Columbia Acorn Trust filing, covers the fund) drops the note."
+        adviser_key_history: [{key: CMIA, from: "2023-03-01"}]
+        series_adviser:
+          S000074123: [{key: EXTERNAL, until: "2026-04-30"}]   # Columbia Pyrford International Stock Fund (sub-adviser Pyrford International Limited): exception endnote in every SAI edition read up to 2026-03-01
+        name: "Columbia Funds Series Trust II"
+        validated: "2026-11-18"
+      - cik: "1097519"
+        adviser: "Columbia Management Investment Advisers, LLC (the Investment Manager)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1097519/000119312523153782/d53423d485bpos.htm"  # 485BPOS filed 2023-05-25, SAI dated 2023-06-01; same sentence in -24-145545, -25-125548, -26-361885 (2026-09-01)
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: the Funds delegated proxy voting to the Investment Manager (CMIA)."
+        adviser_key_history: [{key: CMIA, from: "2023-06-01"}]
+        name: "Columbia Funds Series Trust"
+        validated: "2026-11-18"
+      - cik: "2110"
+        adviser: "Columbia Management Investment Advisers, LLC (the Investment Manager)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/2110/000119312523121340/d467818d485bpos.htm"  # 485BPOS filed 2023-04-27, SAI dated 2023-05-01; same sentence in -24-104368, -25-095335, -26-172113 (2026-05-01)
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: the Funds delegated proxy voting to the Investment Manager (CMIA), including Funds managed by subadvisers."
+        adviser_key_history: [{key: CMIA, from: "2023-05-01"}]
+        name: "Columbia Acorn Trust"
+        validated: "2026-11-18"
+      - cik: "1551950"
+        adviser: "Columbia Management Investment Advisers, LLC (the Investment Manager)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1551950/000119312523052741/d458393d485bpos.htm"  # 485BPOS filed 2023-02-28, SAI dated 2023-03-01; same sentence in -24-045965, -25-036140, -26-073671, -26-435481 (2026-10-28)
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: the Funds delegated proxy voting to the Investment Manager (CMIA)."
+        adviser_key_history: [{key: CMIA, from: "2023-03-01"}]
+        name: "Columbia ETF Trust I"
+        validated: "2026-11-18"
+      - cik: "1450501"
+        adviser: "Columbia Management Investment Advisers, LLC (the Investment Manager)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1450501/000119312523194238/d521915d485bpos.htm"  # 485BPOS filed 2023-07-26, SAI dated 2023-08-01; same sentence in -24-186793, -25-165006, -26-315293 (2026-08-01)
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: the Funds delegated proxy voting to the Investment Manager (CMIA)."
+        adviser_key_history: [{key: CMIA, from: "2023-08-01"}]
+        name: "Columbia ETF Trust II"
+        validated: "2026-11-18"
+    voting_scope_notes:
+      - "Keyed CMIA, per trust, from the effective date of the earliest SAI read (2023-03-01 to 2023-08-01): Columbia Funds Series Trust I (773757), Series Trust II (1352280), Columbia Funds Series Trust (1097519), Columbia Acorn Trust (2110), Columbia ETF Trust I (1551950) and Columbia ETF Trust II (1450501). Each trust's SAI says the Funds delegated proxy voting to Columbia Management Investment Advisers, LLC, including Funds managed by subadvisers, in every edition read (2023 to 2026). Earlier meetings stay unlabelled; SAIs from before 2023 were not read."
+      - "Columbia Pyrford International Stock Fund (S000074123, Series Trust II) is kept out of CMIA (EXTERNAL, not paired with any policy) until 2026-04-30: the Corporate Governance Guidelines printed in the SAI carried the endnote that they do not apply to Pyrford International Limited through the March 1, 2026 SAIs, so who voted its proxies is unclear; the SAI dated May 1, 2026 drops the note and the series is keyed CMIA from 2026-05-01."
+      - "Not ingested, not keyed: Columbia Funds Variable Series Trust (929521), Columbia Funds Variable Insurance Trust (815425) and other trusts that file N-PX under the Columbia name; their SAIs were not read. The Columbia Management Investment Advisers, LLC and Columbia Advisory Partners institutional-manager N-PX (CIK 1233991, 1808179) are not ingested here: fund votes appear in the trusts' own N-PX, so ingesting both would count the same ballots twice. Closed-end Columbia funds (e.g. Seligman Premium Technology Growth, Tri-Continental) were not looked at."
+      - "Policy text: the Corporate Governance Guidelines (CGG) are the document that states voting stances (board, compensation, audit, shareholder rights, ESG, voting matters), and are the one archived: from docs.columbiathreadneedle.com (the global Columbia Threadneedle file, dated March 2025 on its cover; the US site columbiathreadneedleus.com hosts no policy document) and as printed in SAI Appendix B ('Corporate Governance Guidelines' / 'Corporate Governance Guidelines and Proxy Voting Principles'), dated by EDGAR filing date. The 'Responsible Investment Proxy Voting Policy' (process, governance, conflicts; it names Columbia Management Investment Advisers, LLC as a covered entity) is a separate procedural document and is not archived. The SAI text is of the Series Trust I filings only, its page footers (which carry the SAI date) are removed."
+    commitments:
+      # Verified 2026-11-18 (200, application/pdf, honest client) at the official Columbia Threadneedle documents host, linked from the Responsible Investment pages.
+      - label: corporate-governance-guidelines
+        url: "https://docs.columbiathreadneedle.com/documents/Responsible%20Investment%20-%20Corporate%20Governance%20Guidelines%20CGG.pdf?inline=true"
+        adviser: "Columbia Management Investment Advisers, LLC"
+        adviser_key: "CMIA"
+      # The same Guidelines as printed in Appendix B of the Columbia Funds Series Trust I SAI (485BPOS), dated by EDGAR filing date. Separate label from the website PDF
+      # (different formatting would invent alternating versions). Page footers ("Statement of Additional Information - March 1, 2023 B-2", "Table of Contents") are stripped.
+      - label: corporate-governance-guidelines-as-printed-in-sai
+        adviser: "Columbia Management Investment Advisers, LLC"
+        adviser_key: "CMIA"
+        sai_appendix:
+          cik: "0000773757"
+          forms: ["485BPOS"]
+          since: "2023-01-01"
+          start: "APPENDIX B — CORPORATE GOVERNANCE GUIDELINES Contents"
+          end: ["APPENDIX C — DESCRIPTION OF STATE RISK FACTORS", "PART C. OTHER INFORMATION", "PART C - OTHER INFORMATION"]
+          strip_patterns:
+            - 'Statement of Additional Information – [A-Za-z]+ \d{1,2} ?, \d{4} B-\d+'
+            - 'Table of Contents'
