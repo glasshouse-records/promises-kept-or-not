@@ -1204,15 +1204,30 @@ institutions:
     aum_usd_tr: 1.0
     notes: "Dimensional Fund Advisors LP, 13-F filer. aum_usd_tr is firm-wide AUM (~$1.0T: passed $1T in early 2026 per Dimensional; $969B at 2026-03-31 per its factsheet), the voting footprint; added 2026-11-17."
     npx_ciks:
-      # Added 2026-11-17 (discover-npx + submissions API + SAI text). Only the three registrants whose 485BPOS SAI states the Board delegated proxy voting to the Advisor
-      # (Dimensional Fund Advisors LP). Deliberately EXCLUDED: DFA Investment Trust Co (896162) and Dimensional Emerging Markets Value Fund (896163), the master
-      # funds of the feeder portfolios (no SAI read states who votes, and the same ballots could be counted twice through feeder and master).
+      # Added 2026-11-17 (discover-npx + submissions API + SAI text). The registrants whose 485BPOS SAI states the Board delegated proxy voting to the Advisor
+      # (Dimensional Fund Advisors LP). The two master-fund registrants (896162, 896163) were added 2026-11-18: the feeder SAIs say the Boards of the Trust
+      # (DFAITC) and of DEM delegated voting for the Master Funds to the Advisor, and the feeder portfolios themselves hold no vote rows in the ledger, so no ballot is counted twice.
+      # SERIES RULES (2026-11-18): the SAIs print ONE guideline summary per SAI. The Social summary is printed in the SAI of five DFAIDG series and the Sustainability
+      # summary in the SAI of six DFAIDG series and of four Dimensional ETF Trust series; those series are keyed DFA_SOCIAL / DFA_SUSTAINABILITY, never DFA, from the first
+      # SAI read that splits them (2024-02-28; the 2023 SAIs print a single summary, so earlier meetings keep the registrant default DFA).
       - cik: "355437"
         adviser: "Dimensional Fund Advisors LP (the Advisor); no sub-adviser named in the voting paragraph"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/355437/000035543726000228/c485bpos.htm"  # 485BPOS filed 2026-08-28; SAI PROXY VOTING POLICIES: Board delegated authority to vote proxies to the Advisor
         adviser_verified: "2026-11-17"
         voting_note: "Voted by the Advisor's Investment Stewardship Committee under the Dimensional Voting Guidelines; portfolios with sustainability or social objectives follow their own guideline summaries."
         adviser_key: "DFA"
+        series_adviser:
+          S000018154: [{key: DFA_SOCIAL, from: "2024-02-28"}]  # U.S. Social Core Equity 2 Portfolio; Social summary printed in its SAI 0001741773-24-000695 (2024-02-28), 0001741773-25-001048, 0000355437-26-000120
+          S000012960: [{key: DFA_SOCIAL, from: "2024-02-28"}]  # Emerging Markets Social Core Equity Portfolio; Social summary printed in its SAI 0001741773-24-000695 (2024-02-28), 0001741773-25-001048, 0000355437-26-000120
+          S000038669: [{key: DFA_SOCIAL, from: "2024-02-28"}]  # International Social Core Equity Portfolio; Social summary printed in its SAI 0001741773-24-000695 (2024-02-28), 0001741773-25-001048, 0000355437-26-000120
+          S000066958: [{key: DFA_SOCIAL, from: "2024-02-28"}]  # Global Social Core Equity Portfolio; Social summary printed in its SAI 0001741773-24-000695 (2024-02-28), 0001741773-25-001048, 0000355437-26-000120
+          S000053205: [{key: DFA_SOCIAL, from: "2024-02-28"}]  # DFA Social Fixed Income Portfolio; Social summary printed in its SAI 0001741773-24-000695 (2024-02-28), 0001741773-25-001048, 0000355437-26-000120
+          S000020422: [{key: DFA_SUSTAINABILITY, from: "2024-02-28"}]  # U.S. Sustainability Core 1 Portfolio; Sustainability summary printed in its SAI 0001741773-24-000695 (2024-02-28), 0001741773-25-001048, 0000355437-26-000120
+          S000068937: [{key: DFA_SUSTAINABILITY, from: "2024-02-28"}]  # U.S. Sustainability Targeted Value Portfolio; Sustainability summary printed in its SAI 0001741773-24-000695 (2024-02-28), 0001741773-25-001048, 0000355437-26-000120
+          S000020423: [{key: DFA_SUSTAINABILITY, from: "2024-02-28"}]  # International Sustainability Core 1 Portfolio; Sustainability summary printed in its SAI 0001741773-24-000695 (2024-02-28), 0001741773-25-001048, 0000355437-26-000120
+          S000060925: [{key: DFA_SUSTAINABILITY, from: "2024-02-28"}]  # Emerging Markets Sustainability Core 1 Portfolio; Sustainability summary printed in its SAI 0001741773-24-000695 (2024-02-28), 0001741773-25-001048, 0000355437-26-000120
+          S000063222: [{key: DFA_SUSTAINABILITY, from: "2024-02-28"}]  # DFA Global Sustainability Fixed Income Portfolio; Sustainability summary printed in its SAI 0001741773-24-000695 (2024-02-28), 0001741773-25-001048, 0000355437-26-000120
+          S000086505: [{key: DFA_SUSTAINABILITY, from: "2025-02-28"}]  # Dimensional World ex U.S. Sustainability Targeted Value Portfolio; Sustainability summary printed in its SAI 0001741773-25-001048 (2025-02-28), 0000355437-26-000120
         name: "DFA Investment Dimensions Group Inc."
         validated: "2026-11-17"
       - cik: "861929"
@@ -1229,18 +1244,73 @@ institutions:
         adviser_verified: "2026-11-17"
         voting_note: "Voted by the Advisor's Investment Stewardship Committee under the Dimensional Voting Guidelines; portfolios with sustainability or social objectives follow their own guideline summaries."
         adviser_key: "DFA"
+        series_adviser:
+          S000076639: [{key: DFA_SUSTAINABILITY, from: "2024-02-28"}]  # Dimensional US Sustainability Core 1 ETF; Sustainability summary printed in its SAI 0001741773-24-000697 (2024-02-28), 0001741773-25-001052, 0001816125-26-000046
+          S000076640: [{key: DFA_SUSTAINABILITY, from: "2024-02-28"}]  # Dimensional International Sustainability Core 1 ETF; Sustainability summary printed in its SAI 0001741773-24-000697 (2024-02-28), 0001741773-25-001052, 0001816125-26-000046
+          S000076641: [{key: DFA_SUSTAINABILITY, from: "2024-02-28"}]  # Dimensional Emerging Markets Sustainability Core 1 ETF; Sustainability summary printed in its SAI 0001741773-24-000697 (2024-02-28), 0001741773-25-001052, 0001816125-26-000046
+          S000076642: [{key: DFA_SUSTAINABILITY, from: "2024-02-28"}]  # Dimensional Global Sustainability Fixed Income ETF; Sustainability summary printed in its SAI 0001741773-24-000697 (2024-02-28), 0001741773-25-001052, 0001816125-26-000046
         name: "Dimensional ETF Trust"
         validated: "2026-11-17"
+      - cik: "896162"
+        adviser: "Dimensional Fund Advisors LP (the Advisor); master fund of the feeder portfolios of DFA Investment Dimensions Group Inc. and Dimensional Investment Group Inc."
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/355437/000035543726000120/c485bpos.htm"  # 485BPOS filed 2026-02-27 (DFAIDG/DIG feeder SAI); SAI PROXY VOTING POLICIES: the Boards of the Trust (DFAITC) and DEM delegated authority to vote proxies for the Master Funds to the Advisor
+        adviser_verified: "2026-11-18"
+        voting_note: "Master Fund: no SAI or 485BPOS of its own; the feeder SAIs (2023-02-28 0000930413-23-000711, 2024-02-28 0001741773-24-000695, 2026-02-27 0000355437-26-000120) say its Board delegated voting for the Master Funds to the Advisor under the same Voting Guidelines as the other Dimensional trusts. The feeder portfolios hold no vote rows, so no ballot is counted through both."
+        adviser_key: "DFA"
+        name: "The DFA Investment Trust Company"
+        validated: "2026-11-18"   # entity name 'DFA INVESTMENT TRUST CO' confirmed via data.sec.gov submissions API
+      - cik: "896163"
+        adviser: "Dimensional Fund Advisors LP (the Advisor); master fund of the feeder portfolios of DFA Investment Dimensions Group Inc. and Dimensional Investment Group Inc."
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/355437/000035543726000120/c485bpos.htm"  # 485BPOS filed 2026-02-27 (DFAIDG/DIG feeder SAI); SAI PROXY VOTING POLICIES: the Boards of the Trust (DFAITC) and DEM delegated authority to vote proxies for the Master Funds to the Advisor
+        adviser_verified: "2026-11-18"
+        voting_note: "Master Fund: no SAI or 485BPOS of its own; the feeder SAIs (2023-02-28 0000930413-23-000711, 2024-02-28 0001741773-24-000695, 2026-02-27 0000355437-26-000120) say its Board delegated voting for the Master Funds to the Advisor under the same Voting Guidelines as the other Dimensional trusts. The feeder portfolios hold no vote rows, so no ballot is counted through both."
+        adviser_key: "DFA"
+        name: "Dimensional Emerging Markets Value Fund"
+        validated: "2026-11-18"   # entity name 'DIMENSIONAL EMERGING MARKETS VALUE FUND' confirmed via data.sec.gov submissions API
     voting_scope_notes:
-      - "Only the Standard guidelines summary is archived. The SAI says funds with sustainability or social objectives follow separate Sustainability or Social guideline summaries (https://www.dimensional.com/chmedia/428745/source/download/summary-of-sustainability-proxy-voting-guidelines.pdf, https://www.dimensional.com/chmedia/370091/source/download/summary-of-social-proxy-voting-guidelines.pdf); series assignment was not read, so a vote from such a fund is compared against the Standard text only as a stated limitation."
+      - "Three guideline documents: Standard (key DFA), Sustainability (key DFA_SUSTAINABILITY) and Social (key DFA_SOCIAL). Series are assigned from the SAI that prints the summary: Social = U.S. Social Core Equity 2, Emerging Markets / International / Global Social Core Equity, DFA Social Fixed Income; Sustainability = U.S. / International / Emerging Markets Sustainability Core 1, U.S. Sustainability Targeted Value, Dimensional World ex U.S. Sustainability Targeted Value, DFA Global Sustainability Fixed Income, and the four Sustainability Core 1 / Global Sustainability Fixed Income ETFs of Dimensional ETF Trust. They are keyed from the first SAI read that splits them (2024-02-28, accessions 0001741773-24-000695 and 0001741773-24-000697; World ex U.S. Sustainability Targeted Value from 2025-02-28); the 2023 SAIs (0000930413-23-000711) print a single summary, so meetings before 2024-02-28 keep the registrant default DFA. A DFA_SOCIAL or DFA_SUSTAINABILITY vote is paired only with its own guideline text. Series not named in any Social or Sustainability SAI stay DFA; the Standard guideline text says the Advisor may still weigh social or sustainability issues for such portfolios."
       - "Possible incompleteness, not established: the 2025 and 2026 vote exhibits of DFA Investment Dimensions Group (CIK 355437) and Dimensional ETF Trust (CIK 1816125) each hold exactly 500,000 proxyTable records (2024: 486,275 and 468,237), and the 2026 DFA Investment Dimensions Group exhibit covers 31 series. Whether the filer or EDGAR capped them was not verified (accessions 0001680359-25-000726, 0002071844-26-001087, 0001680359-25-000722, 0002071844-26-001088), so Dimensional counts are lower bounds and must not be read as the complete vote record."
-      - "The master-fund trusts DFA Investment Trust Co (CIK 896162) and Dimensional Emerging Markets Value Fund (CIK 896163) are not covered."
+      - "The master funds DFA Investment Trust Co (CIK 896162) and Dimensional Emerging Markets Value Fund (CIK 896163) are covered from 2026-11-18. They file N-PX but have no SAI of their own; the feeder SAIs state the Advisor votes for the Master Funds. Several of their reports are notice-only (no votes held), recorded as filings without votes."
     commitments:
       # Verified 2026-11-17 (200, application/pdf), linked from https://www.dimensional.com/us-en/who-we-are/investment-stewardship
       - label: summary-of-standard-proxy-voting-guidelines
         url: "https://www.dimensional.com/chmedia/428704/source/download/summary-of-standard-proxy-voting-guidelines.pdf"
         adviser: "Dimensional Fund Advisors LP"
         adviser_key: "DFA"
+      # Added 2026-11-18: the Sustainability and Social summaries, from the Dimensional site (linked from the same page, 200 application/pdf 2026-11-18)
+      - label: summary-of-sustainability-proxy-voting-guidelines
+        url: "https://www.dimensional.com/chmedia/428745/source/download/summary-of-sustainability-proxy-voting-guidelines.pdf"
+        adviser: "Dimensional Fund Advisors LP"
+        adviser_key: "DFA_SUSTAINABILITY"
+      - label: summary-of-social-proxy-voting-guidelines
+        url: "https://www.dimensional.com/chmedia/370091/source/download/summary-of-social-proxy-voting-guidelines.pdf"
+        adviser: "Dimensional Fund Advisors LP"
+        adviser_key: "DFA_SOCIAL"
+      # The same two summaries AS PRINTED as the exhibit of the DFAIDG SAIs (485BPOS), dated by EDGAR filing date; SEPARATE labels from the website PDFs
+      # (different formatting would invent alternating versions). Each exhibit ends at the DFAIDG closing page; a 485BPOS may print the Sustainability exhibit
+      # in two SAIs, hence allow_identical_copies. Printed page markers ("A- 12") stay out via strip_patterns.
+      - label: summary-of-sustainability-proxy-voting-guidelines-as-printed-in-sai
+        adviser: "Dimensional Fund Advisors LP"
+        adviser_key: "DFA_SUSTAINABILITY"
+        sai_appendix:
+          cik: "0000355437"
+          forms: ["485BPOS"]
+          since: "2024-01-01"
+          start: "Exhibit A Summary of Sustainability Proxy Voting Guidelines"
+          end: ["DFA INVESTMENT DIMENSIONS GROUP INC. 6300 Bee Cave Road", "DFA INVESTMENT DIMENSIONS GROUP INC. (", "PART C OTHER INFORMATION"]
+          allow_identical_copies: true
+          strip_patterns: ["A- \\d+"]
+      - label: summary-of-social-proxy-voting-guidelines-as-printed-in-sai
+        adviser: "Dimensional Fund Advisors LP"
+        adviser_key: "DFA_SOCIAL"
+        sai_appendix:
+          cik: "0000355437"
+          forms: ["485BPOS"]
+          since: "2024-01-01"
+          start: "Exhibit A Summary of Social Proxy Voting Guidelines"
+          end: ["DFA INVESTMENT DIMENSIONS GROUP INC. 6300 Bee Cave Road", "DFA INVESTMENT DIMENSIONS GROUP INC. (", "PART C OTHER INFORMATION"]
+          allow_identical_copies: true
+          strip_patterns: ["A- \\d+"]
 
   wellington:
     display_name: "Wellington Management Group LLP"
