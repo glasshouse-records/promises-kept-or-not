@@ -222,7 +222,22 @@ the 2023, 2024 and 2025 editions (label `parametric-proxy-voting-policy-as-print
 printed page footers stay in the text). The 2026 SAIs print Morgan Stanley
 Investment Management's Equity Proxy Voting Policy instead, which names
 Parametric as a covered affiliate but is a different document and is not
-filed under Parametric's key. Re-check the website if a sanctioned path appears.
+filed under Parametric's key; the copy those SAIs print is archived on its own
+as `msim-equity-proxy-voting-policy-parametric-as-printed-in-sai`, keyed
+PARAMETRIC_MSIM (the key the votes carry from that SAI's date), never under
+Parametric's own key or the MSIM key. Re-check the website if a sanctioned path appears.
+
+Morgan Stanley Investment Management (added 2026-11-18): morganstanley.com/im
+and eatonvance.com answer requests that identify themselves honestly with 403
+(`proxyvotingpolicy_msim_en.pdf`, probed 2026-11-18; a third host timed out).
+Glasshouse does not change its identification to get in, and a 403 is a block,
+not proof the file is gone, so no website copy of the MSIM Equity Proxy Voting
+Policy is archived. The sanctioned path used is the SAI route: the Morgan
+Stanley Institutional Fund, Inc. SAI prints the policy as Appendix A (label
+`msim-equity-proxy-voting-policy-as-printed-in-sai`; the heading changed
+between editions, so several start headings are listed; printed page footers
+such as "A-9 Back to Table of Contents" are removed; a filing that prints the
+heading twice yields nothing). Re-check the website if a sanctioned path appears.
 
 Nuveen / TIAA (added 2026-11-18): nuveen.com and documents.nuveen.com answer
 requests that identify themselves honestly with "Your request was blocked"

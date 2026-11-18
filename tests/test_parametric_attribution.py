@@ -56,8 +56,11 @@ def test_msim_policy_period_is_not_paired_with_parametric_policy():
     assert engine.resolve_key(ts2, "S000002405", "2026-06-30") == "PARAMETRIC"
 
 
-def test_msim_key_has_no_policy_document():
-    assert all(d["adviser_key"] == "PARAMETRIC" for d in PA["commitments"])
+def test_msim_key_has_its_own_sai_printed_policy_document_never_parametrics_text():
+    docs = {d["label"]: d["adviser_key"] for d in PA["commitments"]}
+    assert docs["parametric-proxy-voting-policy-as-printed-in-sai"] == "PARAMETRIC"
+    assert docs["msim-equity-proxy-voting-policy-parametric-as-printed-in-sai"] == "PARAMETRIC_MSIM"
+    assert set(docs.values()) == {"PARAMETRIC", "PARAMETRIC_MSIM"}
 
 
 def test_series_resolve_only_from_evidence_window():
@@ -82,7 +85,7 @@ def test_policy_document_is_keyed_and_sai_sourced():
     docs = {d["label"]: d for d in PA["commitments"]}
     assert docs, "Parametric policy document must be configured"
     for label, d in docs.items():
-        assert d["adviser_key"] == "PARAMETRIC"
+        assert d["adviser_key"] in ("PARAMETRIC", "PARAMETRIC_MSIM")
         assert label.endswith("-as-printed-in-sai")   # the website blocks honest clients: SAI route only
         assert d["sai_appendix"]["start"] and d["sai_appendix"]["end"]
 

@@ -260,6 +260,107 @@ institutions:
     type: "bank"
     aum_usd_tr: 1.4
     notes: "Investment bank and wealth management; CIK is Morgan Stanley."
+    npx_ciks:
+      # Added 2026-11-18. MSIM's own US fund registrants. Each registrant's SAI (closed-end funds: N-CSR) says voting is delegated to MSIM / the Adviser (Morgan Stanley
+      # Investment Management Inc.) and prints MSIM's proxy voting policy; named sub-advisers are MSIM affiliates covered by it. `from` is the effective date of the earliest
+      # SAI read (or the filing date of the earliest N-CSR); SAIs from before 2023 were not read, earlier meetings stay unlabelled. No series is EXTERNAL: no outside sub-adviser is named.
+      - cik: "836487"
+        adviser: "Morgan Stanley Investment Management Inc. (MSIM); sub-advised series use MSIM affiliates (MSIM Company, MSIM Limited) covered by the MSIM policy"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/836487/000113322823003267/msif-html6245_485bpos.htm"  # 485BPOS filed 2023-04-28, SAI dated 2023-04-28; same delegation in -24-004760, -25-004826, -26-007524 (2026-04-30)
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policy and Proxy Voting Record: the Board delegated the responsibility to vote proxies to MSIM, and prints MSIM's proxy voting policy as Appendix A; sub-advisers named (Morgan Stanley Investment Management Company, Morgan Stanley Investment Management Limited) are MSIM affiliates covered by that policy."
+        adviser_key_history: [{key: MSIM, from: "2023-04-28"}]
+        name: "Morgan Stanley Institutional Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "741375"
+        adviser: "Morgan Stanley Investment Management Inc. (MSIM); Morgan Stanley Investment Management Limited sub-advises one Fund under the MSIM policy"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/741375/000113322823000277/msift-html5938_485bpos.htm"  # 485BPOS filed 2023-01-27, SAI dated 2023-01-27; same delegation in -24-000580, -25-000631, -26-000956, -26-008412
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policy and Proxy Voting Record: the Board delegated the responsibility to vote proxies to MSIM, and prints MSIM's proxy voting policy as Appendix A; sub-advisers named (Morgan Stanley Investment Management Limited) are MSIM affiliates covered by that policy."
+        adviser_key_history: [{key: MSIM, from: "2023-01-27"}]
+        name: "Morgan Stanley Institutional Fund Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1011378"
+        adviser: "Morgan Stanley Investment Management Inc. (MSIM) and its advisory affiliates (MSIM Company, MSIM Limited)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1011378/000113322823002516/msvif-html6322_485bpos.htm"  # 485BPOS filed 2023-04-21, SAI dated 2023-04-28; same delegation in -24-004049, -25-003968, -26-005514
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policy and Proxy Voting Record: the Board delegated the responsibility to vote proxies to MSIM and its advisory affiliates, and prints MSIM's proxy voting policy as Appendix A; sub-advisers named (Morgan Stanley Investment Management Company, Morgan Stanley Investment Management Limited, Morgan Stanley Investment Management Inc.) are MSIM affiliates covered by that policy."
+        adviser_key_history: [{key: MSIM, from: "2023-04-28"}]
+        name: "Morgan Stanley Variable Insurance Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "860720"
+        adviser: "Morgan Stanley Investment Management Inc. (MSIM); sub-adviser Morgan Stanley Investment Management Company (MSIM affiliate)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/860720/000113322823000860/mseop-html5992_485bpos.htm"  # 485BPOS filed 2023-02-28, SAI dated 2023-02-28; same delegation in -24-001282, -25-001822, -26-002584 (2026-02-27)
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policy and Proxy Voting Record: the Board delegated the responsibility to vote proxies to the Adviser (MSIM Inc.), and prints MSIM's proxy voting policy as Appendix A; sub-advisers named (Morgan Stanley Investment Management Company) are MSIM affiliates covered by that policy."
+        adviser_key_history: [{key: MSIM, from: "2023-02-28"}]
+        name: "Morgan Stanley Europe Opportunity Fund Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1002427"
+        adviser: "Morgan Stanley Investment Management Inc. (MSIM)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1002427/000113322823003202/msif-html6244_485bpos.htm"  # 485BPOS filed 2023-04-28, SAI dated 2023-04-28; same delegation in -24-004879, -25-004801, -26-007514 (2026-04-30)
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policy and Proxy Voting Record: the Board delegated the responsibility to vote proxies to the Adviser (MSIM Inc.), and prints MSIM's proxy voting policy as Appendix A; sub-advisers named (none named) are MSIM affiliates covered by that policy."
+        adviser_key_history: [{key: MSIM, from: "2023-04-28"}]
+        name: "Morgan Stanley Insight Fund"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1368493"
+        adviser: "Morgan Stanley Investment Management Inc. (MSIM); closed-end fund, sub-adviser Morgan Stanley Investment Management Company"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1368493/000110465923030925/tm233147d1_ncsr.htm"  # N-CSR filed 2023-03-10; same policy named in 0001104659-24-031759, -25-021323, -26-022170
+        adviser_verified: "2026-11-18"
+        voting_note: "N-CSR Item 7 (2023) / Item 12 (2026): the registrant's and its Investment Advisor's proxy voting policy is MSIM's Equity Proxy Voting Policy and Procedures (March 2022 edition printed in full in the 2023 report); the Sub-Adviser, Morgan Stanley Investment Management Company, is a wholly-owned Morgan Stanley subsidiary covered by that policy. Keyed from the filing date of the earliest N-CSR read."
+        adviser_key_history: [{key: MSIM, from: "2023-03-10"}]
+        name: "Morgan Stanley China A Share Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "916618"
+        adviser: "Morgan Stanley Investment Management Inc. (MSIM); closed-end fund, sub-adviser Morgan Stanley Investment Management Company"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/916618/000110465923030941/tm233147d5_ncsr.htm"  # N-CSR filed 2023-03-10; same policy named in 0001104659-24-031761, -25-021366, -26-022151
+        adviser_verified: "2026-11-18"
+        voting_note: "N-CSR Item 7 (2023) / Item 12 (2026): the registrant's and its Investment Advisor's proxy voting policy is MSIM's Equity Proxy Voting Policy and Procedures (March 2022 edition printed in full in the 2023 report); the Sub-Adviser, Morgan Stanley Investment Management Company, is a wholly-owned Morgan Stanley subsidiary covered by that policy. Keyed from the filing date of the earliest N-CSR read."
+        adviser_key_history: [{key: MSIM, from: "2023-03-10"}]
+        name: "Morgan Stanley India Investment Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1676326"
+        adviser: "Morgan Stanley Investment Management Inc. (MSIM) is the Adviser; Parametric Portfolio Associates LLC (three equity ETFs) and Morgan Stanley Investment Management Limited are sub-advisers under the Adviser's supervision. The six Calvert ETFs follow Calvert's own policy and are not attributed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1676326/000113322823005649/msetf-html6927_485bpos.htm"  # 485BPOS filed 2023-10-06 (Parametric Equity Premium Income ETF); the other series' own SAIs are cited per series below
+        adviser_verified: "2026-11-18"
+        voting_note: "Every series' own SAI: the Trustees delegated the responsibility to vote proxies to the Adviser (Morgan Stanley Investment Management Inc.) and MSIM's Proxy Voting Policy is printed as Appendix A. From the SAIs of 2024-09-30 onward that policy says 'Certain ETFs will follow Calvert's Global Proxy Voting Guidelines ... and the proxy voting guidelines discussed below do not apply to such ETFs': the six Calvert ETFs (S000077958-S000077963, in the multi-fund SAIs 0001133228-24-000567, -25-000635, -26-000962) therefore stay unlabelled (Calvert's policy is not archived, so no CALVERT key). Keyed per series from the effective date of each series' own earliest SAI read; earlier meetings unlabelled."
+        series_adviser:
+          S000082246: [{key: MSIM, from: "2023-10-07"}]  # Eaton Vance High Yield ETF; SAI effective 2023-10-07 in 0001133228-23-005645
+          S000082247: [{key: MSIM, from: "2023-10-07"}]  # Eaton Vance Intermediate Municipal Income ETF; SAI effective 2023-10-07 in 0001133228-23-005645
+          S000082248: [{key: MSIM, from: "2023-10-07"}]  # Eaton Vance Ultra-Short Income ETF; SAI effective 2023-10-07 in 0001133228-23-005645
+          S000082250: [{key: MSIM, from: "2023-10-07"}]  # Parametric Hedged Equity ETF; SAI effective 2023-10-07 in 0001133228-23-005647
+          S000082252: [{key: MSIM, from: "2023-10-07"}]  # Parametric Equity Premium Income ETF; SAI effective 2023-10-07 in 0001133228-23-005649
+          S000083413: [{key: MSIM, from: "2023-12-16"}]  # Eaton Vance Total Return Bond ETF; SAI effective 2023-12-16 in 0001133228-23-006315
+          S000083416: [{key: MSIM, from: "2023-12-16"}]  # Eaton Vance Short Duration Municipal Income ETF; SAI effective 2023-12-16 in 0001133228-23-006316
+          S000083827: [{key: MSIM, from: "2024-01-13"}]  # Eaton Vance Floating-Rate ETF; SAI effective 2024-01-13 in 0001133228-24-000249
+          S000084183: [{key: MSIM, from: "2024-03-02"}]  # Eaton Vance Short Duration Income ETF; SAI effective 2024-03-02 in 0001133228-24-001754
+          S000088098: [{key: MSIM, from: "2024-09-30"}]  # Parametric Equity Plus ETF; SAI effective 2024-09-30 in 0001133228-24-009220
+          S000088107: [{key: MSIM, from: "2024-09-30"}]  # Eaton Vance CLO Investment Grade Income ETF; SAI effective 2024-09-30 in 0001133228-24-009222
+          S000088108: [{key: MSIM, from: "2024-09-30"}]  # Eaton Vance High Income Municipal ETF; SAI effective 2024-09-30 in 0001133228-24-009222
+          S000101437: [{key: MSIM, from: "2026-02-18"}]  # Eaton Vance Preferred Securities and Income ETF; SAI effective 2026-02-18 in 0001133228-26-001659
+        name: "Morgan Stanley ETF Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Added 2026-11-18: seven MSIM fund registrants keyed MSIM from the earliest filing read: Morgan Stanley Institutional Fund Trust (741375, SAI dated 2023-01-27, 0001133228-23-000277), Institutional Fund, Inc. (836487, 2023-04-28, -23-003267), Variable Insurance Fund, Inc. (1011378, 2023-04-28, -23-002516), Europe Opportunity Fund Inc. (860720, 2023-02-28, -23-000860), Insight Fund (1002427, 2023-04-28, -23-003202) and the closed-end China A Share Fund (1368493) and India Investment Fund (916618), from the N-CSR filed 2023-03-10 (0001104659-23-030925, -23-030941). Each says the Board delegated proxy voting to MSIM / the Adviser (Morgan Stanley Investment Management Inc.) and prints MSIM's Equity Proxy Voting Policy; the sub-advisers named (MSIM Company, MSIM Limited) are MSIM affiliates covered by that policy, so no series is EXTERNAL."
+      - "Morgan Stanley ETF Trust (1676326) is keyed per series, never as a registrant: 13 Eaton Vance fixed-income and Parametric ETF series (Trustees delegated voting to the Adviser, MSIM Inc.; Parametric is only a sub-adviser under the Adviser's supervision) from the effective date of each series' own earliest SAI (2023-10-07 to 2026-02-18); the six Calvert ETFs (S000077958-S000077963) follow Calvert's own proxy voting policy per the MSIM policy printed in the SAIs and stay unlabelled."
+      - "Not ingested here: the institutional-manager N-PX of MSIM Inc., MSIM Company, MSIM Limited, Morgan Stanley AIP GP LP (CIK 1230193, 1270238, 1358504, 1230207), which would count the same ballots twice; Eaton Vance and Calvert trusts (separate registrants, some under the parametric institution; a CIK is never ingested under two institutions); Morgan Stanley Institutional Liquidity Funds (1227155), Income Opportunities Fund (882381) and Emerging Markets Domestic Debt Fund (1388141), whose N-PX carry under 10 KB of vote records and were not read; Long Duration Government Opportunities, Mortgage Securities Trust, California Tax-Free Daily Income Trust and Emerging Markets Debt Fund (730044, 806564, 832705, 904112), whose N-PX carry no vote table."
+      - "Policy text: morganstanley.com/im and eatonvance.com answer requests that identify themselves honestly with 403 (proxyvotingpolicy_msim_en.pdf, probed 2026-11-18), so no website copy is archived (see METHODOLOGY source-access notes). The only dated text is the SAI route: MSIM's proxy voting policy as printed in Appendix A of the Morgan Stanley Institutional Fund, Inc. SAI (archived as msim-equity-proxy-voting-policy-as-printed-in-sai, dated by EDGAR filing date; page footers removed). The Parametric series' own 2026 SAIs print a differently formatted copy of the January 2026 policy, archived under the parametric institution as PARAMETRIC_MSIM."
+    commitments:
+      - label: msim-equity-proxy-voting-policy-as-printed-in-sai
+        adviser: "Morgan Stanley Investment Management Inc. and its MSIM affiliates"
+        adviser_key: "MSIM"
+        sai_appendix:
+          cik: "0000836487"
+          forms: ["485BPOS"]
+          since: "2023-01-01"
+          # The heading changed between editions (dash and 'Equity' added; 2025 has no dash). Appendix A runs to Appendix B (ratings); a second 2026 SAI
+          # prints the heading twice, so that filing yields nothing rather than a guess. Page footers "A-9 Back to Table of Contents" are removed.
+          start: ["APPENDIX A — MORGAN STANLEY INVESTMENT MANAGEMENT PROXY VOTING POLICY AND PROCEDURES", "APPENDIX A — MORGAN STANLEY INVESTMENT MANAGEMENT EQUITY PROXY VOTING POLICY AND PROCEDURES", "APPENDIX A MORGAN STANLEY INVESTMENT MANAGEMENT EQUITY PROXY VOTING POLICY AND PROCEDURES"]
+          end: ["APPENDIX B — DESCRIPTION OF RATINGS"]
+          strip_patterns:
+            - '\bA- ?\d{1,2}\b'
+            - 'Back [Tt]o Table of Contents'
 
   state_street:
     npx_ciks:
@@ -1455,7 +1556,7 @@ institutions:
       # in the trust (Eaton Vance, Morgan Stanley Investment Management Limited and Eaton Vance Advisers International voted series) stays unlabelled.
       # `from` is the effective date printed on the earliest SAI read that makes the statement; earlier meetings stay unlabelled.
       # PARAMETRIC_MSIM: from the effective date of the series' 2026 SAI, which prints the MSIM Equity Proxy Voting Policy (Jan 2026) instead of Parametric's own
-      # (Feb 2025) policy, the voter is still Parametric but the key has NO policy document, so pairing tools refuse rather than pair the wrong text.
+      # (Feb 2025) policy, the voter is still Parametric; the key's policy is the text those SAIs print (label msim-equity-proxy-voting-policy-parametric-as-printed-in-sai), never Parametric's own or the MSIM-keyed copy.
       # Commodity Strategy: SAI dated 2026-05-01 (0001133228-26-006989); Emerging Markets, International Equity, VRP-Defensive: SAIs dated 2026-06-01 (0001133228-26-008463).
       # Dividend Income (no 2026 SAI found) and Tax-Managed EM (SAI of 2025-11-01 prints Parametric's policy; the MSIM-policy SAI is dated 2026-11-01, after the votes) keep PARAMETRIC.
       - cik: "745463"
@@ -1481,12 +1582,12 @@ institutions:
         name: "Eaton Vance Series Trust II"
         validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
     voting_scope_notes:
-      - "Parametric votes the proxies of the six series keyed PARAMETRIC (Eaton Vance Mutual Funds Trust: Parametric Emerging Markets, International Equity, Volatility Risk Premium - Defensive, Commodity Strategy, Dividend Income; Eaton Vance Series Trust II: Parametric Tax-Managed Emerging Markets) per each series' own SAI, which names Parametric as sub-adviser and says the Board delegated proxy voting to the investment sub-adviser; keyed from the effective date of the earliest such SAI read (2024-11-01 to 2025-07-01), earlier meetings stay unlabelled. From the effective date of a series' 2026 SAI that prints the MSIM Equity Proxy Voting Policy instead of Parametric's own (Commodity Strategy 2026-05-01; Emerging Markets, International Equity, Volatility Risk Premium - Defensive 2026-06-01) the voter is keyed PARAMETRIC_MSIM, which has no policy document and is never paired with Parametric's archived text."
+      - "Parametric votes the proxies of the six series keyed PARAMETRIC (Eaton Vance Mutual Funds Trust: Parametric Emerging Markets, International Equity, Volatility Risk Premium - Defensive, Commodity Strategy, Dividend Income; Eaton Vance Series Trust II: Parametric Tax-Managed Emerging Markets) per each series' own SAI, which names Parametric as sub-adviser and says the Board delegated proxy voting to the investment sub-adviser; keyed from the effective date of the earliest such SAI read (2024-11-01 to 2025-07-01), earlier meetings stay unlabelled. From the effective date of a series' 2026 SAI that prints the MSIM Equity Proxy Voting Policy instead of Parametric's own (Commodity Strategy 2026-05-01; Emerging Markets, International Equity, Volatility Risk Premium - Defensive 2026-06-01) the voter is keyed PARAMETRIC_MSIM, whose policy is the MSIM Equity Proxy Voting Policy as those SAIs print it (archived as msim-equity-proxy-voting-policy-parametric-as-printed-in-sai, dated 2026-04-28) and is never paired with Parametric's own archived text."
       - "Left unlabelled, not attributed: Parametric Tax-Managed International Equity Fund (S000005279; N-PX of 2025 only, no SAI of its own was located), every Eaton Vance, Eaton Vance Tax-Managed and fixed-income series (Eaton Vance Management, BMR, Eaton Vance Advisers International or MSIM Limited advise or sub-advise them), and Eaton Vance Series Trust, Investment Trust, Variable Trust and Series Fund, whose SAIs name Parametric only in boilerplate. Unlabelled lines are not asserted to be voted by anyone."
-      - "Morgan Stanley ETF Trust (CIK 1676326; Parametric Equity Plus, Equity Premium Income and Hedged Equity ETFs) is NOT attributed and not ingested here: its SAI says the Trustees delegated proxy voting to the Adviser (Morgan Stanley Investment Management Inc.) under MSIM's Proxy Voting Policy, with Parametric only a sub-adviser under the Adviser's supervision. Innovator ETFs Trust was read on 2026-11-18 (next note): its Adviser votes."
+      - "Morgan Stanley ETF Trust (CIK 1676326; Parametric Equity Plus, Equity Premium Income and Hedged Equity ETFs) is NOT attributed to Parametric and not ingested here (it is ingested under the morgan_stanley institution, keyed MSIM per series): its SAI says the Trustees delegated proxy voting to the Adviser (Morgan Stanley Investment Management Inc.) under MSIM's Proxy Voting Policy, with Parametric only a sub-adviser under the Adviser's supervision. Innovator ETFs Trust was read on 2026-11-18 (next note): its Adviser votes."
       - "Reviewed 2026-11-18, nothing keyed PARAMETRIC and nothing ingested (each trust's own SAI says the Board delegated proxy voting to the investment adviser, and Parametric is not named as a sub-adviser outside the MSIM-affiliate boilerplate): Eaton Vance Series Trust (CIK 102818; one Eaton Vance Management-advised index feeder, N-CSR 0001193125-26-081269), Eaton Vance Investment Trust (CIK 779991; SAIs 0001133228-26-010801, 0000779991-25-000008, 0000940394-23-000968), Eaton Vance Variable Trust (CIK 1121746; 0001133228-26-006945, 0000102816-25-000015, 0000940394-23-000638), Eaton Vance Series Fund (CIK 1552324; 0001133228-25-012756, 0000940394-23-001152). Calvert Variable Trust (CIK 743773; SAIs 0001133228-26-006980, 0000102816-25-000017, 0000940394-24-000378) does name Parametric as co-sub-adviser of the three Volatility Managed portfolios, but the SAI says CRM votes proxies consistent with CRM's Proxy Voting Policies and the Board delegated voting to the investment adviser, so they stay unlabelled (CRM's policy is not archived, so no CALVERT key). The other Calvert trusts (Variable Series 708950, Responsible Index Series 1105446, Impact Fund 1121624, Management Series 319676, World Values 884110, Fund 701039, Social Investment Fund 356682; 2026 SAIs) name Parametric only as a former employer of portfolio managers or not at all, and CRM votes. Innovator ETFs Trust (CIK 1415726; SAIs 0001213900-26-021394, 0001213900-25-122909, 0001213900-26-079269) lists a Parametric sub-advisory agreement only among exhibits and says the Board delegated proxy voting to the Adviser (Innovator, Egan-Jones guidelines via Broadridge ProxyEdge)."
       - "The Parametric Portfolio Associates LLC N-PX filings (CIK 932859) are institutional-manager reports and are not ingested here; the sub-advised fund votes appear in the Eaton Vance trusts' own N-PX, so ingesting both would count the same ballots twice."
-      - "Policy text: Parametric's own website (parametricportfolio.com) rejects requests that identify themselves honestly (403, 2026-11-18), so no website copy is archived (see METHODOLOGY source-access notes). The SAI of Eaton Vance Series Trust II printed Parametric's own policy in the 2023, 2024 and 2025 editions (archived as parametric-proxy-voting-policy-as-printed-in-sai); the 2026 SAIs instead print the Morgan Stanley Investment Management Equity Proxy Voting Policy (which lists Parametric Portfolio Associates LLC as a covered MSIM affiliate), a different document that is not archived under Parametric's key."
+      - "Policy text: Parametric's own website (parametricportfolio.com) rejects requests that identify themselves honestly (403, 2026-11-18), so no website copy is archived (see METHODOLOGY source-access notes). The SAI of Eaton Vance Series Trust II printed Parametric's own policy in the 2023, 2024 and 2025 editions (archived as parametric-proxy-voting-policy-as-printed-in-sai); the 2026 SAIs instead print the Morgan Stanley Investment Management Equity Proxy Voting Policy (which lists Parametric Portfolio Associates LLC as a covered MSIM affiliate), a different document that is not archived under Parametric's key: it is archived under its own key, PARAMETRIC_MSIM, as the copy those SAIs print (msim-equity-proxy-voting-policy-parametric-as-printed-in-sai, from the filing of 2026-04-28)."
     commitments:
       # The SAI of the single-fund Parametric Tax-Managed Emerging Markets Fund prints Parametric's own policy as its Appendix C (2023, 2024, 2025 editions; the
       # 2026 editions print the MSIM Equity policy instead and contribute nothing, since the start marker is absent). Page footers ("Parametric Tax-Managed
@@ -1501,6 +1602,24 @@ institutions:
           start: "PARAMETRIC PORTFOLIO ASSOCIATES LLC PROXY VOTING POLICIES AND PROCEDURES"
           end: "PART C - OTHER INFORMATION"
           strip_page_numbers: true
+      # Added 2026-11-18: the text the Parametric series' OWN 2026 SAIs print instead (keyed PARAMETRIC_MSIM, the key their votes carry from the SAI date): the Morgan Stanley
+      # Investment Management Equity Proxy Voting Policy and Procedures, January 2026, as Appendix G / E / C of the Eaton Vance Mutual Funds Trust SAIs (the Commodity Strategy,
+      # Emerging Markets, International Equity and Volatility Risk Premium - Defensive SAIs, 0001133228-26-006989 and -26-008463; the Series Trust II SAI of 2026-10-27 prints
+      # the identical text). A separate label from the MSIM-keyed one (a different, differently formatted copy; never reuse the MSIM key). Each filing prints several SAIs, so
+      # the copies must be identical; the policy is followed directly by the next SAI's cover or by Part C, and the printed footer (G-9, E-9, C-9) marks its end.
+      - label: msim-equity-proxy-voting-policy-parametric-as-printed-in-sai
+        adviser: "Morgan Stanley Investment Management (policy printed in the Parametric series' SAIs)"
+        adviser_key: "PARAMETRIC_MSIM"
+        sai_appendix:
+          cik: "0000745463"
+          forms: ["485BPOS"]
+          since: "2026-01-01"
+          start: "Morgan Stanley Investment Management (“MSIM”) Equity Proxy Voting Policy and Procedures January 2026 Introduction"
+          end: ["G-9", "E-9", "C-9"]
+          allow_identical_copies: true
+          strip_patterns:
+            - '\b[A-G]- ?\d{1,2}\b'
+            - 'Back [Tt]o Table of Contents'
 
   columbia:
     display_name: "Columbia Threadneedle Investments (Columbia Management Investment Advisers, LLC; Ameriprise Financial)"
