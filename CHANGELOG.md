@@ -4,6 +4,13 @@ All notable changes to the Glasshouse dataset and tooling. The **dataset** is
 versioned by release date (`release/v<DATE>/`); each release is checksummed
 (`MANIFEST.sha256`) and self-describing (`datapackage.json`, `DATASHEET.md`).
 
+## Correction (2026-11-18)
+
+Releases 2026-11-17.2, 2026-11-17.3, 2026-11-18 and 2026-11-18.2 shipped repeated
+N-PX vote lines as distinct votes (0.62–0.69% of shipped votes; mostly Dimensional).
+Details and per-release counts: [docs/CORRECTIONS.md](docs/CORRECTIONS.md). Ingest now
+marks duplicates itself, and release and doctor refuse stale duplicate flags.
+
 ## v1 (2026-06-29) — first public release candidate
 
 The cleanest, best-documented machine-readable record of what major financial

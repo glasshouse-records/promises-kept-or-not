@@ -305,7 +305,9 @@ code commit that built it. Metadata: `CITATION.cff`. Steps for a new version:
 Corrections: open an issue at
 <https://github.com/glasshouse-records/promises-kept-or-not/issues> with the table,
 the row and the primary-source link. They are applied in a new release and listed in
-[CHANGELOG.md](CHANGELOG.md). Unverified items: [PENDING_VERIFICATION.md](PENDING_VERIFICATION.md).
+[CHANGELOG.md](CHANGELOG.md). Errors found in published releases, with their size and the
+release that fixes them: [docs/CORRECTIONS.md](docs/CORRECTIONS.md) (2026-11-18: releases
+2026-11-17.2 to 2026-11-18.2 shipped 0.6–0.7% duplicate vote lines). Unverified items: [PENDING_VERIFICATION.md](PENDING_VERIFICATION.md).
 
 Leads, not findings: any say-versus-do gap you derive is a lead. Check the proposal
 text, the adviser, and the policy in force on the meeting date first.
