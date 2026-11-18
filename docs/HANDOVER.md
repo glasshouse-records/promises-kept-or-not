@@ -4,7 +4,9 @@ Written 2026-11-17. Published the same day: the dataset on Zenodo
 (first version doi:10.5281/zenodo.24321607; version 2026-11-17.2,
 adding Capital Group and Dimensional, doi:10.5281/zenodo.24324314;
 version 2026-11-17.3, adding Geode-voted Fidelity index series, Wellington via
-Hartford and 17 more Capital Group trusts, doi:10.5281/zenodo.24326076) and the code at
+Hartford and 17 more Capital Group trusts, doi:10.5281/zenodo.24326076;
+version 2026-11-18, adding Nuveen/TIAA, Columbia, Parametric and 19 SAI-printed
+policy versions, doi:10.5281/zenodo.24329615) and the code at
 https://github.com/glasshouse-records/promises-kept-or-not, both credited to
 "Glasshouse". Nothing else has been sent or shown to anyone; the drafts below
 are still private.

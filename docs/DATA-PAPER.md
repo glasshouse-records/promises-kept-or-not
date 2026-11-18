@@ -222,6 +222,6 @@ working ledger. The DATASHEET records the exact commit used.
 
 ## Data availability
 
-Zenodo: this release doi:10.5281/zenodo.24326076; all versions
+Zenodo: this release doi:10.5281/zenodo.24329615; all versions
 doi:10.5281/zenodo.24321606 (resolves to the latest).
 Licence CC BY 4.0. Corrections via GitHub issues.

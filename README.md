@@ -11,8 +11,8 @@ On top sit an evidence engine (`glasshouse ask`, cited queries) and a checker
 (`glasshouse desk verify`, which re-runs every claim in a draft). The dataset is
 the product.
 
-**Status, 2026-11-17:** published. Data: Zenodo,
-[doi:10.5281/zenodo.24326076](https://doi.org/10.5281/zenodo.24326076) (latest version, 2026-11-17.3;
+**Status, 2026-11-18:** published. Data: Zenodo,
+[doi:10.5281/zenodo.24329615](https://doi.org/10.5281/zenodo.24329615) (latest version, 2026-11-18;
 all versions: [10.5281/zenodo.24321606](https://doi.org/10.5281/zenodo.24321606)).
 Code: <https://github.com/glasshouse-records/promises-kept-or-not>.
 The `findings` table is empty: no claim has passed human review. Drafts in
@@ -288,8 +288,8 @@ quotations not in the archived text, and words that assert motive or wrongdoing.
 Cite the version you used:
 
 > Glasshouse (2026). *Glasshouse — institutional accountability evidence dataset
-> (say vs. do)*, version 2026-11-17.3 [Data set]. Zenodo.
-> https://doi.org/10.5281/zenodo.24326076
+> (say vs. do)*, version 2026-11-18 [Data set]. Zenodo.
+> https://doi.org/10.5281/zenodo.24329615
 
 To refer to the dataset in general (every version), use
 https://doi.org/10.5281/zenodo.24321606. The bundle's `DATASHEET.md` records the
