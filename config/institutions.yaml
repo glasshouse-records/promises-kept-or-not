@@ -1353,3 +1353,59 @@ institutions:
           # The 2023 SAI follows the policy with the Voting Guidelines (a different document, kept out so every edition covers the same text); 2024+ with Appendix B.
           end: ["Wellington Management Company LLP Global Proxy Voting Guidelines", "APPENDIX B: CREDIT RATINGS"]
           strip_page_numbers: true   # the SAI's printed page numbers (94 -> 95) must not look like edits
+
+  parametric:
+    display_name: "Parametric Portfolio Associates LLC"
+    short_name: "Parametric"
+    cik: "0000932859"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Parametric Portfolio Associates LLC (a Morgan Stanley subsidiary since the 2021 Eaton Vance acquisition; 13-F filer, and files N-PX as an institutional manager under the same CIK 932859). Parametric has no fund trust of its own: it votes proxies as sub-adviser for funds sitting in Eaton Vance trusts, added 2026-11-18 per series. aum_usd_tr left 0 (firm AUM not verified from an official source), so it carries no weight in AUM-weighted metrics."
+    npx_ciks:
+      # Added 2026-11-18 (Parametric follow-up). Only a series whose OWN SAI names Parametric as its sub-adviser (the only sub-advisory agreement it
+      # lists) under an SAI proxy-voting section that delegates all proxy voting to "the investment sub-adviser" is keyed PARAMETRIC. Everything else
+      # in the trust (Eaton Vance, Morgan Stanley Investment Management Limited and Eaton Vance Advisers International voted series) stays unlabelled.
+      # `from` is the effective date printed on the earliest SAI read that makes the statement; earlier meetings stay unlabelled.
+      - cik: "745463"
+        adviser: "Eaton Vance Management is the investment adviser; Parametric Portfolio Associates LLC is sub-adviser and votes the proxies of the series keyed PARAMETRIC below; other series not attributed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/745463/000113322826008463/pvrpevmft-efp24766_485bpos.htm"  # 485BPOS filed 2026-05-28; SAIs of June 1, 2026
+        adviser_verified: "2026-11-18"
+        voting_note: "Series keyed PARAMETRIC: the series' own SAI states Parametric is its sub-adviser (its only sub-advisory agreement) and that the Board delegated proxy voting to the investment sub-adviser, whose policy the SAI prints. All other series are left unlabelled."
+        series_adviser:
+          S000012701: [{key: PARAMETRIC, from: "2025-06-01"}]  # Parametric Emerging Markets Fund; SAI dated 2025-06-01 in 0001076598-25-000134 (filed 2025-05-29), reaffirmed 0001133228-26-008463 (2026-05-28)
+          S000028355: [{key: PARAMETRIC, from: "2025-06-01"}]  # Parametric International Equity Fund; SAI dated 2025-06-01 in 0001076598-25-000134 (filed 2025-05-29), reaffirmed 0001133228-26-008463 (2026-05-28)
+          S000056237: [{key: PARAMETRIC, from: "2025-06-01"}]  # Parametric Volatility Risk Premium - Defensive Fund; SAI dated 2025-06-01 in 0001076598-25-000134 (filed 2025-05-29), reaffirmed 0001133228-26-008463 (2026-05-28)
+          S000032773: [{key: PARAMETRIC, from: "2025-05-01"}]  # Parametric Commodity Strategy Fund; SAI dated 2025-05-01 in 0001076598-25-000030 (filed 2025-04-28), reaffirmed 0001133228-26-006989 (2026-04-28)
+          S000044370: [{key: PARAMETRIC, from: "2025-07-01"}]  # Parametric Dividend Income Fund; SAI dated 2025-07-01 in 0001076598-25-000255 (filed 2025-06-26)
+        name: "Eaton Vance Mutual Funds Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "74663"
+        adviser: "Eaton Vance Management is the investment adviser; Parametric Portfolio Associates LLC is sub-adviser and votes the proxies of the series keyed PARAMETRIC below; other series not attributed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/74663/000094039424001024/evstii-20240630.htm"  # 485BPOS filed 2024-10-24; SAI dated 2024-11-01, reaffirmed 2025-10-27 and 2026-10-27
+        adviser_verified: "2026-11-18"
+        voting_note: "Series keyed PARAMETRIC: the series' own SAI states Parametric is its sub-adviser and that the Board delegated proxy voting to the investment sub-adviser, whose policy the SAI prints. Eaton Vance Income Fund of Boston (S000004984) is Eaton Vance/BMR-advised and left unlabelled."
+        series_adviser:
+          S000002405: [{key: PARAMETRIC, from: "2024-11-01"}]  # Parametric Tax-Managed Emerging Markets Fund; SAI 0000940394-24-001024 filed 2024-10-24 (dated 2024-11-01), reaffirmed 0001133228-25-011235 (2025-10-27) and 0001133228-26-013641 (2026-10-27)
+        name: "Eaton Vance Series Trust II"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Parametric votes the proxies of the six series keyed PARAMETRIC (Eaton Vance Mutual Funds Trust: Parametric Emerging Markets, International Equity, Volatility Risk Premium - Defensive, Commodity Strategy, Dividend Income; Eaton Vance Series Trust II: Parametric Tax-Managed Emerging Markets) per each series' own SAI, which names Parametric as sub-adviser and says the Board delegated proxy voting to the investment sub-adviser; keyed from the effective date of the earliest such SAI read (2024-11-01 to 2025-07-01), earlier meetings stay unlabelled."
+      - "Left unlabelled, not attributed: Parametric Tax-Managed International Equity Fund (S000005279; N-PX of 2025 only, no SAI of its own was located), every Eaton Vance, Eaton Vance Tax-Managed and fixed-income series (Eaton Vance Management, BMR, Eaton Vance Advisers International or MSIM Limited advise or sub-advise them), and Eaton Vance Series Trust, Investment Trust, Variable Trust and Series Fund, whose SAIs name Parametric only in boilerplate. Unlabelled lines are not asserted to be voted by anyone."
+      - "Morgan Stanley ETF Trust (CIK 1676326; Parametric Equity Plus, Equity Premium Income and Hedged Equity ETFs) is NOT attributed and not ingested here: its SAI says the Trustees delegated proxy voting to the Adviser (Morgan Stanley Investment Management Inc.) under MSIM's Proxy Voting Policy, with Parametric only a sub-adviser under the Adviser's supervision. Innovator ETFs sub-advised by Parametric were not read."
+      - "The Parametric Portfolio Associates LLC N-PX filings (CIK 932859) are institutional-manager reports and are not ingested here; the sub-advised fund votes appear in the Eaton Vance trusts' own N-PX, so ingesting both would count the same ballots twice."
+      - "Policy text: Parametric's own website (parametricportfolio.com) rejects requests that identify themselves honestly (403, 2026-11-18), so no website copy is archived (see METHODOLOGY source-access notes). The SAI of Eaton Vance Series Trust II printed Parametric's own policy in the 2023, 2024 and 2025 editions (archived as parametric-proxy-voting-policy-as-printed-in-sai); the 2026 SAIs instead print the Morgan Stanley Investment Management Equity Proxy Voting Policy (which lists Parametric Portfolio Associates LLC as a covered MSIM affiliate), a different document that is not archived under Parametric's key."
+    commitments:
+      # The SAI of the single-fund Parametric Tax-Managed Emerging Markets Fund prints Parametric's own policy as its Appendix C (2023, 2024, 2025 editions; the
+      # 2026 editions print the MSIM Equity policy instead and contribute nothing, since the start marker is absent). Page footers ("Parametric Tax-Managed
+      # Emerging Markets Fund 109 SAI dated November 1, 2024") stay inside the text: constant within an edition, and every edition is a genuinely re-dated policy.
+      - label: parametric-proxy-voting-policy-as-printed-in-sai
+        adviser: "Parametric Portfolio Associates LLC"
+        adviser_key: "PARAMETRIC"
+        sai_appendix:
+          cik: "0000074663"
+          forms: ["485BPOS"]
+          since: "2023-01-01"
+          start: "PARAMETRIC PORTFOLIO ASSOCIATES LLC PROXY VOTING POLICIES AND PROCEDURES"
+          end: "PART C - OTHER INFORMATION"
+          strip_page_numbers: true

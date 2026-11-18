@@ -212,6 +212,18 @@ Filings that cannot be extracted are therefore missing versions, not guesses;
 a policy edit between two extracted filings is dated to the later one's
 filing, so the version in force may have been public earlier than shown.
 
+Parametric Portfolio Associates (added 2026-11-18): parametricportfolio.com
+answers requests that identify themselves honestly with 403 (probed
+2026-11-18; the same pages open for other client strings). Glasshouse does not
+change its identification to get in, so no website copy of Parametric's policy is
+archived. The only dated text is the SAI route: the Parametric Tax-Managed
+Emerging Markets Fund SAI printed Parametric's own policy as an appendix in
+the 2023, 2024 and 2025 editions (label `parametric-proxy-voting-policy-as-printed-in-sai`;
+printed page footers stay in the text). The 2026 SAIs print Morgan Stanley
+Investment Management's Equity Proxy Voting Policy instead, which names
+Parametric as a covered affiliate but is a different document and is not
+filed under Parametric's key. Re-check the website if a sanctioned path appears.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting
