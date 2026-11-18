@@ -2128,7 +2128,7 @@ institutions:
         name: "American Century Strategic Asset Allocations, Inc."
         validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
       - cik: "814680"
-        npx_ended: {last_period: "2025-06-30", reason: "deregistered: N-8F filed 2026-07-27", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000814680&type=N-8F", checked: "2026-11-18"}
+        npx_ended: {last_period: "2025-06-30", reason: "deregistered: N-8F filed 2026-07-27", source: "https://www.sec.gov/Archives/edgar/data/814680/000081468026000005/0000814680-26-000005-index.htm", checked: "2026-11-18"}
         adviser: "American Century Investment Management, Inc. (ACIM); no outside voter named"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/814680/000081468022000040/ck0000814680-20211231.htm"  # 485BPOS filed 2022-04-14, SAI dated May 1, 2022; later annual editions not opened
         adviser_verified: "2026-11-18"
@@ -2343,7 +2343,7 @@ institutions:
         name: "AB Global Bond Fund, Inc."
         validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
       - cik: "1018368"
-        npx_ended: {last_period: "2025-06-30", reason: "deregistered: N-8F notice 2025-12-02, order 2026-01-07", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001018368&type=N-8F", checked: "2026-11-18"}
+        npx_ended: {last_period: "2025-06-30", reason: "deregistered: N-8F notice 2025-12-02, order 2026-01-07", source: "https://www.sec.gov/Archives/edgar/data/1018368/999999999726000021/9999999997-26-000021-index.htm", checked: "2026-11-18"}
         adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/1018368/000091957422002005/abgrifi-20220228.htm"  # 485BPOS filed 2022-03-01, SAI Appendix A; later annual editions not opened
         adviser_verified: "2026-11-18"
