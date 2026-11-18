@@ -2645,3 +2645,130 @@ institutions:
             - "Proxy Voting Report A report on"
           strip_patterns:
             - '(?<![\w$(./,-])[3-4]\d(?![\w%.,)/-])'
+
+  neuberger_berman:
+    display_name: "Neuberger Berman (Neuberger Berman Investment Advisers LLC)"
+    short_name: "Neuberger Berman"
+    cik: "0001465109"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Neuberger Berman, New York. CIK 1465109 is Neuberger Berman Group LLC, the 13-F filer (13F-HR) and parent of Neuberger Berman Investment Advisers LLC ('NBIA', CIK 1230440, the investment manager that votes the US NB funds' proxies under the Neuberger Berman Proxy Voting Policies and Procedures). Group LLC also files an institutional-manager N-PX voting report (separate-account say-on-pay votes) that is not a fund registrant and is not ingested here. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-18. Neuberger Berman's own US fund registrants that file N-PX vote tables with operating-company votes. Every trust's SAI (and for the closed-end funds Item 7 of the
+      # N-CSR) says the Board has delegated to NBIA the responsibility to vote proxies and prints the NB Proxy Voting Policies and Procedures (SAIs: Appendix B). Two series are voted by an
+      # outside sub-adviser and are kept apart as EXTERNAL: the Absolute Return Multi-Manager Fund (Alternative Funds; its SAI says NBIA 'has delegated to each Subadviser by contract the
+      # responsibility to vote proxies' under the Subadviser's own policy, Appendix B of that SAI) and the Greater China Equity Fund (Equity Funds; sub-adviser Green Court Capital Management
+      # Limited, whose own proxy voting policy the SAI prints as Appendix C; the fund has no N-PX in the window). Sub-advisers named elsewhere (Neuberger Berman Europe Limited, Neuberger Berman
+      # Asia) are NB affiliates covered by the NBIA policy. `from` is the EDGAR filing date of the earliest SAI (N-CSR for the closed-end funds) read, 2022; earlier meetings stay unlabelled.
+      - cik: "44402"
+        adviser: "Neuberger Berman Investment Advisers LLC (NBIA)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/44402/000120677422002878/nb413556-485bpos.htm"  # 485BPOS filed 2022-12-15 (0001206774-22-002878), SAI 'Proxy Voting': the Board has delegated to NBIA the responsibility to vote proxies; Appendix B prints the NB policy (April 2019 edition); later annual editions not all opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting: 'The Board has delegated to NBIA the responsibility to vote proxies related to the securities held in the Funds' portfolios' under NBIA's Proxy Voting Policy (Appendix B prints it). The Greater China Equity Fund is sub-advised by Green Court, whose own proxy voting policy the SAI prints (Appendix C), so that series is EXTERNAL; the SAI also says NBIA keeps separate proxy voting guidelines for the Sustainable Equity Fund (still NBIA). Keyed from the filing date of the earliest filing read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: NEUBERGER_BERMAN, from: "2022-12-15"}]
+        series_adviser:
+          S000041658: [{key: EXTERNAL, from: "2022-12-15"}]   # Greater China Equity Fund: sub-adviser Green Court, own policy (Appendix C)
+        name: "NEUBERGER BERMAN EQUITY FUNDS"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "736913"
+        adviser: "Neuberger Berman Investment Advisers LLC (NBIA)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/736913/000089843222000287/nbamt-20220420.htm"  # 485BPOS filed 2022-04-20 (0000898432-22-000287), SAI 'Proxy Voting': the Board has delegated to NBIA the responsibility to vote proxies; Appendix B prints the NB policy (April 2019 edition); later annual editions not all opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting: 'The Board has delegated to NBIA the responsibility to vote proxies related to the securities held in the Funds' portfolios' under NBIA's Proxy Voting Policy (Appendix B prints it). Keyed from the filing date of the earliest filing read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: NEUBERGER_BERMAN, from: "2022-04-20"}]
+        name: "NEUBERGER BERMAN ADVISERS MANAGEMENT TRUST"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1317474"
+        adviser: "Neuberger Berman Investment Advisers LLC (NBIA)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1317474/000089843222000127/nbaf-20220225.htm"  # 485BPOS filed 2022-02-25 (0000898432-22-000127), two SAIs in one document; later annual editions not all opened
+        adviser_verified: "2026-11-18"
+        voting_note: "Two SAIs in the 2022-02-25 filing. The Absolute Return Multi-Manager Fund SAI: NBIA 'has delegated to each Subadviser by contract the responsibility to vote proxies for the Fund's portfolio securities allocated to such Subadviser' under each Subadviser's policy (Appendix B), so that series is EXTERNAL. The SAI covering the Commodity Strategy, Global Allocation, Long Short and U.S. Equity Index PutWrite Strategy funds says 'The Board has delegated to NBIA the responsibility to vote proxies related to the securities held in the Funds' portfolios' (no Subadviser). Keyed from the filing date of the earliest SAI read. Keyed from the filing date of the earliest filing read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: NEUBERGER_BERMAN, from: "2022-02-25"}]
+        series_adviser:
+          S000036681: [{key: EXTERNAL, from: "2022-02-25"}]   # Absolute Return Multi-Manager Fund: Subadvisers vote
+        name: "NEUBERGER BERMAN ALTERNATIVE FUNDS"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1506001"
+        adviser: "Neuberger Berman Investment Advisers LLC (NBIA)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1506001/000120677422002804/nb413557-485bpos.htm"  # 485BPOS filed 2022-12-14 (0001206774-22-002804), SAI 'Proxy Voting': the Board has delegated to NBIA the responsibility to vote proxies; Appendix B prints the NB policy; later annual editions not all opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting: 'The Board has delegated to NBIA the responsibility to vote proxies related to the securities held in the Funds' portfolios' under NBIA's Proxy Voting Policy (Appendix B prints it). The sub-adviser named in later SAIs (Neuberger Berman Europe Limited) is an NB affiliate. The 2022-09-16 SAI covers the Commodity Strategy ETF only (notice-report series); the first SAI read that covers the voting series is the 2022-12-14 one. Keyed from the filing date of the earliest filing read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: NEUBERGER_BERMAN, from: "2022-12-14"}]
+        name: "Neuberger Berman ETF Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1843181"
+        adviser: "Neuberger Berman Investment Advisers LLC (NBIA)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1843181/000089843222000026/ncsr.htm"  # N-CSR filed 2022-01-05 (0000898432-22-000026), Item 7; later annual editions not all opened
+        adviser_verified: "2026-11-18"
+        voting_note: "N-CSR Item 7: 'the Board has delegated to Neuberger Berman Investment Advisers LLC (NBIA) the responsibility to vote proxies related to the securities held in the Registrant's portfolio' under NBIA's Proxy Voting Policy; the closed-end fund has no 485BPOS SAI. Keyed from the filing date of the earliest filing read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: NEUBERGER_BERMAN, from: "2022-01-05"}]
+        name: "Neuberger Next Generation Connectivity Fund Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1562051"
+        adviser: "Neuberger Berman Investment Advisers LLC (NBIA)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1562051/000089843222000077/n-csr.htm"  # N-CSR filed 2022-02-04 (0000898432-22-000077), Item 7; later annual editions not all opened
+        adviser_verified: "2026-11-18"
+        voting_note: "N-CSR Item 7: 'the Board has delegated to Neuberger Berman Investment Advisers LLC (NBIA) the responsibility to vote proxies related to the securities held in the Registrant's portfolio' under NBIA's Proxy Voting Policy; the closed-end fund has no 485BPOS SAI. Keyed from the filing date of the earliest filing read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: NEUBERGER_BERMAN, from: "2022-02-04"}]
+        name: "Neuberger Energy Infrastructure & Income Fund Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1487610"
+        adviser: "Neuberger Berman Investment Advisers LLC (NBIA)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1487610/000089843222000023/ncsr.htm"  # N-CSR filed 2022-01-05 (0000898432-22-000023), Item 7; later annual editions not all opened
+        adviser_verified: "2026-11-18"
+        voting_note: "N-CSR Item 7: 'the Board has delegated to Neuberger Berman Investment Advisers LLC (NBIA) the responsibility to vote proxies related to the securities held in the Registrant's portfolio' under NBIA's Proxy Voting Policy; the closed-end fund has no 485BPOS SAI. Keyed from the filing date of the earliest filing read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: NEUBERGER_BERMAN, from: "2022-01-05"}]
+        name: "Neuberger High Yield Strategies Fund Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1261166"
+        adviser: "Neuberger Berman Investment Advisers LLC (NBIA)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1261166/000089843222000027/ncsr.htm"  # N-CSR filed 2022-01-05 (0000898432-22-000027), Item 7; later annual editions not all opened
+        adviser_verified: "2026-11-18"
+        voting_note: "N-CSR Item 7: 'the Board has delegated to Neuberger Berman Investment Advisers LLC (NBIA) the responsibility to vote proxies related to the securities held in the Registrant's portfolio' under NBIA's Proxy Voting Policy; the closed-end fund has no 485BPOS SAI. Keyed from the filing date of the earliest filing read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: NEUBERGER_BERMAN, from: "2022-01-05"}]
+        name: "NEUBERGER REAL ESTATE SECURITIES INCOME FUND INC"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1818105"
+        adviser: "Neuberger Berman Investment Advisers LLC (NBIA)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1818105/000110465922068492/tm2216676d2_ncsr.htm"  # N-CSR filed 2022-06-06 (0001104659-22-068492), Item 7; later annual editions not all opened
+        adviser_verified: "2026-11-18"
+        voting_note: "N-CSR Item 7: 'the Registrant has delegated responsibility to vote any proxies the Registrant may receive to the Investment Adviser, Neuberger Berman Investment Advisers LLC (NBIA)' under NBIA's Proxy Voting Policy; the closed-end fund has no 485BPOS SAI. Its N-PX tables are tiny (underlying-fund ballots) but are real votes by NBIA. Keyed from the filing date of the earliest filing read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: NEUBERGER_BERMAN, from: "2022-06-06"}]
+        name: "Neuberger Private Markets Access Fund LLC"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed NEUBERGER_BERMAN, per registrant, from the EDGAR filing date of the earliest SAI read (the closed-end funds from their N-CSR, Item 7): Advisers Management Trust (736913) 2022-04-20, Alternative Funds (1317474) 2022-02-25, ETF Trust (1506001) 2022-12-14, Equity Funds (44402) 2022-12-15, Next Generation Connectivity Fund (1843181), High Yield Strategies Fund (1487610) and Real Estate Securities Income Fund (1261166) 2022-01-05, Energy Infrastructure & Income Fund (1562051) 2022-02-04, Private Markets Access Fund (1818105) 2022-06-06. Earlier meetings stay unlabelled. The Equity Funds trust reaches back to a 2021 SAI that was not read."
+      - "Voted by outside sub-advisers, key EXTERNAL, never paired with a policy: Alternative Funds Absolute Return Multi-Manager Fund (S000036681, Subadvisers vote under their own policies, from 2022-02-25) and Equity Funds Greater China Equity Fund (S000041658, Green Court, from 2022-12-15; no N-PX in the window)."
+      - "Not ingested, not keyed: the municipal closed-end funds (Neuberger Municipal Fund 1178839, whose N-PX is a notice report, and the California and New York municipal funds 1178840 and 1178841, last N-PX 2023), the NB Crossroads Private Markets and NB Private Markets funds (notice reports), the Neuberger Berman trust companies and non-US advisers (institutional-manager notice reports), NBIA (1230440, a notice report) and Neuberger Berman Group LLC (1465109, whose institutional-manager voting report holds separate-account votes, not fund votes), and older closed-end funds with no N-PX in the window. Series that file only notice reports inside a voting trust (Equity Funds Equity Income Fund S000013716, Advisers Management Trust Real Estate, Short Duration Bond and PutWrite Portfolios, ETF Trust Commodity Strategy ETF and two others) hold no operating-company votes. The 2023-08 legacy-HTML N-PX is not ingested."
+      - "Policy text: the Neuberger Berman Proxy Voting Policies and Procedures PDF (nb.com handlers/documents.ashx?id=e6b2f962-93ae-48b5-854e-627c89b3ea7f; /proxy-voting redirects to it). www.nb.com answers honest requests with a Vercel bot challenge (HTTP 429, x-vercel-mitigated: challenge) that Glasshouse does not evade, so the live copy cannot be captured; the editions are archived from the Wayback Machine (captures 2022-05-17 to 2026-05-11: editions January 2022, February 2023, March 2024, February 2025, and a re-issue of the February 2025 edition with 'NB' spelled 'Neuberger' and renumbered headings). Under a separate label, the policy as printed in Appendix B of the Advisers Management Trust SAI (one copy per annual 485BPOS; heading to Part C; page marks 'B- n' removed). The SAIs print an edition up to two years late (April 2019 in the SAIs of 2022 and 2023), so SAI dates are upper bounds."
+    commitments:
+      # nb.com is gated by a bot challenge (429), so this label is filled by the Wayback walk (id_ endpoint); a live fetch is logged as a failed attempt. /proxy-voting redirected here;
+      # the nameless address (what /proxy-voting redirected to) is listed first because the Wayback walk records the first capture of each text it meets: it holds the earliest captures
+      # (2022-05, 2024-07, 2024-11, 2025-04), the `&name=` address (2022-07, 2023-08, 2025-11, 2026-05) the later ones. The policy is the PDF, so no `body` bound is needed.
+      - label: proxy-voting-policies-and-procedures
+        url: "https://www.nb.com/handlers/documents.ashx?id=e6b2f962-93ae-48b5-854e-627c89b3ea7f"
+        former_urls:
+          - "https://www.nb.com/handlers/documents.ashx?id=e6b2f962-93ae-48b5-854e-627c89b3ea7f&name=S0301_nb_proxy_policy_procedures"
+        adviser: "Neuberger Berman Investment Advisers LLC"
+        adviser_key: "NEUBERGER_BERMAN"
+      # The same policy as printed in Appendix B of the Advisers Management Trust SAI, dated by EDGAR filing date. Separate label from the website PDF (different formatting would invent
+      # alternating versions). One heading per printed edition; the section runs to Part C of the registration statement; the page marks "B- 3" are stripped.
+      - label: neuberger-berman-proxy-voting-policies-and-procedures-as-printed-in-sai
+        adviser: "Neuberger Berman Investment Advisers LLC"
+        adviser_key: "NEUBERGER_BERMAN"
+        sai_appendix:
+          cik: "0000736913"
+          forms: ["485BPOS"]
+          since: "2022-01-01"
+          start:
+            - "APPENDIX B APRIL 2019 PROXY VOTING POLICIES AND PROCEDURES I. INTRODUCTION AND GENERAL PRINCIPLES"
+            - "Appendix B March 2024 Proxy Voting Policies and Procedures I. Introduction and General Principles"
+            - "Appendix B Proxy Voting Policies and Procedures February 2025 I. Introduction and General Principles"
+          end:
+            - "PART C OTHER INFORMATION"
+          strip_patterns:
+            - '\bB- ?\d{1,2}\b'
+            # The page header "Proxy Voting Policies and Procedures" (upper case in the 2019 edition) falls at a different spot in each filing and would mint a
+            # phantom version of unchanged text; only the edition heading (after "2019", "2024" or "Appendix B") keeps the title.
+            - '(?<!2019)(?<!2024)(?<!Appendix B) (?:PROXY VOTING POLICIES AND PROCEDURES|Proxy Voting Policies and Procedures)'

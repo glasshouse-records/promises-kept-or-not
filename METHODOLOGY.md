@@ -407,6 +407,54 @@ Series per series). Money Market Obligations Trust and three municipal trusts (o
 Nuveen and BlackRock fund ballots), the Core Trust (no SAI exists to say who votes) and
 the notice-only registrants are not ingested.
 
+Neuberger Berman (added 2026-11-18): www.nb.com answers requests that identify
+themselves honestly with HTTP 429 and `x-vercel-mitigated: challenge` (a Vercel bot
+challenge, probed 2026-11-18 on `/proxy-voting`, `/robots.txt` and the policy PDF;
+a plain `curl` and the pipeline's own client get the same answer). Glasshouse does not
+change its identification or solve the challenge, and a 429 is not a removal, so no
+live copy of the policy can be captured today and the capture attempt is logged as
+failed (the doctor reports it; the live label stays configured so the day the
+challenge lifts, capture resumes). The sanctioned path is the Wayback Machine:
+`/proxy-voting` redirected (301, seen in the 2024-07-12 capture) to the policy PDF
+`nb.com/handlers/documents.ashx?id=e6b2f962-93ae-48b5-854e-627c89b3ea7f` (also served
+as `...&name=S0301_nb_proxy_policy_procedures`), and Wayback holds captures of both
+addresses from 2022-05-17 to 2026-05-11. They are archived as
+`proxy-voting-policies-and-procedures`; the policy is a PDF, so no `body` bound is
+needed. Editions by the date the PDF prints: January 2022, February 2023, March
+2024, February 2025, and a re-issue of the February 2025 edition (capture 2026-05-11)
+that spells "NB" out as "Neuberger" and renumbers the headings. The nameless address is
+walked first because the walk keeps the first capture of each text it meets; the
+2022-05-17 and 2025-04-13 captures carry the same text as the later `&name=` captures
+of 2022-07-26 and 2025-11-02, so where an earlier capture was met second the
+version is dated by the later one (an upper bound). The dated route is
+`neuberger-berman-proxy-voting-policies-and-procedures-as-printed-in-sai`: Appendix B of the
+Neuberger Berman Advisers Management Trust SAI (the trust whose April filing prints
+one copy; the Equity Funds SAI prints the same editions in December and, in 2026,
+twice), read from the edition heading to "PART C OTHER INFORMATION" so the last
+sentence ("...break a tie vote.") is kept. Page marks "B- 3" and the running page
+header "Proxy Voting Policies and Procedures", which falls at a different place in
+each filing and minted phantom versions, are removed; the edition heading keeps
+its title. It yields five versions: April 2019 (filed 2022-04-20; the SAI still
+printed this 2019 edition in 2022 and 2023), the same edition with an updated
+Proxy Committee roster (2023-04-14), March 2024 (2024-04-16), February 2025
+(2025-04-15) and the "Neuberger" re-issue (2026-04-15). The SAI prints an edition up to
+two years after the manager published it, so SAI dates are upper bounds.
+Voting: each trust's SAI says "The Board has delegated to NBIA the responsibility to
+vote proxies related to the securities held in the Funds' portfolios" (the
+closed-end funds say it in Item 7 of the N-CSR) and prints the NB policy. Two series
+are voted by an outside sub-adviser and are keyed EXTERNAL: the Absolute Return
+Multi-Manager Fund of Alternative Funds (its SAI: NBIA "has delegated to each
+Subadviser by contract the responsibility to vote proxies", under each Subadviser's
+policy) and the Greater China Equity Fund of Equity Funds (sub-adviser Green Court,
+whose own proxy voting policy the SAI prints; no N-PX in the window). Sub-advisers
+that are NB affiliates (Neuberger Berman Europe Limited, Neuberger Berman Asia) vote
+under the NBIA policy. Each registrant is keyed from the EDGAR filing date of the
+earliest SAI (N-CSR for the closed-end funds) read, 2022-01-05 to 2022-12-15. The
+municipal funds, NB Crossroads and NB Private Markets funds, the Neuberger Berman
+trust companies and non-US advisers, NBIA (all notice reports) and Neuberger Berman
+Group LLC (an institutional-manager report of separate-account votes, not fund votes)
+are not ingested.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting
