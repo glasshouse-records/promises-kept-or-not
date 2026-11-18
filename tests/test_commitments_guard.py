@@ -8,7 +8,7 @@ import pytest
 from glasshouse import ledger
 from glasshouse.ingest import commitments
 
-_REAL_PDF = b"%PDF-1.7\nWe are committed to climate risk oversight in our voting."
+_REAL_PDF = b"%PDF-1.7\nWe are committed to climate risk oversight in our voting.\n%%EOF\n"
 _404_HTML = (b"<!DOCTYPE HTML><html lang=en><head><title>404 Error - Page not "
              b"found | Vanguard</title></head><body>Sorry.</body></html>")
 _REAL_HTML = (b"<!doctype html><html><head><title>Proxy Voting Policy</title></head>"

@@ -539,7 +539,9 @@ def purge_error_pages(conn: sqlite3.Connection) -> int:
         p = Path(r["content_path"])
         if not p.exists():
             continue
-        if looks_like_error_page(p.read_bytes(), r["content_type"] or ""):
+        content = p.read_bytes()
+        # A truncated PDF (no %%EOF in its tail) is a failed capture, never a version.
+        if looks_like_error_page(content, r["content_type"] or "") or pdf_looks_truncated(content):
             conn.execute("UPDATE commitments SET superseded=1 WHERE id = ?", (r["id"],))
             purged += 1
     conn.commit()

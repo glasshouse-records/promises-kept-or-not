@@ -487,7 +487,7 @@ def cmd_ingest_commitments(args) -> int:
     conn = _conn()
     if args.purge_errors:
         n = commitments.purge_error_pages(conn)
-        print(f"  purged {n} error-page rows masquerading as policy versions")
+        print(f"  purged {n} error-page or truncated-PDF rows masquerading as policy versions")
         return 0
     insts = registry.load()
     new = commitments.fetch_live(conn, insts)

@@ -74,3 +74,25 @@ def test_capture_attempts_accepts_needs_review_on_old_and_new_ledgers(tmp_path):
               " VALUES ('a','b','u','t','needs_review')")
     assert c.execute("SELECT COUNT(*) FROM capture_attempts").fetchone()[0] == 2
     assert isinstance(c, sqlite3.Connection)
+
+
+def test_purge_retires_truncated_pdf_captures(tmp_path, monkeypatch):
+    """A PDF with no %%EOF in its tail is a failed capture, never a version
+    (Wayback serves some large PDFs cut at 1 MiB). Captures recorded before the
+    ingest guard existed are retired by the same purge, keeping row and file."""
+    monkeypatch.setattr(commitments, "COMMITMENTS_DIR", tmp_path / "c")
+    conn = ledger.connect(tmp_path / "t.db")
+    conn.execute("INSERT INTO institutions (id, display_name) VALUES ('x','X')")
+    cut = tmp_path / "cut.pdf"
+    cut.write_bytes(b"%PDF-1.7\n" + b"0" * 4000)              # no end marker
+    whole = tmp_path / "whole.pdf"
+    whole.write_bytes(b"%PDF-1.7\n" + b"0" * 4000 + b"\n%%EOF\n")
+    for sha, p in (("a", cut), ("b", whole)):
+        conn.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date,"
+                     " sha256, content_path, content_type) VALUES ('x','p','u','2026-01-01',?,?,"
+                     "'application/pdf')", (sha, str(p)))
+    conn.commit()
+    assert commitments.purge_error_pages(conn) == 1
+    rows = dict(conn.execute("SELECT sha256, superseded FROM commitments"))
+    assert rows == {"a": 1, "b": 0}
+    assert cut.exists()
