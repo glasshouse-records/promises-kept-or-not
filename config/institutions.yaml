@@ -2062,3 +2062,118 @@ institutions:
           strip_patterns:
             - '^restated in its entirety as follows: APPENDIX E [–-] PROXY VOTING POLICIES AND PROCEDURES'
             - '(?:\b\d{1,2} )?MULTI-SAI-SUP-I-\d{6}(?: \d{1,2}\b)?'
+
+  american_century:
+    display_name: "American Century Investments (American Century Investment Management, Inc.)"
+    short_name: "American Century"
+    cik: "0000748054"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "American Century Investments, Kansas City (Nomura holds an equity stake in the parent, American Century Companies, Inc.). CIK 748054 is American Century Companies Inc, the 13-F filer (file 028-11918) and the filer of the institutional-manager voting report; American Century Investment Management, Inc. (ACIM, CIK 52388) is the investment adviser that votes the funds' proxies and files only a notice report. Avantis Investors is an ACIM business unit. Added 2026-11-18. aum_usd_tr left 0 (firm AUM not verified from an official source), so it carries no weight in AUM-weighted metrics."
+    npx_ciks:
+      # Added 2026-11-18. ACIM's own US fund registrants that file N-PX vote tables with operating-company votes. Every trust's SAI (Proxy Voting Policies) says the advisor
+      # (ACIM) is responsible for exercising the voting rights, or, for the two trusts that print a board statement of principles, that the funds have delegated that
+      # responsibility to the advisor, and prints ACIM's proxy voting policies as an appendix. Sub-advisers named (Nomura Corporate Research and Asset Management Inc. for the
+      # Investment Trust High Income Fund and the ETF Trust Select High Yield ETF) are investment sub-advisers only: the SAI voting delegation to ACIM carries no carve-out, so no
+      # series is EXTERNAL. Avantis funds and ETFs are ACIM products under the same policy. `from` is the EDGAR filing date of the earliest 485BPOS (with SAI) read, 2022; earlier
+      # meetings stay unlabelled.
+      - cik: "100334"
+        adviser: "American Century Investment Management, Inc. (ACIM); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/100334/000010033422000023/ck0000100334-20211031.htm"  # 485BPOS filed 2022-02-28, SAI dated March 1, 2022; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies: 'The advisor is responsible for exercising the voting rights associated with the securities purchased and/or held by the funds' and the Board approved the advisor's proxy voting policies (printed as an appendix). Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: AMERICAN_CENTURY, from: "2022-02-28"}]
+        name: "American Century Mutual Funds, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "908186"
+        adviser: "American Century Investment Management, Inc. (ACIM); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/908186/000090818622000040/ck0000908186-20211031.htm"  # 485BPOS filed 2022-02-28, SAI dated March 1, 2022; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies: 'The advisor is responsible for exercising the voting rights associated with the securities purchased and/or held by the funds' and the Board approved the advisor's proxy voting policies (printed as an appendix). Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: AMERICAN_CENTURY, from: "2022-02-28"}]
+        name: "American Century Capital Portfolios, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1710607"
+        adviser: "American Century Investment Management, Inc. (ACIM); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1710607/000171060722000311/ck0001710607-20220831.htm"  # 485BPOS filed 2022-12-29, American Century ETFs SAI; the Avantis-only SAI of 485BPOS 0001710607-22-000072 (filed 2022-03-07) says the same; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies: 'The advisor is responsible for exercising the voting rights associated with the securities purchased and/or held by the funds' and the Board approved the advisor's proxy voting policies (printed as an appendix). Select High Yield ETF is sub-advised by Nomura (model portfolio delivered to the advisor), voted by ACIM; Avantis ETFs and funds are managed by ACIM. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: AMERICAN_CENTURY, from: "2022-12-29"}]
+        name: "American Century ETF Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1353176"
+        adviser: "American Century Investment Management, Inc. (ACIM); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1353176/000135317622000026/ck0001353176-20220731.htm"  # 485BPOS filed 2022-11-28, SAI dated December 1, 2022; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies: 'The advisor is responsible for exercising the voting rights associated with the securities purchased and/or held by the funds' and the Board approved the advisor's proxy voting policies (printed as an appendix). Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: AMERICAN_CENTURY, from: "2022-11-28"}]
+        name: "American Century Growth Funds, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "827060"
+        adviser: "American Century Investment Management, Inc. (ACIM); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/827060/000082706022000045/ck0000827060-20210630.htm"  # 485BPOS filed 2022-05-04, SAI of the May 2022 485BPOS; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies: the Board adopted a general statement of proxy voting principles and 'the funds have delegated to the advisor the responsibility for exercising such rights'; ACIM's proxy voting policies are printed as an appendix. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: AMERICAN_CENTURY, from: "2022-05-04"}]
+        name: "American Century Quantitative Equity Funds, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "924211"
+        adviser: "American Century Investment Management, Inc. (ACIM); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/924211/000092421122000023/ck0000924211-20220731.htm"  # 485BPOS filed 2022-11-28, SAI dated December 1, 2022; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies: 'The advisor is responsible for exercising the voting rights associated with the securities purchased and/or held by the funds' and the Board approved the advisor's proxy voting policies (printed as an appendix). Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: AMERICAN_CENTURY, from: "2022-11-28"}]
+        name: "American Century Strategic Asset Allocations, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "814680"
+        adviser: "American Century Investment Management, Inc. (ACIM); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/814680/000081468022000040/ck0000814680-20211231.htm"  # 485BPOS filed 2022-04-14, SAI dated May 1, 2022; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies: 'The advisor is responsible for exercising the voting rights associated with the securities purchased and/or held by the funds' and the Board approved the advisor's proxy voting policies (printed as an appendix). Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: AMERICAN_CENTURY, from: "2022-04-14"}]
+        name: "American Century Variable Portfolios, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "872825"
+        adviser: "American Century Investment Management, Inc. (ACIM); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/872825/000087282522000022/ck0000872825-20211130.htm"  # 485BPOS filed 2022-03-30, SAI dated April 1, 2022; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies: 'The advisor is responsible for exercising the voting rights associated with the securities purchased and/or held by the funds' and the Board approved the advisor's proxy voting policies (printed as an appendix). Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: AMERICAN_CENTURY, from: "2022-03-30"}]
+        name: "American Century World Mutual Funds, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "908406"
+        adviser: "American Century Investment Management, Inc. (ACIM); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/908406/000090840622000011/ck0000908406-20210930.htm"  # 485BPOS filed 2022-05-18, SAI of the May 2022 485BPOS; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies: the Board adopted a general statement of proxy voting principles and 'the funds have delegated to the advisor the responsibility for exercising such rights'; ACIM's proxy voting policies are printed as an appendix. High Income Fund is sub-advised by Nomura Corporate Research and Asset Management Inc. (NCRAM); the delegation names the advisor only, no voting carve-out. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: AMERICAN_CENTURY, from: "2022-05-18"}]
+        name: "American Century Investment Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed AMERICAN_CENTURY, per registrant, from the EDGAR filing date of the earliest 485BPOS (SAI) read: Mutual Funds (100334) and Capital Portfolios (908186) 2022-02-28, World Mutual Funds (872825) 2022-03-30, Variable Portfolios (814680) 2022-04-14, Quantitative Equity Funds (827060) 2022-05-04, Investment Trust (908406) 2022-05-18, Growth Funds (1353176) and Strategic Asset Allocations (924211) 2022-11-28, ETF Trust (1710607) 2022-12-29 (the American Century ETFs SAI; the Avantis-only SAI of 2022-03-07 holds the same delegation). Earlier meetings stay unlabelled. The N-PX of the Variable Portfolios and Investment Trust hold few votes (underlying-fund and restructuring ballots)."
+      - "Not ingested, not keyed: Asset Allocation Portfolios (1293210, its N-PX hold only ballots of the American Century Capital Portfolios funds it owns), Government Income Trust (773674), Municipal Trust (746458), California Tax-Free and Municipal Funds (717316), International Bond Funds (880268) and Target Maturities Trust (757928) (bond trusts whose N-PX hold no operating-company votes, at most State Street Institutional Investment Trust or Vanguard fund ballots), Variable Portfolios II (1124155, a fund notice report), and the institutional-manager filers American Century Companies Inc (748054, a separate-account voting report of its own, not a fund) and ACIM (52388, a notice report). 13-F holdings not ingested here."
+      - "Policy text: the American Century Investment Management proxy voting policies, from americancentury.com (an HTML page that answers honest clients with 200; the page text includes site navigation, so a navigation change can add a version) and, under a separate label, as printed in Appendix E of the Mutual Funds SAI (one copy per 485BPOS; read from the appendix heading to the back cover, page numbers E-n removed)."
+    commitments:
+      # Verified 2026-11-18 (200, text/html, honest client; 'Last Revised: June 2025' printed at the foot of the policy). The policy is the page body, not a PDF.
+      - label: proxy-voting-policies
+        url: "https://www.americancentury.com/about/proxy-voting-policies/"
+        adviser: "American Century Investment Management, Inc."
+        adviser_key: "AMERICAN_CENTURY"
+      # The same policy as printed in the Mutual Funds SAI (Appendix E), dated by EDGAR filing date. Separate label from the website copy (different formatting
+      # would invent alternating versions). Page numbers "E-6" are stripped; the section stops at the SAI back cover.
+      - label: american-century-proxy-voting-policies-as-printed-in-sai
+        adviser: "American Century Investment Management, Inc."
+        adviser_key: "AMERICAN_CENTURY"
+        sai_appendix:
+          cik: "0000100334"
+          forms: ["485BPOS"]
+          since: "2022-01-01"
+          start:
+            - "Appendix E – Proxy Voting Policies American Century Investment Management, Inc. (the “Advisor”)"
+            - "Appendix E – Proxy Voting Policies American Century Investment Management, Inc. (the “Adviser”)"
+          end:
+            - "Notes American Century Investments americancentury.com"
+            - "American Century Investments americancentury.com Retail Investors"
+          strip_patterns:
+            - '\bE-\d{1,2}\b'

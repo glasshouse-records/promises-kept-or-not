@@ -268,6 +268,27 @@ SAI's own date. The edition of 1 January 2022 and earlier is not archived. The
 municipal trusts and the money-market trust file N-PX with no equity votes and
 are not ingested.
 
+American Century (added 2026-11-18): americancentury.com answers requests that
+identify themselves honestly (200 on `.../about/proxy-voting-policies/`, probed
+2026-11-18; the home page is slow and one guessed path returned repeated 500s,
+so only the policy page is requested), so it is not a blocked source. The policy
+is the HTML page body (no PDF is linked); it prints "Last Revised: June 2025",
+and the page text includes site navigation, so a navigation change can add a
+version that is not a policy edit (the first three Wayback captures, 2022-06-25 to 2023-02-07, carry one identical policy body and differ only in navigation). It is archived as `proxy-voting-policies`.
+The dated route is `american-century-proxy-voting-policies-as-printed-in-sai`:
+Appendix E of the American Century Mutual Funds SAI (one copy per 485BPOS, read
+from the appendix heading to the SAI back cover; the table-of-contents line is
+not the heading; page numbers "E-n" are removed). It yields four editions
+(2022-02-28, 2023-10-23, 2024-02-28, 2026-02-27, the 2022 text says "Advisor",
+later ones "Adviser"). American Century Investment Management votes every
+series, sub-advised series included (Nomura Corporate Research and Asset
+Management is a named investment sub-adviser only); the Avantis funds and ETFs
+are its products under the same policy. The Asset Allocation, Government
+Income, Municipal, California Tax-Free, International Bond and Target
+Maturities trusts, Variable Portfolios II, and the institutional-manager filers
+are not ingested (no operating-company votes in a fund registrant's N-PX, or not
+a fund).
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting
