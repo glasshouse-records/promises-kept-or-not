@@ -28,7 +28,7 @@ from html import unescape
 from pathlib import Path
 
 from .. import http
-from ..contradictions import identity_hash_from_file
+from ..contradictions import IDENTITY_VERSION, identity_hash_from_file
 
 logger = logging.getLogger(__name__)
 
@@ -287,33 +287,88 @@ def record_snapshot(conn: sqlite3.Connection, institution_id: str, doc_label: st
     conn.execute(
         "INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, "
         "sha256, content_path, content_type, size_bytes, wayback_timestamp, "
-        "text_sha256, doc_created_at, doc_modified_at, doc_producer, identity_sha256) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "text_sha256, doc_created_at, doc_modified_at, doc_producer, identity_sha256, "
+        "identity_version) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (institution_id, doc_label, url, retrieval_date or date.today().isoformat(),
          sha, str(dest), content_type, len(content), wayback_timestamp, text_sha,
          origin["doc_created_at"], origin["doc_modified_at"], origin["doc_producer"],
-         identity_hash_from_file(institution_id, doc_label, dest)),
+         identity_hash_from_file(institution_id, doc_label, dest), IDENTITY_VERSION),
     )
     conn.commit()
     return True
 
 
-def backfill_identity_hashes(conn: sqlite3.Connection) -> int:
-    """Derive commitments.identity_sha256 from the stored files for rows that lack it.
-    Deterministic and idempotent; it derives a column, it edits no fact. Unreadable
-    captures (and rows whose file is gone) stay ''. Returns rows filled."""
-    filled = 0
-    for row in conn.execute("SELECT id, institution_id, doc_label, content_path "
-                            "FROM commitments WHERE identity_sha256 = ''").fetchall():
+def _accession_of(url: str) -> str:
+    """'0001193125-26-163054' from an EDGAR archive URL ('' if it has none)."""
+    m = re.search(r"/(\d{10})(\d{2})(\d{6})/", url or "")
+    return "-".join(m.groups()) if m else ""
+
+
+def declared_reprints() -> dict[tuple[str, str], list[dict]]:
+    """{(institution, label): [reprint entries]} from config `sai_appendix.reprints`."""
+    from .. import registry
+    out = {}
+    for iid, inst in registry.load().items():
+        for doc in inst.get("commitments") or []:
+            rp = (doc.get("sai_appendix") or {}).get("reprints")
+            if rp:
+                out[(iid, doc["label"])] = rp
+    return out
+
+
+def backfill_identity_hashes(conn: sqlite3.Connection, reprints: dict | None = None) -> int:
+    """Derive commitments.identity_sha256 from the stored files. Deterministic and
+    idempotent; it derives a column, it edits no fact. A row is (re)computed when its
+    identity is empty, was made under an older normaliser (identity_version), or was a
+    declared reprint that is no longer declared. Rows whose file is gone keep their
+    stored hash (logged). Then every DECLARED REPRINT (config `reprints`, matched by
+    accession; never deleted, ids kept) takes the identity of the preceding live
+    capture of its label and records it in reprint_of. Returns rows changed."""
+    from ..contradictions import IDENTITY_VERSION
+    reprints = declared_reprints() if reprints is None else reprints
+    declared = {(k[0], k[1], e["accession"]) for k, v in reprints.items() for e in v
+                if e.get("same_as_previous") and e.get("accession")}
+    changed, no_file = 0, []
+    for row in conn.execute("SELECT id, institution_id, doc_label, url, content_path, "
+                            "identity_sha256, identity_version, reprint_of FROM commitments"
+                            ).fetchall():
+        still = (row["institution_id"], row["doc_label"], _accession_of(row["url"])) in declared
+        stale = (row["identity_sha256"] == "" or row["identity_version"] != IDENTITY_VERSION
+                 or (row["reprint_of"] and not still))
+        if not stale:
+            continue
         path = Path(row["content_path"]) if row["content_path"] else None
         if path is None or not path.is_file():
+            if row["identity_sha256"]:
+                no_file.append(row["id"])
             continue
         h = identity_hash_from_file(row["institution_id"], row["doc_label"], path)
-        if h:
-            conn.execute("UPDATE commitments SET identity_sha256=? WHERE id=?", (h, row["id"]))
-            filled += 1
+        conn.execute("UPDATE commitments SET identity_sha256=?, identity_version=?, "
+                     "reprint_of=0 WHERE id=?", (h, IDENTITY_VERSION, row["id"]))
+        changed += h != row["identity_sha256"] or bool(row["reprint_of"])
+    if no_file:
+        logger.warning("identity backfill: %d rows have no local file and keep their stored "
+                       "hash (ids %s)", len(no_file), no_file)
+    for row in conn.execute("SELECT id, institution_id, doc_label, url, identity_sha256, "
+                            "reprint_of FROM commitments WHERE superseded=0 "
+                            "ORDER BY public_by, id").fetchall():
+        if (row["institution_id"], row["doc_label"], _accession_of(row["url"])) not in declared:
+            continue
+        prev = conn.execute(
+            "SELECT id, identity_sha256 FROM commitments WHERE institution_id=? AND doc_label=? "
+            "AND superseded=0 AND id!=? AND (public_by, id) < (SELECT public_by, id FROM "
+            "commitments WHERE id=?) ORDER BY public_by DESC, id DESC LIMIT 1",
+            (row["institution_id"], row["doc_label"], row["id"], row["id"])).fetchone()
+        if prev is None or not prev["identity_sha256"]:
+            logger.warning("reprint %s/%s %s has no readable previous edition; not grouped",
+                           row["institution_id"], row["doc_label"], row["url"])
+            continue
+        if (prev["identity_sha256"], prev["id"]) != (row["identity_sha256"], row["reprint_of"]):
+            conn.execute("UPDATE commitments SET identity_sha256=?, reprint_of=? WHERE id=?",
+                         (prev["identity_sha256"], prev["id"], row["id"]))
+            changed += 1
     conn.commit()
-    return filled
+    return changed
 
 
 def backfill_text_hashes(conn: sqlite3.Connection) -> int:

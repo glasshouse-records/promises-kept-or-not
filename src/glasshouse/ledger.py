@@ -231,6 +231,12 @@ CREATE TABLE IF NOT EXISTS commitments (
     -- text is unreadable. Ships in the release so a restored ledger (no files)
     -- reproduces the same version count.
     identity_sha256   TEXT NOT NULL DEFAULT '',
+    -- The identity_text normaliser version identity_sha256 was computed under
+    -- (contradictions.IDENTITY_VERSION); a stale row is recomputed from its file.
+    identity_version  INTEGER NOT NULL DEFAULT 0,
+    -- 0, or the id of the earlier capture this one is a DECLARED REPRINT of (config
+    -- `reprints`): its identity_sha256 is that capture's, so it is not a new version.
+    reprint_of        INTEGER NOT NULL DEFAULT 0,
     -- What the DOCUMENT says about its own authorship, written by the
     -- manager's own software. Independent of both our hash and the Wayback
     -- timestamp. Corroboration only: a creation date is not a publication
@@ -360,6 +366,11 @@ def _migrate(conn: sqlite3.Connection) -> None:
         if col not in ccols:
             conn.execute(f"ALTER TABLE commitments ADD COLUMN {col} "
                          "TEXT NOT NULL DEFAULT ''")
+            conn.commit()
+    for col in ("identity_version", "reprint_of"):
+        if col not in ccols:
+            conn.execute(f"ALTER TABLE commitments ADD COLUMN {col} "
+                         "INTEGER NOT NULL DEFAULT 0")
             conn.commit()
     sql = (conn.execute("SELECT sql FROM sqlite_master WHERE name='capture_attempts'")
            .fetchone() or [""])[0] or ""

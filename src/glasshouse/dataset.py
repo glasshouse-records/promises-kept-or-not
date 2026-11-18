@@ -126,8 +126,15 @@ DATA_DICTIONARY: dict[str, dict] = {
                        "removed). NOT the version identity: see identity_sha256",
         "identity_sha256": "SHA-256 of the text a policy version is identified by: the "
                            "label's configured `body` span if any, whitespace-normalised, no "
-                           "whitespace before a trademark sign (see METHODOLOGY); '' = "
-                           "unreadable. Captures sharing it are one version",
+                           "whitespace before a trademark sign or percent sign, ASCII quotes and one dash form "
+                           "(see METHODOLOGY); '' = unreadable. Captures sharing it are one "
+                           "version. A declared reprint (reprint_of) carries the identity of "
+                           "the edition it reprints",
+        "identity_version": "version of the identity normaliser identity_sha256 was computed "
+                            "under; a stale row is recomputed from its file",
+        "reprint_of": "0, or the id of the earlier capture this one is a declared reprint of "
+                      "(config `reprints`, with a written reason): kept as a capture, not a "
+                      "new version",
         "doc_created_at": "creation date written inside the PDF by the manager's own software; "
                           "'' if none",
         "doc_modified_at": "modification date written inside the PDF; '' if none",

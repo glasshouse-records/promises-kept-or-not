@@ -204,3 +204,72 @@ def test_body_spec_raises_when_the_registry_cannot_load(monkeypatch):
     monkeypatch.setattr(registry, "load", boom)
     with pytest.raises(OSError):
         contradictions.body_spec("acme", "page")
+
+
+def test_identity_text_ignores_typography_that_never_changes_meaning():
+    from glasshouse.contradictions import identity_text
+    a = "The Board’s “proxy” rule – at 15 % of votes — applies."
+    b = "The Board's \"proxy\" rule - at 15% of votes - applies."
+    assert identity_text(a) == identity_text(b)
+    # a changed number or word is still a change
+    assert identity_text("at 15%") != identity_text("at 5%")
+    assert identity_text("well-known") == "well-known"
+
+
+def _sai_ledger(tmp_path, texts):
+    """texts: [(accession, public_by, text)] as live SAI-appendix rows."""
+    c = ledger.connect(tmp_path / "l.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('acme','Acme')")
+    for n, (acc, pb, text) in enumerate(texts):
+        f = tmp_path / f"s{n}.txt"
+        f.write_text(text)
+        c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date,"
+                  " sha256, content_path, content_type, size_bytes, text_sha256, public_by, via,"
+                  " identity_sha256) VALUES ('acme','sai',?,'2026-11-19',?,?,'text/plain',1,?,?,"
+                  "'sai_appendix','')",
+                  (f"https://www.sec.gov/Archives/edgar/data/1/{acc}/x.htm", f"sha{n}", str(f),
+                   f"t{n}", pb))
+    c.commit()
+    return c
+
+
+def test_declared_reprint_is_kept_but_grouped_with_the_previous_edition(tmp_path):
+    from glasshouse import contradictions
+    from glasshouse.ingest import commitments as cm
+    base = "The Adviser votes proxies in clients' interest. " * 8
+    c = _sai_ledger(tmp_path, [("000000000025000001", "2025-04-28", base),
+                               ("000000000026000002", "2026-04-20", base + "Reflowed page."),
+                               ("000000000026000003", "2026-10-01", base + "New rule added.")])
+    rp = {("acme", "sai"): [{"accession": "0000000000-26-000002", "same_as_previous": True,
+                             "reason": "re-print", "checked": "2026-11-19"}]}
+    cm.backfill_identity_hashes(c, reprints=rp)
+    rows = c.execute("SELECT id, identity_sha256, reprint_of, superseded FROM commitments "
+                     "ORDER BY id").fetchall()
+    assert rows[1]["identity_sha256"] == rows[0]["identity_sha256"]
+    assert rows[1]["reprint_of"] == rows[0]["id"] and rows[1]["superseded"] == 0
+    assert rows[2]["identity_sha256"] != rows[0]["identity_sha256"] and rows[2]["reprint_of"] == 0
+    assert c.execute("SELECT COUNT(*) FROM commitments").fetchone()[0] == 3   # never deleted
+    vs = contradictions.distinct_versions(c)
+    assert [v[1]["id"] for v in vs] == [rows[0]["id"], rows[2]["id"]]   # earliest keeps its date
+    assert vs[0][1]["public_by"] == "2025-04-28"
+    assert cm.backfill_identity_hashes(c, reprints=rp) == 0      # idempotent
+    # un-declaring restores the capture's own identity
+    cm.backfill_identity_hashes(c, reprints={})
+    again = c.execute("SELECT identity_sha256, reprint_of FROM commitments WHERE id=?",
+                      (rows[1]["id"],)).fetchone()
+    assert again["identity_sha256"] != rows[0]["identity_sha256"] and again["reprint_of"] == 0
+
+
+def test_backfill_recomputes_when_the_normaliser_version_changes(tmp_path):
+    from glasshouse.ingest import commitments as cm
+    text = "The Adviser votes proxies at 15 % of clients’ holdings. " * 8
+    c = _sai_ledger(tmp_path, [("000000000025000001", "2025-04-28", text)])
+    c.execute("UPDATE commitments SET identity_sha256='old', identity_version=1")
+    c.commit()
+    assert cm.backfill_identity_hashes(c, reprints={}) == 1
+    assert c.execute("SELECT identity_sha256 FROM commitments").fetchone()[0] != "old"
+    # a row without a local file keeps its stored hash
+    c.execute("UPDATE commitments SET identity_sha256='kept', identity_version=1, "
+              "content_path='/nonexistent'")
+    assert cm.backfill_identity_hashes(c, reprints={}) == 0
+    assert c.execute("SELECT identity_sha256 FROM commitments").fetchone()[0] == "kept"
