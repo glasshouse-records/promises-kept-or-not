@@ -2897,3 +2897,137 @@ institutions:
           strip_patterns:
             - '(?:Variable Trust Funds )?\b\d{1,3} Back [Tt]o Table of Contents'
             - '\b\d{1,3} Variable Trust Funds Back [Tt]o Table of Contents'
+
+  lord_abbett:
+    display_name: "Lord Abbett (Lord, Abbett & Co. LLC)"
+    short_name: "Lord Abbett"
+    cik: "0000728100"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Lord, Abbett & Co. LLC, Jersey City NJ (CIK 728100, the 13-F filer and the investment adviser that votes the Lord Abbett Funds' proxies under its Proxy Voting Policy). It also files an institutional-manager N-PX (say-on-pay votes of its accounts, including accounts it sub-advises for other funds); that report overlaps the fund registrants' own tables on cusip and meeting, so it is not ingested here. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-18. Lord Abbett's own US fund registrants that file N-PX voting reports with operating-company votes. Every SAI says 'The Funds have delegated proxy voting responsibilities to the Funds' investment
+      # adviser, Lord Abbett, subject to the [Proxy / ESG and Proxy / Sustainability and Proxy / Board's] general oversight. Lord Abbett has adopted its own proxy voting policies and procedures for this purpose', attached
+      # as Appendix C, so every series is LORD_ABBETT and none is EXTERNAL. `from` is the EDGAR filing date of the earliest SAI read (the annual 485BPOS of 2021); earlier meetings stay unlabelled. Not ingested: the municipal
+      # trust (Municipal Income Fund, 737800), the money-market fund (311635), and the interval / closed-end / private-credit funds (Credit Opportunities 1753712, Floating Rate High Income 1802293, Corporate Opportunities
+      # 1855299, Flexible Income 2005563, Municipal Opportunities 2029852), which file notice reports with no vote table; the retired mutual-fund CIKs and the private trusts file no N-PX.
+      - cik: "2691"
+        adviser: "Lord, Abbett & Co. LLC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/2691/000093041321000386/c100830_485bpos-ixbrl.htm"  # 485BPOS (SAI) filed 2021-02-23 (0000930413-21-000386), 'Proxy Voting': the Funds delegated proxy voting to Lord Abbett; later annual SAIs repeat it
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI 'Proxy Voting': 'The Funds have delegated proxy voting responsibilities to the Funds' investment adviser, Lord Abbett, subject to the Proxy Committee's general oversight. Lord Abbett has adopted its own proxy voting policies and procedures for this purpose', attached as Appendix C (Lord Abbett Affiliated Fund). The wording read in every annual SAI to 2026 names the same adviser (the oversight body is called the ESG and Proxy Committee in 2022-23, the Sustainability and Proxy Committee in late 2023 and the Board from 2024); no outside sub-adviser is named as voting any series."
+        adviser_key_history: [{key: LORD_ABBETT, from: "2021-02-23"}]
+        name: "LORD ABBETT AFFILIATED FUND INC"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "60365"
+        adviser: "Lord, Abbett & Co. LLC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/60365/000093041321000876/c101282_485bpos-ixbrl.htm"  # 485BPOS (SAI) filed 2021-04-26 (0000930413-21-000876), 'Proxy Voting': the Funds delegated proxy voting to Lord Abbett; later annual SAIs repeat it
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI 'Proxy Voting': 'The Funds have delegated proxy voting responsibilities to the Funds' investment adviser, Lord Abbett, subject to the Proxy Committee's general oversight. Lord Abbett has adopted its own proxy voting policies and procedures for this purpose', attached as Appendix C (Lord Abbett Bond-Debenture Fund). The wording read in every annual SAI to 2026 names the same adviser (the oversight body is called the ESG and Proxy Committee in 2022-23, the Sustainability and Proxy Committee in late 2023 and the Board from 2024); no outside sub-adviser is named as voting any series."
+        adviser_key_history: [{key: LORD_ABBETT, from: "2021-04-26"}]
+        name: "LORD ABBETT BOND DEBENTURE FUND INC"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "276914"
+        adviser: "Lord, Abbett & Co. LLC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/276914/000093041321001898/c102398_485bpos-ixbrl.htm"  # 485BPOS (SAI) filed 2021-11-22 (0000930413-21-001898), 'Proxy Voting': the Funds delegated proxy voting to Lord Abbett; later annual SAIs repeat it
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI 'Proxy Voting': 'The Funds have delegated proxy voting responsibilities to the Funds' investment adviser, Lord Abbett, subject to the Proxy Committee's general oversight. Lord Abbett has adopted its own proxy voting policies and procedures for this purpose', attached as Appendix C (Lord Abbett Developing Growth Fund). The wording read in every annual SAI to 2026 names the same adviser (the oversight body is called the ESG and Proxy Committee in 2022-23, the Sustainability and Proxy Committee in late 2023 and the Board from 2024); no outside sub-adviser is named as voting any series."
+        adviser_key_history: [{key: LORD_ABBETT, from: "2021-11-22"}]
+        name: "LORD ABBETT DEVELOPING GROWTH FUND, INC."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "716788"
+        adviser: "Lord, Abbett & Co. LLC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/716788/000093041321000875/c101283_485bpos-ixbrl.htm"  # 485BPOS (SAI) filed 2021-04-26 (0000930413-21-000875), 'Proxy Voting': the Funds delegated proxy voting to Lord Abbett; later annual SAIs repeat it
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI 'Proxy Voting': 'The Funds have delegated proxy voting responsibilities to the Funds' investment adviser, Lord Abbett, subject to the Proxy Committee's general oversight. Lord Abbett has adopted its own proxy voting policies and procedures for this purpose', attached as Appendix C (Lord Abbett Mid Cap Stock Fund). The wording read in every annual SAI to 2026 names the same adviser (the oversight body is called the ESG and Proxy Committee in 2022-23, the Sustainability and Proxy Committee in late 2023 and the Board from 2024); no outside sub-adviser is named as voting any series."
+        adviser_key_history: [{key: LORD_ABBETT, from: "2021-04-26"}]
+        name: "LORD ABBETT MID CAP STOCK FUND INC"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "829901"
+        adviser: "Lord, Abbett & Co. LLC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/829901/000093041321000877/c101281_485bpos-ixbrl.htm"  # 485BPOS (SAI) filed 2021-04-26 (0000930413-21-000877), 'Proxy Voting': the Funds delegated proxy voting to Lord Abbett; later annual SAIs repeat it
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI 'Proxy Voting': 'The Funds have delegated proxy voting responsibilities to the Funds' investment adviser, Lord Abbett, subject to the Proxy Committee's general oversight. Lord Abbett has adopted its own proxy voting policies and procedures for this purpose', attached as Appendix C (the Lord Abbett Global Fund (emerging-markets bond series)). The wording read in every annual SAI to 2026 names the same adviser (the oversight body is called the ESG and Proxy Committee in 2022-23, the Sustainability and Proxy Committee in late 2023 and the Board from 2024); no outside sub-adviser is named as voting any series."
+        adviser_key_history: [{key: LORD_ABBETT, from: "2021-04-26"}]
+        name: "LORD ABBETT GLOBAL FUND INC"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "887194"
+        adviser: "Lord, Abbett & Co. LLC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/887194/000093041321000637/c101086_485bposixbrl.htm"  # 485BPOS (SAI) filed 2021-03-25 (0000930413-21-000637), 'Proxy Voting': the Funds delegated proxy voting to Lord Abbett; later annual SAIs repeat it
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI 'Proxy Voting': 'The Funds have delegated proxy voting responsibilities to the Funds' investment adviser, Lord Abbett, subject to the Proxy Committee's general oversight. Lord Abbett has adopted its own proxy voting policies and procedures for this purpose', attached as Appendix C (the Lord Abbett Research Fund (Dividend Growth, Growth Opportunities, Small Cap Value)). The wording read in every annual SAI to 2026 names the same adviser (the oversight body is called the ESG and Proxy Committee in 2022-23, the Sustainability and Proxy Committee in late 2023 and the Board from 2024); no outside sub-adviser is named as voting any series."
+        adviser_key_history: [{key: LORD_ABBETT, from: "2021-03-25"}]
+        name: "LORD ABBETT RESEARCH FUND INC"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1139819"
+        adviser: "Lord, Abbett & Co. LLC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1139819/000093041321001202/c101526_485bpos-ixbrl.htm"  # 485BPOS (SAI) filed 2021-06-21 (0000930413-21-001202), 'Proxy Voting': the Funds delegated proxy voting to Lord Abbett; later annual SAIs repeat it
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI 'Proxy Voting': 'The Funds have delegated proxy voting responsibilities to the Funds' investment adviser, Lord Abbett, subject to the Proxy Committee's general oversight. Lord Abbett has adopted its own proxy voting policies and procedures for this purpose', attached as Appendix C (Lord Abbett Trust I). The wording read in every annual SAI to 2026 names the same adviser (the oversight body is called the ESG and Proxy Committee in 2022-23, the Sustainability and Proxy Committee in late 2023 and the Board from 2024); no outside sub-adviser is named as voting any series."
+        adviser_key_history: [{key: LORD_ABBETT, from: "2021-06-21"}]
+        name: "LORD ABBETT TRUST I"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "855396"
+        adviser: "Lord, Abbett & Co. LLC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/855396/000093041321000740/c101218_485bpos-ixbrl.htm"  # 485BPOS (SAI) filed 2021-04-08 (0000930413-21-000740), 'Proxy Voting': the Funds delegated proxy voting to Lord Abbett; later annual SAIs repeat it
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI 'Proxy Voting': 'The Funds have delegated proxy voting responsibilities to the Funds' investment adviser, Lord Abbett, subject to the Proxy Committee's general oversight. Lord Abbett has adopted its own proxy voting policies and procedures for this purpose', attached as Appendix C (the Lord Abbett Series Fund (variable-insurance portfolios)). The wording read in every annual SAI to 2026 names the same adviser (the oversight body is called the ESG and Proxy Committee in 2022-23, the Sustainability and Proxy Committee in late 2023 and the Board from 2024); no outside sub-adviser is named as voting any series."
+        adviser_key_history: [{key: LORD_ABBETT, from: "2021-04-08"}]
+        name: "LORD ABBETT SERIES FUND INC"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "898031"
+        adviser: "Lord, Abbett & Co. LLC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/898031/000093041321000387/c100831_485bpos-ixbrl.htm"  # 485BPOS (SAI) filed 2021-02-23 (0000930413-21-000387), 'Proxy Voting': the Funds delegated proxy voting to Lord Abbett; later annual SAIs repeat it
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI 'Proxy Voting': 'The Funds have delegated proxy voting responsibilities to the Funds' investment adviser, Lord Abbett, subject to the Proxy Committee's general oversight. Lord Abbett has adopted its own proxy voting policies and procedures for this purpose', attached as Appendix C (Lord Abbett Securities Trust). The wording read in every annual SAI to 2026 names the same adviser (the oversight body is called the ESG and Proxy Committee in 2022-23, the Sustainability and Proxy Committee in late 2023 and the Board from 2024); no outside sub-adviser is named as voting any series."
+        adviser_key_history: [{key: LORD_ABBETT, from: "2021-02-23"}]
+        name: "LORD ABBETT SECURITIES TRUST"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "911507"
+        adviser: "Lord, Abbett & Co. LLC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/911507/000093041321000648/c101085_485bposixbrl.htm"  # 485BPOS (SAI) filed 2021-03-26 (0000930413-21-000648), 'Proxy Voting': the Funds delegated proxy voting to Lord Abbett; later annual SAIs repeat it
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI 'Proxy Voting': 'The Funds have delegated proxy voting responsibilities to the Funds' investment adviser, Lord Abbett, subject to the Proxy Committee's general oversight. Lord Abbett has adopted its own proxy voting policies and procedures for this purpose', attached as Appendix C (Lord Abbett Investment Trust). The wording read in every annual SAI to 2026 names the same adviser (the oversight body is called the ESG and Proxy Committee in 2022-23, the Sustainability and Proxy Committee in late 2023 and the Board from 2024); no outside sub-adviser is named as voting any series."
+        adviser_key_history: [{key: LORD_ABBETT, from: "2021-03-26"}]
+        name: "LORD ABBETT INVESTMENT TRUST"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed LORD_ABBETT, per registrant, from the EDGAR filing date of the earliest SAI read (annual 485BPOS, 2021): Affiliated Fund (2691) and Securities Trust (898031) 2021-02-23 (0000930413-21-000386, -000387); Investment Trust (911507) 2021-03-26 (-000648); Research Fund (887194) 2021-03-25 (-000637); Series Fund (855396) 2021-04-08 (-000740); Bond-Debenture (60365), Mid Cap Stock (716788) and Global Fund (829901) 2021-04-26 (-000876, -000875, -000877); Trust I (1139819) 2021-06-21 (-001202); Developing Growth (276914) 2021-11-22 (-001898). Each earlier meeting stays unlabelled."
+      - "No series is keyed EXTERNAL. No SAI read (2021 to 2026, all ten registrants) names an outside sub-adviser that votes a series' proxies; the only 'sub-adviser' sentences are the investment restrictions and the policy's own provisions for Lord Abbett acting as a sub-adviser to other firms' funds (which it reports in its own institutional-manager N-PX)."
+      - "Not ingested, not keyed: Lord, Abbett & Co. LLC's institutional-manager N-PX (728100, 'INSTITUTIONAL MANAGER VOTING REPORT', say-on-pay votes only; 351 of its 520 cusip-and-meeting lines of the 2025 report coincide with a line of the fund registrants' own 2025 tables, so ingesting it would double count). Notice-only registrants: the Municipal Income Fund (737800), the U.S. Government & Government Sponsored Enterprises Money Market Fund (311635), Credit Opportunities (1753712), Floating Rate High Income (1802293), Corporate Opportunities (1855299), Flexible Income (2005563) and Municipal Opportunities (2029852). The Global Fund's 2026 N-PX is a notice report; its 2024 and 2025 reports carry votes."
+      - "Policy text: the Lord Abbett Proxy Voting Policy and Procedures PDF (lordabbett.com, 200 application/pdf to honest clients; the HTML policy page is a landing page that only links to the PDF, so it is not a label). The PDF moved: /content/dam/lordabbett/en/resources/proxyVoting/Proxy_Voting_Policy_and_Procedures.pdf (Wayback 2021-09-22 and 2022-05-17), /content/dam/lordabbett/en/documents/sustainability/ (page capture 2024-08-14), /captivate/documents/Impact/ (2024-12-02) and /captivate/documents/Governance-and-Sustainability/ (current, edition March 2026). Under a separate label, the policy as printed in Appendix C of the Lord Abbett Affiliated Fund SAI (one 485BPOS a year, February; six printed editions 2020 to March 2026; running page marks 'Part II C- n' removed)."
+    commitments:
+      # Verified 2026-11-18 (200, application/pdf, honest client). A PDF, so no `body` bound; the edition date is printed on its first page ('March 2026'). The same lineage was served from earlier addresses
+      # (former_urls, read from Wayback captures of the policy page); only the first is in the Wayback CDX as a PDF.
+      - label: proxy-voting-policy-and-procedures
+        url: "https://www.lordabbett.com/content/dam/lordabbett-captivate/documents/Governance-and-Sustainability/Proxy-Voting-Policy-and-Procedures.pdf"
+        former_urls:
+          - "https://www.lordabbett.com/content/dam/lordabbett/en/resources/proxyVoting/Proxy_Voting_Policy_and_Procedures.pdf"
+          - "https://www.lordabbett.com/content/dam/lordabbett/en/documents/sustainability/Proxy_Voting_Policy_and_Procedures.pdf"
+          - "https://www.lordabbett.com/content/dam/lordabbett-captivate/documents/Impact/Proxy-Voting-Policy-and-Procedures.pdf"
+        adviser: "Lord, Abbett & Co. LLC"
+        adviser_key: "LORD_ABBETT"
+      # The same policy as printed in Appendix C of the Lord Abbett Affiliated Fund SAI (one 485BPOS a year, filed in February), dated by EDGAR filing date. Separate label from the website PDF (different
+      # formatting would invent alternating versions). One heading per printed edition (the editions retitle the appendix: 2020 'Proxy Voting Policies and Procedures', March 2021, 'Sustainable Investing & Proxy Voting Policy'
+      # November 2022, February 2024, February 2025, March 2026); the section runs to Appendix D (bond ratings), so the last sentence is kept; the running page marks 'N Part II C- N' / 'Part II C- N' are stripped
+      # (the page number only when it equals the mark, so a real number is never removed).
+      - label: lord-abbett-proxy-voting-policy-as-printed-in-sai
+        adviser: "Lord, Abbett & Co. LLC"
+        adviser_key: "LORD_ABBETT"
+        sai_appendix:
+          cik: "0000002691"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "APPENDIX C PROXY VOTING POLICIES AND PROCEDURES THE LORD ABBETT FAMILY OF FUNDS"
+            - "APPENDIX C Proxy Voting Policy and Procedures March 2021"
+            - "APPENDIX C Sustainable Investing & Proxy Voting Policy November 2022"
+            - "APPENDIX C Proxy Voting Policy February 2024"
+            - "APPENDIX C PROXY VOTING POLICY February 2025"
+            - "PROXY VOTING POLICY March 2026 APPENDIX C"
+          end:
+            - "APPENDIX D DESCRIPTION OF CORPORATE BOND RATINGS"
+          strip_patterns:
+            - '\b(\d{1,2}) Part II C- ?\1\b'
+            - 'Part II C- ?\d{1,2}\b'

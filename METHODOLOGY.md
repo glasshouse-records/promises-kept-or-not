@@ -512,6 +512,46 @@ distributor, the 13-F filing holding companies (the 13-F filer is Allspring Glob
 Investments Holdings, LLC, CIK 1890906) and the Luxembourg funds file no fund N-PX and
 are not ingested.
 
+Lord Abbett (Lord, Abbett & Co. LLC; added 2026-11-18): lordabbett.com answers requests
+that identify themselves honestly (200, probed 2026-11-18), so it is not a blocked source.
+The policy page is a landing page that only links to the policy PDF, so no HTML page is a
+label and no `body` bound is needed; the label `proxy-voting-policy-and-procedures` is the
+PDF (`/content/dam/lordabbett-captivate/documents/Governance-and-Sustainability/Proxy-Voting-Policy-and-Procedures.pdf`,
+`application/pdf`, first page "March 2026"). The PDF moved: `/content/dam/lordabbett/en/resources/proxyVoting/Proxy_Voting_Policy_and_Procedures.pdf`
+(Wayback 2021-09-22 and 2022-05-17), `/content/dam/lordabbett/en/documents/sustainability/`
+(page capture 2024-08-14) and `/captivate/documents/Impact/` (2024-12-02) are `former_urls`; only the
+first is in the Wayback index. Versions on file: the March 2021 edition (Wayback 2022-05-17; the
+2021-09-22 capture is a 5.4 MB PDF that Wayback serves cut at 1 MiB, so the walk now skips a
+PDF with no end marker, but that one stub was recorded as id 249 before the guard existed and
+is unreadable), the March 2026 edition as captured 2026-06-07 (with an "APPLIES TO" block and a
+proprietary-use notice on every page) and the live PDF (PDF created 2026-08-21, same "March
+2026" date but without those two elements: a re-issue under the same date, captured live).
+The dated route is `lord-abbett-proxy-voting-policy-as-printed-in-sai`: Appendix C of the Lord
+Abbett Affiliated Fund SAI (one 485BPOS a year, February, 2021-02-23 to 2026-02-25; a single
+copy per filing, where the multi-series trusts file several differently arranged SAIs a year and
+print a slightly different page layout), read from the appendix heading to "APPENDIX D
+DESCRIPTION OF CORPORATE BOND RATINGS" so the last sentence is kept. Six headings cover the
+printed editions (2020 "Proxy Voting Policies and Procedures", March 2021, "Sustainable Investing &
+Proxy Voting Policy" November 2022, February 2024, February 2025, March 2026); the running page
+marks "N Part II C- N" and "Part II C- N" are removed (the page number only when it equals the
+mark). It yields six versions (2021-02-23, 2022-02-23, 2023-02-28, 2024-02-23, 2025-02-25,
+2026-02-25), each a different printed edition. Voting: every SAI says "The Funds have delegated
+proxy voting responsibilities to the Funds' investment adviser, Lord Abbett, subject to the
+[Proxy / ESG and Proxy / Sustainability and Proxy / Board's] general oversight", with the policy
+attached as Appendix C, so each of the ten registrants is keyed LORD_ABBETT from the EDGAR filing
+date of the earliest SAI read (Affiliated Fund and Securities Trust 2021-02-23, 0000930413-21-000386
+and -000387; Research Fund 2021-03-25, -000637; Investment Trust 2021-03-26, -000648; Series Fund
+2021-04-08, -000740; Bond-Debenture, Mid Cap Stock and Global Fund 2021-04-26, -000876, -000875,
+-000877; Trust I 2021-06-21, -001202; Developing Growth 2021-11-22, -001898). No SAI names an
+outside sub-adviser that votes a series' proxies, so no series is EXTERNAL. Ingested N-PX 2024-26
+(24,042 / 23,050 / 22,834 votes with is_duplicate = 0 for the seasons filed in 2024, 2025 and
+2026; the Global Fund's 2026 report is a notice). Not ingested: Lord, Abbett & Co. LLC's own
+institutional-manager N-PX (CIK 728100, say-on-pay votes only; 351 of its 520 cusip-and-meeting
+lines in 2025 coincide with fund-registrant lines, so it would double count), and the seven
+registrants that file notice reports only (Municipal Income Fund, the money-market fund, Credit
+Opportunities, Floating Rate High Income, Corporate Opportunities, Flexible Income, Municipal
+Opportunities).
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting

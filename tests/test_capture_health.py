@@ -240,3 +240,18 @@ def test_backfill_retry_of_a_known_unreadable_pdf_does_not_warn(caplog):
     with caplog.at_level(logging.WARNING, logger="glasshouse.ingest.commitments"):
         commitments.version_identity(broken, "application/pdf", "u")
     assert any("extraction failed" in r.getMessage() for r in caplog.records)
+
+
+def test_a_truncated_wayback_pdf_is_skipped_by_the_walk(conn, monkeypatch):
+    """Wayback serves some large PDFs cut at exactly 1 MiB (Lord Abbett's 2021-09-22 capture of a 5.4 MB policy: no
+    %%EOF, 'Cannot find Root object in pdf'). The live fetch already refused such a download; the Wayback walk filed
+    the stub as a policy version with no readable text."""
+    snaps = [{"timestamp": "20210922183841", "mimetype": "application/pdf"},
+             {"timestamp": "20220517182351", "mimetype": "application/pdf"}]
+    monkeypatch.setattr(commitments, "wayback_history", lambda url, limit=10: snaps)
+    served = {"20210922183841": _GOOD_PDF[:1500], "20220517182351": _GOOD_PDF}
+    monkeypatch.setattr(commitments.http, "get",
+                        lambda url, **kw: _PdfResp(served[url.split("/web/")[1][:14]]))
+    assert commitments._wayback_one(conn, "alpha", "policy", "https://alpha.example/policy.pdf", 10) == 1
+    rows = conn.execute("SELECT wayback_timestamp FROM commitments").fetchall()
+    assert [r[0] for r in rows] == ["20220517182351"]

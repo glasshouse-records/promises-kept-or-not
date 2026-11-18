@@ -22,7 +22,7 @@ def test_former_urls_are_walked_and_recorded_at_their_own_address(monkeypatch):
 
     monkeypatch.setattr(commitments, "wayback_history", fake_history)
     monkeypatch.setattr(commitments.http, "get",
-                        lambda u, **k: SimpleNamespace(content=b"%PDF-1.4 x"))
+                        lambda u, **k: SimpleNamespace(content=b"%PDF-1.4 x\n%%EOF"))
     monkeypatch.setattr(
         commitments, "record_snapshot",
         lambda conn, inst, label, url, content, ctype, **k:

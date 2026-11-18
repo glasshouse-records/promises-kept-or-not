@@ -494,6 +494,11 @@ def _wayback_one(conn: sqlite3.Connection, inst_id: str, label: str, url: str,
         except Exception as exc:
             logger.warning("wayback %s@%s fetch failed: %s", label, ts, exc)
             continue
+        if content_is_pdf(resp.content, snap.get("mimetype", ""), url) and pdf_looks_truncated(resp.content):
+            # Wayback serves some large PDFs cut at 1 MiB; a stub is not a version of the policy.
+            logger.warning("wayback %s@%s: PDF capture truncated (%d bytes, no end marker) - skipped",
+                           label, ts, len(resp.content))
+            continue
         if record_snapshot(conn, inst_id, label, url, resp.content,
                            snap.get("mimetype", ""), wayback_timestamp=ts,
                            retrieval_date=date.today().isoformat()):
