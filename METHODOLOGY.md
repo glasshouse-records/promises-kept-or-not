@@ -360,6 +360,53 @@ Income Fund II, National Municipal Income Fund, Multi-Manager Alternative Fund a
 Bernstein Fund II N-PX are notice reports with no vote table, and several older
 AllianceBernstein funds last filed N-PX before the window; none is ingested.
 
+Federated Hermes (added 2026-11-18): federatedhermes.com answers requests that
+identify themselves honestly (200 on the home page, `/policies-and-disclosures` and
+on PDFs under `/siteassets/documents/`, probed 2026-11-18; unknown page paths
+redirect to the home page and unknown PDF paths return 404), so it is not a blocked
+source. But the new site (an Optimizely CMS, a JavaScript shell) links no US adviser
+proxy voting policy: its policy documents are the EOS and Hermes UK voting
+guidelines. The US advisers' policy, "Proxy Voting Policies and Procedures: Voting
+Client Securities" (form 50404), is a PDF served by Federated's own document server,
+`services.federatedinvestors.com/teamsite-file-server/content/Federated+Advisors+-+Proxy+Voting+Policies`
+with a signed `token` query string (the tokenless path answers 200 with an empty
+body; the token the Wayback Machine captured is still accepted and returns the PDF,
+`application/pdf`, created 2024-01-23). It is archived as
+`federated-advisors-proxy-voting-policies`: the live copy plus one Wayback capture
+(2020-12-02), whose PDF metadata date the editions April 2020 and January 2024 (a
+2024-07-13 capture is byte-identical to the live copy); the text prints no edition
+date, and the two editions differ in many passages (for example the UK/Ireland
+CFO exception to the director rule). It is a PDF, so no `body` bound is needed. If Federated rotates
+the token the live fetch fails and is logged, not rewritten around. The dated route is
+`federated-hermes-proxy-voting-policies-as-printed-in-sai`: the Federated Hermes
+Global Allocation Fund SAI (one copy per annual 485BPOS, read from "Proxy Voting
+Policies As an investment adviser with a fiduciary duty" to "Proxy Voting Report A
+report on", so the policy's last sentence, "...how the proposal shall be voted.", is
+kept; page numbers 30-49, which print mid-text and shift by edition, are removed).
+It yields five editions (2022-01-27, 2023-01-25, 2024-01-26, 2025-01-27, 2026-01-27;
+the 2024 edition differs from the one before by two commas and one threshold, "at
+least 15%" to "10%", of shareholders needed to call a special meeting). That fund is
+used because a single-fund SAI prints one copy once a year; the multi-fund Federated
+SAIs print differing copies (different advisers) and would invent versions, and other
+trusts carried each edition earlier than this fund's SAI, so these dates are upper
+bounds.
+Voting: each trust's SAI says the Board has delegated to the Adviser (the Federated
+advisory company it names, a Federated Hermes, Inc. subsidiary) authority to vote
+proxies and prints the Federated policy. Series sub-advised by Hermes Investment
+Management Limited (HIML) differ: their SAIs say the Adviser "has in turn delegated
+to the Sub-Adviser, the authority to vote proxies", under HIML's own guidelines, and
+the Federated summary excludes "Hermes Investment Management, which maintains its own
+voting policy". Those series (Adviser Series Global Equity, U.S. SMID and SDG
+Engagement Equity Funds; the Sustainable High Yield Bond Fund from its SAI of
+2023-05-26) are keyed HERMES_HIML, dated from the SAI that says so; HIML's own policy
+is not archived, so nothing is ever paired with that key. The International Equity
+Fund names Polaris Capital Management as a portfolio sub-adviser only, the voting
+delegation there is to the Adviser, so it is keyed FEDERATED_HERMES. Each trust is keyed
+from the EDGAR filing date of the earliest SAI read (2022-01-26 to 2022-12-27; Adviser
+Series per series). Money Market Obligations Trust and three municipal trusts (only
+Nuveen and BlackRock fund ballots), the Core Trust (no SAI exists to say who votes) and
+the notice-only registrants are not ingested.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting

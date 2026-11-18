@@ -2470,3 +2470,178 @@ institutions:
             - "PART C OTHER INFORMATION"
           strip_patterns:
             - '\bA- ?\d{1,2}\b(?: Table of Contents)?'
+
+  federated_hermes:
+    display_name: "Federated Hermes (Federated Hermes, Inc.)"
+    short_name: "Federated Hermes"
+    cik: "0001056288"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Federated Hermes, Inc., Pittsburgh. CIK 1056288 is Federated Hermes, Inc., the 13-F filer (13F-HR) and parent of the US advisers that vote the Federated Hermes funds' proxies (Federated Equity Management Company of Pennsylvania 1279012, Federated Global Investment Management Corp. 1086431, Federated Investment Management Company, Federated MDTA LLC 1056508, Federated Advisory Services Company 1279010), which file 13F-NT and only institutional-manager N-PX reports, as does Hermes Investment Management Ltd (1013143, the UK sub-adviser of some series that votes under its own policy). Added 2026-11-18. aum_usd_tr left 0 (firm AUM not verified from an official source), so it carries no weight in AUM-weighted metrics."
+    npx_ciks:
+      # Added 2026-11-18. The Federated Hermes US fund registrants that file N-PX vote tables with operating-company votes. Every trust's SAI says the Board has delegated to the
+      # Adviser authority to vote proxies on the securities held in the Fund's portfolio and prints the Federated proxy voting policy under "Voting Proxies On Fund Portfolio
+      # Securities". Exception, read fund by fund from the SAIs: for series sub-advised by Hermes Investment Management Limited (HIML) the SAI says "The Board has delegated to the
+      # Adviser, and the Adviser has in turn delegated to the Sub-Adviser, the authority to vote proxies", under HIML's own Corporate Governance and Responsible Investment
+      # Guidelines, and the Federated summary says it excludes "Hermes Investment Management, which maintains its own voting policy". Those series carry the separate key HERMES_HIML
+      # (dated from the SAI that says so); HIML's own policy is not archived, so it is never paired with text. `from` is the EDGAR filing date of the earliest SAI read (2022
+      # onward); earlier meetings stay unlabelled. Federated Hermes Adviser Series is keyed per series, with no registrant-wide key. International Equity Fund (Adviser Series) names
+      # Polaris Capital Management as its sub-adviser for portfolio management only; the voting delegation there is to the Adviser, so it is keyed FEDERATED_HERMES.
+      - cik: "912577"
+        adviser: "Federated Hermes advisory companies (the Adviser named in each SAI: Federated Equity Management Company of Pennsylvania, Federated Global Investment Management Corp., Federated Investment Management Company, Federated MDTA LLC); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/912577/000162363222000535/fis-form.htm"  # 485BPOS filed 2022-04-25 (0001623632-22-000535), SAI "Voting Proxies On Fund Portfolio Securities"; later annual editions not opened one by one
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Voting Proxies On Fund Portfolio Securities: 'The Board has delegated to the Adviser authority to vote proxies on the securities held in the Fund's portfolio. The Board has also approved the Adviser's policies and procedures for voting the proxies' (the Adviser is the Federated advisory company named in the SAI, a Federated Hermes, Inc. subsidiary); the SAI prints the Federated proxy voting policy. Every SAI of the trust read (2022-2026, 0001623632-22-000535 first) says the same. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: FEDERATED_HERMES, from: "2022-04-25"}]
+        name: "Federated Hermes Insurance Series"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1849998"
+        adviser: "Federated Hermes advisory companies (the Adviser named in each SAI: Federated Equity Management Company of Pennsylvania, Federated Global Investment Management Corp., Federated Investment Management Company, Federated MDTA LLC); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1849998/000162363222000755/form292.htm"  # 485BPOS filed 2022-06-24 (0001623632-22-000755), SAI "Voting Proxies On Fund Portfolio Securities"; later annual editions not opened one by one
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Voting Proxies On Fund Portfolio Securities: 'The Board has delegated to the Adviser authority to vote proxies on the securities held in the Fund's portfolio. The Board has also approved the Adviser's policies and procedures for voting the proxies' (the Adviser is the Federated advisory company named in the SAI, a Federated Hermes, Inc. subsidiary); the SAI prints the Federated proxy voting policy. Every SAI of the trust read (2022-2026, 0001623632-22-000755 first) says the same. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: FEDERATED_HERMES, from: "2022-06-24"}]
+        name: "Federated Hermes ETF Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "745968"
+        adviser: "Federated Hermes advisory companies (the Adviser named in each SAI: Federated Equity Management Company of Pennsylvania, Federated Global Investment Management Corp., Federated Investment Management Company, Federated MDTA LLC); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/745968/000162363222000067/fef-form.htm"  # 485BPOS filed 2022-01-26 (0001623632-22-000067), SAI "Voting Proxies On Fund Portfolio Securities"; later annual editions not opened one by one
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Voting Proxies On Fund Portfolio Securities: 'The Board has delegated to the Adviser authority to vote proxies on the securities held in the Fund's portfolio. The Board has also approved the Adviser's policies and procedures for voting the proxies' (the Adviser is the Federated advisory company named in the SAI, a Federated Hermes, Inc. subsidiary); the SAI prints the Federated proxy voting policy. Every SAI of the trust read (2022-2026, 0001623632-22-000067 first) says the same. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: FEDERATED_HERMES, from: "2022-01-26"}]
+        name: "Federated Hermes Equity Funds"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "879569"
+        adviser: "Federated Hermes advisory companies (the Adviser named in each SAI: Federated Equity Management Company of Pennsylvania, Federated Global Investment Management Corp., Federated Investment Management Company, Federated MDTA LLC); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/879569/000162363222000152/fxisi-form.htm"  # 485BPOS filed 2022-01-31 (0001623632-22-000152), SAI "Voting Proxies On Fund Portfolio Securities"; later annual editions not opened one by one
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Voting Proxies On Fund Portfolio Securities: 'The Board has delegated to the Adviser authority to vote proxies on the securities held in the Fund's portfolio. The Board has also approved the Adviser's policies and procedures for voting the proxies' (the Adviser is the Federated advisory company named in the SAI, a Federated Hermes, Inc. subsidiary); the SAI prints the Federated proxy voting policy. Every SAI of the trust read (2022-2026, 0001623632-22-000152 first) says the same. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: FEDERATED_HERMES, from: "2022-01-31"}]
+        name: "Federated Hermes Fixed Income Securities, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "13386"
+        adviser: "Federated Hermes advisory companies (the Adviser named in each SAI: Federated Equity Management Company of Pennsylvania, Federated Global Investment Management Corp., Federated Investment Management Company, Federated MDTA LLC); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/13386/000162363222000096/form18566.htm"  # 485BPOS filed 2022-01-27 (0001623632-22-000096), SAI "Voting Proxies On Fund Portfolio Securities"; later annual editions not opened one by one
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Voting Proxies On Fund Portfolio Securities: 'The Board has delegated to the Adviser authority to vote proxies on the securities held in the Fund's portfolio. The Board has also approved the Adviser's policies and procedures for voting the proxies' (the Adviser is the Federated advisory company named in the SAI, a Federated Hermes, Inc. subsidiary); the SAI prints the Federated proxy voting policy. Every SAI of the trust read (2022-2026, 0001623632-22-000096 first) says the same. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: FEDERATED_HERMES, from: "2022-01-27"}]
+        name: "Federated Hermes Global Allocation Fund"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "745967"
+        adviser: "Federated Hermes advisory companies (the Adviser named in each SAI: Federated Equity Management Company of Pennsylvania, Federated Global Investment Management Corp., Federated Investment Management Company, Federated MDTA LLC); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/745967/000162363222000560/form178.htm"  # 485BPOS filed 2022-04-26 (0001623632-22-000560), SAI "Voting Proxies On Fund Portfolio Securities"; later annual editions not opened one by one
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Voting Proxies On Fund Portfolio Securities: 'The Board has delegated to the Adviser authority to vote proxies on the securities held in the Fund's portfolio. The Board has also approved the Adviser's policies and procedures for voting the proxies' (the Adviser is the Federated advisory company named in the SAI, a Federated Hermes, Inc. subsidiary); the SAI prints the Federated proxy voting policy. Every SAI of the trust read (2022-2026, 0001623632-22-000560 first) says the same. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: FEDERATED_HERMES, from: "2022-04-26"}]
+        name: "Federated Hermes High Yield Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "789281"
+        adviser: "Federated Hermes advisory companies (the Adviser named in each SAI: Federated Equity Management Company of Pennsylvania, Federated Global Investment Management Corp., Federated Investment Management Company, Federated MDTA LLC); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/789281/000162363222000045/fist-form.htm"  # 485BPOS filed 2022-01-26 (0001623632-22-000045), SAI "Voting Proxies On Fund Portfolio Securities"; later annual editions not opened one by one
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Voting Proxies On Fund Portfolio Securities: 'The Board has delegated to the Adviser authority to vote proxies on the securities held in the Fund's portfolio. The Board has also approved the Adviser's policies and procedures for voting the proxies' (the Adviser is the Federated advisory company named in the SAI, a Federated Hermes, Inc. subsidiary); the SAI prints the Federated proxy voting policy. Every SAI of the trust read (2022-2026, 0001623632-22-000045 first) says the same. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: FEDERATED_HERMES, from: "2022-01-26"}]
+        name: "Federated Hermes Income Securities Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "861469"
+        adviser: "Federated Hermes advisory companies (the Adviser named in each SAI: Federated Equity Management Company of Pennsylvania, Federated Global Investment Management Corp., Federated Investment Management Company, Federated MDTA LLC); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/861469/000162363222001567/form713.htm"  # 485BPOS filed 2022-12-27 (0001623632-22-001567), SAI "Voting Proxies On Fund Portfolio Securities"; later annual editions not opened one by one
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Voting Proxies On Fund Portfolio Securities: 'The Board has delegated to the Adviser authority to vote proxies on the securities held in the Fund's portfolio. The Board has also approved the Adviser's policies and procedures for voting the proxies' (the Adviser is the Federated advisory company named in the SAI, a Federated Hermes, Inc. subsidiary); the SAI prints the Federated proxy voting policy. Every SAI of the trust read (2022-2026, 0001623632-22-001567 first) says the same. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: FEDERATED_HERMES, from: "2022-12-27"}]
+        name: "Federated Hermes Index Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1363526"
+        adviser: "Federated Hermes advisory companies (the Adviser named in each SAI: Federated Equity Management Company of Pennsylvania, Federated Global Investment Management Corp., Federated Investment Management Company, Federated MDTA LLC); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1363526/000162363222001210/mdt-form.htm"  # 485BPOS filed 2022-09-27 (0001623632-22-001210), SAI "Voting Proxies On Fund Portfolio Securities"; later annual editions not opened one by one
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Voting Proxies On Fund Portfolio Securities: 'The Board has delegated to the Adviser authority to vote proxies on the securities held in the Fund's portfolio. The Board has also approved the Adviser's policies and procedures for voting the proxies' (the Adviser is the Federated advisory company named in the SAI, a Federated Hermes, Inc. subsidiary); the SAI prints the Federated proxy voting policy. Every SAI of the trust read (2022-2026, 0001623632-22-001210 first) says the same. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: FEDERATED_HERMES, from: "2022-09-27"}]
+        name: "Federated Hermes MDT Series"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1340579"
+        adviser: "Federated Hermes advisory companies (the Adviser named in each SAI: Federated Equity Management Company of Pennsylvania, Federated Global Investment Management Corp., Federated Investment Management Company, Federated MDTA LLC); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1340579/000162363222000124/form18572.htm"  # 485BPOS filed 2022-01-28 (0001623632-22-000124), SAI "Voting Proxies On Fund Portfolio Securities"; later annual editions not opened one by one
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Voting Proxies On Fund Portfolio Securities: 'The Board has delegated to the Adviser authority to vote proxies on the securities held in the Fund's portfolio. The Board has also approved the Adviser's policies and procedures for voting the proxies' (the Adviser is the Federated advisory company named in the SAI, a Federated Hermes, Inc. subsidiary); the SAI prints the Federated proxy voting policy. Every SAI of the trust read (2022-2026, 0001623632-22-000124 first) says the same. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: FEDERATED_HERMES, from: "2022-01-28"}]
+        name: "Federated Hermes Managed Pool Series"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "799704"
+        adviser: "Federated Hermes advisory companies (the Adviser named in each SAI: Federated Equity Management Company of Pennsylvania, Federated Global Investment Management Corp., Federated Investment Management Company, Federated MDTA LLC); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/799704/000162363222000049/form18533.htm"  # 485BPOS filed 2022-01-26 (0001623632-22-000049), SAI "Voting Proxies On Fund Portfolio Securities"; later annual editions not opened one by one
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Voting Proxies On Fund Portfolio Securities: 'The Board has delegated to the Adviser authority to vote proxies on the securities held in the Fund's portfolio. The Board has also approved the Adviser's policies and procedures for voting the proxies' (the Adviser is the Federated advisory company named in the SAI, a Federated Hermes, Inc. subsidiary); the SAI prints the Federated proxy voting policy. Every SAI of the trust read (2022-2026, 0001623632-22-000049 first) says the same. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: FEDERATED_HERMES, from: "2022-01-26"}]
+        name: "Federated Hermes Strategic Dividend Growth Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "918199"
+        adviser: "Federated Hermes advisory companies (the Adviser named in each SAI: Federated Equity Management Company of Pennsylvania, Federated Global Investment Management Corp., Federated Investment Management Company, Federated MDTA LLC); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/918199/000162363222000097/wisi-form.htm"  # 485BPOS filed 2022-01-27 (0001623632-22-000097), SAI "Voting Proxies On Fund Portfolio Securities"; later annual editions not opened one by one
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Voting Proxies On Fund Portfolio Securities: 'The Board has delegated to the Adviser authority to vote proxies on the securities held in the Fund's portfolio. The Board has also approved the Adviser's policies and procedures for voting the proxies' (the Adviser is the Federated advisory company named in the SAI, a Federated Hermes, Inc. subsidiary); the SAI prints the Federated proxy voting policy. Every SAI of the trust read (2022-2026, 0001623632-22-000097 first) says the same. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: FEDERATED_HERMES, from: "2022-01-27"}]
+        name: "Federated Hermes World Investment Series, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "925723"
+        adviser: "Federated Hermes advisory companies (the Adviser named in each SAI: Federated Equity Management Company of Pennsylvania, Federated Global Investment Management Corp., Federated Investment Management Company, Federated MDTA LLC); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/925723/000162363222000852/finst-form.htm"  # 485BPOS filed 2022-07-26 (0001623632-22-000852), SAI "Voting Proxies On Fund Portfolio Securities"; later annual editions not opened one by one
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Voting Proxies On Fund Portfolio Securities: 'The Board has delegated to the Adviser authority to vote proxies on the securities held in the Fund's portfolio. The Board has also approved the Adviser's policies and procedures for voting the proxies' (the Adviser is the Federated advisory company named in the SAI, a Federated Hermes, Inc. subsidiary); the SAI prints the Federated proxy voting policy. Every SAI of the trust read (2022-2026, 0001623632-22-000852 first) says the same. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: FEDERATED_HERMES, from: "2022-07-26"}]
+        name: "Federated Hermes Institutional Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1707560"
+        adviser: "Federated Hermes advisory companies for the Federated-voted series; Hermes Investment Management Limited (HIML) votes the series it sub-advises"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1707560/000162363222001563/fadvs-form.htm"  # 485BPOS filed 2022-12-27 (0001623632-22-001563): SDG Engagement Equity Fund SAI delegates voting to the Sub-Adviser (HIML); the MDT Large Cap Value Fund SAI in the same filing prints the Federated policy
+        adviser_verified: "2026-11-18"
+        voting_note: "The trust's SAIs are per fund. Federated policy (SAI 'Voting Proxies On Fund Portfolio Securities': the Board delegated to the Adviser): MDT Market Neutral Fund S000072284 (0001623632-22-000362, filed 2022-02-28), Emerging Markets Equity S000066201, International Equity S000066202 and International Growth S000066203 Funds (0001623632-22-000874, 2022-07-27), Conservative Municipal Microshort Fund S000070657 (0001623632-22-001328, 2022-10-25), MDT Large Cap Value Fund S000058355 (0001623632-22-001563, 2022-12-27). HIML own policy (SAI 'PROXY VOTING POLICIES AND PROCEDURES': 'The Board has delegated to the Adviser, and the Adviser has in turn delegated to the Sub-Adviser, the authority to vote proxies'): Global Equity Fund S000065055 (0001623632-22-000069, 2022-01-26), U.S. SMID Fund S000068640 (0001623632-22-001102, 2022-08-25), SDG Engagement Equity Fund S000063461 (0001623632-22-001563, 2022-12-27). No registrant-wide key: a series with no rule stays unlabelled."
+        series_adviser:
+          S000072284: [{key: FEDERATED_HERMES, from: "2022-02-28"}]
+          S000066201: [{key: FEDERATED_HERMES, from: "2022-07-27"}]
+          S000066202: [{key: FEDERATED_HERMES, from: "2022-07-27"}]
+          S000066203: [{key: FEDERATED_HERMES, from: "2022-07-27"}]
+          S000070657: [{key: FEDERATED_HERMES, from: "2022-10-25"}]
+          S000058355: [{key: FEDERATED_HERMES, from: "2022-12-27"}]
+          S000065055: [{key: HERMES_HIML, from: "2022-01-26"}]
+          S000068640: [{key: HERMES_HIML, from: "2022-08-25"}]
+          S000063461: [{key: HERMES_HIML, from: "2022-12-27"}]
+        name: "Federated Hermes Adviser Series"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "225318"
+        adviser: "Federated Investment Management Company until 2023-05-25; Hermes Investment Management Limited (HIML, sub-adviser) from the SAI of 2023-05-26"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/225318/000162363223000681/fhsuhy981-form.htm"  # 485BPOS filed 2023-05-26 (0001623632-23-000681): the Board delegated to the Adviser, which delegated to the Sub-Adviser (HIML), voting under HIML's guidelines
+        adviser_verified: "2026-11-18"
+        voting_note: "The 485BPOS of 2022-05-24 (0001623632-22-000661, then the High Income Bond Fund, Inc.) prints the Federated policy; from the 485BPOS of 2023-05-26 the SAI says the Adviser delegated proxy voting to the Sub-Adviser (HIML), and every later SAI (2024-05-28, 2025-05-28, 2026-05-26) says the same. So FEDERATED_HERMES ends 2023-05-25 and every N-PX meeting in the dated window is HERMES_HIML."
+        adviser_key_history: [{key: FEDERATED_HERMES, from: "2022-05-24", until: "2023-05-25"}, {key: HERMES_HIML, from: "2023-05-26"}]
+        name: "Federated Hermes Sustainable High Yield Bond Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed FEDERATED_HERMES, per registrant, from the EDGAR filing date of the earliest 485BPOS (SAI) read: Equity Funds (745968) and Income Securities Trust (789281) and Strategic Dividend Growth Fund (799704) 2022-01-26, Global Allocation Fund (13386) and World Investment Series (918199) 2022-01-27, Managed Pool Series (1340579) 2022-01-28, Fixed Income Securities (879569) 2022-01-31, Insurance Series (912577) 2022-04-25, High Yield Trust (745967) 2022-04-26, ETF Trust (1849998) 2022-06-24, Institutional Trust (925723) 2022-07-26, MDT Series (1363526) 2022-09-27, Index Trust (861469) 2022-12-27; Adviser Series (1707560) per series (MDT Market Neutral 2022-02-28; Emerging Markets Equity, International Equity, International Growth 2022-07-27; Conservative Municipal Microshort 2022-10-25; MDT Large Cap Value 2022-12-27). SAIs from before 2022 were not read, earlier meetings stay unlabelled. Several of these SAIs cover series that appear in later SAIs only; every dated window starts before the first N-PX meeting in scope (2023-07-01)."
+      - "Voted by Hermes Investment Management Limited, key HERMES_HIML, never paired with a policy (its own policy is not archived): Adviser Series Global Equity Fund (S000065055) from 2022-01-26, U.S. SMID Fund (S000068640) from 2022-08-25, SDG Engagement Equity Fund (S000063461) from 2022-12-27, and the Sustainable High Yield Bond Fund, Inc. (225318) from 2023-05-26. The Global Small Cap (S000065056), International Developed Equity (S000065852), SDG Engagement High Yield Credit (S000066503) and Unconstrained Credit (S000065125) Funds are HIML-voted per their SAIs but have no series in the ingested N-PX, so no rule is written for them."
+      - "Not ingested, not keyed: Money Market Obligations Trust (856517), Municipal Securities Income Trust (866700), Premier Municipal Income Fund (1199004) and Short-Intermediate Duration Municipal Trust (353101) (their N-PX hold only Nuveen and BlackRock fund ballots, no operating-company votes), the Core Trust (1034106; no 485BPOS SAI exists to establish who votes, so its 2024-26 N-PX of bankruptcy ballots stays out), and registrants whose N-PX is a notice report with no vote table (Adjustable Rate Securities Trust 771524, Core Trust III 1411674, Government Income Trust 357052, Intermediate Municipal Trust 770116, International Series 742286, Investment Series Funds 889388, Municipal Bond Fund 201801, Project and Trade Finance Tender Fund 1677615, Short-Intermediate Government Trust 357159, Short-Term Government Trust 739594, Total Return Government Bond Fund 946868, Total Return Series 912763; Government Income Securities 355691 last filed 2024). The 2023-08 legacy-HTML N-PX and the institutional-manager reports (1279012, 1279010, 1086431, 1056508, 1013143) are not ingested."
+      - "Policy text: the Federated advisers' 'Proxy Voting Policies and Procedures: Voting Client Securities' summary (form 50404), a PDF served by Federated's own document server (services.federatedinvestors.com, `teamsite-file-server`, with a `token` query string; the new federatedhermes.com site links no US adviser policy, only the EOS and Hermes UK voting guidelines) and, under a separate label, as printed in the Federated Hermes Global Allocation Fund SAI (one copy per annual 485BPOS, read from 'Proxy Voting Policies As an investment adviser' to 'Proxy Voting Report A report on'; page numbers 30-49 that print inside the policy removed). That fund's SAI is used because a single-fund SAI prints one copy once a year; the multi-fund Federated SAIs print differing copies (different advisers) and would invent versions. No text prints an edition date; the PDF's own metadata dates its two editions (April 2020, January 2024). Other trusts carried each SAI edition earlier than this fund's SAI, so the SAI-printed dates are upper bounds."
+    commitments:
+      # Verified 2026-11-18 (200, application/pdf, honest client; PDF title 'PROXY VOTING POLICIES AND PROCEDURES', Keywords 50404, created 2024-01-23). The tokenless path answers 200
+      # with an empty body, the token query string (the Wayback-captured one, which the server still accepts) returns the PDF. The policy is the PDF, so no `body` bound is needed.
+      - label: federated-advisors-proxy-voting-policies
+        url: "https://services.federatedinvestors.com/teamsite-file-server/content/Federated+Advisors+-+Proxy+Voting+Policies?token=ZGFmXHBkZlxhYm91dF9mZWRlcmF0ZWRcaW52ZXN0b3JfcmVsYXRpb25zXDUwNDA0LnBkZg%3D%3D%7C1%7CMCwCFG7KcuCeq7PPXTI19wh6SDnMwsRqAhRnm%2BVkj2CPHSh8y2A7YDFFVpN6aA%3D%3D"
+        adviser: "Federated Hermes advisory companies (Federated Hermes, Inc.)"
+        adviser_key: "FEDERATED_HERMES"
+      # The same policy as printed in the Federated Hermes Global Allocation Fund SAI, dated by EDGAR filing date. Separate label from the website PDF (different formatting would
+      # invent alternating versions). Page numbers 30-49 print mid-text and shift by edition, so they are stripped. The section ends at the N-PX availability paragraph, after the
+      # policy's last sentence ("...how the proposal shall be voted.").
+      - label: federated-hermes-proxy-voting-policies-as-printed-in-sai
+        adviser: "Federated Hermes advisory companies (Federated Hermes, Inc.)"
+        adviser_key: "FEDERATED_HERMES"
+        sai_appendix:
+          cik: "0000013386"
+          forms: ["485BPOS"]
+          since: "2022-01-01"
+          start:
+            - "Proxy Voting Policies As an investment adviser with a fiduciary duty to the Fund and its shareholders"
+          end:
+            - "Proxy Voting Report A report on"
+          strip_patterns:
+            - '(?<![\w$(./,-])[3-4]\d(?![\w%.,)/-])'
