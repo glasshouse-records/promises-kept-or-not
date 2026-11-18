@@ -177,6 +177,12 @@ Coverage is a set of named fund registrants per institution, not the whole firm.
   and 1816125) contain exactly 500,000 `proxyTable` records in the SEC file
   itself; the XML is well-formed but appears capped. Counts for those filings are
   lower bounds.
+- **Duplicate guard and a correction.** Releases 2026-11-17.2 to 2026-11-18.2 shipped
+  repeated N-PX lines of newly added registrants as distinct votes (0.62–0.69% of votes,
+  mostly Dimensional), because duplicate marking was not re-run after those ingests. Each
+  shipped vote id was re-checked against the ledger's flags; this release ships none.
+  Ingest now marks duplicates itself, and the release build refuses stale flags. Per-release
+  counts are in the repository's `docs/CORRECTIONS.md`.
 - **Independent re-count.** Spot counts run directly against the ledger have
   matched the derived tables; one discrepancy found in review was traced to the
   hand count, not the tool.
