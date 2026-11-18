@@ -36,7 +36,7 @@ PUBLIC_TABLES: dict[str, str] = {
     "enforcement_actions": "WHERE is_duplicate = 0",
     "entities": "",
     "entity_cusips": "",
-    "commitments": "",
+    "commitments": "WHERE superseded = 0",
     "findings": "WHERE status = 'approved'",   # only human-approved findings are public
 }
 

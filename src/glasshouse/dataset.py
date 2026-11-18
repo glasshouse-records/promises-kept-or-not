@@ -128,6 +128,7 @@ DATA_DICTIONARY: dict[str, dict] = {
         "doc_producer": "software named in the PDF's producer metadata; '' if none",
         "public_by": "edgar-sai versions only: filing date of the earliest EDGAR filing "
                      "carrying this text (public by then; not the date it was written); '' otherwise",
+        "superseded": "internal: 1 = replaced by a rebuild; never shipped (always 0 here)",
         "via": "'' = the manager's own URL; 'edgar-sai' = section extracted from a fund SAI "
                "on EDGAR (url is that SAI document)"},
     "findings": {"_": "HUMAN-APPROVED findings only (status='approved'). The "
@@ -205,7 +206,7 @@ def coverage(conn: sqlite3.Connection) -> list[dict]:
             # Version identity is the policy TEXT: counting distinct bytes
             # published 63 "versions" where the archive holds 51.
             "SELECT COUNT(DISTINCT CASE WHEN text_sha256='' THEN 'raw:'||sha256 ELSE text_sha256 END) "
-            "FROM commitments WHERE institution_id=?",
+            "FROM commitments WHERE institution_id=? AND superseded=0",
             (inst["id"],)).fetchone()[0]
         # How many of this institution's archived policies carry a date written
         # by ITS OWN software. That is the only dating evidence in the corpus
@@ -215,7 +216,7 @@ def coverage(conn: sqlite3.Connection) -> list[dict]:
         # here instead published "7 self-dated of 5 versions".
         dated = conn.execute(
             "SELECT COUNT(DISTINCT CASE WHEN text_sha256='' THEN 'raw:'||sha256 "
-            "ELSE text_sha256 END) FROM commitments WHERE institution_id=? "
+            "ELSE text_sha256 END) FROM commitments WHERE institution_id=? AND superseded=0 "
             "AND doc_created_at != ''", (inst["id"],)).fetchone()[0]
         if not (npx["n"] or hold or docs):
             continue  # registered but not yet ingested — omit from coverage

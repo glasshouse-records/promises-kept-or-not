@@ -43,6 +43,7 @@ from .contradictions import (
     score_commitment_sentence,
 )
 from .http import DATA_DIR
+from .ledger import VERSION_DATE_SQL
 
 MATRIX_CACHE = DATA_DIR / "investigate" / "matrix.json"
 
@@ -113,8 +114,8 @@ def _commitment_for(conn: sqlite3.Connection, inst_id: str, commitment_pats: lis
     best_v = ""
     for r in conn.execute(
         "SELECT doc_label, url, sha256, content_path, "
-        "COALESCE(NULLIF(wayback_timestamp,''), retrieval_date) AS v "
-        "FROM commitments WHERE institution_id=?", (inst_id,)):
+        f"{VERSION_DATE_SQL} AS v "
+        "FROM commitments WHERE institution_id=? AND superseded=0", (inst_id,)):
         cp = r["content_path"]
         if not cp or not Path(cp).exists():
             continue

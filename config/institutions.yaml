@@ -1350,5 +1350,6 @@ institutions:
           forms: ["485BPOS"]
           since: "2023-01-01"
           start: "APPENDIX A: PROXY VOTING POLICIES AND PROCEDURES Wellington Management Company LLP Global Proxy Policy and Procedures"
-          end: "APPENDIX B: CREDIT RATINGS"
+          # The 2023 SAI follows the policy with the Voting Guidelines (a different document, kept out so every edition covers the same text); 2024+ with Appendix B.
+          end: ["Wellington Management Company LLP Global Proxy Voting Guidelines", "APPENDIX B: CREDIT RATINGS"]
           strip_page_numbers: true   # the SAI's printed page numbers (94 -> 95) must not look like edits

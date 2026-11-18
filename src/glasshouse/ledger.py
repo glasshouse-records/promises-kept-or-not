@@ -237,6 +237,10 @@ CREATE TABLE IF NOT EXISTS commitments (
     -- '' = fetched from the manager's own URL; 'edgar-sai' = a section extracted
     -- from a fund SAI on EDGAR (url is then that SAI document).
     via               TEXT NOT NULL DEFAULT '',
+    -- 1 = replaced by a rebuild with different extraction settings. Rows are
+    -- NEVER deleted (an id, once published, must never point at other text);
+    -- readers and the release skip superseded rows.
+    superseded        INTEGER NOT NULL DEFAULT 0,
     UNIQUE (institution_id, doc_label, sha256, wayback_timestamp)
 );
 
@@ -292,6 +296,11 @@ CREATE TABLE IF NOT EXISTS match_log (
 """
 
 
+# The date a commitment version was demonstrably public: the Wayback capture, else
+# the EDGAR filing date of an SAI-printed version, else our own retrieval date.
+VERSION_DATE_SQL = "COALESCE(NULLIF(wayback_timestamp,''), NULLIF(public_by,''), retrieval_date)"
+
+
 def connect(db_path: Path | str = DB_PATH) -> sqlite3.Connection:
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     # 60s busy timeout + WAL so reports can run while an ingest is writing.
@@ -329,6 +338,9 @@ def _migrate(conn: sqlite3.Connection) -> None:
             conn.execute(f"ALTER TABLE commitments ADD COLUMN {col} "
                          "TEXT NOT NULL DEFAULT ''")
             conn.commit()
+    if "superseded" not in {r[1] for r in conn.execute("PRAGMA table_info(commitments)")}:
+        conn.execute("ALTER TABLE commitments ADD COLUMN superseded INTEGER NOT NULL DEFAULT 0")
+        conn.commit()
     ocols = {r[1] for r in conn.execute("PRAGMA table_info(outreach)")}
     if "finding_fingerprint" not in ocols:
         conn.execute("ALTER TABLE outreach ADD COLUMN finding_fingerprint "

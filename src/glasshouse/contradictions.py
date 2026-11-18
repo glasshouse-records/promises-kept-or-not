@@ -24,6 +24,8 @@ import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .ledger import VERSION_DATE_SQL
+
 logger = logging.getLogger(__name__)
 
 # Themes: commitment-side patterns (in policy language) and proposal-side
@@ -363,10 +365,10 @@ def find_commitment_vote_contradictions(
     # All commitment versions, grouped by document and sorted oldest→newest.
     versions: dict[tuple[str, str], list[sqlite3.Row]] = {}
     for d in conn.execute(
-        """SELECT c.institution_id, c.doc_label, c.url, c.sha256, c.text_sha256,
+        f"""SELECT c.institution_id, c.doc_label, c.url, c.sha256, c.text_sha256,
                   c.content_path,
-                  COALESCE(NULLIF(c.wayback_timestamp,''), c.retrieval_date) AS version
-           FROM commitments c"""):
+                  {VERSION_DATE_SQL} AS version
+           FROM commitments c WHERE c.superseded=0"""):
         versions.setdefault((d["institution_id"], d["doc_label"]), []).append(d)
     for vs in versions.values():
         vs.sort(key=lambda d: _yyyymmdd(d["version"]))

@@ -28,8 +28,8 @@ import json
 import logging
 import re
 import sqlite3
+import statistics
 from datetime import date
-from pathlib import Path
 
 from .. import http
 from . import commitments as cm
@@ -41,8 +41,8 @@ VIA = "edgar-sai"
 
 
 # Bump when extraction/normalisation changes: every SAI version of a label is then
-# rebuilt from EDGAR (the rows are fully derived from public filings).
-EXTRACTION_VERSION = 3
+# rebuilt from EDGAR; the old rows are marked superseded, never deleted.
+EXTRACTION_VERSION = 5
 
 _SPACE_BEFORE_PUNCT = re.compile(r" +([.,;:])")
 # A printed page number: a 1-3 digit token straight after a sentence end and before a
@@ -64,68 +64,79 @@ def _all_positions(hay: str, needle: str) -> list[int]:
     return out
 
 
-def extract_section(text: str, start: str, end: str,
+def extract_section(text: str, start: str, end: str | list[str],
                     allow_identical_copies: bool = False,
                     strip_page_numbers: bool = False) -> str | None:
     """The normalised text from `start` up to (not including) the first `end`
     that follows it, or None when it cannot be extracted without guessing.
+    `end` may list alternatives (editions differ in what follows the policy);
+    the earliest one after the start wins.
 
     A multi-fund filing can print the same appendix once per SAI. With
     `allow_identical_copies` several start markers are accepted ONLY if every
     copy extracts to exactly the same text; any disagreement gives None."""
-    text, start, end = normalise(text), normalise(start), normalise(end)
-    if not start or not end:
+    text, start = normalise(text), normalise(start)
+    ends = [normalise(e) for e in ([end] if isinstance(end, str) else end)]
+    if not start or not all(ends):
         return None
     starts = _all_positions(text, start)
     if not starts or (len(starts) > 1 and not allow_identical_copies):
         return None
     sections = set()
     for s in starts:
-        e = text.find(end, s + len(start))
-        if e == -1:
+        found = [e for e in (text.find(m, s + len(start)) for m in ends) if e != -1]
+        if not found:
             return None
-        sec = text[s:e].strip()
+        sec = text[s:min(found)].strip()
         if strip_page_numbers:
             sec = _PAGE_NUMBER.sub("", sec).strip()
         sections.add(sec)
     return sections.pop() if len(sections) == 1 else None
 
 
-def purge_label(conn: sqlite3.Connection, institution_id: str, doc_label: str) -> int:
-    """Drop this label's edgar-sai rows (and their text files) so a changed
-    extraction rebuilds them from EDGAR. Only via='edgar-sai' rows are ever
-    touched: website captures and Wayback lineages are never affected."""
-    rows = conn.execute("SELECT id, content_path FROM commitments WHERE institution_id=? "
-                        "AND doc_label=? AND via=?", (institution_id, doc_label, VIA)).fetchall()
-    for r in rows:
-        conn.execute("DELETE FROM commitments WHERE id=?", (r["id"],))
-        Path(r["content_path"]).unlink(missing_ok=True)
+def supersede_label(conn: sqlite3.Connection, institution_id: str, doc_label: str) -> int:
+    """Mark this label's live edgar-sai rows superseded so a changed extraction
+    can rebuild them. NOTHING is deleted: a commitment id, once published, must
+    never later point at different text (the table has no AUTOINCREMENT, so a
+    deleted top row's id would be reused). Only via='edgar-sai' rows are touched;
+    website captures and Wayback lineages never are."""
+    cur = conn.execute("UPDATE commitments SET superseded=1 WHERE institution_id=? "
+                       "AND doc_label=? AND via=? AND superseded=0",
+                       (institution_id, doc_label, VIA))
     conn.commit()
-    return len(rows)
+    return cur.rowcount
 
 
 def record_version(conn: sqlite3.Connection, institution_id: str, doc_label: str,
                    url: str, section: str, filing_date: str,
                    retrieval_date: str | None = None) -> bool:
-    """Store one extracted section. True when it is a new version (or moved an
-    existing version to an earlier filing date); False when already on file."""
+    """Store one extracted section. True when a row was added, revived or moved
+    to an earlier filing; False when the text is already on file from this or an
+    earlier filing. A row's url and stored text file always refer to the SAME
+    filing, so re-extracting the cited url reproduces its text."""
     data = section.encode()
     sha = hashlib.sha256(data).hexdigest()   # file custody: the stored text file
     # Version identity ignores ALL whitespace: HTML inline tags leave spacing
     # artefacts ("Issuer -specific", '" excessive "') that are not edits.
     text_sha = hashlib.sha256("".join(section.split()).encode()).hexdigest()
-    row = conn.execute(
-        "SELECT id, public_by FROM commitments WHERE institution_id=? AND doc_label=? "
-        "AND text_sha256=?", (institution_id, doc_label, text_sha)).fetchone()
-    if row:
-        if filing_date < row["public_by"]:
-            # EDGAR lists newest first, and an earlier filing may only turn up
-            # on a later run: the version's date is the earliest filing's.
-            conn.execute("UPDATE commitments SET public_by=?, url=? WHERE id=?",
-                         (filing_date, url, row["id"]))
-            conn.commit()
-            return True
-        return False
+    live = conn.execute(
+        "SELECT MIN(public_by) FROM commitments WHERE institution_id=? AND doc_label=? "
+        "AND text_sha256=? AND superseded=0", (institution_id, doc_label, text_sha)).fetchone()[0]
+    if live is not None and live <= filing_date:
+        return False   # this text is already on file from this or an earlier filing
+    same_bytes = conn.execute(
+        "SELECT id FROM commitments WHERE institution_id=? AND doc_label=? AND sha256=? "
+        "AND wayback_timestamp=''", (institution_id, doc_label, sha)).fetchone()
+    if same_bytes:
+        # The stored file IS this filing's text (identical bytes), so the row may be
+        # revived or moved to cite this filing: url and file stay consistent.
+        conn.execute("UPDATE commitments SET superseded=0, public_by=?, url=? WHERE id=?",
+                     (filing_date, url, same_bytes["id"]))
+        conn.commit()
+        return True
+    # New text, or the same text from an EARLIER filing whose own bytes differ
+    # (whitespace): a row of its own, citing and storing that filing. The engine
+    # dedupes by text identity and takes the earliest.
     dest = cm.COMMITMENTS_DIR / institution_id / f"{doc_label}__{filing_date}__{sha[:8]}.txt"
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_bytes(data)
@@ -139,19 +150,44 @@ def record_version(conn: sqlite3.Connection, institution_id: str, doc_label: str
     return True
 
 
+OUTLIER_FACTOR = 3
+
+
 def ingest_filings(conn: sqlite3.Connection, institution_id: str, doc_label: str,
-                   filings: list[dict], start: str, end: str,
+                   filings: list[dict], start: str, end: str | list[str],
                    allow_identical_copies: bool = False,
                    strip_page_numbers: bool = False) -> int:
-    """Extract and record each filing ({accession, filing_date, url, text}),
-    oldest first. Returns the number of versions added or back-dated."""
-    n = 0
+    """Extract and record each filing ({accession, filing_date, url, text} or
+    a pre-extracted `section`), oldest first. Returns rows added or moved.
+
+    Length guard: a section more than OUTLIER_FACTOR times longer or shorter
+    than the label's median (rows on file plus this batch) is logged and not
+    recorded: it is almost certainly a different document (Wellington's 2023 SAI
+    printed the voting guidelines too), and diffing it against its neighbours
+    would report hundreds of sentences "removed"."""
+    cands = []
     for f in sorted(filings, key=lambda f: (f["filing_date"], f["accession"])):
-        section = extract_section(f["text"], start, end, allow_identical_copies,
-                                  strip_page_numbers)
+        section = f.get("section")
+        if section is None:
+            section = extract_section(f["text"], start, end, allow_identical_copies,
+                                      strip_page_numbers)
         if section is None:
             logger.info("%s/%s: no clean section in %s (%s); nothing recorded",
                         institution_id, doc_label, f["accession"], f["url"])
+            continue
+        cands.append((f, section))
+    sizes = [r[0] for r in conn.execute(
+        "SELECT size_bytes FROM commitments WHERE institution_id=? AND doc_label=? "
+        "AND via=? AND superseded=0", (institution_id, doc_label, VIA))]
+    sizes += [len(sec.encode()) for _, sec in cands]
+    median = statistics.median(sizes) if sizes else 0
+    n = 0
+    for f, section in cands:
+        size = len(section.encode())
+        if median and (size > OUTLIER_FACTOR * median or size * OUTLIER_FACTOR < median):
+            logger.info("%s/%s: length outlier in %s (%s): %d bytes vs median %d; "
+                        "not recorded", institution_id, doc_label, f["accession"],
+                        f["url"], size, median)
             continue
         n += record_version(conn, institution_id, doc_label, f["url"], section,
                             f["filing_date"])
@@ -171,23 +207,25 @@ def fetch_sai_appendices(conn: sqlite3.Connection, institutions: dict[str, dict]
             try:
                 found = [f for f in edgar.list_filings(str(cfg["cik"]), cfg.get("forms", ["485BPOS"]))
                          if f.filing_date >= str(cfg.get("since", "2023-01-01")) and f.primary_document]
-                # A filing is immutable: skip those already read under THESE markers
-                # (changing the markers re-reads everything).
+                found.sort(key=lambda f: (f.filing_date, f.accession_number))
+                copies = bool(cfg.get("allow_identical_copies"))
+                pages = bool(cfg.get("strip_page_numbers"))
+                # A filing is immutable: skip those already read under THESE settings
+                # (changing them re-reads everything).
                 sig = hashlib.sha256(json.dumps(
-                    [EXTRACTION_VERSION, cfg["start"], cfg["end"],
-                     bool(cfg.get("allow_identical_copies")), bool(cfg.get("strip_page_numbers"))]
+                    [EXTRACTION_VERSION, cfg["start"], cfg["end"], copies, pages]
                 ).encode()).hexdigest()[:16]
                 have = {r[0] for r in conn.execute(
                     "SELECT url FROM capture_attempts WHERE institution_id=? AND doc_label=? "
                     "AND outcome='unchanged' AND detail=?", (inst_id, label, "sai-read:" + sig))}
                 if not have:
                     # Never read under THESE settings: rows from an older
-                    # extraction are stale, rebuild them from the filings.
-                    purged = purge_label(conn, inst_id, label)
-                    if purged:
-                        logger.info("%s/%s: rebuilt, dropped %d stale SAI row(s)",
-                                    inst_id, label, purged)
-                n = 0
+                    # extraction are stale. Supersede (never delete) and rebuild.
+                    old = supersede_label(conn, inst_id, label)
+                    if old:
+                        logger.info("%s/%s: settings changed, superseded %d SAI row(s)",
+                                    inst_id, label, old)
+                batch, urls = [], []
                 for f in found:
                     url = f"{f.directory_url}/{f.primary_document}"
                     if url in have:
@@ -197,13 +235,20 @@ def fetch_sai_appendices(conn: sqlite3.Connection, institutions: dict[str, dict]
                     except Exception as exc:
                         logger.warning("%s/%s: fetch failed %s: %s", inst_id, label, url, exc)
                         continue
-                    n += ingest_filings(
-                        conn, inst_id, label,
-                        [{"accession": f.accession_number, "filing_date": f.filing_date,
-                          "url": url, "text": cm.html_to_text(raw)}],
-                        cfg["start"], cfg["end"], bool(cfg.get("allow_identical_copies")),
-                        bool(cfg.get("strip_page_numbers")))
-                    # Commit per iteration, never across a network wait.
+                    # Keep only the extracted section (or None), not the 2-5 MB page.
+                    batch.append({"accession": f.accession_number, "filing_date": f.filing_date,
+                                  "url": url,
+                                  "section": extract_section(cm.html_to_text(raw), cfg["start"],
+                                                             cfg["end"], copies, pages)})
+                    urls.append(url)
+                n = ingest_filings(conn, inst_id, label,
+                                   [b for b in batch if b["section"] is not None],
+                                   cfg["start"], cfg["end"], copies, pages)
+                for b in batch:
+                    if b["section"] is None:
+                        logger.info("%s/%s: no clean section in %s (%s); nothing recorded",
+                                    inst_id, label, b["accession"], b["url"])
+                for url in urls:
                     cm.log_attempt(conn, inst_id, label, url, "unchanged", "sai-read:" + sig)
             except Exception as exc:
                 logger.warning("%s/%s: SAI listing failed: %s", inst_id, label, exc)

@@ -665,7 +665,7 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
     for c in led.execute(
         """SELECT id, institution_id, doc_label, url, sha256, text_sha256, content_path,
                   wayback_timestamp, retrieval_date, doc_created_at, public_by, via
-           FROM commitments
+           FROM commitments WHERE superseded=0
            ORDER BY COALESCE(NULLIF(substr(wayback_timestamp,1,8),''),
                              NULLIF(replace(public_by,'-',''),''),
                              replace(retrieval_date,'-','')), id"""):

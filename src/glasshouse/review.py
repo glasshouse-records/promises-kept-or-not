@@ -21,6 +21,8 @@ import sqlite3
 from dataclasses import asdict
 from datetime import date
 
+from .ledger import VERSION_DATE_SQL
+
 
 def fingerprint(c) -> str:
     key = f"{c.theme}|{c.institution_id}|{c.accession}|{c.cusip}|{c.meeting_date}|{c.vote_description[:120]}"
@@ -102,8 +104,8 @@ def dossier(conn: sqlite3.Connection, finding_id: int) -> str:
     fts = ("https://efts.sec.gov/LATEST/search-index?q="
            + urllib.parse.quote(f'"{p["issuer_name"]}"') + "&forms=DEF+14A")
     versions = conn.execute(
-        "SELECT COALESCE(NULLIF(wayback_timestamp,''), retrieval_date) AS v, sha256, "
-        "content_path FROM commitments WHERE institution_id=? AND doc_label=? "
+        f"SELECT {VERSION_DATE_SQL} AS v, sha256, "
+        "content_path FROM commitments WHERE institution_id=? AND doc_label=? AND superseded=0 "
         "GROUP BY sha256 ORDER BY v",
         (p["institution_id"], p["doc_label"])).fetchall()
 

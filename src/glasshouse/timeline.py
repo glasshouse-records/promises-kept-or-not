@@ -62,7 +62,7 @@ def policy_versions(conn: sqlite3.Connection, inst_id: str) -> list[dict]:
                   CASE WHEN wayback_timestamp != '' THEN substr(wayback_timestamp, 1, 8)
                        WHEN public_by != '' THEN replace(public_by, '-', '')
                        ELSE replace(substr(retrieval_date, 1, 10), '-', '') END AS version
-           FROM commitments WHERE institution_id = ?
+           FROM commitments WHERE institution_id = ? AND superseded = 0
            ORDER BY doc_label, version, wayback_timestamp, id""", (inst_id,))
     # Identity is the POLICY TEXT, never the bytes: a CDN beacon token changes
     # the sha256 on every fetch of an unchanged policy, which put ten "versions"
