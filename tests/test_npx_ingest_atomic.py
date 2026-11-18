@@ -69,3 +69,18 @@ def test_a_filing_that_fails_midway_leaves_nothing_and_the_run_goes_on(world):
     state["fail"] = False                     # next run: SEC is back
     npx.ingest_npx(conn, "1")
     assert _counts(conn)[bad] == _counts(conn)[good]
+
+
+def test_ingest_marks_duplicates_before_returning(world):
+    """Found 2026-11-18: ingest left repeated exhibit rows unflagged and ~107k
+    duplicates shipped as distinct votes. Both fixture exhibits are the same
+    table, so every row of the second copy must be flagged on return."""
+    conn, state = world
+    state["fail"] = False
+    npx.ingest_npx(conn, "1")
+    total, dups = conn.execute("SELECT COUNT(*), SUM(is_duplicate) FROM votes").fetchone()
+    unique = conn.execute(
+        "SELECT COUNT(*) FROM (SELECT DISTINCT issuer_name, cusip, meeting_date, "
+        "vote_description, vote_series, how_voted, shares_voted FROM votes)").fetchone()[0]
+    assert dups > 0 and total - dups == unique
+    assert ledger.duplicate_flags_stale(conn) == ""

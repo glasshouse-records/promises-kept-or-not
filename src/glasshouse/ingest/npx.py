@@ -24,7 +24,7 @@ from pathlib import Path
 
 from lxml import etree
 
-from .. import http
+from .. import http, ledger
 from .edgar import Filing, filing_directory, list_filings
 
 logger = logging.getLogger(__name__)
@@ -324,6 +324,10 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                     filing.accession_number, cover.report_type, stats["votes"])
 
     conn.commit()
+    if stats["filings"] or stats["notices"]:
+        # After the network loop, in its own transaction: new rows must never
+        # sit unflagged (a repeated share class would be counted twice).
+        ledger.dedupe_votes(conn, ciks=sorted({f.cik for f in filings}))
     return stats
 
 

@@ -282,6 +282,16 @@ CREATE TABLE IF NOT EXISTS ingest_runs (
 );
 CREATE INDEX IF NOT EXISTS idx_ingest_runs_source ON ingest_runs (source, ok, id);
 
+-- Coverage watermark of the last vote dedupe: every vote with id <= max_vote_id
+-- had its is_duplicate flag computed by that run. Votes above it were ingested
+-- since and may be unflagged duplicates. Operator-internal: never published.
+CREATE TABLE IF NOT EXISTS dedupe_runs (
+    id          INTEGER PRIMARY KEY,
+    run_at      TEXT NOT NULL,
+    max_vote_id INTEGER NOT NULL,
+    marked      INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS runs (
     id                INTEGER PRIMARY KEY,
     ts                TEXT NOT NULL,
@@ -387,27 +397,77 @@ def _migrate(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
-def dedupe_votes(conn: sqlite3.Connection) -> int:
+def dedupe_votes(conn: sqlite3.Connection, ciks: list[str] | None = None) -> int:
     """Mark exact-duplicate vote rows (same filing, security, meeting,
     proposal, series, direction, AND share count) so analytics never sum the
     same shares twice. Found in the wild 2026-06-11: ~105k redundant rows
     (e.g. the same voteRecord repeated x2/x4 within one exhibit, likely one
     copy per share class). Rows are marked, never deleted — the ledger
-    preserves filings as filed; queries filter on is_duplicate = 0."""
-    conn.execute("UPDATE votes SET is_duplicate = 0")
+    preserves filings as filed; queries filter on is_duplicate = 0.
+
+    `ciks` scopes the run to those filers. That is exact, not approximate: the
+    duplicate key includes the filer's CIK, so no group spans two filers. A
+    scoped run advances the coverage watermark only when every vote newer than
+    the previous watermark belongs to the scoped filers; the full run (about
+    3 minutes on the 21.8M-row ledger) always does."""
+    scope, args = "", []
+    if ciks is not None:
+        ciks = sorted({str(c) for c in ciks})
+        if not ciks:
+            return 0
+        scope = f"f.cik IN ({','.join('?' * len(ciks))})"
+        args = ciks
+    prev = conn.execute("SELECT COALESCE(MAX(max_vote_id), 0) FROM dedupe_runs").fetchone()[0]
+    if scope:
+        conn.execute(
+            f"UPDATE votes SET is_duplicate = 0 WHERE accession IN "
+            f"(SELECT accession FROM filings f WHERE {scope})", args)
+    else:
+        conn.execute("UPDATE votes SET is_duplicate = 0")
     # Scope: one filer's reporting period. Two real shapes found 2026-06-11:
     # the same voteRecord repeated within one exhibit (x2/x4, one copy per
     # share class), and the same series' votes filed in TWO exhibits of the
     # same period (~100k rows). Both collapse to one row per natural key.
+    where = f"WHERE {scope}" if scope else ""
+    outer = (f"accession IN (SELECT accession FROM filings f WHERE {scope}) AND "
+             if scope else "")
     cur = conn.execute(
-        """UPDATE votes SET is_duplicate = 1 WHERE id NOT IN (
+        f"""UPDATE votes SET is_duplicate = 1 WHERE {outer}id NOT IN (
                SELECT MIN(v.id) FROM votes v
                JOIN filings f ON f.accession = v.accession
+               {where}
                GROUP BY f.cik, f.period_of_report, v.issuer_name, v.cusip,
                         v.meeting_date, v.vote_description, v.vote_series,
-                        v.how_voted, v.shares_voted)""")
+                        v.how_voted, v.shares_voted)""", args + args)
+    marked = cur.rowcount
+    from datetime import datetime
+    top = conn.execute("SELECT COALESCE(MAX(id), 0) FROM votes").fetchone()[0]
+    covers_all = True
+    if scope:
+        covers_all = conn.execute(
+            f"SELECT COUNT(*) FROM votes v JOIN filings f ON f.accession = v.accession "
+            f"WHERE v.id > ? AND f.cik NOT IN ({','.join('?' * len(ciks))})",
+            [prev, *ciks]).fetchone()[0] == 0
+    if covers_all:
+        conn.execute("INSERT INTO dedupe_runs (run_at, max_vote_id, marked) VALUES (?,?,?)",
+                     (datetime.now().astimezone().isoformat(timespec="seconds"), top, marked))
     conn.commit()
-    return cur.rowcount
+    return marked
+
+
+def duplicate_flags_stale(conn: sqlite3.Connection) -> str:
+    """Empty string when every vote is covered by a dedupe run; otherwise the
+    reason the is_duplicate flags may be stale (votes ingested since the last
+    `glasshouse dedupe`, which would count duplicate shares twice)."""
+    top = conn.execute("SELECT COALESCE(MAX(id), 0) FROM votes").fetchone()[0]
+    if top == 0:
+        return ""
+    row = conn.execute("SELECT MAX(max_vote_id) FROM dedupe_runs").fetchone()
+    covered = row[0] if row and row[0] is not None else None
+    if covered is None or covered < top:
+        return (f"duplicate flags may be stale: the last dedupe covered votes up to id "
+                f"{covered}, the ledger's max vote id is {top}. Run `glasshouse dedupe`.")
+    return ""
 
 
 @dataclass

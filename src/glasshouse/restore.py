@@ -157,6 +157,7 @@ def restore(bundle: Path | str, dest: Path | str | None = None) -> dict:
             counts[table] = _load_table(conn, bundle, table)
             conn.commit()
         total = sum(counts.values())
+        ledger.dedupe_votes(conn)   # bundle holds kept rows only; records the watermark
         ledger.record_ingest_run(
             conn, f"{RESTORE_SOURCE_PREFIX}{version}:{manifest_sha[:12]}", total, total)
         conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")

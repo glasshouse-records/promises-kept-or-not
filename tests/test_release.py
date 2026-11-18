@@ -60,6 +60,7 @@ def conn(tmp_path, monkeypatch):
     c.execute("INSERT INTO llm_log (ts, model, purpose, prompt_sha, input_key, output) "
               "VALUES ('t','m','p','s','k',?)", (SECRET_LLM,))
     c.commit()
+    ledger.dedupe_votes(c)
     return c
 
 
@@ -81,6 +82,8 @@ REGISTRY = {"blackrock": {
 def _build_engine(conn, tmp_path, name="engine.db"):
     path = Path(conn.execute("PRAGMA database_list").fetchone()[2])
     ep = tmp_path / name
+    if ledger.duplicate_flags_stale(conn):     # a release needs current duplicate flags
+        ledger.dedupe_votes(conn)
     engine.build(path, ep, REGISTRY)
     return ep
 
@@ -93,6 +96,8 @@ def _fresh_engine(monkeypatch, tmp_path_factory):
     def wrapper(conn, root=None, version=None, **kw):
         if "engine_path" not in kw:
             d = tmp_path_factory.mktemp("eng")
+            if ledger.duplicate_flags_stale(conn):
+                ledger.dedupe_votes(conn)
             kw["engine_path"] = _build_engine(conn, d)
             kw.setdefault("institutions", REGISTRY)
         return orig(conn, root, version, **kw)
@@ -316,6 +321,7 @@ def test_stale_engine_is_refused_and_no_derived_overrides(conn, tmp_path):
         release.build_release(conn, root=tmp_path, version="n4", with_parquet=False,
                               engine_path=ep, institutions=REGISTRY)
     assert not (tmp_path / "vn4").exists()
+    ledger.dedupe_votes(conn)
     release.build_release(conn, root=tmp_path, version="n4", with_parquet=False,
                           engine_path=ep, institutions=REGISTRY, no_derived=True)
     d = tmp_path / "vn4"

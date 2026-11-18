@@ -625,6 +625,9 @@ def build_release(conn: sqlite3.Connection, root: Path | str | None = None,
         max_vote_id = None
         if not no_derived:
             max_vote_id = check_engine_current(conn, eng)
+        stale_dupes = ledger.duplicate_flags_stale(conn)
+        if stale_dupes:
+            raise StaleEngineError(stale_dupes)
         institutions = registry.load() if institutions is None else institutions
         pv_rows = policy_versions_rows(conn, eng)
         va_rows, omitted = voting_advisers_rows(institutions)

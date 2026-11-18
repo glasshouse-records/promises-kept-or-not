@@ -12,6 +12,7 @@ import json
 import sqlite3
 from datetime import UTC, date, datetime
 
+from . import ledger
 from .http import DATA_DIR
 
 DOCTOR_DIR = DATA_DIR / "doctor"
@@ -139,6 +140,10 @@ def diagnose(conn: sqlite3.Connection) -> dict:
               f"NOT a live ingest; its rows keep the retrieval dates they had when the "
               f"bundle was made. Source freshness is reported as 'restored, not live' "
               f"until a live ingest runs.")
+
+    stale_dupes = ledger.duplicate_flags_stale(conn)
+    check("votes:duplicate-flags", not stale_dupes,
+          stale_dupes or "duplicate flags cover every vote", "error")
 
     # 0. The votes themselves: every rate is computed from them.
     for g in missing_vote_seasons(conn, today):

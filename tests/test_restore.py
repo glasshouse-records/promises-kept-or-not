@@ -43,6 +43,7 @@ def bundle(tmp_path):
         agency="SEC", company_name="Oracle", action_date="2020-01-01",
         resolution_type="civil_settlement", primary_ref="LR-1", source_url="https://s")])
     src.commit()
+    ledger.dedupe_votes(src)
     eng = tmp_path / "eng.db"
     engine.build(tmp_path / "src.db", eng, REGISTRY)
     info = release.build_release(src, root=tmp_path / "rel", version="T", no_derived=True,
