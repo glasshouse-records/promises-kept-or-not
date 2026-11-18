@@ -8,7 +8,10 @@ Hartford and 17 more Capital Group trusts, doi:10.5281/zenodo.24326076;
 version 2026-11-18, adding Nuveen/TIAA, Columbia, Parametric and 19 SAI-printed
 policy versions, doi:10.5281/zenodo.24329615;
 version 2026-11-18.2, adding Dimensional master funds and dated Standard/Social/
-Sustainability guidelines plus four Columbia registrants, doi:10.5281/zenodo.24339801) and the code at
+Sustainability guidelines plus four Columbia registrants, doi:10.5281/zenodo.24339801;
+version 2026-11-18.3, corrected for duplicate vote lines (see docs/CORRECTIONS.md) and adding
+Morgan Stanley, MFS, American Century, Janus Henderson, AllianceBernstein and Federated Hermes,
+doi:10.5281/zenodo.24353272) and the code at
 https://github.com/glasshouse-records/promises-kept-or-not, both credited to
 "Glasshouse". Nothing else has been sent or shown to anyone; the drafts below
 are still private.

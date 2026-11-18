@@ -33,4 +33,6 @@ institutions are unaffected.
 
 **Fix.** Ingesting votes now marks duplicates before it returns, and `glasshouse
 release` and `glasshouse doctor` refuse to proceed when the duplicate flags do
-not cover every vote line in the ledger. Fixed from the release after 2026-11-18.2.
+not cover every vote line in the ledger. Fixed in release 2026-11-18.3
+(doi:10.5281/zenodo.24353272): none of its shipped votes is a marked duplicate. A correction
+note was added to the description of each affected Zenodo version on 2026-11-18.
