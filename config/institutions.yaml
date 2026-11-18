@@ -859,31 +859,184 @@ institutions:
     country: "USA"
     type: "asset_manager"
     aum_usd_tr: 1.5
-    notes: "Global asset manager; NYSE-listed (BEN). 13-F filed by Franklin Resources Inc. (CIK 0000038777). aum_usd_tr is Franklin Templeton managed AUM (~$1.5T)."
+    notes: "Global asset manager; NYSE-listed (BEN). 13-F filed by Franklin Resources Inc. (CIK 0000038777). aum_usd_tr is Franklin Templeton managed AUM (~$1.5T). TWO ADVISER GROUPS (added 2026-11-18): FRANKLIN (Franklin Advisers, Inc.; Franklin Custodian Funds and Franklin ETF Trust, policy proxy-voting-policies-procedures) and PUTNAM (Putnam Investment Management, LLC, acquired by Franklin Resources on 2024-01-01; the Putnam Funds trusts, policy putnam-investments-proxy-voting-procedures). Their policies and votes are not interchangeable: compare by adviser_key."
     npx_ciks:
-      # Verified 2026-06-26. Franklin Custodian Funds (38721) is the flagship
+      # FRANKLIN (the two registrants below) and PUTNAM (the registrants after them) are separate adviser groups under one institution
+      # (Franklin Resources acquired Putnam Investments on 2024-01-01). Verified 2026-06-26. Franklin Custodian Funds (38721) is the flagship
       # Franklin equity complex (Income/Growth/etc.); plus the Franklin ETF Trust.
       # Both unambiguously Franklin-managed, filing N-PX through 2025.
       - cik: "38721"
         adviser: "Franklin Advisers, Inc. (series: Income, Growth, Utilities, DynaTech); no sub-adviser named"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/38721/000113322825012975/fcf-efp18887_ncsr.htm"  # N-CSR filed 2025-12-01; voting delegated to the investment manager per SAI https://www.sec.gov/Archives/edgar/data/38721/000165558926000070/c485bpos.htm
         adviser_verified: "2026-11-17"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures' (0001379491-21-000215, filed 2021-01-26): 'The board of trustees of the Fund has delegated the authority to vote proxies related to the portfolio securities held by the Fund to the Fund's investment manager, Franklin Advisers, Inc., in accordance with the Proxy Voting Policies and Procedures adopted by the investment manager'; every later annual SAI to 2026-01 repeats it (the 2022-26 SAIs say 'the Fund's investment manager' and print the Franklin Equity Group policy as Appendix A). No sub-adviser is named for the series."
+        adviser_key_history: [{key: FRANKLIN, from: "2021-01-26"}]
         name: "Franklin Custodian Funds"
         validated: "2026-06-26"
       - cik: "1551895"
         adviser: "Franklin Advisers, Inc.; N-CSR refers to a subadviser without naming it"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/1551895/000113322826008749/fetft-efp24615_ncsr.htm"  # N-CSR filed 2026-06-03; SAI https://www.sec.gov/Archives/edgar/data/1551895/000165558926000971/c485bpos.htm says voting is delegated to Franklin Advisers, Inc.
         adviser_verified: "2026-11-17"
-        voting_note: "Sub-adviser mention is generic risk wording; no sub-adviser is named for the series seen (Franklin Short Duration U.S. Government ETF)."
+        voting_note: "Sub-adviser mention is generic risk wording; no sub-adviser is named for the series seen (Franklin Short Duration U.S. Government ETF). SAI 'Proxy Voting Policies and Procedures' (0001379491-21-003455, filed 2021-07-28): 'The board of trustees of the Fund has delegated the authority to vote proxies ... to the Fund's investment manager, Franklin Advisers, Inc.'; every later annual SAI to 2026-07 repeats it."
+        adviser_key_history: [{key: FRANKLIN, from: "2021-07-28"}]
         name: "Franklin ETF Trust"
         validated: "2026-06-26"
+      # Putnam registrants, added 2026-11-18 (discover-npx + submissions API + SAI text). Each is keyed PUTNAM from the EDGAR filing date of its
+      # earliest SAI whose Part II says the Trustees delegated proxy voting to Putnam Management (SAIs to 2023-02-28 say the Trustees directed
+      # the votes, so those meetings stay unlabelled). No later SAI (to 2026-10-26) gives the Putnam funds the Franklin Templeton policy, so no rule ends.
+      - cik: "1005942"
+        adviser: "Putnam Investment Management, LLC (Putnam Management); Franklin Advisers, Inc. is the Investment Manager of some series from 2025-26, Putnam Management then sub-advising"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1005942/000092881623000404/a2_put2303pftpro.htm"  # 485BPOS (SAI) filed 2023-03-27 (0000928816-23-000404), Part II 'Proxy Voting Guidelines and Procedures': the Trustees delegated proxy voting to Putnam Management; later SAIs repeat it to 2026-10
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Part II 'Proxy Voting Guidelines and Procedures': 'The Trustees of the Putnam Funds have delegated proxy voting authority for the securities held in the funds' portfolios to Putnam Management and have approved Putnam Management's current proxy voting guidelines and procedures', attached as Appendix A 'Putnam Investments Proxy Voting Procedures'. The same registrant's previous SAI (0000928816-23-000233, filed 2023-02-28) says instead that the Trustees established the guidelines and a Director of Proxy Voting and Corporate Governance in the Office of the Trustees directed the votes, so meetings before 2023-03-27 stay unlabelled. The votes are cast under Putnam's procedures by Putnam Management and its affiliates (The Putnam Advisory Company, Putnam Investments Limited) that the procedures cover; no outside sub-adviser is named as voting any series. Series with votes: Putnam Core Equity, Dynamic AA Equity (Franklin Dynamic AA Equity from 2026), Emerging Markets Equity, Focused Equity, Global Technology, International Value, Small Cap Growth vote; the bond and money-market series file a notice."
+        adviser_key_history: [{key: PUTNAM, from: "2023-03-27"}]
+        name: "PUTNAM FUNDS TRUST"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "787836"
+        adviser: "Putnam Investment Management, LLC (Putnam Management); Franklin Advisers, Inc. is the Investment Manager of some series from 2025-26, Putnam Management then sub-advising"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/787836/000092881623000400/a2_put2303060pro.htm"  # 485BPOS (SAI) filed 2023-03-27 (0000928816-23-000400), Part II 'Proxy Voting Guidelines and Procedures': the Trustees delegated proxy voting to Putnam Management; later SAIs repeat it to 2026-10
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Part II 'Proxy Voting Guidelines and Procedures': 'The Trustees of the Putnam Funds have delegated proxy voting authority for the securities held in the funds' portfolios to Putnam Management and have approved Putnam Management's current proxy voting guidelines and procedures', attached as Appendix A 'Putnam Investments Proxy Voting Procedures'. The same registrant's previous SAI (0000928816-22-000386, filed 2022-03-28) says instead that the Trustees established the guidelines and a Director of Proxy Voting and Corporate Governance in the Office of the Trustees directed the votes, so meetings before 2023-03-27 stay unlabelled. The votes are cast under Putnam's procedures by Putnam Management and its affiliates (The Putnam Advisory Company, Putnam Investments Limited) that the procedures cover; no outside sub-adviser is named as voting any series. Series with votes: one series, Putnam High Yield Fund."
+        adviser_key_history: [{key: PUTNAM, from: "2023-03-27"}]
+        name: "PUTNAM HIGH YIELD FUND"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "822671"
+        adviser: "Putnam Investment Management, LLC (Putnam Management); Franklin Advisers, Inc. is the Investment Manager of some series from 2025-26, Putnam Management then sub-advising"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/822671/000092881623000541/a2_put2304pvtpro.htm"  # 485BPOS (SAI) filed 2023-04-28 (0000928816-23-000541), Part II 'Proxy Voting Guidelines and Procedures': the Trustees delegated proxy voting to Putnam Management; later SAIs repeat it to 2026-10
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Part II 'Proxy Voting Guidelines and Procedures': 'The Trustees of the Putnam Funds have delegated proxy voting authority for the securities held in the funds' portfolios to Putnam Management and have approved Putnam Management's current proxy voting guidelines and procedures', attached as Appendix A 'Putnam Investments Proxy Voting Procedures'. The same registrant's previous SAI (0000928816-22-000509, filed 2022-04-29) says instead that the Trustees established the guidelines and a Director of Proxy Voting and Corporate Governance in the Office of the Trustees directed the votes, so meetings before 2023-04-28 stay unlabelled. The votes are cast under Putnam's procedures by Putnam Management and its affiliates (The Putnam Advisory Company, Putnam Investments Limited) that the procedures cover; no outside sub-adviser is named as voting any series. Series with votes: the Putnam VT series (insurance-product funds)."
+        adviser_key_history: [{key: PUTNAM, from: "2023-04-28"}]
+        name: "PUTNAM VARIABLE TRUST"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "932101"
+        adviser: "Putnam Investment Management, LLC (Putnam Management); Franklin Advisers, Inc. is the Investment Manager of some series from 2025-26, Putnam Management then sub-advising"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/932101/000092881623001000/a2_put23062mfpro.htm"  # 485BPOS (SAI) filed 2023-06-27 (0000928816-23-001000), Part II 'Proxy Voting Guidelines and Procedures': the Trustees delegated proxy voting to Putnam Management; later SAIs repeat it to 2026-10
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Part II 'Proxy Voting Guidelines and Procedures': 'The Trustees of the Putnam Funds have delegated proxy voting authority for the securities held in the funds' portfolios to Putnam Management and have approved Putnam Management's current proxy voting guidelines and procedures', attached as Appendix A 'Putnam Investments Proxy Voting Procedures'. The same registrant's previous SAI (0000928816-23-000108, filed 2023-01-26) says instead that the Trustees established the guidelines and a Director of Proxy Voting and Corporate Governance in the Office of the Trustees directed the votes, so meetings before 2023-06-27 stay unlabelled. The votes are cast under Putnam's procedures by Putnam Management and its affiliates (The Putnam Advisory Company, Putnam Investments Limited) that the procedures cover; no outside sub-adviser is named as voting any series. Series with votes: International Capital Opportunities (International Small Cap from 2026), Large Cap Growth, Research (U.S. Research from 2026), Small Cap Value, Sustainable Future."
+        adviser_key_history: [{key: PUTNAM, from: "2023-06-27"}]
+        name: "PUTNAM INVESTMENT FUNDS"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "868648"
+        adviser: "Putnam Investment Management, LLC (Putnam Management); Franklin Advisers, Inc. is the Investment Manager of some series from 2025-26, Putnam Management then sub-advising"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/868648/000092881623001494/a2_put2310841pro.htm"  # 485BPOS (SAI) filed 2023-10-26 (0000928816-23-001494), Part II 'Proxy Voting Guidelines and Procedures': the Trustees delegated proxy voting to Putnam Management; later SAIs repeat it to 2026-10
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Part II 'Proxy Voting Guidelines and Procedures': 'The Trustees of the Putnam Funds have delegated proxy voting authority for the securities held in the funds' portfolios to Putnam Management and have approved Putnam Management's current proxy voting guidelines and procedures', attached as Appendix A 'Putnam Investments Proxy Voting Procedures'. The same registrant's previous SAI (0000928816-22-001137, filed 2022-10-26) says instead that the Trustees established the guidelines and a Director of Proxy Voting and Corporate Governance in the Office of the Trustees directed the votes, so meetings before 2023-10-26 stay unlabelled. The votes are cast under Putnam's procedures by Putnam Management and its affiliates (The Putnam Advisory Company, Putnam Investments Limited) that the procedures cover; no outside sub-adviser is named as voting any series. Series with votes: one series, Putnam International Equity Fund."
+        adviser_key_history: [{key: PUTNAM, from: "2023-10-26"}]
+        name: "PUTNAM INTERNATIONAL EQUITY FUND"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "81259"
+        adviser: "Putnam Investment Management, LLC (Putnam Management); Franklin Advisers, Inc. is the Investment Manager of some series from 2025-26, Putnam Management then sub-advising"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/81259/000092881623001596/a2_put2311001pro.htm"  # 485BPOS (SAI) filed 2023-11-27 (0000928816-23-001596), Part II 'Proxy Voting Guidelines and Procedures': the Trustees delegated proxy voting to Putnam Management; later SAIs repeat it to 2026-10
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Part II 'Proxy Voting Guidelines and Procedures': 'The Trustees of the Putnam Funds have delegated proxy voting authority for the securities held in the funds' portfolios to Putnam Management and have approved Putnam Management's current proxy voting guidelines and procedures', attached as Appendix A 'Putnam Investments Proxy Voting Procedures'. The same registrant's previous SAI (0000928816-22-001239, filed 2022-11-23) says instead that the Trustees established the guidelines and a Director of Proxy Voting and Corporate Governance in the Office of the Trustees directed the votes, so meetings before 2023-11-27 stay unlabelled. The votes are cast under Putnam's procedures by Putnam Management and its affiliates (The Putnam Advisory Company, Putnam Investments Limited) that the procedures cover; no outside sub-adviser is named as voting any series. Series with votes: one series, George Putnam Balanced Fund."
+        adviser_key_history: [{key: PUTNAM, from: "2023-11-27"}]
+        name: "GEORGE PUTNAM BALANCED FUND"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "357295"
+        adviser: "Putnam Investment Management, LLC (Putnam Management); Franklin Advisers, Inc. is the Investment Manager of some series from 2025-26, Putnam Management then sub-advising"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/357295/000092881623001708/a2_put2312021pro.htm"  # 485BPOS (SAI) filed 2023-12-28 (0000928816-23-001708), Part II 'Proxy Voting Guidelines and Procedures': the Trustees delegated proxy voting to Putnam Management; later SAIs repeat it to 2026-10
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Part II 'Proxy Voting Guidelines and Procedures': 'The Trustees of the Putnam Funds have delegated proxy voting authority for the securities held in the funds' portfolios to Putnam Management and have approved Putnam Management's current proxy voting guidelines and procedures', attached as Appendix A 'Putnam Investments Proxy Voting Procedures'. The same registrant's previous SAI (0000928816-22-001339, filed 2022-12-28) says instead that the Trustees established the guidelines and a Director of Proxy Voting and Corporate Governance in the Office of the Trustees directed the votes, so meetings before 2023-12-28 stay unlabelled. The votes are cast under Putnam's procedures by Putnam Management and its affiliates (The Putnam Advisory Company, Putnam Investments Limited) that the procedures cover; no outside sub-adviser is named as voting any series. Series with votes: one series, Putnam Global Health Care Fund."
+        adviser_key_history: [{key: PUTNAM, from: "2023-12-28"}]
+        name: "PUTNAM GLOBAL HEALTH CARE FUND"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "914209"
+        adviser: "Putnam Investment Management, LLC (Putnam Management); Franklin Advisers, Inc. is the Investment Manager of some series from 2025-26, Putnam Management then sub-advising"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/914209/000092881623001727/a2_put2212vc9pro.htm"  # 485BPOS (SAI) filed 2023-12-29 (0000928816-23-001727), Part II 'Proxy Voting Guidelines and Procedures': the Trustees delegated proxy voting to Putnam Management; later SAIs repeat it to 2026-10
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Part II 'Proxy Voting Guidelines and Procedures': 'The Trustees of the Putnam Funds have delegated proxy voting authority for the securities held in the funds' portfolios to Putnam Management and have approved Putnam Management's current proxy voting guidelines and procedures', attached as Appendix A 'Putnam Investments Proxy Voting Procedures'. The same registrant's previous SAI (0000928816-23-000115, filed 2023-01-26) says instead that the Trustees established the guidelines and a Director of Proxy Voting and Corporate Governance in the Office of the Trustees directed the votes, so meetings before 2023-12-29 stay unlabelled. The votes are cast under Putnam's procedures by Putnam Management and its affiliates (The Putnam Advisory Company, Putnam Investments Limited) that the procedures cover; no outside sub-adviser is named as voting any series. Series with votes: four fund-of-funds series (Putnam Dynamic Asset Allocation Balanced / Conservative / Growth and Multi-Asset Income, renamed Putnam Asset Allocation in 2025 and Franklin Asset Allocation / Franklin Multi-Asset Income in 2026)."
+        adviser_key_history: [{key: PUTNAM, from: "2023-12-29"}]
+        name: "PUTNAM ASSET ALLOCATION FUNDS"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "836622"
+        adviser: "Putnam Investment Management, LLC (Putnam Management); Franklin Advisers, Inc. is the Investment Manager of some series from 2025-26, Putnam Management then sub-advising"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/836622/000092881624000235/a2_put2401075pro.htm"  # 485BPOS (SAI) filed 2024-01-25 (0000928816-24-000235), Part II 'Proxy Voting Guidelines and Procedures': the Trustees delegated proxy voting to Putnam Management; later SAIs repeat it to 2026-10
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Part II 'Proxy Voting Guidelines and Procedures': 'The Trustees of the Putnam Funds have delegated proxy voting authority for the securities held in the funds' portfolios to Putnam Management and have approved Putnam Management's current proxy voting guidelines and procedures', attached as Appendix A 'Putnam Investments Proxy Voting Procedures'. The same registrant's previous SAI (0000928816-23-000096, filed 2023-01-25) says instead that the Trustees established the guidelines and a Director of Proxy Voting and Corporate Governance in the Office of the Trustees directed the votes, so meetings before 2024-01-25 stay unlabelled. The votes are cast under Putnam's procedures by Putnam Management and its affiliates (The Putnam Advisory Company, Putnam Investments Limited) that the procedures cover; no outside sub-adviser is named as voting any series. Series with votes: one series; its 2024 and 2025 reports are notices and the 2026 report holds votes."
+        adviser_key_history: [{key: PUTNAM, from: "2024-01-25"}]
+        name: "PUTNAM DIVERSIFIED INCOME TRUST"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "81247"
+        adviser: "Putnam Investment Management, LLC (Putnam Management); Franklin Advisers, Inc. is the Investment Manager of some series from 2025-26, Putnam Management then sub-advising"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/81247/000092881624000349/a2_put2402008pro.htm"  # 485BPOS (SAI) filed 2024-02-26 (0000928816-24-000349), Part II 'Proxy Voting Guidelines and Procedures': the Trustees delegated proxy voting to Putnam Management; later SAIs repeat it to 2026-10
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Part II 'Proxy Voting Guidelines and Procedures': 'The Trustees of the Putnam Funds have delegated proxy voting authority for the securities held in the funds' portfolios to Putnam Management and have approved Putnam Management's current proxy voting guidelines and procedures', attached as Appendix A 'Putnam Investments Proxy Voting Procedures'. The same registrant's previous SAI (0000928816-23-000255, filed 2023-02-28) says instead that the Trustees established the guidelines and a Director of Proxy Voting and Corporate Governance in the Office of the Trustees directed the votes, so meetings before 2024-02-26 stay unlabelled. The votes are cast under Putnam's procedures by Putnam Management and its affiliates (The Putnam Advisory Company, Putnam Investments Limited) that the procedures cover; no outside sub-adviser is named as voting any series. Series with votes: one series, Putnam Convertible Securities Fund."
+        adviser_key_history: [{key: PUTNAM, from: "2024-02-26"}]
+        name: "PUTNAM CONVERTIBLE SECURITIES FUND"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "216934"
+        adviser: "Putnam Investment Management, LLC (Putnam Management); Franklin Advisers, Inc. is the Investment Manager of some series from 2025-26, Putnam Management then sub-advising"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/216934/000092881624000353/a2_put2402012pro.htm"  # 485BPOS (SAI) filed 2024-02-26 (0000928816-24-000353), Part II 'Proxy Voting Guidelines and Procedures': the Trustees delegated proxy voting to Putnam Management; later SAIs repeat it to 2026-10
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Part II 'Proxy Voting Guidelines and Procedures': 'The Trustees of the Putnam Funds have delegated proxy voting authority for the securities held in the funds' portfolios to Putnam Management and have approved Putnam Management's current proxy voting guidelines and procedures', attached as Appendix A 'Putnam Investments Proxy Voting Procedures'. The same registrant's previous SAI (0000928816-23-000215, filed 2023-02-24) says instead that the Trustees established the guidelines and a Director of Proxy Voting and Corporate Governance in the Office of the Trustees directed the votes, so meetings before 2024-02-26 stay unlabelled. The votes are cast under Putnam's procedures by Putnam Management and its affiliates (The Putnam Advisory Company, Putnam Investments Limited) that the procedures cover; no outside sub-adviser is named as voting any series. Series with votes: one series, Putnam Large Cap Value Fund (formerly Equity Income)."
+        adviser_key_history: [{key: PUTNAM, from: "2024-02-26"}]
+        name: "PUTNAM LARGE CAP VALUE FUND"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "81251"
+        adviser: "Putnam Investment Management, LLC (Putnam Management); Franklin Advisers, Inc. is the Investment Manager of some series from 2025-26, Putnam Management then sub-advising"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/81251/000092881624000360/a2_put2402005pro.htm"  # 485BPOS (SAI) filed 2024-02-26 (0000928816-24-000360), Part II 'Proxy Voting Guidelines and Procedures': the Trustees delegated proxy voting to Putnam Management; later SAIs repeat it to 2026-10
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Part II 'Proxy Voting Guidelines and Procedures': 'The Trustees of the Putnam Funds have delegated proxy voting authority for the securities held in the funds' portfolios to Putnam Management and have approved Putnam Management's current proxy voting guidelines and procedures', attached as Appendix A 'Putnam Investments Proxy Voting Procedures'. The same registrant's previous SAI (0000928816-23-000223, filed 2023-02-27) says instead that the Trustees established the guidelines and a Director of Proxy Voting and Corporate Governance in the Office of the Trustees directed the votes, so meetings before 2024-02-26 stay unlabelled. The votes are cast under Putnam's procedures by Putnam Management and its affiliates (The Putnam Advisory Company, Putnam Investments Limited) that the procedures cover; no outside sub-adviser is named as voting any series. Series with votes: one series, Putnam Focused International Equity Fund."
+        adviser_key_history: [{key: PUTNAM, from: "2024-02-26"}]
+        name: "PUTNAM FOCUSED INTERNATIONAL EQUITY FUND"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1845809"
+        adviser: "Putnam Investment Management, LLC (Putnam Management); sub-adviser PanAgora Asset Management, Inc. for the PanAgora ESG series (investment decisions only)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1845809/000092881621000572/a2_etfcombo.htm"  # 485BPOS (SAI) filed 2021-05-20 (0000928816-21-000572), 'Proxy Voting Guidelines and Procedures': the Trustees delegated to Putnam Management the responsibility for voting the funds' proxies
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI 'Proxy Voting Guidelines and Procedures': 'The Trustees of the funds have delegated to Putnam Management the responsibility for the voting of proxies for the securities held in the funds' portfolios. Putnam Management has established proxy voting guidelines and procedures, which will apply to the voting of proxies for the funds as well as for other investment advisory clients' (2021); the 2023-2026 SAIs word it as the Putnam Funds' Trustees (2026: the Board of Trustees) having delegated proxy voting authority to Putnam Management and approved its procedures, attached as Appendix A. The sub-advisory description of PanAgora (an affiliate of Putnam Management, sub-adviser of the Putnam PanAgora ESG ETFs) covers investment decisions for its portion of the fund and does not assign it proxy voting, so no series is EXTERNAL. Series with votes: Putnam BDC Income, BioRevolution, Em Markets ex-China, Focused Large Cap Growth, Focused Large Cap Value, PanAgora ESG Em Mkt Eq, PanAgora ESG Intl Eq, Sustainable Future, Sustainable Leaders (the ESG bond ETFs and the Franklin municipal ETFs added in 2026 file a notice)."
+        adviser_key_history: [{key: PUTNAM, from: "2021-05-20"}]
+        name: "Putnam ETF Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
     voting_scope_notes:
-      - "The Franklin ETF Trust N-CSR refers to a subadviser without naming one (https://www.sec.gov/Archives/edgar/data/1551895/000113322826008749/fetft-efp24615_ncsr.htm) while the SAI says voting is delegated to Franklin Advisers, Inc. (https://www.sec.gov/Archives/edgar/data/1551895/000165558926000971/c485bpos.htm); no sub-adviser voting was identified, but the series affected were not established."
+      - "Two adviser groups. FRANKLIN: Franklin Custodian Funds (38721) from 2021-01-26 (SAI 0001379491-21-000215) and Franklin ETF Trust (1551895) from 2021-07-28 (0001379491-21-003455); each SAI says the board delegated voting to the investment manager, Franklin Advisers, Inc. PUTNAM: the Putnam Funds and the Putnam ETF Trust, from each registrant's earliest SAI whose Part II says the Trustees delegated proxy voting to Putnam Management (Putnam Funds Trust and Putnam High Yield Fund 2023-03-27, Putnam Variable Trust 2023-04-28, Putnam Investment Funds 2023-06-27, Putnam International Equity Fund 2023-10-26, George Putnam Balanced Fund 2023-11-27, Putnam Global Health Care Fund 2023-12-28, Putnam Asset Allocation Funds 2023-12-29, Putnam Diversified Income Trust 2024-01-25, Putnam Convertible Securities Fund, Putnam Large Cap Value Fund and Putnam Focused International Equity Fund 2024-02-26, Putnam ETF Trust 2021-05-20). The accessions are in each registrant's adviser_source."
+      - "Regime change inside the Putnam funds: SAIs to 2023-02-28 say the Trustees of the Putnam Funds established the proxy voting guidelines and that the Director of Proxy Voting and Corporate Governance, a member of the Office of the Trustees, directed the votes (the Putnam Funds' own guidelines, not Putnam Management's). From 2023-03-27 the SAIs say the Trustees delegated proxy voting authority to Putnam Management and approved its procedures, and print a footnote 'Effective January 27, 2023, the Board of Trustees of the Putnam Mutual Funds delegated proxy voting authority to Putnam Investment Management, LLC.' Each registrant is keyed PUTNAM only from its OWN first SAI of the new wording; its meetings before that stay unlabelled (a known loss of coverage for the registrants whose first such SAI is late: Large Cap Value, Convertible Securities and Focused International Equity, 2024-02-26, so meetings 2023-07-01 to 2024-02-25 are unlabelled), never guessed from a sister trust's filing."
+      - "No Putnam rule ends: the SAIs read to 2026-10-26 (Putnam Funds Trust 0001193125-26-431489, Putnam Variable Trust 0001193125-26-410580) still say the Board delegated voting to Putnam Management and print the Putnam Investments Proxy Voting Procedures, although Franklin Advisers, Inc. became the Investment Manager of some series in 2025-26 (the Franklin Asset Allocation, Franklin Multi-Asset Income, Franklin Dynamic AA Equity and Franklin Retirement Advantage funds) with Putnam Management as sub-adviser whose services 'may include ... proxy voting'. The procedures route items on securities held solely in accounts managed by the Global Asset Allocation team within Franklin Templeton Investment Solutions to that team's portfolio managers for a recommendation; the vote is still cast under the Putnam procedures."
+      - "No series is keyed EXTERNAL. Putnam Investments Limited and The Putnam Advisory Company act under the same procedures. PanAgora Asset Management, Inc. (sub-adviser of the Putnam PanAgora ESG ETFs, an affiliate of Putnam Management) is described as making investment decisions for its portion; no SAI gives it proxy voting."
+      - "Not ingested: Putnam Investment Management, LLC (81273), The Putnam Advisory Company (81238) and Putnam FL Investment Management (1140334) file institutional-manager N-PX reports for their own accounts and for funds they sub-advise, which overlap the fund tables, so they would double count. Notice-only registrants (no votes in 2024-26): Putnam Money Market Fund (81248), Putnam Income Fund (81264), Putnam Global Income Trust (794614), Putnam California Tax Exempt Income Fund (711402). High Income Securities Fund (810943) was renamed from Putnam High Income Securities Fund in 2018 and is not Putnam-managed. Putnam registrants whose last N-PX is 2021-23 (Investors Fund, Global Natural Resources, Arizona Tax Exempt and earlier) have no meeting in 2023-07-01 to 2026-06-30."
+      - "The Franklin ETF Trust N-CSR refers to a subadviser without naming one (https://www.sec.gov/Archives/edgar/data/1551895/000113322826008749/fetft-efp24615_ncsr.htm) while the SAI says voting is delegated to Franklin Advisers, Inc. (https://www.sec.gov/Archives/edgar/data/1551895/000165558926000971/c485bpos.htm); no sub-adviser voting was identified, but the series affected were not established. Its N-PX reports are notices."
     commitments:
       # Franklin Equity Group Proxy Voting Policies & Procedures (franklintempleton.com),
-      # verified 2026-06-26 (200, application/pdf).
+      # verified 2026-06-26 (200, application/pdf). The policy of the two FRANKLIN registrants.
       - label: proxy-voting-policies-procedures
         url: "https://www.franklintempleton.com/forms-literature/download/FEG_ProxyVotingPolicies"
+        adviser: "Franklin Advisers, Inc."
+        adviser_key: "FRANKLIN"
+      # Putnam Investments Proxy Voting Procedures (the policy of the PUTNAM registrants): franklintempleton.com, 200 application/pdf to honest clients
+      # (probed 2026-11-18), first page "March 28, 2025". A PDF, so no `body` bound. The same lineage was served at putnam.com
+      # (`/static/pdf/proxy/proxy_voting_procedures_guidelines.pdf`, March 26, 2021 edition, Wayback 2021-10-28 and 2022-03-25). putnam.com's
+      # `/static/pdf/proxy/proxy_voting_guidelines.pdf` is NOT walked: its 2014-2021 captures are the Putnam Funds' own Trustee guidelines (a different
+      # document) and it still serves the July 1, 2024 edition live.
+      - label: putnam-investments-proxy-voting-procedures
+        url: "https://www.franklintempleton.com/forms-literature/download/PI-PVG"
+        former_urls:
+          - "https://www.putnam.com/static/pdf/proxy/proxy_voting_procedures_guidelines-f6887a00711c0c4e65cd1526b1ee7830.pdf"
+          - "https://www.putnam.com/static/pdf/proxy/proxy_voting_procedures_guidelines.pdf"
+        adviser: "Putnam Investment Management, LLC"
+        adviser_key: "PUTNAM"
+      # The same procedures as printed in Appendix A of the Putnam Variable Trust SAI (one 485BPOS a year, April, plus one in October 2026): the one
+      # Putnam registrant whose annual SAI prints the policy in one arrangement (the multi-series trusts file many differently typeset SAIs a year).
+      # Separate label from the website PDF. Read from "Putnam Investments Proxy Voting Procedures Introduction and Summary" (the dated line above it
+      # is dropped: the Franklin-era SAIs omit it) to the Part C heading, so the last sentence of the certification is kept; the SAI's page numbers
+      # (a bare number at every page foot from 2025, "Month D, YYYY II- n" before) and bullet glyphs and signature blanks are removed.
+      - label: putnam-investments-proxy-voting-procedures-as-printed-in-sai
+        adviser: "Putnam Investment Management, LLC"
+        adviser_key: "PUTNAM"
+        sai_appendix:
+          cik: "0000822671"
+          forms: ["485BPOS"]
+          since: "2023-04-01"
+          allow_identical_copies: true
+          page_sequence: true
+          start:
+            - "Putnam Investments Proxy Voting Procedures Introduction and Summary"
+          end:
+            - "PUTNAM VARIABLE TRUST FORM N-1A PART C"
+            - "Item 28. Exhibits"
+          strip_patterns:
+            - '(?:[A-Z][a-z]+ \d{1,2}, \d{4} )?II- ?\d{1,3}'
+            - '(?<= )(?:[•Ø►➢➣▪●○◦·§◾]|o)(?= )'
+            - '_{2,}'
 
   bny_mellon:
     display_name: "Bank of New York Mellon Corp"

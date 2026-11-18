@@ -51,6 +51,40 @@ _SPACE_BEFORE_PUNCT = re.compile(r" +([.,;:])")
 _PAGE_NUMBER = re.compile(r"(?<=[.!?\u201d\"\u2019)]) \d{1,3}(?= [A-Z])| \d{1,3}$")
 
 
+# A standalone 2-3 digit number: not part of a figure ("$150", "75%", "1,200"), an entity ("&#216;"), a citation
+# ("162(m)") or a range. Page furniture is one run of CONSECUTIVE such numbers (the SAI's own page number at every
+# page foot, sometimes between two words of a sentence), so only a long run is removed; a real number is never
+# removed on its own. Opt-in per document (`page_sequence`).
+_SEQ_NUMBER = re.compile(r"(?<![\w$#&.,%/(-])(\d{2,3})(?=\s|$)(?![-/%])")
+PAGE_RUN_MIN = 8
+
+
+def strip_page_sequence(text: str, min_run: int = PAGE_RUN_MIN) -> str:
+    """`text` without its longest run of consecutive page numbers (each the previous plus one, in reading
+    order), provided the run has at least `min_run` members. Where a real number equals the next page number
+    the mark at the page foot (the LATER one) is the page number, so the real one stays."""
+    cands = [(m.start(), m.end(), int(m.group(1))) for m in _SEQ_NUMBER.finditer(text)]
+    n = len(cands)
+    if n < min_run:
+        return text
+    run, prev = [1] * n, [-1] * n
+    for i in range(n):
+        for j in range(i):
+            if cands[j][2] + 1 == cands[i][2] and run[j] + 1 >= run[i]:
+                run[i], prev[i] = run[j] + 1, j
+    end = max(range(n), key=lambda k: (run[k], -k))
+    if run[end] < min_run:
+        return text
+    chain = []
+    while end != -1:
+        chain.append(end)
+        end = prev[end]
+    for k in sorted(chain, reverse=True):
+        a, b, _ = cands[k]
+        text = text[:a] + " " + text[b:]
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def normalise(text: str) -> str:
     """Whitespace collapsed, and the space HTML conversion leaves before a
     punctuation mark removed ("1 . Attendance" == "1. Attendance")."""
@@ -68,7 +102,8 @@ def _all_positions(hay: str, needle: str) -> list[int]:
 def extract_section(text: str, start: str | list[str], end: str | list[str],
                     allow_identical_copies: bool = False,
                     strip_page_numbers: bool = False,
-                    strip_patterns: list[str] | None = None) -> str | None:
+                    strip_patterns: list[str] | None = None,
+                    page_sequence: bool = False) -> str | None:
     """The normalised text from `start` up to (not including) the first `end`
     that follows it, or None when it cannot be extracted without guessing.
     `end` may list alternatives (editions differ in what follows the policy);
@@ -101,6 +136,8 @@ def extract_section(text: str, start: str | list[str], end: str | list[str],
             sec = re.sub(r"\s+", " ", re.sub(pat, " ", sec)).strip()
         if strip_page_numbers:
             sec = _PAGE_NUMBER.sub("", sec).strip()
+        if page_sequence:
+            sec = strip_page_sequence(sec)
         sections.add(sec)
     return sections.pop() if len(sections) == 1 else None
 
@@ -170,7 +207,8 @@ def ingest_filings(conn: sqlite3.Connection, institution_id: str, doc_label: str
                    allow_identical_copies: bool = False,
                    strip_page_numbers: bool = False,
                    flagged: list[str] | None = None,
-                   strip_patterns: list[str] | None = None) -> int:
+                   strip_patterns: list[str] | None = None,
+                   page_sequence: bool = False) -> int:
     """Extract and record each filing ({accession, filing_date, url, text} or
     a pre-extracted `section`), oldest first. Returns rows added or moved.
 
@@ -184,7 +222,7 @@ def ingest_filings(conn: sqlite3.Connection, institution_id: str, doc_label: str
         section = f.get("section")
         if section is None:
             section = extract_section(f["text"], start, end, allow_identical_copies,
-                                      strip_page_numbers, strip_patterns)
+                                      strip_page_numbers, strip_patterns, page_sequence)
         if section is None:
             logger.info("%s/%s: no clean section in %s (%s); nothing recorded",
                         institution_id, doc_label, f["accession"], f["url"])
@@ -230,13 +268,15 @@ def fetch_sai_appendices(conn: sqlite3.Connection, institutions: dict[str, dict]
                 copies = bool(cfg.get("allow_identical_copies"))
                 pages = bool(cfg.get("strip_page_numbers"))
                 patterns = [str(p) for p in cfg.get("strip_patterns") or []]
+                sequence = bool(cfg.get("page_sequence"))
                 # A filing is immutable: skip those already read under THESE settings
                 # (changing them re-reads everything).
                 # strip_patterns joins the signature only when set, so every existing
                 # label keeps its signature (and is not re-read).
                 sig = hashlib.sha256(json.dumps(
                     [EXTRACTION_VERSION, cfg["start"], cfg["end"], copies, pages]
-                    + ([patterns] if patterns else [])).encode()).hexdigest()[:16]
+                    + ([patterns] if patterns else []) + (["page_sequence"] if sequence else [])).encode()
+                ).hexdigest()[:16]
                 have = {r[0] for r in conn.execute(
                     "SELECT url FROM capture_attempts WHERE institution_id=? AND doc_label=? "
                     "AND outcome='unchanged' AND detail=?", (inst_id, label, "sai-read:" + sig))}
@@ -261,12 +301,12 @@ def fetch_sai_appendices(conn: sqlite3.Connection, institutions: dict[str, dict]
                     batch.append({"accession": f.accession_number, "filing_date": f.filing_date,
                                   "url": url,
                                   "section": extract_section(cm.html_to_text(raw), cfg["start"],
-                                                             cfg["end"], copies, pages, patterns)})
+                                                             cfg["end"], copies, pages, patterns, sequence)})
                     urls.append(url)
                 flagged: list[str] = []
                 n = ingest_filings(conn, inst_id, label,
                                    [b for b in batch if b["section"] is not None],
-                                   cfg["start"], cfg["end"], copies, pages, flagged, patterns)
+                                   cfg["start"], cfg["end"], copies, pages, flagged, patterns, sequence)
                 for b in batch:
                     if b["section"] is None:
                         logger.info("%s/%s: no clean section in %s (%s); nothing recorded",

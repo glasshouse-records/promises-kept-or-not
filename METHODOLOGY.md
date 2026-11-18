@@ -552,6 +552,57 @@ registrants that file notice reports only (Municipal Income Fund, the money-mark
 Opportunities, Floating Rate High Income, Corporate Opportunities, Flexible Income, Municipal
 Opportunities).
 
+Franklin Templeton and Putnam (Putnam Investments added 2026-11-19 under `franklin_templeton`;
+Franklin Resources acquired Putnam on 2024-01-01): franklintempleton.com answers requests that
+identify themselves honestly (200, probed 2026-11-19), so it is not a blocked source; the Putnam
+policy page is an application shell that holds no policy text, so no HTML page is a label and no
+`body` bound is needed. The institution now has two adviser groups. FRANKLIN: Franklin Custodian
+Funds (CIK 38721, from 2021-01-26, SAI 0001379491-21-000215) and Franklin ETF Trust (CIK 1551895,
+from 2021-07-28, SAI 0001379491-21-003455), whose SAIs say the board delegated voting to the
+investment manager, Franklin Advisers, Inc.; policy label `proxy-voting-policies-procedures`
+(Franklin Equity Group). PUTNAM: 13 fund registrants (Putnam Funds Trust, High Yield Fund,
+Variable Trust, Investment Funds, International Equity Fund, George Putnam Balanced Fund, Global
+Health Care Fund, Asset Allocation Funds, Diversified Income Trust, Convertible Securities Fund,
+Large Cap Value Fund, Focused International Equity Fund, ETF Trust), each keyed PUTNAM from the
+EDGAR filing date of its own earliest SAI whose Part II says "The Trustees of the Putnam Funds
+have delegated proxy voting authority for the securities held in the funds' portfolios to Putnam
+Management and have approved Putnam Management's current proxy voting guidelines and procedures"
+(2023-03-27 to 2024-02-26; the ETF Trust's SAI said so from 2021-05-20; accessions in each
+registrant's `adviser_source`). SAIs up to 2023-02-28 say the opposite: the Trustees established
+the guidelines and a Director of Proxy Voting and Corporate Governance in the Office of the
+Trustees directed the votes. That is not Putnam Management voting, so earlier meetings stay
+unlabelled, and so do meetings between 2023-07-01 and a registrant's first SAI of the new wording
+(Large Cap Value, Convertible Securities and Focused International Equity: until 2024-02-26),
+although the SAI footnote says the Board delegated "effective January 27, 2023"; a sister trust's
+filing is never used to date another registrant. No rule ends: the SAIs read to 2026-10-26 still
+say Putnam Management votes under the Putnam Investments Proxy Voting Procedures, also where
+Franklin Advisers, Inc. became the Investment Manager of a series in 2025-26 and Putnam
+Management sub-advises it. No series is EXTERNAL: PanAgora Asset Management (sub-adviser of the
+Putnam PanAgora ESG ETFs) is described as making investment decisions only. Not ingested:
+Putnam's institutional-manager N-PX reports (CIKs 81273, 81238, 1140334: they overlap the fund
+tables), the notice-only funds (Money Market, Income, Global Income, California Tax Exempt) and
+High Income Securities Fund (Putnam in name until 2018). Ingested N-PX 2024-26: 96,135, 94,465
+and 101,865 votes with is_duplicate = 0 for the seasons filed in 2024, 2025 and 2026. Policy: label
+`putnam-investments-proxy-voting-procedures` is the franklintempleton.com PDF
+(`/forms-literature/download/PI-PVG`, first page "March 28, 2025"; commitments id 251) with the
+earlier putnam.com address `/static/pdf/proxy/proxy_voting_procedures_guidelines.pdf` walked as a
+`former_url` (March 26, 2021 edition, Wayback 2021-10-28, id 257); putnam.com's
+`/static/pdf/proxy/proxy_voting_guidelines.pdf` is deliberately not walked: its 2014-2021 captures
+are the Putnam Funds' own Trustee guidelines (another document) and it still serves the July 1,
+2024 edition live. The dated route is `putnam-investments-proxy-voting-procedures-as-printed-in-sai`:
+Appendix A of the Putnam Variable Trust SAI (one 485BPOS a year plus one in October 2026; the
+multi-series Putnam trusts file many differently typeset SAIs a year, whose bullet glyphs and
+split words would mint a version each), read from "Putnam Investments Proxy Voting Procedures
+Introduction and Summary" to the Part C heading, so the final certification sentence is kept. The
+SAI's own page numbers (a bare number at every page foot from 2025, mid-sentence too, "Month D,
+YYYY II- n" before) are removed by the opt-in `page_sequence` (the longest run of at least eight
+consecutive numbers, never a lone number), bullet glyphs and signature blanks by `strip_patterns`.
+Five versions (2023-04-28 January 2023 edition, 2024-04-29 March 2024, 2025-04-28 March 2025,
+2026-04-20, 2026-10-01), diffed consecutively: the first three and the last differ in wording; the
+2026-04-20 version is the 2025-04-28 text with one list item moved across a page break and one
+split word ("A n"), a layout difference the extraction cannot remove (known phantom, commitments
+id 255).
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting

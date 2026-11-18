@@ -296,3 +296,39 @@ def test_start_may_list_alternative_headings_for_different_editions():
     assert sai.extract_section(new, starts, "END").startswith("Exhibit A Summary")
     # both headings in one filing is still ambiguity unless the copies are identical
     assert sai.extract_section(old + new, starts, "END") is None
+
+
+def _paged(offset, tail="Final sentence stays."):
+    """Eleven printed pages of one policy, the SAI page number (offset+n) printed at each page foot:
+    sometimes after a sentence, sometimes between two words of one."""
+    pages = ["Putnam votes for proposals", "to declassify boards. It will vote against", "proposals in excess of 200 percent of",
+             "outstanding shares, see Section 162(m). Directors", "who attend fewer than 75% of meetings", "are opposed. A 27 month plan",
+             "is routine. Sole 150 holders may", "not nominate. Items on page", "headers are skipped. Proxies are", "never lent. Votes are public.", tail]
+    return " ".join(f"{p} {offset + i}" if i < len(pages) - 1 else f"{p} {offset + i}" for i, p in enumerate(pages))
+
+
+def test_page_sequence_strips_the_running_page_numbers_only_when_opted_in():
+    """A SAI prints its own page number at every page foot, mid-sentence too, and the number moves when the
+    SAI grows; only the run of consecutive numbers is page furniture, a real '200 percent' or '162(m)' is not."""
+    a = sai.extract_section(doc(_paged(144)), START, END, page_sequence=True)
+    b = sai.extract_section(doc(_paged(98)), START, END, page_sequence=True)
+    assert a == b, "a repagination must not look like a new version"
+    for real in ("200 percent", "Section 162(m)", "75% of meetings", "A 27 month plan", "Sole 150 holders"):
+        assert real in a
+    assert a.endswith("Final sentence stays.")
+    assert "144" not in a and "154" not in a
+    assert "144 " in sai.extract_section(doc(_paged(144)), START, END), "off by default"
+
+
+def test_page_sequence_prefers_the_mark_at_the_page_foot_over_an_equal_number_earlier_on_the_page():
+    words = [f"w{i}" for i in range(9)]
+    body = " ".join(f"{words[i % 9]} text {n}" for i, n in enumerate(range(140, 150)))
+    body += " Votes of 150 holders count. 150 more words 151 end"
+    got = sai.extract_section(doc(body), START, END, page_sequence=True)
+    assert "Votes of 150 holders count." in got, "a real number that equals the next page number stays"
+    assert got.endswith("more words end") and "140" not in got and "151" not in got
+
+
+def test_page_sequence_needs_a_long_run_so_a_short_run_of_real_numbers_is_kept():
+    body = "Ranges: 10 11 12 are tiers. " + "Text. " * 20
+    assert "10 11 12" in sai.extract_section(doc(body), START, END, page_sequence=True)
