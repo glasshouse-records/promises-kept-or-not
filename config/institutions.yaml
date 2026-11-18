@@ -1956,6 +1956,7 @@ institutions:
         name: "MFS Series Trust XV"
         validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
       - cik: "63067"
+        npx_ended: {last_period: "2025-06-30", reason: "no 2026 N-PX on EDGAR as of 2026-11-18; re-check", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000063067&type=N-PX", checked: "2026-11-18"}
         adviser: "Massachusetts Financial Services Company (MFS); no outside sub-adviser named"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/63067/000110465922110473/tm2227758d1_485bpos.htm"  # 485BPOS filed 2022-10-21, SAI dated 2022-10-24; later annual editions not opened
         adviser_verified: "2026-11-18"
@@ -2127,6 +2128,7 @@ institutions:
         name: "American Century Strategic Asset Allocations, Inc."
         validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
       - cik: "814680"
+        npx_ended: {last_period: "2025-06-30", reason: "deregistered: N-8F filed 2026-07-27", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000814680&type=N-8F", checked: "2026-11-18"}
         adviser: "American Century Investment Management, Inc. (ACIM); no outside voter named"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/814680/000081468022000040/ck0000814680-20211231.htm"  # 485BPOS filed 2022-04-14, SAI dated May 1, 2022; later annual editions not opened
         adviser_verified: "2026-11-18"
@@ -2341,6 +2343,7 @@ institutions:
         name: "AB Global Bond Fund, Inc."
         validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
       - cik: "1018368"
+        npx_ended: {last_period: "2025-06-30", reason: "deregistered: N-8F notice 2025-12-02, order 2026-01-07", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001018368&type=N-8F", checked: "2026-11-18"}
         adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/1018368/000091957422002005/abgrifi-20220228.htm"  # 485BPOS filed 2022-03-01, SAI Appendix A; later annual editions not opened
         adviser_verified: "2026-11-18"
@@ -2752,6 +2755,7 @@ institutions:
           - "https://www.nb.com/handlers/documents.ashx?id=e6b2f962-93ae-48b5-854e-627c89b3ea7f&name=S0301_nb_proxy_policy_procedures"
         adviser: "Neuberger Berman Investment Advisers LLC"
         adviser_key: "NEUBERGER_BERMAN"
+        access: {status: blocked, reason: "nb.com answers honest clients with a Vercel bot challenge (429); documented in METHODOLOGY, never evaded", checked: "2026-11-18"}
       # The same policy as printed in Appendix B of the Advisers Management Trust SAI, dated by EDGAR filing date. Separate label from the website PDF (different formatting would invent
       # alternating versions). One heading per printed edition; the section runs to Part C of the registration statement; the page marks "B- 3" are stripped.
       - label: neuberger-berman-proxy-voting-policies-and-procedures-as-printed-in-sai

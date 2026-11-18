@@ -44,3 +44,27 @@ def test_the_doctor_reports_it_as_an_error(tmp_path, monkeypatch):
     names = {c["name"]: c for c in doctor.diagnose(conn)["checks"]}
     assert names["votes:alpha/1"]["ok"] is False
     assert names["votes:alpha/1"]["severity"] == "error"
+
+
+_ENDED = {"alpha": {"npx_ciks": [{"cik": "1", "npx_ended": {"last_period": "2025-06-30"}}]}}
+
+
+def test_a_registrant_that_ended_its_npx_is_not_a_gap_after_last_period(tmp_path):
+    conn = _ledger(tmp_path, [("0000000001", "06/30/2025")])
+    gaps = doctor.missing_vote_seasons(conn, today=date(2026, 11, 16), institutions=_ENDED)
+    assert len(gaps) == 1 and gaps[0]["ended"] == _ENDED["alpha"]["npx_ciks"][0]["npx_ended"]
+
+
+def test_seasons_up_to_last_period_still_error(tmp_path):
+    conn = _ledger(tmp_path, [("1", "06/30/2023")])
+    gaps = doctor.missing_vote_seasons(conn, today=date(2026, 11, 16), institutions=_ENDED)
+    assert len(gaps) == 1 and "ended" not in gaps[0]
+
+
+def test_blocked_access_label_is_info_not_error():
+    doc = {"label": "x", "access": {"status": "blocked", "reason": "429 challenge",
+                                    "checked": "2026-11-18"}}
+    ok, detail = doctor.apply_access(doc, False, "capture FAILED", "error")
+    assert ok and "blocked" in detail and "429 challenge" in detail
+    assert doctor.apply_access({"label": "y"}, False, "capture FAILED", "error") == (
+        False, "capture FAILED")

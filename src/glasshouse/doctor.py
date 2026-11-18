@@ -46,7 +46,28 @@ def _today() -> date:
     return date.today()
 
 
-def missing_vote_seasons(conn: sqlite3.Connection, today: date | None = None) -> list[dict]:
+def _ended_map(institutions: dict | None) -> dict[tuple, dict]:
+    """(institution, cik without leading zeros) -> the registrant's `npx_ended` record."""
+    if institutions is None:
+        from .registry import load
+        institutions = load()
+    return {(iid, str(r["cik"]).lstrip("0")): r["npx_ended"]
+            for iid, inst in institutions.items()
+            for r in inst.get("npx_ciks") or [] if r.get("npx_ended")}
+
+
+def apply_access(doc: dict, ok: bool, detail: str, severity: str) -> tuple[bool, str]:
+    """A failed live capture of a label configured `access: {status: blocked}` is
+    a documented block (honest client refused; never evaded), reported as info."""
+    acc = doc.get("access") or {}
+    if not ok and acc.get("status") == "blocked":
+        return True, (f"blocked, documented ({acc.get('reason', '')}; checked "
+                      f"{acc.get('checked', '')}): {detail}")
+    return ok, detail
+
+
+def missing_vote_seasons(conn: sqlite3.Connection, today: date | None = None,
+                         institutions: dict | None = None) -> list[dict]:
     """Fund registrants whose newest N-PX season on file is older than the one
     already due. N-PX covers the 12 months to 30 June and must be filed by
     31 August; from mid-September its absence is a hole in the record, not a
@@ -63,8 +84,18 @@ def missing_vote_seasons(conn: sqlite3.Connection, today: date | None = None) ->
         if year.isdigit():
             key = (r[0], r[1])
             latest[key] = max(latest.get(key, 0), int(year))
-    return [{"institution": i, "cik": c, "latest_on_file": y, "expected": expected}
-            for (i, c), y in sorted(latest.items()) if y < expected]
+    ended = _ended_map(institutions)
+    out = []
+    for (i, c), y in sorted(latest.items()):
+        if y >= expected:
+            continue
+        g = {"institution": i, "cik": c, "latest_on_file": y, "expected": expected}
+        e = ended.get((i, str(c).lstrip("0")))
+        # Only seasons AFTER the last period are excused; earlier ones are still holes.
+        if e and y >= int(str(e["last_period"])[:4]):
+            g["ended"] = e
+        out.append(g)
+    return out
 
 
 def capture_health(conn: sqlite3.Connection, institution_id: str, doc_label: str,
@@ -147,6 +178,12 @@ def diagnose(conn: sqlite3.Connection) -> dict:
 
     # 0. The votes themselves: every rate is computed from them.
     for g in missing_vote_seasons(conn, today):
+        if g.get("ended"):
+            e = g["ended"]
+            check(f"votes:{g['institution']}/{g['cik']}", True,
+                  f"no N-PX expected after {e['last_period']}: {e.get('reason', '')} "
+                  f"(source {e.get('source', '')}; checked {e.get('checked', '')})")
+            continue
         check(f"votes:{g['institution']}/{g['cik']}", False,
               f"N-PX season {g['expected']} was due 31 Aug and is not on file (latest: "
               f"{g['latest_on_file']}). Run `glasshouse ingest npx --institution "
@@ -185,6 +222,7 @@ def diagnose(conn: sqlite3.Connection) -> dict:
 
     # 3. Commitments: is every tracked policy page actually being captured?
     from .registry import load
+    blocked_labels: list[str] = []
     for inst_id, inst in load().items():
         for doc in inst.get("commitments", []):
             if restored and not conn.execute(
@@ -194,7 +232,16 @@ def diagnose(conn: sqlite3.Connection) -> dict:
                       "restored, not live: no capture has run on this ledger")
                 continue
             ok, detail, severity = capture_health(conn, inst_id, doc["label"], today)
+            was_ok = ok
+            ok, detail = apply_access(doc, ok, detail, severity)
+            if ok and not was_ok:
+                blocked_labels.append(f"{inst_id}/{doc['label']}")
             check(f"commitment-live:{inst_id}/{doc['label']}", ok, detail, severity)
+
+    if blocked_labels:
+        check("commitment-access:blocked", True,
+              f"{len(blocked_labels)} label(s) failing live capture are documented "
+              f"blocked: {', '.join(blocked_labels)}")
 
     for inst_id, label, detail in sai_needs_review(conn):
         check(f"sai-outlier:{inst_id}/{label}", False,
