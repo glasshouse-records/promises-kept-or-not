@@ -291,6 +291,38 @@ Maturities trusts, Variable Portfolios II, and the institutional-manager filers
 are not ingested (no operating-company votes in a fund registrant's N-PX, or not
 a fund).
 
+Janus Henderson (added 2026-11-18): janushenderson.com answers requests that
+identify themselves honestly (200 on `.../investor/legal-information/proxy-voting/`,
+probed 2026-11-18), so it is not a blocked source. The policy page is navigation
+plus a link; the policy itself is a PDF reached through
+`/download/document/131419` (301, 302, 200 `application/pdf`), whose CDN file name
+changes with each edition ("Proxy Voting Policy July 2026"). It is archived as
+`proxy-voting-policy`; because the page is not the policy text no `body` bound is
+needed, and the earlier CDN file names found in the Wayback CDX index are walked
+under the same label as `former_urls` (editions "Last Review Date" March 2021,
+March 2022 and February 2025 from Wayback captures 2021-06-15, 2022-06-19 and
+2025-08-27, plus July 2026 live; the Wayback CDX endpoint throttled during a
+pipeline-wide `--wayback` run on 2026-11-18, so a later run may add captures).
+The dated route is `janus-henderson-proxy-voting-policy-as-printed-in-sai`:
+Appendix B of the Janus Investment Fund SAI (read from the policy title to the SAI
+back cover; one copy per SAI, accepted only when every copy in a filing is
+identical). It yields five editions printing "Last Review Date" March 2023
+(2023-10-27), February 2024 (2024-06-20), February 2025 (2025-06-24), September
+2025 (2026-03-04) and July 2026 (2026-10-28). The contents list, bullets, the
+footnote naming who votes for the Proprietary U.S. Funds, and page numbers are
+removed because they follow each SAI's pagination; before the October 2023 edition
+the SAI printed only a "Proxy Voting Summary", which is a summary and is not
+archived. Voting: each trust's SAI says its Trustees delegated proxy voting to the
+Adviser, Janus Henderson Investors US LLC. Intech Investment Management voted
+its own sub-advised series until its agreements ended (Janus Investment Fund's four
+Intech Managed Volatility funds, terminated 2022-04-05; the Janus Aspen U.S. Low
+Volatility Portfolio until 2023), so each registrant is keyed from the first SAI in
+which the Adviser alone votes (2022-10-28, 2023-04-28, and 2022-02-28 for the
+Detroit Street Trust ETFs). Kapstream and the other foreign affiliates work under
+personnel-sharing arrangements and do not vote. Clayton Street Trust (a fund of
+funds, only Vanguard and Franklin ETF ballots) and the institutional-manager
+reports are not ingested.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting

@@ -2181,3 +2181,91 @@ institutions:
             - "American Century Investments americancentury.com Retail Investors"
           strip_patterns:
             - '\bE-\d{1,2}\b'
+
+  janus_henderson:
+    display_name: "Janus Henderson Investors (Janus Henderson Investors US LLC)"
+    short_name: "Janus Henderson"
+    cik: "0001274173"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Janus Henderson Group, Denver / London. CIK 1274173 is Janus Henderson Group Ltd., the 13-F filer (13F-HR); Janus Henderson Investors US LLC (CIK 812295, the investment adviser that votes the US funds' proxies) files 13F-NT and, like Group, the UK, Jersey, Singapore and Australia affiliates and Group Holdings, only institutional-manager N-PX reports. Added 2026-11-18. aum_usd_tr left 0 (firm AUM not verified from an official source), so it carries no weight in AUM-weighted metrics."
+    npx_ciks:
+      # Added 2026-11-18. The Adviser's own US fund registrants that file N-PX vote tables with operating-company votes. Every trust's SAI (Proxy Voting Policy and Procedures)
+      # says the Trustees have delegated to the Adviser the authority to vote all proxies relating to the Fund's portfolio securities in accordance with the Adviser's own
+      # policies and procedures, and (from the October 2023 edition) prints the Adviser's proxy voting policy as an appendix. The only outside voter ever named is Intech Investment
+      # Management LLC (a Janus-controlled sub-adviser with its own policy): the Janus Investment Fund SAI of 2021-10-28 says "Janus Capital or Intech, as applicable" and its
+      # sub-advisory agreements for the four Intech Managed Volatility funds were terminated 2022-04-05 (exhibit (d)(64) of the 2022-10-28 filing); the Janus Aspen Series SAI of
+      # 2022-04-29 says "the Adviser or Intech, as applicable" (U.S. Low Volatility Portfolio, interim sub-advisory agreement dated 2022-03-31) and the 2023-04-28 SAI no longer does.
+      # `from` is therefore the EDGAR filing date of the first 485BPOS (SAI) read in which the Adviser alone votes every series; earlier meetings stay unlabelled, which also
+      # keeps the Intech-voted series out of the dated window, so no series is EXTERNAL. Kapstream (Absolute Return Income Opportunities Fund) and the other foreign affiliates act under
+      # personnel-sharing arrangements, "subject to the oversight and supervision of the Adviser"; the SAI voting delegation to the Adviser carries no carve-out for them.
+      - cik: "277751"
+        adviser: "Janus Henderson Investors US LLC (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/277751/000119312522271151/d269703d485bpos.htm"  # 485BPOS filed 2022-10-28, first SAI after the 2022-04-05 Intech termination
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting: 'Trustees of the Trust have delegated to the Adviser the authority to vote all proxies relating to such Fund's portfolio securities in accordance with the Adviser's own policies and procedures.' The 485BPOS of 2021-10-28 (0001193125-21-309596) still said 'Janus Capital or Intech, as applicable' for the four Intech Managed Volatility funds; their sub-advisory agreements were terminated 2022-04-05. Keyed from the filing date of the first SAI read after that; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: JANUS_HENDERSON, from: "2022-10-28"}]
+        name: "Janus Investment Fund"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "906185"
+        adviser: "Janus Henderson Investors US LLC (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/906185/000119312523122655/d469715d485bpos.htm"  # 485BPOS filed 2023-04-28, first SAI without the Intech carve-out
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting: 'Trustees of the Trust have delegated to the Adviser the authority to vote all proxies relating to such Portfolio's securities in accordance with the Adviser's own policies and procedures.' The 485BPOS of 2022-04-29 (0001193125-22-128371) said 'the Adviser or Intech, as applicable' (Janus Henderson U.S. Low Volatility Portfolio, subadvised by Intech); the 2023-04-28 SAI lists the subadvisory agreement as terminated. Keyed from that filing date; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: JANUS_HENDERSON, from: "2023-04-28"}]
+        name: "Janus Aspen Series"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1500604"
+        adviser: "Janus Henderson Investors US LLC (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1500604/000119312522054967/d235090d485bpos.htm"  # 485BPOS filed 2022-02-28, the multi-fund Janus Detroit Street Trust SAI; later annual editions not opened in full
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Proxy Voting Policies and Procedures: 'Trustees have delegated to the Adviser the authority to vote all proxies relating to such Fund's portfolio securities in accordance with the Adviser's own policies and procedures.' No sub-adviser is named for any ETF. Keyed from the filing date of the earliest multi-fund SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: JANUS_HENDERSON, from: "2022-02-28"}]
+        name: "Janus Detroit Street Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed JANUS_HENDERSON, per registrant, from the EDGAR filing date of the first 485BPOS (SAI) read in which the Adviser alone votes every series: Janus Investment Fund (277751) 2022-10-28, Janus Aspen Series (906185) 2023-04-28, Janus Detroit Street Trust (1500604) 2022-02-28. Intech Investment Management LLC voted under its own policy for the four Intech Managed Volatility funds until 2022-04-05 and for the Janus Aspen U.S. Low Volatility Portfolio until 2023; both lie before the dated window, so no series is EXTERNAL. Meetings before those dates stay unlabelled."
+      - "Not ingested, not keyed: Clayton Street Trust (1660765, Protective Life Dynamic Allocation Series portfolios; a fund of funds whose N-PX hold only Vanguard Index Funds, Vanguard International Equity Index Funds and Franklin Templeton ETF Trust ballots), the institutional-manager reports of Janus Henderson Investors US LLC (812295), Janus Henderson Group Ltd. (1274173), Janus Henderson Group Holdings (2146052) and the UK, Jersey, Singapore and Australia affiliates (1280110, 1874815, 1810753, 1794678), the private-fund registrants (Janus Henderson Biotech Innovation, Dynamic Trend, Multi-Strategy and similar LLC/Ltd/LP issuers, no N-PX), and Henderson Global Funds (1141306, last N-PX 2017)."
+      - "Policy text: the Janus Henderson Investors US LLC Proxy Voting Policy PDF from janushenderson.com (the policy page links /download/document/131419, which redirects to a CDN PDF whose file name changes with each edition) and, under a separate label, as printed in Appendix B of the Janus Investment Fund SAI (one copy per SAI; read from the policy title to the SAI back cover; contents list, footnote and page numbers removed). The Appendix replaces the 'PROXY VOTING SUMMARY' printed in the SAI body until early 2023, which is a summary and is not archived."
+    commitments:
+      # Verified 2026-11-18 (the policy page answers honest clients with 200; /download/document/131419 -> 301 -> 302 -> 200 application/pdf, 'Proxy Voting Policy July 2026').
+      # The page text itself is navigation plus a link, the policy is the PDF, so no `body` bound is needed.
+      - label: proxy-voting-policy
+        url: "https://www.janushenderson.com/download/document/131419"
+        adviser: "Janus Henderson Investors US LLC"
+        adviser_key: "JANUS_HENDERSON"
+        # The CDN file name changes with each edition (current: Proxy+Voting+Policy+July+2026.pdf). Earlier names found in the Wayback CDX index (captures
+        # 2021-06-15, 2022-06-19, 2025-08-27), walked by `glasshouse ingest commitments --wayback` under this one label.
+        former_urls:
+          - "https://cdn.janushenderson.com/webdocs/Proxy+Voting+Policy+July+2026.pdf"
+          - "https://cdn.janushenderson.com/webdocs/Proxy+Voting+Policy+and+Procedures.pdf"
+          - "https://cdn.janushenderson.com/webdocs/JHI+Proxy+Voting+Policy+and+Procedures.pdf"
+          - "https://cdn.janushenderson.com/webdocs/Proxy+Voting+Policy+and+Procedures+2021.pdf"
+      # The same policy as printed in Appendix B of the Janus Investment Fund SAI, dated by EDGAR filing date. Separate label from the website PDF (different formatting
+      # would invent alternating versions). Every edition prints "Last Review Date: <month year>" under the title. Removed: the contents list (page numbers differ per SAI),
+      # bullets, the footnote on who votes for the Proprietary U.S. Funds (its position follows the pagination), standalone page numbers 50-199, and in one filing's layout an
+      # "A-" page prefix, single-digit page numbers and "U.S" for "U.S.".
+      - label: janus-henderson-proxy-voting-policy-as-printed-in-sai
+        adviser: "Janus Henderson Investors US LLC"
+        adviser_key: "JANUS_HENDERSON"
+        sai_appendix:
+          cik: "0000277751"
+          forms: ["485BPOS"]
+          since: "2023-01-01"
+          allow_identical_copies: true
+          start:
+            - "Proxy Voting Policy and Procedures Last Review Date:"
+          end:
+            - "This page intentionally left blank"
+            - "janushenderson.com"
+          strip_patterns:
+            - ' \d{1,3} Contents 1 Overview .*? Proposals Outside the Guidelines \d+ \d+ (?=1 Overview 1\.1 Policy Statement)'
+            - '[•·●]'
+            - '\b\d{1,2} Janus Henderson Investors US LLC has been designated by the Boards of Trustees of .*?\bas applicable\.'
+            - ' (?:[5-9]\d|1\d\d)(?![\w/%.,)-])'
+            - ' A-(?= 1 Overview)'
+            - '(?<=[.]) \d(?= \d)'
+            - '(?<=issuer\.) \d(?= Janus)'
+            - '(?<=Proxy Voting Service\.) \d(?= Proxy Voting Service\.)'
+            - '(?<=Proprietary) U\.S\.?(?= Funds refer)'
