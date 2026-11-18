@@ -72,6 +72,25 @@ def cmd_ingest_npx(args) -> int:
     from .ingest import npx
     conn = _conn()
     targets: list[tuple[str, str | None]] = []
+    reingest = {a.strip() for a in (args.reingest or "").split(",") if a.strip()}
+    if reingest:
+        if not args.reason:
+            print("error: --reingest needs --reason (logged in ingest_runs)", file=sys.stderr)
+            return 2
+        rows = conn.execute(
+            f"SELECT DISTINCT cik, institution_id FROM filings WHERE accession IN "
+            f"({','.join('?' * len(reingest))})", sorted(reingest)).fetchall()
+        known = {r[0] for r in conn.execute(
+            f"SELECT accession FROM filings WHERE accession IN "
+            f"({','.join('?' * len(reingest))})", sorted(reingest))}
+        if known != reingest:
+            print(f"error: not in ledger: {sorted(reingest - known)}", file=sys.stderr)
+            return 2
+        for cik, inst_id in rows:
+            stats = npx.ingest_npx(conn, cik, institution_id=inst_id, reingest=reingest,
+                                   reingest_reason=args.reason)
+            print(f"  CIK {cik}: {stats}")
+        return 0
     if args.cik:
         targets.append((args.cik, args.institution))
     elif args.institution:
@@ -1047,6 +1066,9 @@ def main(argv: list[str] | None = None) -> int:
     npx_p.add_argument("--max-filings", type=int, default=None)
     npx_p.add_argument("--max-tables", type=int, default=None,
                        help="stop after N proxyTables per exhibit (smoke tests)")
+    npx_p.add_argument("--reingest", help="comma-separated accessions to re-fetch and "
+                       "replace (e.g. stubs from a --max-tables run); needs --reason")
+    npx_p.add_argument("--reason", help="why (logged in ingest_runs)")
     npx_p.add_argument("--legacy", action="store_true",
                        help="parse pre-2024 legacy HTML N-PX (historical depth); "
                             "votes tagged legacy_html and quarantined from releases")

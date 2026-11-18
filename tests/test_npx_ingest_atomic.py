@@ -84,3 +84,66 @@ def test_ingest_marks_duplicates_before_returning(world):
         "vote_description, vote_series, how_voted, shares_voted FROM votes)").fetchone()[0]
     assert dups > 0 and total - dups == unique
     assert ledger.duplicate_flags_stale(conn) == ""
+
+
+def _votes(conn):
+    return sorted(tuple(r) for r in conn.execute(
+        "SELECT accession, issuer_name, cusip, vote_description, how_voted, shares_voted, "
+        "is_duplicate FROM votes"))
+
+
+def test_a_table_limited_run_is_recorded_partial_and_a_full_run_completes_it(world):
+    """Found 2026-11-18: `--max-tables 1` left 8 Allspring filings as 1-vote
+    stubs that a later full run skipped as already ingested."""
+    conn, state = world
+    state["fail"] = False
+    npx.ingest_npx(conn, "1", max_tables=1)
+    assert conn.execute("SELECT COUNT(*) FROM filings WHERE partial=1").fetchone()[0] == 2
+
+    stats = npx.ingest_npx(conn, "1")                 # no limit: must redo both
+    assert stats["filings"] == 2 and stats["skipped"] == 0
+    assert conn.execute("SELECT COUNT(*) FROM filings WHERE partial=1").fetchone()[0] == 0
+    assert ledger.duplicate_flags_stale(conn) == ""
+
+    clean = ledger.connect(Path(conn.execute("PRAGMA database_list").fetchone()[2]).parent
+                           / "clean.db")
+    npx.ingest_npx(clean, "1")
+    assert _votes(conn) == _votes(clean)
+    # a complete run is not partial and is skipped next time
+    assert npx.ingest_npx(conn, "1")["skipped"] == 2
+
+
+def test_a_limit_that_does_not_cut_anything_is_not_partial(world):
+    conn, state = world
+    state["fail"] = False
+    npx.ingest_npx(conn, "1", max_tables=10_000)
+    assert conn.execute("SELECT COUNT(*) FROM filings WHERE partial=1").fetchone()[0] == 0
+
+
+def test_reingest_replaces_exactly_the_named_filings_and_logs_the_reason(world):
+    conn, state = world
+    state["fail"] = False
+    npx.ingest_npx(conn, "1")
+    good = _votes(conn)
+    a1, a2 = _filing(1).accession_number, _filing(2).accession_number
+    conn.execute("DELETE FROM votes WHERE accession=?", (a1,))   # simulate a stub
+    conn.execute("DELETE FROM votes WHERE accession=?", (a2,))
+    conn.commit()
+    stats = npx.ingest_npx(conn, "1", reingest={a1}, reingest_reason="stub from smoke run")
+    assert stats["filings"] == 1
+    assert {r[0] for r in _votes(conn)} == {a1}        # a2 untouched
+    npx.ingest_npx(conn, "1", reingest={a2}, reingest_reason="stub from smoke run")
+    assert _votes(conn) == good
+    runs = conn.execute("SELECT source, fetched, ok FROM ingest_runs").fetchall()
+    assert len(runs) == 2 and "stub from smoke run" in runs[0][0] and runs[0][2] == 1
+    assert a1 in runs[0][0]
+
+
+def test_failed_reingest_keeps_the_old_votes(world):
+    conn, state = world
+    state["fail"] = False
+    npx.ingest_npx(conn, "1")
+    before = _votes(conn)
+    state["fail"] = True
+    npx.ingest_npx(conn, "1", reingest={_filing(1).accession_number}, reingest_reason="x")
+    assert _votes(conn) == before

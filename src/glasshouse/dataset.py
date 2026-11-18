@@ -49,6 +49,7 @@ DATA_DICTIONARY: dict[str, dict] = {
                        "N-PORT filings",
         "source_url": "EDGAR directory of the filing (primary source)",
         "retrieval_date": "date Glasshouse fetched the filing",
+        "partial": "1 if a limited smoke run stopped before the filing's last table (votes incomplete, replaced on the next ingest); 0 for a complete filing",
         "notes": "free-text note; no ingester writes it, so it is empty in every row"},
     "votes": {"_": "Proxy votes from N-PX, one row per voteRecord (de-duplicated, cast votes "
         "only). Carries no source_url or retrieval_date: join votes.accession → "

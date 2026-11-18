@@ -75,7 +75,9 @@ CREATE TABLE IF NOT EXISTS filings (
     report_type      TEXT,             -- N-PX cover reportType (notice vs voting report)
     source_url       TEXT NOT NULL,
     retrieval_date   TEXT NOT NULL,
-    notes            TEXT
+    notes            TEXT,
+    partial          INTEGER NOT NULL DEFAULT 0  -- 1: a limited run (--max-tables) stopped
+                                                 -- before the last table; ingest redoes it
 );
 
 CREATE TABLE IF NOT EXISTS fund_series (
@@ -334,6 +336,10 @@ def _migrate(conn: sqlite3.Connection) -> None:
     cols = {r[1] for r in conn.execute("PRAGMA table_info(entities)")}
     if "country" not in cols:
         conn.execute("ALTER TABLE entities ADD COLUMN country TEXT DEFAULT ''")
+        conn.commit()
+    fcols = {r[1] for r in conn.execute("PRAGMA table_info(filings)")}
+    if "partial" not in fcols:
+        conn.execute("ALTER TABLE filings ADD COLUMN partial INTEGER NOT NULL DEFAULT 0")
         conn.commit()
     vcols = {r[1] for r in conn.execute("PRAGMA table_info(votes)")}
     if "is_duplicate" not in vcols:

@@ -119,7 +119,8 @@ def _float_of(parent: etree._Element, localname: str) -> float:
         return 0.0
 
 
-def iter_vote_rows(xml_path: Path, max_tables: int | None = None) -> Iterator[VoteRow]:
+def iter_vote_rows(xml_path: Path, max_tables: int | None = None,
+                   state: dict | None = None) -> Iterator[VoteRow]:
     """Stream VoteRows from a vote-table exhibit without loading the DOM.
 
     Yields one row per voteRecord (a proxyTable with three voteRecords
@@ -130,6 +131,10 @@ def iter_vote_rows(xml_path: Path, max_tables: int | None = None) -> Iterator[Vo
     context = etree.iterparse(str(xml_path), events=("end",), tag="{*}proxyTable",
                               recover=True, huge_tree=True)
     for _event, table in context:
+        if max_tables and n_tables >= max_tables:
+            if state is not None:
+                state["truncated"] = True      # a further table exists, unread
+            break
         base = VoteRow(
             issuer_name=_text_of(table, "issuerName"),
             cusip=_text_of(table, "cusip").upper(),
@@ -159,8 +164,6 @@ def iter_vote_rows(xml_path: Path, max_tables: int | None = None) -> Iterator[Vo
             del table.getparent()[0]
 
         n_tables += 1
-        if max_tables and n_tables >= max_tables:
-            break
     del context
 
 
@@ -187,7 +190,9 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                institution_id: str | None = None,
                max_filings: int | None = None,
                max_tables: int | None = None,
-               legacy: bool = False) -> dict:
+               legacy: bool = False,
+               reingest: set[str] | None = None,
+               reingest_reason: str = "") -> dict:
     """Ingest N-PX filings for a CIK into the evidence ledger.
 
     Idempotent: filings already in the ledger are skipped. Cover-only
@@ -201,13 +206,23 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
     """
     today = date.today().isoformat()
     stats = {"filings": 0, "skipped": 0, "notices": 0, "votes": 0, "failed": 0}
+    reingest = set(reingest or ())
 
     filings = list_filings(cik, NPX_FORMS, limit=max_filings)
     for filing in filings:
         exists = conn.execute(
-            "SELECT report_type FROM filings WHERE accession = ?", (filing.accession_number,)
+            "SELECT report_type, partial FROM filings WHERE accession = ?",
+            (filing.accession_number,)
         ).fetchone()
-        if exists:
+        replace = False
+        if exists and (filing.accession_number in reingest if reingest else exists[1]):
+            if exists[0] in ("LEGACY_NO_COVER", "LEGACY_PARSED"):
+                stats["skipped"] += 1          # legacy filings are not replaced here
+                continue
+            replace = True
+        elif reingest and not exists:
+            continue
+        if exists and not replace:
             # legacy mode may upgrade a filing previously skipped as
             # LEGACY_NO_COVER (no votes attached) — reprocess it. Otherwise skip.
             if legacy and exists[0] == "LEGACY_NO_COVER":
@@ -233,6 +248,11 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
             if not (isinstance(exc, _rq.HTTPError) and status == 404):
                 logger.warning("transient cover failure for %s (%s) — will retry next run",
                                filing.accession_number, exc)
+                stats["skipped"] += 1
+                continue
+            if replace:
+                logger.warning("cover 404 while replacing %s — kept as is",
+                               filing.accession_number)
                 stats["skipped"] += 1
                 continue
             if legacy:
@@ -275,6 +295,13 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                 continue
 
         try:
+            if replace:
+                conn.execute("DELETE FROM votes WHERE accession = ?",
+                             (filing.accession_number,))
+                conn.execute("DELETE FROM fund_series WHERE accession = ?",
+                             (filing.accession_number,))
+                conn.execute("DELETE FROM filings WHERE accession = ?",
+                             (filing.accession_number,))
             conn.execute(
                 """INSERT INTO filings (accession, cik, institution_id, form_type,
                                         filing_date, period_of_report, report_type,
@@ -284,6 +311,7 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                  filing.filing_date, cover.period_of_report or filing.period_of_report,
                  cover.report_type, filing.directory_url, today),
             )
+            trunc: dict = {}
             for sr in cover.series:
                 conn.execute(
                     "INSERT OR IGNORE INTO fund_series (series_id, accession, name, lei) "
@@ -293,7 +321,7 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
             n_votes = 0
             for local in locals_:
                 rows = []
-                for row in iter_vote_rows(local, max_tables=max_tables):
+                for row in iter_vote_rows(local, max_tables=max_tables, state=trunc):
                     rows.append((
                         filing.accession_number, row.issuer_name, row.cusip, row.isin,
                         row.meeting_date, row.vote_description, row.category_type,
@@ -307,6 +335,9 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                 if rows:
                     conn.executemany(_VOTE_INSERT, rows)
                     n_votes += len(rows)
+            if trunc.get("truncated"):
+                conn.execute("UPDATE filings SET partial = 1 WHERE accession = ?",
+                             (filing.accession_number,))
             conn.commit()
         except Exception as exc:
             conn.rollback()
@@ -324,6 +355,11 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                     filing.accession_number, cover.report_type, stats["votes"])
 
     conn.commit()
+    if reingest:
+        ledger.record_ingest_run(
+            conn, f"npx_reingest:{','.join(sorted(reingest))}:{reingest_reason}",
+            fetched=stats["filings"], inserted=stats["votes"],
+            error="" if not stats["failed"] else f"{stats['failed']} failed")
     if stats["filings"] or stats["notices"]:
         # After the network loop, in its own transaction: new rows must never
         # sit unflagged (a repeated share class would be counted twice).

@@ -617,6 +617,7 @@ Scope is deliberately narrow, precision-first:
   two exhibits of the same period — 107,088 of 2,158,394 ingested rows
   (9.3% of rows — 350,732 of 3,765,999 as of 2026-11). Rows are kept as filed but marked `is_duplicate`; every analytic
   query excludes them. N-PX ingest re-runs the marking before it returns, and `glasshouse release` and `glasshouse doctor` refuse/err when any vote is newer than the last dedupe run. **Never sum `shares_voted` without this filter.**
+  A run cut short by `--max-tables` marks that filing `partial` and the next normal ingest replaces its votes; `glasshouse ingest npx --reingest <accession,...> --reason "..."` does the same for named filings and logs the reason in `ingest_runs`.
   Rows where identical share counts appear FOR and AGAINST the same
   proposal are additionally excluded from divergence visuals as likely
   as-filed duplication, pending verification.
