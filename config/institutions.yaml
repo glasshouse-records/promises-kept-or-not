@@ -1277,6 +1277,23 @@ institutions:
         url: "https://www.dimensional.com/chmedia/428704/source/download/summary-of-standard-proxy-voting-guidelines.pdf"
         adviser: "Dimensional Fund Advisors LP"
         adviser_key: "DFA"
+      # The Standard summary AS PRINTED in the DFAIDG SAIs (485BPOS), dated by EDGAR filing date; a SEPARATE label from the website PDF (different formatting).
+      # One 485BPOS binds many SAIs; each prints ONE exhibit: the Standard one (headed "Exhibit A Summary of Proxy Voting Guidelines", "Exhibit A Proxy Voting
+      # Guidelines" in the 2023 SAI), the Social one ("... Summary of Social ...") or the Sustainability one. The Standard heading never matches those two, so
+      # they are never captured; all Standard copies must extract identically (allow_identical_copies) or the filing yields nothing. The exhibit ends at its last
+      # printed page (A- 17; A- 19 in 2023), the cover of the next SAI follows: the ends name that page marker plus the first words of the cover, which
+      # keeps the exhibit's final sentence and drops the cover.
+      - label: summary-of-standard-proxy-voting-guidelines-as-printed-in-sai
+        adviser: "Dimensional Fund Advisors LP"
+        adviser_key: "DFA"
+        sai_appendix:
+          cik: "0000355437"
+          forms: ["485BPOS"]
+          since: "2023-01-01"
+          start: ["Exhibit A Summary of Proxy Voting Guidelines", "Exhibit A Proxy Voting Guidelines"]
+          end: ["A- 17 DFA INVESTMENT DIMENS", "A- 17 INSTITUTIONAL CLASS SHARES", "A- 19 DFA INVESTMENT DIMENS", "A- 19 INSTITUTIONAL CLASS SHARES", "PART C OTHER INFORMATION"]
+          allow_identical_copies: true
+          strip_patterns: ["A- \\d+"]
       # Added 2026-11-18: the Sustainability and Social summaries, from the Dimensional site (linked from the same page, 200 application/pdf 2026-11-18)
       - label: summary-of-sustainability-proxy-voting-guidelines
         url: "https://www.dimensional.com/chmedia/428745/source/download/summary-of-sustainability-proxy-voting-guidelines.pdf"

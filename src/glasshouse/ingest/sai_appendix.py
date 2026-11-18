@@ -64,7 +64,7 @@ def _all_positions(hay: str, needle: str) -> list[int]:
     return out
 
 
-def extract_section(text: str, start: str, end: str | list[str],
+def extract_section(text: str, start: str | list[str], end: str | list[str],
                     allow_identical_copies: bool = False,
                     strip_page_numbers: bool = False,
                     strip_patterns: list[str] | None = None) -> str | None:
@@ -80,16 +80,19 @@ def extract_section(text: str, start: str, end: str | list[str],
     `strip_patterns` (opt-in regexes) delete running page furniture that carries
     the SAI's own date (Columbia: "Statement of Additional Information - March 1,
     2023 B-2"), which would otherwise make every filing a new "edition"."""
-    text, start = normalise(text), normalise(start)
+    text = normalise(text)
+    heads = [normalise(h) for h in ([start] if isinstance(start, str) else start)]
     ends = [normalise(e) for e in ([end] if isinstance(end, str) else end)]
-    if not start or not all(ends):
+    if not heads or not all(heads) or not all(ends):
         return None
-    starts = _all_positions(text, start)
+    # `start` may list alternative headings (editions retitle the exhibit); every
+    # occurrence of any of them counts, so two headings in one filing is ambiguity.
+    starts = sorted((i, len(h)) for h in heads for i in _all_positions(text, h))
     if not starts or (len(starts) > 1 and not allow_identical_copies):
         return None
     sections = set()
-    for s in starts:
-        found = [e for e in (text.find(m, s + len(start)) for m in ends) if e != -1]
+    for s, hlen in starts:
+        found = [e for e in (text.find(m, s + hlen) for m in ends) if e != -1]
         if not found:
             return None
         sec = text[s:min(found)].strip()
@@ -161,7 +164,7 @@ OUTLIER_FACTOR = 3
 
 
 def ingest_filings(conn: sqlite3.Connection, institution_id: str, doc_label: str,
-                   filings: list[dict], start: str, end: str | list[str],
+                   filings: list[dict], start: str | list[str], end: str | list[str],
                    allow_identical_copies: bool = False,
                    strip_page_numbers: bool = False,
                    flagged: list[str] | None = None,

@@ -284,3 +284,15 @@ def test_strip_patterns_remove_dated_page_footers_only_when_configured():
     a = sai.extract_section(doc(body), START, END, strip_patterns=pats)
     b = sai.extract_section(doc(moved), START, END, strip_patterns=pats)
     assert a == b and "Statement of Additional" not in a and "Re-election is annual." in a
+
+
+def test_start_may_list_alternative_headings_for_different_editions():
+    """Dimensional's 2023 SAI titles the exhibit 'Proxy Voting Guidelines', later ones
+    'Summary of Proxy Voting Guidelines': one label, two headings."""
+    old = f"x Exhibit A Proxy Voting Guidelines {BODY} END y"
+    new = f"x Exhibit A Summary of Proxy Voting Guidelines {BODY} END y"
+    starts = ["Exhibit A Summary of Proxy Voting Guidelines", "Exhibit A Proxy Voting Guidelines"]
+    assert sai.extract_section(old, starts, "END").startswith("Exhibit A Proxy Voting Guidelines")
+    assert sai.extract_section(new, starts, "END").startswith("Exhibit A Summary")
+    # both headings in one filing is still ambiguity unless the copies are identical
+    assert sai.extract_section(old + new, starts, "END") is None

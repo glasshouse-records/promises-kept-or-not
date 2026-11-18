@@ -83,7 +83,7 @@ def test_guideline_documents_are_keyed_to_their_own_groups_never_dfa():
         if "sustainability" in lab:
             assert d["adviser_key"] == "DFA_SUSTAINABILITY"
     sai = [d for lab, d in docs.items() if lab.endswith("-as-printed-in-sai")]
-    assert {d["adviser_key"] for d in sai} == {"DFA_SOCIAL", "DFA_SUSTAINABILITY"}
+    assert {d["adviser_key"] for d in sai} == {"DFA", "DFA_SOCIAL", "DFA_SUSTAINABILITY"}
     for d in sai:
         assert d["sai_appendix"]["start"] and d["sai_appendix"]["end"]
 
@@ -92,3 +92,36 @@ def test_scope_notes_say_how_the_groups_were_decided():
     notes = " ".join(DIM["voting_scope_notes"])
     for word in ("DFA_SOCIAL", "DFA_SUSTAINABILITY", "2024-02-28"):
         assert word in notes
+
+
+def test_standard_summary_as_printed_in_sai_is_keyed_dfa_and_bounded_to_the_standard_exhibit():
+    docs = {d["label"]: d for d in DIM["commitments"]}
+    d = docs["summary-of-standard-proxy-voting-guidelines-as-printed-in-sai"]
+    assert d["adviser_key"] == "DFA"
+    cfg = d["sai_appendix"]
+    assert cfg["cik"] == "0000355437" and cfg["forms"] == ["485BPOS"] and cfg["since"] == "2023-01-01"
+    starts = cfg["start"] if isinstance(cfg["start"], list) else [cfg["start"]]
+    for s in starts:
+        assert "Social" not in s and "Sustainability" not in s
+    assert cfg["allow_identical_copies"] is True
+
+
+def _sai(standard_title):
+    std = "Dimensional votes on directors. " * 5
+    soc = "Voting Guidelines for Environmental and Social Matters. Framework for Social. " * 3
+    return (f"cover Exhibit A {standard_title} {std}A- 17 DFA INVESTMENT DIMENSIONS GROUP INC. 6300 Bee Cave Road "
+            f"next sai Exhibit A Summary of Social Proxy Voting Guidelines {soc}A- 17 DFA INVESTMENT DIMENSIONS GROUP INC. 6300 Bee Cave Road "
+            f"Exhibit A Summary of Sustainability Proxy Voting Guidelines {soc}A- 17 DFA INVESTMENT DIMENSIONS GROUP INC. 6300 Bee Cave Road "
+            f"Exhibit A {standard_title} {std}A- 17 INSTITUTIONAL CLASS SHARES DFA INVESTMENT DIMENSIONS GROUP INC. 6300 Bee Cave Road")
+
+
+def test_extracted_standard_text_never_contains_the_social_or_sustainability_exhibits():
+    from glasshouse.ingest import sai_appendix as sai
+    cfg = next(d for d in DIM["commitments"]
+               if d["label"] == "summary-of-standard-proxy-voting-guidelines-as-printed-in-sai")["sai_appendix"]
+    for title in ("Summary of Proxy Voting Guidelines", "Proxy Voting Guidelines"):
+        sec = sai.extract_section(_sai(title), cfg["start"], cfg["end"], cfg["allow_identical_copies"],
+                                  strip_patterns=cfg.get("strip_patterns"))
+        assert sec is not None and sec.startswith(f"Exhibit A {title}")
+        assert "Social" not in sec and "Sustainability" not in sec
+        assert sec.endswith("directors.")   # the last sentence is kept, page and cover furniture is not
