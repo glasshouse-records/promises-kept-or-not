@@ -120,11 +120,16 @@ DATA_DICTIONARY: dict[str, dict] = {
         "wayback_timestamp": "'' = live fetch, else Wayback Machine capture timestamp",
         "size_bytes": "file size in bytes",
         "text_sha256": "SHA-256 of the extracted text (the identity of a policy version); "
-                       "'' if no text could be extracted",
+                       "'' if no text could be extracted (edgar-sai: hash of the section text "
+                       "with all whitespace removed)",
         "doc_created_at": "creation date written inside the PDF by the manager's own software; "
                           "'' if none",
         "doc_modified_at": "modification date written inside the PDF; '' if none",
-        "doc_producer": "software named in the PDF's producer metadata; '' if none"},
+        "doc_producer": "software named in the PDF's producer metadata; '' if none",
+        "public_by": "edgar-sai versions only: filing date of the earliest EDGAR filing "
+                     "carrying this text (public by then; not the date it was written); '' otherwise",
+        "via": "'' = the manager's own URL; 'edgar-sai' = section extracted from a fund SAI "
+               "on EDGAR (url is that SAI document)"},
     "findings": {"_": "HUMAN-APPROVED findings only (status='approved'). The "
         "verified, citable claims; everything unreviewed stays operator-side.",
         "id": "row id in the Glasshouse ledger",

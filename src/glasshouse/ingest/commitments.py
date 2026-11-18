@@ -383,6 +383,8 @@ def fetch_live(conn: sqlite3.Connection, institutions: dict[str, dict]) -> dict[
     failed = 0
     for inst_id, inst in institutions.items():
         for doc in inst.get("commitments", []):
+            if doc.get("sai_appendix"):
+                continue   # no URL of its own: ingest.sai_appendix reads it from EDGAR
             label, url = doc["label"], doc["url"]
             try:
                 resp = http.get(url, timeout=60)
@@ -489,6 +491,8 @@ def fetch_wayback(conn: sqlite3.Connection, institutions: dict[str, dict],
     n_new = 0
     for inst_id, inst in institutions.items():
         for doc in inst.get("commitments", []):
+            if doc.get("sai_appendix"):
+                continue   # not a web page: there is no Wayback history to walk
             label = doc["label"]
             # The current address first, then any earlier addresses the
             # publisher used (`former_urls`); same label, so one lineage.

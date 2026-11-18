@@ -25,6 +25,7 @@ class Filing:
     filing_date: str
     period_of_report: str | None
     accession_number: str
+    primary_document: str = ""
 
     @property
     def accession_clean(self) -> str:
@@ -66,6 +67,7 @@ def list_filings(cik: str, form_types: list[str], limit: int | None = None) -> l
                 filing_date=block["filingDate"][i],
                 period_of_report=(block.get("reportDate") or [None] * len(forms))[i] or None,
                 accession_number=block["accessionNumber"][i],
+                primary_document=(block.get("primaryDocument") or [""] * len(forms))[i] or "",
             ))
 
     scan(recent)

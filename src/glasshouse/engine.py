@@ -664,9 +664,10 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
     sid = 0
     for c in led.execute(
         """SELECT id, institution_id, doc_label, url, sha256, text_sha256, content_path,
-                  wayback_timestamp, retrieval_date, doc_created_at
+                  wayback_timestamp, retrieval_date, doc_created_at, public_by, via
            FROM commitments
            ORDER BY COALESCE(NULLIF(substr(wayback_timestamp,1,8),''),
+                             NULLIF(replace(public_by,'-',''),''),
                              replace(retrieval_date,'-','')), id"""):
         ident = (c["institution_id"], c["doc_label"], c["text_sha256"] or "raw:" + c["sha256"])
         if ident in seen:
@@ -678,7 +679,8 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
         text = extract_text(path) if path is not None and path.is_file() else ""
         sents = sentences(text)
         wb = c["wayback_timestamp"] or ""
-        captured = (f"{wb[:4]}-{wb[4:6]}-{wb[6:8]}" if wb else c["retrieval_date"][:10])
+        captured = (f"{wb[:4]}-{wb[4:6]}-{wb[6:8]}" if wb
+                    else (c["public_by"] or c["retrieval_date"][:10]))
         # The version's key is resolved from the document's history on the day
         # the text was demonstrably public (`captured`), the same date the
         # in-force rule uses. The authored date is NOT used: a policy is
@@ -687,7 +689,8 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
         drules = doc_rules.get((c["institution_id"], c["doc_label"]))
         eng.execute("INSERT INTO policy_versions VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                     (c["id"], c["institution_id"], c["doc_label"], c["url"], captured,
-                     (c["doc_created_at"] or "")[:10], "wayback" if wb else "live",
+                     (c["doc_created_at"] or "")[:10],
+                     "wayback" if wb else (c["via"] or "live"),
                      f"https://web.archive.org/web/{wb}/{c['url']}" if wb else "",
                      c["sha256"], len(sents),
                      resolve_key(drules, None, captured), captured))

@@ -55,4 +55,7 @@ def test_policy_document_is_keyed():
     assert docs, "Wellington policy documents must be archived"
     for d in docs.values():
         assert d["adviser_key"] == "WELLINGTON"
-        assert d["url"].startswith("https://www.wellington.com/")
+        if d.get("sai_appendix"):   # read from EDGAR: no URL of its own
+            assert d["label"].endswith("-as-printed-in-sai") and d["sai_appendix"]["cik"]
+        else:
+            assert d["url"].startswith("https://www.wellington.com/")

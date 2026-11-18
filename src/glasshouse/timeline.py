@@ -60,6 +60,7 @@ def policy_versions(conn: sqlite3.Connection, inst_id: str) -> list[dict]:
     rows = conn.execute(
         """SELECT doc_label, url, sha256, text_sha256, content_path, wayback_timestamp,
                   CASE WHEN wayback_timestamp != '' THEN substr(wayback_timestamp, 1, 8)
+                       WHEN public_by != '' THEN replace(public_by, '-', '')
                        ELSE replace(substr(retrieval_date, 1, 10), '-', '') END AS version
            FROM commitments WHERE institution_id = ?
            ORDER BY doc_label, version, wayback_timestamp, id""", (inst_id,))

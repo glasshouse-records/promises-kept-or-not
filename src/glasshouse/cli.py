@@ -472,6 +472,8 @@ def cmd_ingest_commitments(args) -> int:
         return 0
     insts = registry.load()
     new = commitments.fetch_live(conn, insts)
+    from .ingest import sai_appendix
+    new.update(sai_appendix.fetch_sai_appendices(conn, insts))
     for key, is_new in new.items():
         print(f"  {key:<56} {'NEW VERSION' if is_new else 'unchanged'}")
     if args.wayback:

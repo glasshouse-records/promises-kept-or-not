@@ -191,6 +191,27 @@ any other, never paired with any policy document. An institution's
 `voting_scope_notes` are appended verbatim as caveats to its vote and policy
 tool results.
 
+### SAI-printed policy versions (added 2026-11-18)
+
+Where a sub-adviser's own website has no archive history (Geode, Wellington),
+the funds it votes for reproduce its proxy policy in an appendix of their
+Statement of Additional Information (EDGAR forms 485BPOS). For these managers
+Glasshouse extracts that one section from each SAI, between two configured
+heading texts, and records it as a policy version under a SEPARATE document
+label (`...-as-printed-in-sai`; the source is shown as `edgar-sai`), never
+under the website PDF's label, because the printed formatting differs and a
+shared label would invent alternating versions. The date of such a version is
+the EDGAR filing date of the earliest filing carrying that text, and it means
+only that the text was public by that day: it is not the date the manager wrote
+or adopted it. Version identity is the extracted section text, ignoring all
+whitespace and (for Wellington) printed page numbers; identical text in later
+filings is the same version. If a start heading is not found cleanly, or the end
+heading does not follow it, that filing yields nothing (a multi-SAI filing that
+prints the section several times is accepted only when every copy is identical).
+Filings that cannot be extracted are therefore missing versions, not guesses;
+a policy edit between two extracted filings is dated to the later one's
+filing, so the version in force may have been public earlier than shown.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting

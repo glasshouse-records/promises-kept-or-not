@@ -533,6 +533,21 @@ institutions:
         url: "https://www.geodecapital.com/hubfs/Geode%20Proxy%20Voting%20Policy%20-%202026.pdf"
         adviser: "Geode Capital Management, LLC"
         adviser_key: "GEODE"
+      # Added 2026-11-18: the same Geode policy AS PRINTED in the SAIs of the Fidelity Concord Street Trust (485BPOS), dated by EDGAR filing
+      # date (public by then), because the website PDF above has no Wayback history before 2026-11-17. SEPARATE label on purpose: the SAI's
+      # formatting differs from the PDF, so sharing a label would invent alternating versions. A 485BPOS prints the appendix once per SAI
+      # (5 copies in 0000819118-26-000072), hence allow_identical_copies: accepted only when every copy extracts to the same text.
+      - label: geode-voting-policies-as-printed-in-sai
+        adviser: "Geode Capital Management, LLC"
+        adviser_key: "GEODE"
+        sai_appendix:
+          cik: "0000819118"
+          forms: ["485BPOS"]
+          since: "2023-01-01"
+          start: "PROXY VOTING GUIDELINES Geode Voting Policies"
+          # Fidelity's closing "To view a fund's proxy voting record ..." sentences are not Geode's text and vary by filing, so the section ends before them.
+          end: "To view a fund's proxy voting record"
+          allow_identical_copies: true
 
   t_rowe_price:
     display_name: "T. Rowe Price (group: TRPA advisory + TRPIM 13-F filer)"
@@ -1325,3 +1340,15 @@ institutions:
         url: "https://www.wellington.com/content/dam/wellington/pdf/en/2026-proxy-voting-guidelines.pdf"
         adviser: "Wellington Management Company LLP"
         adviser_key: "WELLINGTON"
+      # Added 2026-11-18: Wellington's Global Proxy Policy and Procedures AS PRINTED in Appendix A of the Hartford Series Fund SAI (485BPOS),
+      # dated by EDGAR filing date. Separate label from the website PDF above (different formatting would invent alternating versions).
+      - label: global-proxy-policy-as-printed-in-sai
+        adviser: "Wellington Management Company LLP"
+        adviser_key: "WELLINGTON"
+        sai_appendix:
+          cik: "0001053425"
+          forms: ["485BPOS"]
+          since: "2023-01-01"
+          start: "APPENDIX A: PROXY VOTING POLICIES AND PROCEDURES Wellington Management Company LLP Global Proxy Policy and Procedures"
+          end: "APPENDIX B: CREDIT RATINGS"
+          strip_page_numbers: true   # the SAI's printed page numbers (94 -> 95) must not look like edits

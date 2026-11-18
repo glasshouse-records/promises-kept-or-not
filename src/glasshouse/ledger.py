@@ -230,6 +230,13 @@ CREATE TABLE IF NOT EXISTS commitments (
     doc_created_at    TEXT NOT NULL DEFAULT '',
     doc_modified_at   TEXT NOT NULL DEFAULT '',
     doc_producer      TEXT NOT NULL DEFAULT '',
+    -- SAI-printed versions only: the EDGAR filing date of the earliest filing
+    -- that carried this text. The text was public by this date; it says nothing
+    -- about when the manager first wrote it. '' = dated by wayback/retrieval.
+    public_by         TEXT NOT NULL DEFAULT '',
+    -- '' = fetched from the manager's own URL; 'edgar-sai' = a section extracted
+    -- from a fund SAI on EDGAR (url is then that SAI document).
+    via               TEXT NOT NULL DEFAULT '',
     UNIQUE (institution_id, doc_label, sha256, wayback_timestamp)
 );
 
@@ -317,7 +324,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE commitments ADD COLUMN text_sha256 "
                      "TEXT NOT NULL DEFAULT ''")
         conn.commit()
-    for col in ("doc_created_at", "doc_modified_at", "doc_producer"):
+    for col in ("doc_created_at", "doc_modified_at", "doc_producer", "public_by", "via"):
         if col not in ccols:
             conn.execute(f"ALTER TABLE commitments ADD COLUMN {col} "
                          "TEXT NOT NULL DEFAULT ''")

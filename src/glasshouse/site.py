@@ -1037,7 +1037,7 @@ def _build_institution(conn, out_dir, r, findings) -> int:
 
     docs = conn.execute(
         """SELECT doc_label, sha256, wayback_timestamp,
-                  COALESCE(NULLIF(wayback_timestamp,''), retrieval_date) AS version
+                  COALESCE(NULLIF(wayback_timestamp,''), NULLIF(public_by,''), retrieval_date) AS version
            FROM commitments WHERE institution_id=?
            GROUP BY CASE WHEN text_sha256='' THEN 'raw:'||sha256 ELSE text_sha256 END ORDER BY version""",
         (inst_id,)).fetchall()
