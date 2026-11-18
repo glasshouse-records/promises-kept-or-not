@@ -2269,3 +2269,204 @@ institutions:
             - '(?<=issuer\.) \d(?= Janus)'
             - '(?<=Proxy Voting Service\.) \d(?= Proxy Voting Service\.)'
             - '(?<=Proprietary) U\.S\.?(?= Funds refer)'
+
+  alliancebernstein:
+    display_name: "AllianceBernstein (AllianceBernstein L.P.)"
+    short_name: "AllianceBernstein"
+    cik: "0001109448"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "AllianceBernstein, Nashville / New York. CIK 1109448 is AllianceBernstein L.P., the 13-F filer (13F-HR) and the investment adviser ('AB', 'the Adviser', 'the Manager') that votes the US AB and Bernstein funds' proxies; AB Holding L.P. (825313, the listed partnership) is not an adviser and is not registered here. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-18. AllianceBernstein L.P.'s own US fund registrants that file N-PX vote tables with operating-company votes. Every trust's SAI says the funds have adopted the
+      # Adviser's (for the Bernstein Fund, the Manager's) proxy voting policies and procedures and prints AllianceBernstein's Proxy Voting and Governance Policy as an appendix (the
+      # closed-end Global High Income Fund prints it in Item 7 of its N-CSR). No SAI read names a sub-adviser that votes, and the Bernstein Fund (the former Sanford C. Bernstein Fund,
+      # sub-brand of Bernstein Private Wealth) prints the same policy, so there is one key and no EXTERNAL series. `from` is the EDGAR filing date of the earliest SAI (N-CSR for the
+      # closed-end fund) read, 2022-2023; earlier meetings stay unlabelled.
+      - cik: "1496608"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1496608/000091957423001559/abae-20230214.htm"  # 485BPOS filed 2023-02-14, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2023-02-14"}]
+        name: "AB Active ETFs, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "3794"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/3794/000091957422000521/abbfi-20220128.htm"  # 485BPOS filed 2022-01-28, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-01-28"}]
+        name: "AB Bond Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "81443"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/81443/000091957422002010/abcfi-20220228.htm"  # 485BPOS filed 2022-03-01, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-03-01"}]
+        name: "AB Cap Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1090504"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1090504/000091957422002009/abcofi-20220228.htm"  # 485BPOS filed 2022-03-01, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-03-01"}]
+        name: "AB Core Opportunities Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "19614"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/19614/000091957422006139/absmf-20221028.htm"  # 485BPOS filed 2022-10-28, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-10-28"}]
+        name: "AB Discovery Growth Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "910036"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/910036/000091957422002008/abeif-20220228.htm"  # 485BPOS filed 2022-03-01, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-03-01"}]
+        name: "AB Equity Income Fund Inc"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "883676"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/883676/000091957422000531/agbf-20220128.htm"  # 485BPOS filed 2022-01-28, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-01-28"}]
+        name: "AB Global Bond Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1018368"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1018368/000091957422002005/abgrifi-20220228.htm"  # 485BPOS filed 2022-03-01, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-03-01"}]
+        name: "AB Global Real Estate Investment Fund Inc"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "69752"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/69752/000091957422002006/agrafi-20220228.htm"  # 485BPOS filed 2022-03-01, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-03-01"}]
+        name: "AB Global Risk Allocation Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "915845"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/915845/000091957422000536/ahif-20220128.htm"  # 485BPOS filed 2022-01-31, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-01-31"}]
+        name: "AB High Income Fund Inc"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1018592"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1018592/000091957422000528/abgifi-20220128.htm"  # 485BPOS filed 2022-01-28, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Fund has adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-01-28"}]
+        name: "AB Institutional Funds Inc"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "889508"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/889508/000091957422006140/ablcgfi-20221028.htm"  # 485BPOS filed 2022-10-28, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-10-28"}]
+        name: "AB Large Cap Growth Fund Inc"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "812015"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/812015/000091957422006142/abp-20221028.htm"  # 485BPOS filed 2022-10-28, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-10-28"}]
+        name: "AB Portfolios"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "29292"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/29292/000091957422002004/arvfi-20220228.htm"  # 485BPOS filed 2022-03-01, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-03-01"}]
+        name: "AB Relative Value Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "350181"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/350181/000091957422006141/abgtgfi-20221028.htm"  # 485BPOS filed 2022-10-28, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-10-28"}]
+        name: "AB Sustainable Global Thematic Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "920701"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/920701/000091957422006146/absitfi-20221028.htm"  # 485BPOS filed 2022-10-28, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-10-28"}]
+        name: "AB Sustainable International Thematic Fund Inc"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1129870"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1129870/000091957422002007/abt-20220228.htm"  # 485BPOS filed 2022-03-01, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Funds have adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-03-01"}]
+        name: "AB Trust"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "825316"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/825316/000091957422002904/avpsfi-20220429.htm"  # 485BPOS filed 2022-04-29, SAI Appendix A; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Policies and Procedures: 'The Fund has adopted the Adviser's proxy voting policies and procedures' (the Adviser is AllianceBernstein L.P.; Appendix A prints them). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-04-29"}]
+        name: "AB Variable Products Series Fund, Inc."
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "906013"
+        adviser: "AllianceBernstein L.P. (the Adviser); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/906013/000119312522167302/d320389dncsr.htm"  # N-CSR filed 2022-06-03, Item 7 prints AllianceBernstein's Statement of Policies and Procedures for Proxy Voting; the closed-end fund has no 485BPOS SAI; no sub-adviser named
+        adviser_verified: "2026-11-18"
+        voting_note: "N-CSR Item 7 (Disclosure of proxy voting policies and procedures for closed-end management investment companies) prints AllianceBernstein L.P.'s Statement of Policies and Procedures for Proxy Voting as the Fund's policy; the annual report points to abfunds.com for the policy. No sub-adviser is named. Keyed from the filing date of the earliest N-CSR read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-06-03"}]
+        name: "AllianceBernstein Global High Income Fund Inc"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1653463"
+        adviser: "AllianceBernstein L.P. (the Adviser / Manager); no outside voter named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1653463/000119312522021686/d239422d485bpos.htm"  # 485BPOS filed 2022-01-28, Bernstein Fund (formerly Sanford C. Bernstein Fund) SAI, Appendix B; later annual editions not opened
+        adviser_verified: "2026-11-18"
+        voting_note: "SAI Code of Ethics and Proxy Voting Procedures: 'Each Fund has adopted the Manager's proxy voting policies and procedures. The Manager's proxy voting policies and procedures are attached as Appendix B' (the Manager is AllianceBernstein L.P.; Appendix B prints the same Proxy Voting and Governance Policy Statement). No sub-adviser is named. Keyed from the filing date of the earliest SAI read; earlier meetings stay unlabelled."
+        adviser_key_history: [{key: ALLIANCEBERNSTEIN, from: "2022-01-28"}]
+        name: "Bernstein Fund Inc"
+        validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed ALLIANCEBERNSTEIN, per registrant, from the EDGAR filing date of the earliest 485BPOS (SAI) read (the closed-end Global High Income Fund, 906013, from its N-CSR of 2022-06-03): Bond Fund (3794), Global Bond Fund (883676), Institutional Funds (1018592) and Bernstein Fund (1653463) 2022-01-28, High Income Fund (915845) 2022-01-31, Cap Fund (81443), Core Opportunities (1090504), Equity Income (910036), Global Real Estate Investment (1018368), Global Risk Allocation (69752), Relative Value (29292) and AB Trust (1129870) 2022-03-01, Variable Products Series Fund (825316) 2022-04-29, Discovery Growth (19614), Large Cap Growth (889508), Portfolios (812015), Sustainable Global Thematic (350181) and Sustainable International Thematic (920701) 2022-10-28, Active ETFs (1496608) 2023-02-14. The earlier AB filings of the funds whose first annual SAI was dated October 2021 were not opened. No series is EXTERNAL: no SAI read names an outside voter; the AB Multi-Manager Select sub-advisory agreements listed as exhibits of the Cap Fund registration statement are 2017 exhibits, not a voting delegation."
+      - "Not ingested, not keyed: registrants whose N-PX is a notice report with no vote table (AB Corporate Shares 1274676, AB Fixed Income Shares 862021, AB Municipal Income Fund II 899774, AllianceBernstein National Municipal Income Fund 1162027, AB Multi-Manager Alternative Fund 1543188, Bernstein Fund II 1166729), series-level notice filings of trusts that also file a voting report (Bond Fund, Active ETFs, Variable Products), and registrants whose last N-PX is before the window (AB Unconstrained Bond Fund 1002718, AB Government Exchange Reserves 917713, AB Pooling Portfolios 1308576, AB Blended Style Series 1172221, older AllianceBernstein funds). The Global Bond Fund, High Income Fund and Global High Income Fund tables are tiny (a handful of bankruptcy-related operating-company ballots plus AB Fixed-Income Shares ballots) but are real votes by AB and are ingested."
+      - "Policy text: the AllianceBernstein Proxy Voting and Governance Policy PDF from alliancebernstein.com (the policy pages, e.g. /nz/en/institutions/proxy-and-governance.html, are navigation plus a link to /content/dam/corporate/corporate-pdfs/AB-Proxy-Voting-and-Governance-Policy.pdf; the same PDF is requested directly, so no `body` bound is needed) and, under a separate label, as printed in Appendix A of the AB Large Cap Growth Fund SAI (one copy per annual 485BPOS; read from the policy heading to Part C; page marks 'A- n' and 'Table of Contents' removed). That fund's SAI is used because its single October annual cycle prints each edition once; the AB Cap Fund filings alternate between typographic renderings of one edition (straight versus curly quotes, 'DC' versus 'D.C.') and would invent alternating versions. Other AB registrants carried an edition earlier than this fund's SAI (the 2023 rewrite in the Cap Fund SAI of 2023-06-30, the 2025 edition in the Cap Fund SAI of 2025-07-28), so the dates are upper bounds."
+    commitments:
+      # Verified 2026-11-18 (200, application/pdf, honest client; first page 'October 2025'). The policy pages are navigation plus this link, so the PDF is the policy.
+      - label: proxy-voting-and-governance-policy
+        url: "https://www.alliancebernstein.com/content/dam/corporate/corporate-pdfs/AB-Proxy-Voting-and-Governance-Policy.pdf"
+        adviser: "AllianceBernstein L.P."
+        adviser_key: "ALLIANCEBERNSTEIN"
+      # The same policy as printed in Appendix A of the AB Large Cap Growth Fund SAI, dated by EDGAR filing date. Separate label from the website PDF (different formatting
+      # would invent alternating versions). The section runs from the policy heading to Part C of the registration statement; the page marks "A- 5" and "Table of Contents"
+      # that follow each SAI's pagination are stripped.
+      - label: alliancebernstein-proxy-voting-and-governance-policy-as-printed-in-sai
+        adviser: "AllianceBernstein L.P."
+        adviser_key: "ALLIANCEBERNSTEIN"
+        sai_appendix:
+          cik: "0000889508"
+          forms: ["485BPOS"]
+          since: "2022-01-01"
+          start:
+            - "Proxy Voting and Governance Policy Statement Introduction"
+          end:
+            - "PART C OTHER INFORMATION"
+          strip_patterns:
+            - '\bA- ?\d{1,2}\b(?: Table of Contents)?'

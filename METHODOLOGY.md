@@ -323,6 +323,43 @@ personnel-sharing arrangements and do not vote. Clayton Street Trust (a fund of
 funds, only Vanguard and Franklin ETF ballots) and the institutional-manager
 reports are not ingested.
 
+AllianceBernstein (added 2026-11-18): alliancebernstein.com answers requests that
+identify themselves honestly (200 on `/nz/en/institutions/proxy-and-governance.html`
+and on the policy PDF, probed 2026-11-18; the guessed US and corporate page paths
+return 404, the policy is not on a US HTML page), so it is not a blocked source. The
+policy pages are navigation plus a link; the policy itself is
+`/content/dam/corporate/corporate-pdfs/AB-Proxy-Voting-and-Governance-Policy.pdf`
+(`application/pdf`, first page "October 2025"), requested directly, so no `body`
+bound is needed. It is archived as `proxy-voting-and-governance-policy`: the live
+copy plus 7 Wayback captures of the same URL (2021-05-14 to 2025-07-05), whose first
+pages print the editions March 2021, August 2021, March 2022, March 2023, September
+2023, August 2024 and May 2025 (each capture is a different edition and a real
+rewrite: the diffs run from 85 to 449 changed passages). The dated route is
+`alliancebernstein-proxy-voting-and-governance-policy-as-printed-in-sai`: Appendix A
+of the AB Large Cap Growth Fund SAI (one copy per annual 485BPOS, read from the
+"Proxy Voting and Governance Policy Statement" heading to Part C of the registration
+statement; the page marks "A- n" and "Table of Contents" are removed). It yields
+four editions (2022-10-28, 2023-10-27, 2025-10-28 and 2026-10-28; the last differs
+from the one before by a single typo fix, "client's" to "clients'"). That fund's
+SAI is used because its single October cycle prints each edition once: the AB Cap
+Fund filings alternate between typographic renderings of one edition (straight
+versus curly quotes, "DC" versus "D.C."), which would invent alternating versions.
+Other AB registrants carried an edition before that SAI did (the 2023 rewrite in the
+Cap Fund SAI of 2023-06-30, the 2025 rewrite in the Cap Fund SAI of 2025-07-28), so
+these dates are upper bounds: the text was public by that day, not first on it.
+Voting: each trust's SAI says the funds adopted the Adviser's (the Bernstein Fund:
+the Manager's) proxy voting policies and procedures and prints the policy as an
+appendix; the closed-end Global High Income Fund prints it in Item 7 of its N-CSR.
+No SAI read names a sub-adviser that votes (the AB Multi-Manager Select sub-advisory
+agreements listed as Cap Fund exhibits are 2017 exhibits), and the Bernstein Fund,
+the former Sanford C. Bernstein Fund, prints the same policy, so there is one key,
+ALLIANCEBERNSTEIN, and no EXTERNAL series. Each registrant is keyed from the
+EDGAR filing date of the earliest SAI (N-CSR for the closed-end fund) read, between
+2022-01-28 and 2023-02-14. The Corporate Shares, Fixed Income Shares, Municipal
+Income Fund II, National Municipal Income Fund, Multi-Manager Alternative Fund and
+Bernstein Fund II N-PX are notice reports with no vote table, and several older
+AllianceBernstein funds last filed N-PX before the window; none is ingested.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting
