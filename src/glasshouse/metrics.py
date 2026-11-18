@@ -40,17 +40,17 @@ def compute(conn: sqlite3.Connection, today: date | None = None) -> dict:
         "SELECT COUNT(DISTINCT f.institution_id) FROM filings f JOIN votes v "
         "ON v.accession=f.accession WHERE v.is_duplicate=0").fetchone()[0]
     n_with_commit = conn.execute(
-        "SELECT COUNT(DISTINCT institution_id) FROM commitments").fetchone()[0]
+        "SELECT COUNT(DISTINCT institution_id) FROM commitments WHERE superseded=0").fetchone()[0]
     full_ids = [r[0] for r in conn.execute(
         "SELECT i.id FROM institutions i WHERE "
         "EXISTS(SELECT 1 FROM filings f JOIN votes v ON v.accession=f.accession "
         "  WHERE f.institution_id=i.id AND v.is_duplicate=0) AND "
-        "EXISTS(SELECT 1 FROM commitments c WHERE c.institution_id=i.id)").fetchall()]
+        "EXISTS(SELECT 1 FROM commitments c WHERE c.institution_id=i.id AND c.superseded=0)").fetchall()]
     n_full = len(full_ids)
     n_any = conn.execute(
         "SELECT COUNT(*) FROM institutions i WHERE "
         "EXISTS(SELECT 1 FROM filings f WHERE f.institution_id=i.id) OR "
-        "EXISTS(SELECT 1 FROM commitments c WHERE c.institution_id=i.id)").fetchone()[0] or 1
+        "EXISTS(SELECT 1 FROM commitments c WHERE c.institution_id=i.id AND c.superseded=0)").fetchone()[0] or 1
     covered_aum = sum(aum.get(iid, 0.0) for iid in full_ids)
 
     # provenance: share of public evidence rows carrying source_url+retrieval_date
@@ -62,7 +62,7 @@ def compute(conn: sqlite3.Connection, today: date | None = None) -> dict:
     # freshness: most recent live retrieval across enforcement + commitments
     last = conn.execute(
         "SELECT MAX(d) FROM (SELECT MAX(retrieval_date) d FROM enforcement_actions "
-        "WHERE source_kind='live' UNION ALL SELECT MAX(retrieval_date) FROM commitments)"
+        "WHERE source_kind='live' UNION ALL SELECT MAX(retrieval_date) FROM commitments WHERE superseded=0)"
     ).fetchone()[0]
 
     coverage = min(1.0, covered_aum / total_aum)   # AUM-weighted, not headcount

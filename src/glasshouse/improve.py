@@ -134,7 +134,7 @@ def _biggest_uncovered(conn: sqlite3.Connection, top: int = 3) -> list[tuple[str
         "SELECT i.id FROM institutions i WHERE "
         "EXISTS(SELECT 1 FROM filings f JOIN votes v ON v.accession=f.accession "
         "  WHERE f.institution_id=i.id AND v.is_duplicate=0) AND "
-        "EXISTS(SELECT 1 FROM commitments c WHERE c.institution_id=i.id)").fetchall()}
+        "EXISTS(SELECT 1 FROM commitments c WHERE c.institution_id=i.id AND c.superseded=0)").fetchall()}
     uncovered = [(v.get("short_name") or v.get("display_name") or k,
                   float(v.get("aum_usd_tr") or 0))
                  for k, v in reg.items() if k not in full]

@@ -82,7 +82,7 @@ def main() -> None:
                           (SELECT COUNT(*) FROM votes v JOIN filings f
                            ON f.accession=v.accession WHERE f.institution_id=i.id) AS votes,
                           (SELECT COUNT(*) FROM commitments c
-                           WHERE c.institution_id=i.id) AS policy_versions
+                           WHERE c.institution_id=i.id AND c.superseded=0) AS policy_versions
                    FROM institutions i"""))
 
     @mcp.tool()

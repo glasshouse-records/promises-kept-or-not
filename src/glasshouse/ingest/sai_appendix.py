@@ -156,7 +156,8 @@ OUTLIER_FACTOR = 3
 def ingest_filings(conn: sqlite3.Connection, institution_id: str, doc_label: str,
                    filings: list[dict], start: str, end: str | list[str],
                    allow_identical_copies: bool = False,
-                   strip_page_numbers: bool = False) -> int:
+                   strip_page_numbers: bool = False,
+                   flagged: list[str] | None = None) -> int:
     """Extract and record each filing ({accession, filing_date, url, text} or
     a pre-extracted `section`), oldest first. Returns rows added or moved.
 
@@ -185,9 +186,14 @@ def ingest_filings(conn: sqlite3.Connection, institution_id: str, doc_label: str
     for f, section in cands:
         size = len(section.encode())
         if median and (size > OUTLIER_FACTOR * median or size * OUTLIER_FACTOR < median):
-            logger.info("%s/%s: length outlier in %s (%s): %d bytes vs median %d; "
-                        "not recorded", institution_id, doc_label, f["accession"],
-                        f["url"], size, median)
+            detail = f"length outlier: {size} bytes vs median {median:.0f}"
+            logger.warning("%s/%s: %s in %s (%s); NOT recorded, needs a human look "
+                           "(a genuine rewrite would be skipped otherwise)",
+                           institution_id, doc_label, detail, f["accession"], f["url"])
+            # Not 'unchanged': the doctor reports it until a later read is clean.
+            cm.log_attempt(conn, institution_id, doc_label, f["url"], "needs_review", detail)
+            if flagged is not None:
+                flagged.append(f["url"])
             continue
         n += record_version(conn, institution_id, doc_label, f["url"], section,
                             f["filing_date"])
@@ -241,14 +247,17 @@ def fetch_sai_appendices(conn: sqlite3.Connection, institutions: dict[str, dict]
                                   "section": extract_section(cm.html_to_text(raw), cfg["start"],
                                                              cfg["end"], copies, pages)})
                     urls.append(url)
+                flagged: list[str] = []
                 n = ingest_filings(conn, inst_id, label,
                                    [b for b in batch if b["section"] is not None],
-                                   cfg["start"], cfg["end"], copies, pages)
+                                   cfg["start"], cfg["end"], copies, pages, flagged)
                 for b in batch:
                     if b["section"] is None:
                         logger.info("%s/%s: no clean section in %s (%s); nothing recorded",
                                     inst_id, label, b["accession"], b["url"])
                 for url in urls:
+                    if url in flagged:
+                        continue   # already logged as needs_review: read again next run
                     cm.log_attempt(conn, inst_id, label, url, "unchanged", "sai-read:" + sig)
             except Exception as exc:
                 logger.warning("%s/%s: SAI listing failed: %s", inst_id, label, exc)

@@ -507,14 +507,14 @@ def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
         "SELECT 'votes', COUNT(*) FROM votes WHERE is_duplicate = 0 UNION ALL "
         "SELECT 'enforcement', COUNT(*) FROM enforcement_actions WHERE is_duplicate = 0 "
         "UNION ALL SELECT 'holdings', COUNT(*) FROM holdings UNION ALL "
-        "SELECT 'commitments', COUNT(*) FROM commitments UNION ALL "
+        "SELECT 'commitments', COUNT(*) FROM commitments WHERE superseded = 0 UNION ALL "
         "SELECT 'issuers', COUNT(DISTINCT issuer_name) FROM votes")}
 
     insts = conn.execute(
         """SELECT i.id, i.display_name, i.type, i.country,
                   (SELECT COUNT(*) FROM votes v JOIN filings f ON f.accession=v.accession
                    WHERE f.institution_id=i.id) AS n_votes,
-                  (SELECT COUNT(*) FROM commitments c WHERE c.institution_id=i.id) AS n_docs,
+                  (SELECT COUNT(*) FROM commitments c WHERE c.institution_id=i.id AND c.superseded=0) AS n_docs,
                   (SELECT COUNT(*) FROM holdings h JOIN filings f ON f.accession=h.accession
                    WHERE f.institution_id=i.id) AS n_holdings
            FROM institutions i ORDER BY n_votes DESC, i.display_name""").fetchall()
@@ -903,7 +903,7 @@ def _write_institution_feeds(conn, out_dir, insts, findings) -> None:
                 f"{_e(p['commitment_quote'][:200])} | N-PX {_e(p['accession'])}</content></entry>")
         for d in conn.execute(
                 "SELECT doc_label, sha256, retrieval_date FROM commitments "
-                "WHERE institution_id=? GROUP BY CASE WHEN text_sha256='' THEN 'raw:'||sha256 ELSE text_sha256 END "
+                "WHERE institution_id=? AND superseded=0 GROUP BY CASE WHEN text_sha256='' THEN 'raw:'||sha256 ELSE text_sha256 END "
                 "ORDER BY id DESC LIMIT 10", (r["id"],)):
             entries.append(
                 f"<entry><title>Policy version: {_e(d['doc_label'])}</title>"

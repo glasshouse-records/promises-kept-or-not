@@ -504,15 +504,17 @@ def fetch_wayback(conn: sqlite3.Connection, institutions: dict[str, dict],
 def purge_error_pages(conn: sqlite3.Connection) -> int:
     """Remove already-ingested commitment rows whose stored content is an
     error page (retroactive fix for snapshots taken before the ingestion
-    guard existed). Deletes the row and its on-disk file. Returns count."""
+    guard existed). Marks the row superseded (excluded everywhere) and keeps
+    the file and the row: ids are never reused, so a published commitment id can
+    never point at other text. Returns count."""
     purged = 0
-    for r in conn.execute("SELECT id, content_path, content_type FROM commitments").fetchall():
+    for r in conn.execute("SELECT id, content_path, content_type FROM commitments "
+                          "WHERE superseded=0").fetchall():
         p = Path(r["content_path"])
         if not p.exists():
             continue
         if looks_like_error_page(p.read_bytes(), r["content_type"] or ""):
-            conn.execute("DELETE FROM commitments WHERE id = ?", (r["id"],))
-            p.unlink(missing_ok=True)
+            conn.execute("UPDATE commitments SET superseded=1 WHERE id = ?", (r["id"],))
             purged += 1
     conn.commit()
     return purged
@@ -525,7 +527,7 @@ def policy_edits(conn: sqlite3.Connection) -> list[dict]:
         """SELECT institution_id, doc_label, COUNT(DISTINCT sha256) AS versions,
                   MIN(COALESCE(NULLIF(wayback_timestamp,''), retrieval_date)) AS first_seen,
                   MAX(COALESCE(NULLIF(wayback_timestamp,''), retrieval_date)) AS last_seen
-           FROM commitments
+           FROM commitments WHERE superseded=0
            GROUP BY institution_id, doc_label
            HAVING COUNT(DISTINCT sha256) > 1
            ORDER BY versions DESC"""
@@ -534,7 +536,7 @@ def policy_edits(conn: sqlite3.Connection) -> list[dict]:
     for r in rows:
         versions = conn.execute(
             "SELECT sha256, content_path, retrieval_date, wayback_timestamp "
-            "FROM commitments WHERE institution_id=? AND doc_label=? "
+            "FROM commitments WHERE institution_id=? AND doc_label=? AND superseded=0 "
             "GROUP BY sha256 ORDER BY COALESCE(NULLIF(wayback_timestamp,''), retrieval_date)",
             (r["institution_id"], r["doc_label"]),
         ).fetchall()

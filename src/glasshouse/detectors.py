@@ -494,7 +494,7 @@ class OwnRecord(Detector):
 
     def _stewards(self, conn: sqlite3.Connection) -> set[str]:
         return {r["institution_id"] for r in
-                conn.execute("SELECT DISTINCT institution_id FROM commitments")}
+                conn.execute("SELECT DISTINCT institution_id FROM commitments WHERE superseded=0")}
 
     def run(self, conn: sqlite3.Connection, **kw) -> list[Lead]:
         from . import findings

@@ -79,7 +79,8 @@ def capture_health(conn: sqlite3.Connection, institution_id: str, doc_label: str
     today = today or _today()
     n, newest_row = conn.execute(
         "SELECT COUNT(*), MAX(retrieval_date) FROM commitments WHERE institution_id=? "
-        "AND doc_label=? AND wayback_timestamp=''", (institution_id, doc_label)).fetchone()
+        "AND doc_label=? AND wayback_timestamp='' AND superseded=0",
+        (institution_id, doc_label)).fetchone()
     last = conn.execute(
         "SELECT attempted_at, outcome, detail, url FROM capture_attempts "
         "WHERE institution_id=? AND doc_label=? ORDER BY id DESC LIMIT 1",
@@ -103,6 +104,18 @@ def capture_health(conn: sqlite3.Connection, institution_id: str, doc_label: str
                 f"commitments`.", "error")
     return (True, f"{n} live snapshot(s) on record; last confirmed live {confirmed} "
             f"({age}d ago; budget {budget_days}d)", "warn")
+
+
+def sai_needs_review(conn: sqlite3.Connection) -> list[tuple]:
+    """(institution, label, detail) for SAI filings whose LATEST read was refused
+    as a length outlier: a genuine rewrite would otherwise be skipped unseen."""
+    out = []
+    for r in conn.execute(
+            "SELECT institution_id, doc_label, url, detail, outcome FROM capture_attempts "
+            "WHERE id IN (SELECT MAX(id) FROM capture_attempts GROUP BY institution_id, doc_label, url)"
+            " AND outcome='needs_review'"):
+        out.append((r["institution_id"], r["doc_label"], f"{r['url']}: {r['detail']}"))
+    return out
 
 
 def diagnose(conn: sqlite3.Connection) -> dict:
@@ -177,6 +190,10 @@ def diagnose(conn: sqlite3.Connection) -> dict:
                 continue
             ok, detail, severity = capture_health(conn, inst_id, doc["label"], today)
             check(f"commitment-live:{inst_id}/{doc['label']}", ok, detail, severity)
+
+    for inst_id, label, detail in sai_needs_review(conn):
+        check(f"sai-outlier:{inst_id}/{label}", False,
+              f"SAI section refused as a length outlier, needs a human look: {detail}", "warn")
 
     # 4. Ledger integrity (hard failures only; quarantine is healthy).
     from .ledger import integrity_check

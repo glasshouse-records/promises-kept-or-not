@@ -251,3 +251,23 @@ def test_revived_row_cites_the_filing_it_was_just_read_from(conn):
     sai.ingest_filings(conn, "wel", "wel-sai", [_filing("Z", "2025-02-01", doc())], START, END)
     r = conn.execute("SELECT url, public_by, superseded FROM commitments").fetchone()
     assert r["superseded"] == 0 and r["url"].endswith("Z.htm") and r["public_by"] == "2025-02-01"
+
+
+def test_outlier_is_a_warning_and_a_distinct_outcome_the_doctor_reports(conn, caplog):
+    from glasshouse import doctor
+    fs = [_filing(str(i), f"2024-0{i}-01", doc(BODY + f" Amendment number {i}."))
+          for i in range(1, 4)]
+    fs.append(_filing("big", "2023-01-01", doc(BODY * 10)))
+    flagged: list[str] = []
+    with caplog.at_level("INFO"):
+        sai.ingest_filings(conn, "wel", "wel-sai", fs, START, END, flagged=flagged)
+    assert flagged == ["https://sec/big.htm"]
+    assert any(r.levelname == "WARNING" and "outlier" in r.message for r in caplog.records)
+    row = conn.execute("SELECT outcome, url FROM capture_attempts").fetchone()
+    assert row["outcome"] == "needs_review" and row["url"].endswith("big.htm")
+    found = doctor.sai_needs_review(conn)
+    assert len(found) == 1 and "big.htm" in found[0][2]
+    # once a later read of the same url is fine, it stops being reported
+    conn.execute("INSERT INTO capture_attempts (institution_id, doc_label, url, attempted_at,"
+                 " outcome) VALUES ('wel','wel-sai','https://sec/big.htm','x','unchanged')")
+    assert doctor.sai_needs_review(conn) == []

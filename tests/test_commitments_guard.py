@@ -54,7 +54,9 @@ def test_purge_removes_previously_ingested_error_pages(conn, monkeypatch, tmp_pa
     monkeypatch.undo()
     purged = commitments.purge_error_pages(conn)
     assert purged == 1
-    rows = conn.execute("SELECT content_path FROM commitments").fetchall()
+    # excluded, not deleted: ids are never reused
+    assert conn.execute("SELECT COUNT(*) FROM commitments").fetchone()[0] == 2
+    rows = conn.execute("SELECT content_path FROM commitments WHERE superseded=0").fetchall()
     assert len(rows) == 1
     from pathlib import Path
     assert Path(rows[0]["content_path"]).read_bytes() == _REAL_PDF  # the real one survives

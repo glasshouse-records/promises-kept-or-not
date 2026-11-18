@@ -254,7 +254,7 @@ CREATE TABLE IF NOT EXISTS capture_attempts (
     doc_label      TEXT NOT NULL,
     url            TEXT NOT NULL,
     attempted_at   TEXT NOT NULL,   -- ISO-8601, local time with offset
-    outcome        TEXT NOT NULL CHECK (outcome IN ('new_version','unchanged','failed')),
+    outcome        TEXT NOT NULL CHECK (outcome IN ('new_version','unchanged','failed','needs_review')),
     detail         TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_capture_attempts_doc
@@ -338,6 +338,24 @@ def _migrate(conn: sqlite3.Connection) -> None:
             conn.execute(f"ALTER TABLE commitments ADD COLUMN {col} "
                          "TEXT NOT NULL DEFAULT ''")
             conn.commit()
+    sql = (conn.execute("SELECT sql FROM sqlite_master WHERE name='capture_attempts'")
+           .fetchone() or [""])[0] or ""
+    if sql and "needs_review" not in sql:
+        # SQLite cannot alter a CHECK: rebuild this operator-internal log table.
+        conn.executescript("""
+            ALTER TABLE capture_attempts RENAME TO capture_attempts_old;
+            CREATE TABLE capture_attempts (
+                id INTEGER PRIMARY KEY, institution_id TEXT NOT NULL, doc_label TEXT NOT NULL,
+                url TEXT NOT NULL, attempted_at TEXT NOT NULL,
+                outcome TEXT NOT NULL CHECK (outcome IN
+                    ('new_version','unchanged','failed','needs_review')),
+                detail TEXT NOT NULL DEFAULT '');
+            INSERT INTO capture_attempts SELECT id, institution_id, doc_label, url,
+                attempted_at, outcome, detail FROM capture_attempts_old;
+            DROP TABLE capture_attempts_old;
+            DROP INDEX IF EXISTS idx_capture_attempts_doc;
+            CREATE INDEX idx_capture_attempts_doc
+                ON capture_attempts (institution_id, doc_label, id);""")
     if "superseded" not in {r[1] for r in conn.execute("PRAGMA table_info(commitments)")}:
         conn.execute("ALTER TABLE commitments ADD COLUMN superseded INTEGER NOT NULL DEFAULT 0")
         conn.commit()

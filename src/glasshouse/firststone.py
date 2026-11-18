@@ -259,7 +259,7 @@ def _desk_ledger(conn: sqlite3.Connection, s: dict) -> dict:
         return re.sub(r"\s*-\s*", "-", t)
     quote_ok = False
     for r in conn.execute("SELECT content_path FROM commitments WHERE institution_id=? "
-                          "AND doc_label=?", (s["institution_id"], s["doc_label"])):
+                          "AND doc_label=? AND superseded=0", (s["institution_id"], s["doc_label"])):
         p = Path(r["content_path"])
         if p.exists() and norm(s["quote"]) in norm(extract_text(p)):
             quote_ok = True
