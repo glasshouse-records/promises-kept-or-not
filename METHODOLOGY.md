@@ -455,6 +455,63 @@ trust companies and non-US advisers, NBIA (all notice reports) and Neuberger Ber
 Group LLC (an institutional-manager report of separate-account votes, not fund votes)
 are not ingested.
 
+Allspring (added 2026-11-18; a separate institution from `wells_fargo`, which sold
+its asset-management arm as Wells Fargo Asset Management in 2021 and keeps only its
+13-F and enforcement record): allspringglobal.com answers requests that identify
+themselves honestly (200, `text/html`, Cloudflare, probed 2026-11-18), so it is not a
+blocked source. The policy page is HTML and its text includes navigation, a cookie
+banner and a footer, so the label `proxy-voting-policies-and-procedures` carries a
+`body: {start, end}` bound: from "Allspring Funds Proxy Voting Policies and Procedures
+Scope of Policies and Procedures" (the Funds' preface, which names the eight
+registrants, followed by the Allspring Global Investments Proxy Voting Policies and
+Procedures and its footnotes) to the page footer ("LinkedIn", "CFA(R)" or "Quick
+links", looked ahead to rather than consumed, so the last footnote is kept; the 2022
+capture has no footer and ends at its own last sentence). Every capture matches the
+start once. The page lived at `/legal/proxy-voting-policies-and-procedures.html` (Wayback
+2022-05-26) and `/legal/proxy-voting-policies-and-procedures/` (2023-07-06) before
+`/corporate/` (2024-04-14 on); the earlier addresses are `former_urls`. Seven versions
+by identity, each a real wording change (consecutive bounded captures diffed): the
+approval line prints November 2021 (capture 2022-05-26), March 2023 (2023-07-06),
+28 February 2024 (2024-04-14), 13 June 2024 (2024-08-03), the same edition with the
+client-administration e-mail address changed from "allspring-global.com" to
+"allspringglobal.com" (2024-11-04), 14 February 2025 effective 1 March 2025
+(2025-03-26; the policy was rewritten, 32,000 characters down to 22,000) and 10
+February 2026 effective 1 April 2026 (2026-07-16, identical to the live page).  The Wayback captures from 2025-03-26 to 2026-03-16 carry one identical text.
+The dated route is `allspring-proxy-voting-policies-and-procedures-as-printed-in-sai`:
+the Allspring Variable Trust SAI (one 485BPOS a year, 2022-04-25 to 2026-04-23; the
+Funds Trust files dozens of differently arranged SAIs a year, so the Variable Trust,
+whose SAI prints the policy once and in one place, is the source), read from the policy
+heading to "Policies and Procedures for Disclosure of Fund Portfolio Holdings I. Scope
+of Policies and Procedures." so the last sentence is kept. Three headings cover the
+printed wordings (2022-23 "Allspring Global Investments, LLC", 2024 "(Allspring)
+Stewardship", 2025-26 "Introduction"); the running page marks "81 Back To Table of
+Contents" and "Variable Trust Funds 83 Back to Table of Contents", which carry no
+policy text, are removed. It yields five versions (2022-04-25, 2023-04-25,
+2024-04-25, 2025-04-23, 2026-04-23); the SAI copy prints no approval date.
+Voting: each SAI says "The Board of the Trusts has delegated the responsibility for
+voting proxies relating to the Funds' portfolio securities to Allspring Funds
+Management", which "utilizes the Allspring Global Investments Proxy Voting Policies and
+Procedures, included below"; the policy's scope paragraph names Allspring Funds Trust,
+Master Trust, Variable Trust and the four closed-end funds, and the website's Funds
+preface also names the Exchange-Traded Funds Trust. Sub-advisers (Allspring Global
+Investments LLC and UK, Galliard, and for the C&B Large Cap Value and C&B Mid Cap Value
+funds Cooke & Bieler) may give input, but the policy reserves "the final voting decision"
+to the Allspring Proxy Governance Committee, so no series is keyed EXTERNAL (a later SAI
+that moved a series to a sub-adviser's own voting would need a dated carve-out). Each
+registrant is keyed ALLSPRING from the EDGAR filing date of the earliest filing read:
+Funds Trust, Master Trust and the four closed-end funds 2022-01-25 (U.S. Equity Funds SAI,
+0001081400-22-000037), Variable Trust 2022-04-25 (0001081400-22-000339), Exchange-Traded
+Funds Trust 2024-12-02 (0001081400-24-000733, its first filing with an SAI). The
+closed-end funds' own N-CSRs only refer to the policy. Master/feeder: the master
+portfolios of Allspring Master Trust carry the vote rows and their feeder funds in
+Funds Trust (Large Cap Value, Small Company Growth, Small Company Value, Core Bond) carry
+none, so a vote is counted once; of the 16,929 Master Trust vote lines of the 2025 N-PX,
+110 coincide with a Funds Trust line on issuer, meeting, proposal and share count, in
+different series (common holdings, not feeder echoes). The management company and
+distributor, the 13-F filing holding companies (the 13-F filer is Allspring Global
+Investments Holdings, LLC, CIK 1890906) and the Luxembourg funds file no fund N-PX and
+are not ingested.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting
