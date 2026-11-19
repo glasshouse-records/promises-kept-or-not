@@ -21,14 +21,14 @@ keywords:
   - shareholder voting
   - ESG accountability
   - financial transparency
-version: "2026-11-19"
+version: "2026-11-19.2"
 date-released: "2026-11-18"
-doi: 10.5281/zenodo.24357331
+doi: 10.5281/zenodo.24376068
 repository-code: "https://github.com/glasshouse-records/promises-kept-or-not"
 identifiers:
   - type: doi
-    value: 10.5281/zenodo.24357331
-    description: "This version (2026-11-19)"
+    value: 10.5281/zenodo.24376068
+    description: "This version (2026-11-19.2)"
   - type: doi
     value: 10.5281/zenodo.24321606
     description: "All versions (concept DOI)"
