@@ -605,6 +605,41 @@ Five versions (2023-04-28 January 2023 edition, 2024-04-29 March 2024, 2025-04-2
 split word ("A n"), a layout difference the extraction cannot remove (known phantom, commitments
 id 255).
 
+Principal (Principal Global Investors, LLC, doing business as Principal Asset Management; added
+2026-11-19): `brandassets.principal.com` answers requests that identify themselves honestly (200,
+`application/pdf`, probed 2026-11-19), so it is not a blocked source. principalam.com has no link to the
+policy (its page says a client may ask for it); the PDF `/m/7a1042bf82d83012/original/Policy-on-Proxy-Voting-for-Investment-Advisory-Clients.pdf`
+(first page "February 2026", PDF created 2026-03-04) is the label `proxy-voting-policies-and-procedures`.
+The same host also serves a different document (the Principal Global Investors Trust Company Proxy
+Voting Policy, December 2025) that is not this label. Wayback holds six captures of the address
+(2025-02-06 to 2026-04-08); nothing older was found (a prefix CDX query returned HTTP 500, backed
+off, not retried in a loop). The dated route is `principal-proxy-voting-policy-as-printed-in-sai`: the PGI
+policy printed in the Principal Exchange-Traded Funds SAI (CIK 1572661, 485BPOS), read from the
+policy heading to the start of the Spectrum Asset Management policy that follows it; six headings
+cover the printed editions ("Proxy Voting and Class Action Monitoring" 2021, the 2021-10 and 2022
+re-titlings that name Principal Real Estate Investors, "Proxy Voting Policies and Procedures",
+"Proxy Voting Policy" 2025, "Principal Asset Management SM ... February 2026"), and the running
+footer "Principal Global Investors PGI Global Compliance Manual" is removed. An SAI with no Spectrum
+policy after the PGI one (the 2026-04-20 filing) contributes nothing. Voting: every SAI of the three
+registrants says the Board delegated proxy voting "to PGI or to that Fund's Sub-Advisor, as
+appropriate", with each policy printed in an appendix, so each registrant is keyed PRINCIPAL from the
+EDGAR filing date of its earliest SAI read (Principal Funds, Inc. 898745, 2021-02-24,
+0000898745-21-000179; Principal Exchange-Traded Funds 1572661, 2021-04-26, -21-000034; Principal
+Variable Contracts Funds 12601, 2021-04-28, 0000012601-21-000065) and the exceptions are listed per
+series. A series is EXTERNAL when ANY SAI read names an unaffiliated sub-adviser for any portion of
+it (12 Principal Funds series and 1 Variable Contracts account); Spectrum Asset Management (own
+printed policy) is keyed SPECTRUM for the two Spectrum preferred funds and two ETFs and Origin Asset
+Management LLP ORIGIN for the Origin Emerging Markets Fund while the SAIs name it (to 2024-12-26,
+UNRESOLVED after); the LargeCap S&P 500 Managed Volatility Index Account (a Spectrum sleeve inside a
+PGI account) is UNRESOLVED; Principal Real Estate Investors is covered by the PGI policy (its heading
+names PGI and Principal Real Estate Investors from the 2021-10-27 SAI) so its series are PRINCIPAL from
+then. The Principal Real Asset Fund (1756404, a multi-sub-adviser interval fund) is ingested but not
+keyed, because its N-CSR names no sub-adviser. Ingested N-PX 2024-26 (non-duplicate votes: 305,463
+Principal Funds, 73,365 Variable Contracts, 30,736 ETFs, 7,259 Real Asset Fund). Not ingested: the
+institutional-manager N-PX of Principal Global Investors (769734) and Principal Real Estate
+Investors (1218333), which overlap the fund tables; the Principal Real Estate Income Fund
+(1557523), whose adviser is ALPS Advisors, Inc.; the private and interval funds with no vote table.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting

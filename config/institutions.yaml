@@ -3191,3 +3191,115 @@ institutions:
           strip_patterns:
             - '\b(\d{1,2}) Part II C- ?\1\b'
             - 'Part II C- ?\d{1,2}\b'
+
+  principal:
+    display_name: "Principal (Principal Global Investors, LLC / Principal Asset Management)"
+    short_name: "Principal"
+    cik: "0000769734"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Principal Global Investors, LLC ('PGI', doing business as Principal Asset Management), Des Moines IA (CIK 769734, the 13-F filer, a subsidiary of Principal Financial Group, Inc. 1126328). PGI is the manager of the Principal Funds, Principal Variable Contracts Funds and Principal Exchange-Traded Funds and votes their proxies itself or through the sub-adviser each series names, under the Principal Asset Management Proxy Voting Policies and Procedures (which, since the 2021-10-27 SAI, names Principal Real Estate Investors, LLC as covered). PGI (769734) and Principal Real Estate Investors (1218333) also file institutional-manager N-PX reports (separate accounts and sub-advised mandates) that overlap the fund registrants' own tables and are not ingested here. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-19. Principal's own US fund registrants that file N-PX vote tables with operating-company votes. Every SAI says 'The Board has delegated responsibility for decisions regarding proxy voting for
+      # securities held by each Fund to PGI or to that Fund's Sub-Advisor, as appropriate. PGI and each Sub-Advisor will vote such proxies in accordance with its proxy policies and procedures ... found in Appendix C'.
+      # So the registrant default is PRINCIPAL (PGI) and the exceptions are listed per series (`series_adviser`):
+      #  - EXTERNAL: a series with any unaffiliated sub-adviser named for any portion of its assets in an SAI read (AllianceBernstein, Barrow Hanley, BlackRock, Brown Advisory, Causeway, DDJ/Polen, Eagle, Emerald, Hotchkis & Wiley,
+      #    Los Angeles Capital, Mellon, MetLife, Nuveen, Pictet, T. Rowe Price, Vaughan Nelson, Victory, Westwood, Wellington, Westfield and others). The sub-adviser votes its own sleeve under its own printed policy and the N-PX does not split the sleeves.
+      #  - SPECTRUM, ORIGIN: Principal affiliates that vote under their OWN printed policy (Spectrum Asset Management 'Policy on Proxy Voting', Origin Asset Management LLP 'Proxy Voting Policy'), so never paired with the PGI policy.
+      #  - Principal Real Estate Investors (sub-adviser of the real-estate series) is covered by the PGI policy itself (its heading names PGI and PREI from the 2021-10-27 SAI on), so those series are PRINCIPAL from 2021-10-27 (the earliest SAI read whose PGI policy heading names it; UNRESOLVED before).
+      #  - UNRESOLVED: no SAI establishes who votes (a Spectrum sleeve inside an otherwise PGI series; Origin Emerging Markets after Origin stops being named, 2024-12-27).
+      # `from` is the EDGAR filing date of the earliest SAI read (2021); earlier meetings stay unlabelled. Not ingested: Principal Real Estate Income Fund (1557523, adviser ALPS Advisors, Inc.; PGI is not its adviser),
+      # Principal Private Credit Fund and the other interval / private funds that file no vote table.
+      - cik: "898745"
+        adviser: "Principal Global Investors, LLC (PGI, the manager); sub-advisers per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/898745/000089874521000179/ck0000898745-20201031.htm"  # 485BPOS (SAI) filed 2021-02-24 (0000898745-21-000179), 'Proxy Voting Policies and Procedures': the Board delegated to PGI or to that Fund's Sub-Advisor, as appropriate; Appendix C prints each policy
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated responsibility for decisions regarding proxy voting for securities held by each Fund to PGI or to that Fund's Sub-Advisor, as appropriate. PGI and each Sub-Advisor will vote such proxies in accordance with its proxy policies and procedures', Appendix C. PGI votes the series it manages directly; series with an unaffiliated sub-adviser are EXTERNAL; series run by Spectrum or Origin carry those firms' own keys. The wording is the same in every SAI read, 2021-02-24 to 2026-08-25 (15 485BPOS filings)."
+        adviser_key_history: [{key: PRINCIPAL, from: "2021-02-24"}]
+        series_adviser:
+          S000007175: [{key: EXTERNAL, from: "2021-02-24"}]   # SmallCap Growth Fund I: AllianceBernstein, Brown Advisory, Emerald
+          S000007122: [{key: EXTERNAL, from: "2021-02-24"}]   # LargeCap Value Fund III: Barrow Hanley, Westwood, Hotchkis & Wiley, Federated MDTA
+          S000023512: [{key: EXTERNAL, from: "2021-02-24"}]   # Overseas Fund: Barrow Hanley, Causeway
+          S000007077: [{key: EXTERNAL, from: "2021-02-24"}]   # LargeCap Growth Fund I: Brown Advisory, T. Rowe Price, Alger, Los Angeles Capital, Westfield
+          S000007173: [{key: EXTERNAL, from: "2021-02-24"}]   # MidCap Value Fund I: Los Angeles Capital, Victory
+          S000007169: [{key: EXTERNAL, from: "2021-02-24"}]   # SmallCap Value Fund II: Hotchkis & Wiley, Los Angeles Capital, Vaughan Nelson
+          S000007125: [{key: EXTERNAL, from: "2021-02-24"}]   # MidCap Growth Fund III: Eagle, Baird (2021-2025 SAIs)
+          S000006996: [{key: EXTERNAL, from: "2021-02-24"}]   # High Income Fund: DDJ / Polen, Mellon, Insight, Post (affiliate) (2021-2024 SAIs)
+          S000006997: [{key: EXTERNAL, from: "2021-02-24"}]   # Inflation Protection Fund: BlackRock (2021-2025 SAIs)
+          S000024296: [{key: EXTERNAL, from: "2021-02-24"}]   # Diversified Income Fund (Global Diversified Income until 2021-22): many outside sleeves
+          S000028139: [{key: EXTERNAL, from: "2021-02-24"}]   # Diversified Real Asset Fund: many outside sleeves
+          S000033960: [{key: EXTERNAL, from: "2021-02-24"}]   # Global Multi-Strategy Fund: many outside sleeves
+          S000041598: [{key: UNRESOLVED, until: "2023-12-26"}, {key: SPECTRUM, from: "2023-12-27"}]   # Capital Securities Fund: sub-adviser Spectrum Asset Management, own policy printed in the SAI of 2023-12-27 (0000898745-23-000393)
+          S000007170: [{key: UNRESOLVED, until: "2023-12-26"}, {key: SPECTRUM, from: "2023-12-27"}]   # Spectrum Preferred and Capital Securities Income Fund: same
+          S000047839: [{key: UNRESOLVED, until: "2021-12-27"}, {key: ORIGIN, from: "2021-12-28", until: "2024-12-26"}, {key: UNRESOLVED, from: "2024-12-27"}]   # Origin Emerging Markets Fund: Origin Asset Management LLP, own policy printed 2021-12 to 2024-02; no longer named as sub-adviser in the SAI of 2024-12-27
+          S000007212: [{key: UNRESOLVED, until: "2021-10-26"}, {key: PRINCIPAL, from: "2021-10-27"}]   # Real Estate Securities Fund: sub-adviser Principal Real Estate Investors, covered by the PGI policy from the ETF SAI of 2021-10-27 (0001572661-21-000168), whose PGI policy heading names it
+          S000019119: [{key: UNRESOLVED, until: "2021-10-26"}, {key: PRINCIPAL, from: "2021-10-27"}]   # Global Real Estate Securities Fund: same
+          S000077513: [{key: UNRESOLVED, until: "2021-10-26"}, {key: PRINCIPAL, from: "2021-10-27"}]   # Global Listed Infrastructure Fund (Global Sustainable Listed Infrastructure until 2025): sub-adviser Principal Real Estate Investors
+        name: "PRINCIPAL FUNDS, INC."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "12601"
+        adviser: "Principal Global Investors, LLC (PGI, the manager); sub-advisers per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/12601/000001260121000065/ck0000012601-20201231.htm"  # 485BPOS (SAI) filed 2021-04-28 (0000012601-21-000065), 'Proxy Voting Policies and Procedures': the Board delegated to PGI or to that Account's Sub-Advisor, as appropriate; Appendix B
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated responsibility for decisions regarding proxy voting for securities held by each Account to PGI or to that Account's Sub-Advisor, as appropriate', Appendix B. Same wording in the annual SAIs of 2022 to 2026. The sub-advised accounts are LargeCap Growth Account I (Brown Advisory / T. Rowe Price, later Los Angeles Capital / Westfield: EXTERNAL), Real Estate Securities Account (Principal Real Estate Investors, covered by the PGI policy) and the LargeCap S&P 500 Managed Volatility Index Account (a Spectrum sleeve inside a PGI account: UNRESOLVED)."
+        adviser_key_history: [{key: PRINCIPAL, from: "2021-04-28"}]
+        series_adviser:
+          S000007682: [{key: EXTERNAL, from: "2021-04-28"}]   # LargeCap Growth Account I: unaffiliated sub-advisers
+          S000042784: [{key: UNRESOLVED, from: "2021-04-28"}]   # LargeCap S&P 500 Managed Volatility Index Account: Spectrum (own policy) runs the volatility sleeve, PGI the rest; no SAI says who votes the equities
+          S000007673: [{key: UNRESOLVED, until: "2021-10-26"}, {key: PRINCIPAL, from: "2021-10-27"}]   # Real Estate Securities Account: sub-adviser Principal Real Estate Investors
+        name: "PRINCIPAL VARIABLE CONTRACTS FUNDS INC"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1572661"
+        adviser: "Principal Global Investors, LLC (PGI, the manager); Spectrum Asset Management and Principal Real Estate Investors sub-advise some ETFs"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1572661/000157266121000034/ck0001572661-20200630.htm"  # 485BPOS (SAI) filed 2021-04-26 (0001572661-21-000034), 'Proxy Voting Policies and Procedures': the Board delegated to PGI or the Fund's Sub-Advisor, if applicable; Appendix C
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated responsibility for decisions regarding proxy voting for securities held by each Fund to PGI or the Fund's Sub-Advisor, if applicable', Appendix C (PGI policy, then the Spectrum policy). No ETF names an unaffiliated sub-adviser. The two Spectrum preferred-securities ETFs carry the SPECTRUM key (its own policy) from the first SAI that names Spectrum as their sub-adviser (2023-10-26); the Real Estate Active Opportunities ETF (Principal Real Estate Investors) is covered by the PGI policy."
+        adviser_key_history: [{key: PRINCIPAL, from: "2021-04-26"}]
+        series_adviser:
+          S000054767: [{key: UNRESOLVED, until: "2023-10-25"}, {key: SPECTRUM, from: "2023-10-26"}]   # Principal Spectrum Preferred Securities Active ETF (0001572661-23-000177)
+          S000068805: [{key: UNRESOLVED, until: "2023-10-25"}, {key: SPECTRUM, from: "2023-10-26"}]   # Principal Spectrum Tax-Advantaged Dividend Active ETF (now Spectrum Preferred and Income ETF)
+        name: "Principal Exchange-Traded Funds"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1756404"
+        adviser: "Principal Global Investors, LLC (the Manager); sub-advisers not established"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1756404/000175640421000020/primary-document.htm"  # N-CSR filed 2021-05-26 (0001756404-21-000020): the Fund policy delegates to 'its advisor or sub-advisor, as appropriate'; the interval fund's sub-advisers are not named in the N-CSR
+        adviser_verified: "2026-11-19"
+        voting_note: "Principal Real Asset Fund (formerly Principal Diversified Select Real Asset Fund), a multi-sub-adviser interval fund. Ingested, deliberately NOT keyed: its N-CSR says only that the Fund policy delegates to the advisor or sub-advisor 'as appropriate' and names no sub-adviser, so who votes which sleeve is not established."
+        name: "Principal Real Asset Fund"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed PRINCIPAL, per registrant, from the EDGAR filing date of the earliest SAI read: Principal Funds, Inc. (898745) 2021-02-24 (0000898745-21-000179); Principal Exchange-Traded Funds (1572661) 2021-04-26 (0001572661-21-000034); Principal Variable Contracts Funds (12601) 2021-04-28 (0000012601-21-000065). Earlier meetings stay unlabelled. Principal Real Asset Fund (1756404) is ingested but unkeyed."
+      - "Series exceptions were read from the 'Sub-Advisor / Fund(s)' tables of the 485BPOS SAIs of Principal Funds (15 filings 2021-02-24 to 2026-08-25), Variable Contracts (7) and the ETFs (14). A series is EXTERNAL if ANY SAI read names an unaffiliated sub-adviser for ANY portion of it (precision over recall: some now run by PGI, e.g. Inflation Protection after 2025, stay EXTERNAL). Series that only a Principal affiliate sub-advises are SPECTRUM, ORIGIN or PRINCIPAL (Principal Real Estate Investors is named in the PGI policy heading and in its scope sentence 'refers specifically to PGI and Principal Real Estate Investors, LLC'). Funds of funds (LifeTime, SAM, Diversified Balanced/Growth) and index series are PGI's and keep the registrant key; PGI votes the underlying-fund shares in proportion to other holders."
+      - "Not ingested, not keyed: Principal Global Investors' own institutional-manager N-PX (769734) and Principal Real Estate Investors' (1218333), which report separate-account and sub-advised mandates that overlap the fund tables; Principal Real Estate Income Fund (1557523), advised by ALPS Advisors, Inc.; Principal Private Credit Fund and other private / interval funds with no vote table. Finisterre Emerging Markets Total Return Bond Fund (S000054330) carries the registrant key although Finisterre's own policy was printed as an appendix until 2023 (bond fund, see follow-ups)."
+      - "Policy text: the Principal Asset Management Proxy Voting Policies and Procedures PDF (brandassets.principal.com, 200 application/pdf to honest clients, edition February 2026, PDF created 2026-03-04; six Wayback captures 2025-02-06 to 2026-04-08). principalam.com has no link to it (the page says to ask for the policy); the same host also serves a different document, the Principal Global Investors Trust Company Proxy Voting Policy (December 2025), which is not this label. Under a separate label, the PGI policy as printed in the Principal Exchange-Traded Funds SAI (one or more 485BPOS a year, ends where the Spectrum policy begins)."
+    commitments:
+      # Verified 2026-11-19 (200, application/pdf, honest client). A PDF, so no `body` bound; the edition date is printed on its first page ('February 2026'). Wayback holds six captures of this address
+      # (2025-02-06 to 2026-04-08); nothing older was found (a prefix CDX query returned 500s).
+      - label: proxy-voting-policies-and-procedures
+        url: "https://brandassets.principal.com/m/7a1042bf82d83012/original/Policy-on-Proxy-Voting-for-Investment-Advisory-Clients.pdf"
+        adviser: "Principal Global Investors, LLC"
+        adviser_key: "PRINCIPAL"
+      # The same policy as printed in the Principal Exchange-Traded Funds SAI (485BPOS), dated by EDGAR filing date. Separate label from the website PDF. Editions retitle it ('Proxy Voting and Class Action
+      # Monitoring', 'Proxy Voting Policies and Procedures', 'Proxy Voting Policy', 'Principal Asset Management SM ... February 2026'); the section ends where the Spectrum Asset Management policy begins, so
+      # the SAI of 2026-04-20 (which prints no Spectrum policy) and the 2022-05-17 one contribute nothing.
+      - label: principal-proxy-voting-policy-as-printed-in-sai
+        adviser: "Principal Global Investors, LLC"
+        adviser_key: "PRINCIPAL"
+        sai_appendix:
+          cik: "0001572661"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "PRINCIPAL GLOBAL INVESTORS, LLC Proxy Voting and Class Action Monitoring Rule 206(4)-6"
+            - "PRINCIPAL GLOBAL INVESTORS, LLC Principal Real Estate Investors, LLC Proxy Voting and Class Action Monitoring"
+            - "PRINCIPAL GLOBAL INVESTORS, LLC Principal Real Estate Investors, LLC Proxy Voting Policies and Procedures Introduction"
+            - "PRINCIPAL GLOBAL INVESTORS, LLC Proxy Voting Policies and Procedures Introduction"
+            - "Principal Global Investors, LLC Proxy Voting Policy Introduction Principal Global Investors, LLC 1 (doing business"
+            - "Principal Asset Management SM Proxy Voting Policies and Procedures February 2026 Introduction"
+          end:
+            - "POLICY ON PROXY VOTING SPECTRUM ASSET MANAGEMENT, INC."
+            - "Principal Global Investors, LLC SPECTRUM ASSET MANAGEMENT, INC. Policy on Proxy Voting"
+            - "SPECTRUM ASSET MANAGEMENT, INC. Policy on Proxy Voting For Investment Advisory Clients 2024"
+          strip_patterns:
+            - 'Principal Global Investors PGI Global Compliance Manual'
