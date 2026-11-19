@@ -32,8 +32,11 @@ def test_release_refuses_when_stale(tmp_path):
     c = ledger.connect(tmp_path / "l.db")
     _vote(c)
     with pytest.raises(release.StaleEngineError, match="duplicate flags"):
+        # Hermetic: no engine index exists (as on a fresh CI checkout). The dedupe
+        # refusal must come first; it failed on CI from 2026-11-18 because the
+        # missing-engine refusal fired before it and only this machine had one.
         release.build_release(c, root=tmp_path, version="x", with_parquet=False,
-                              no_derived=True)
+                              no_derived=True, engine_path=tmp_path / "absent.db")
     assert not (tmp_path / "vx").exists()
 
 
