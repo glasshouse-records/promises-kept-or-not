@@ -729,6 +729,17 @@ Ingested N-PX 2024-26: 693,860 non-duplicate votes (1,068 duplicates marked). No
 Trust (notice-only N-PX), Thrivent Church Loan and Income Fund ("did not hold any votable positions"), Thrivent
 Financial for Lutherans' institutional-manager N-PX and the legacy-HTML N-PX before 2024.
 
+Dodge & Cox (added 2026-11-19): the only US fund registrant filing N-PX vote tables is Dodge & Cox Funds (CIK 29440, seven
+series); the older single-fund CIKs (Stock Fund 29442, Income Fund 836427) stopped filing in 2007. Every SAI says "The
+Dodge & Cox Funds have authorized Dodge & Cox to vote proxies on behalf of the Dodge & Cox Funds pursuant to the following
+Dodge & Cox Proxy Voting Policies and Procedures" (Appendix B), and none of the six Form N-CEN read (FY2020 to FY2025)
+names a sub-adviser, so the trust is keyed `DODGE_COX` from the EDGAR filing date of the earliest SAI read (2021-01-08, the
+Emerging Markets Stock Fund 485BPOS) with no series exception. Policy text: the dodgeandcox.com Funds policy PDF (3
+versions, 2022-2026) and the same policy as printed in the multi-fund SAI (6 versions, 2021-2026); the 2021-01-08 SAI is a
+single-fund family printing an older edition and is not mixed in. The original 2026 N-PX is marked duplicate because its
+N-PX/A restates every vote. Ingested N-PX 2024-26: 25,757 non-duplicate votes (9,098 duplicates marked). Not ingested:
+Dodge & Cox's institutional-manager N-PX and the legacy-HTML N-PX before 2024.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting

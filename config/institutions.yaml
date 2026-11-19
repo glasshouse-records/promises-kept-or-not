@@ -4339,3 +4339,51 @@ institutions:
           # to the next (found 2026-11-19: every 2024-2026 edition swaps them); they carry no wording.
           strip_patterns:
             - '(?<=\s)[\u25cf\u2022\u00b7\u00a7\u25fe\u25aa\u25a0](?=\s)'
+  dodge_cox:
+    display_name: "Dodge & Cox"
+    short_name: "Dodge & Cox"
+    cik: "0000200217"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Dodge & Cox, San Francisco CA (CIK 200217, the 13-F filer and the investment adviser of the Dodge & Cox Funds, a California corporation). One US fund registrant, Dodge & Cox Funds (CIK 29440, 7 series: Stock, International Stock, Global Stock, Balanced, Income, Global Bond, Emerging Markets Stock), which every SAI says authorises Dodge & Cox to vote its proxies under the Dodge & Cox Proxy Voting Policies and Procedures (Appendix B). No sub-adviser appears in any Form N-CEN (FY2020 to FY2025). Dodge & Cox's own institutional-manager N-PX (CIK 200217, separate accounts) is not ingested. The Irish Dodge & Cox Worldwide Funds plc is not a US registrant and files no N-PX. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-19. The only Dodge & Cox US fund registrant that files N-PX vote tables is Dodge & Cox Funds (CIK 29440; the older single-fund CIKs 29442 Stock Fund and 836427 Income Fund stopped filing in 2007 and
+      # hold no N-PX; Dodge & Cox Inc 1424610 is an adviser shell). Every SAI read says 'The Dodge & Cox Funds have authorized Dodge & Cox to vote proxies on behalf of the Dodge & Cox Funds pursuant to the following Dodge &
+      # Cox Proxy Voting Policies and Procedures'; no N-CEN (FY2020 to FY2025, six read) lists a sub-adviser, so there is no series exception. DODGE_COX is dated from the EDGAR filing date of the earliest SAI read
+      # (the 485BPOS of the Emerging Markets Stock Fund, 2021-01-08, the first SAI of 2021), so earlier meetings stay unlabelled.
+      - cik: "29440"
+        adviser: "Dodge & Cox (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/29440/000119312521005003/d40849d485bpos.htm"  # 485BPOS (SAI) filed 2021-01-08 (0001193125-21-005003), Appendix B: the Funds authorised Dodge & Cox to vote proxies
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Dodge & Cox Funds Proxy Voting Policies and Procedures': 'The Dodge & Cox Funds have authorized Dodge & Cox to vote proxies on behalf of the Dodge & Cox Funds pursuant to the following Dodge & Cox Proxy Voting Policies and Procedures.' The same wording is in the SAIs of 2021-04-30, 2022-04-28, 2023-04-28, 2024-04-26, 2025-04-28 and 2026-04-22. Every Form N-CEN filed 2021-03 to 2026-03 names Dodge & Cox as the only adviser and no sub-adviser. The trust's N-PX of 2021-2023 are legacy HTML (not ingested without --legacy); the 2026 season has an N-PX/A."
+        adviser_key_history: [{key: DODGE_COX, from: "2021-01-08"}]
+        name: "DODGE & COX FUNDS"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed DODGE_COX from the EDGAR filing date of the earliest SAI read, the Emerging Markets Stock Fund 485BPOS of 2021-01-08 (0001193125-21-005003); earlier meetings stay unlabelled. No sub-adviser is named in any SAI or N-CEN, so every series carries the registrant key."
+      - "Not ingested: Dodge & Cox's institutional-manager N-PX (CIK 200217, the adviser's own filing, not a fund registrant) and the legacy-HTML N-PX before 2024."
+      - "Policy text: the Dodge & Cox Funds Proxy Voting Policy PDF on dodgeandcox.com (200 application/pdf to honest clients, verified 2026-11-19; Wayback holds captures from 2022-07) and the same policy as printed in Appendix B of the multi-fund SAI (editions revised 2022-02-09, 2023-03-02, 2024-03-07, 2025-02-26, 2026-02-24). The Emerging Markets Stock Fund SAI of 2021-01-08 is a single-fund family printing an older edition and is not mixed in."
+    commitments:
+      # Verified 2026-11-19 (200, application/pdf, honest client). A PDF: the edition date is printed on its first page; Wayback holds captures of this address (2022-07-06 onward).
+      - label: dc-funds-proxy-voting-policy
+        url: "https://www.dodgeandcox.com/content/dam/dc/us/en/pdf/policies/dc_funds_proxy_voting_policy.pdf"
+        adviser: "Dodge & Cox"
+        adviser_key: "DODGE_COX"
+      # The same policy as printed in Appendix B of the Dodge & Cox Funds multi-fund SAI (485BPOS), dated by EDGAR filing date. `since` skips the single-fund Emerging Markets Stock Fund SAI of 2021-01-08.
+      # Heading case changes between editions (2022 prints capitals) and a stray page number can sit mid-sentence; each of the six editions is also a genuine rewrite (the 'Revised' date changes every year).
+      - label: dc-funds-proxy-voting-policy-as-printed-in-sai
+        adviser: "Dodge & Cox"
+        adviser_key: "DODGE_COX"
+        sai_appendix:
+          cik: "0000029440"
+          forms: ["485BPOS"]
+          since: "2021-04-01"
+          start:
+            - "Appendix B: Proxy Voting Policies and Procedures Dodge & Cox Funds Proxy Voting Policies and Procedures"
+            - "Appendix B: Proxy Voting Policies and Procedures DODGE & COX FUNDS PROXY VOTING POLICIES AND PROCEDURES"
+          end:
+            - "Link to Prospectus"
+            - "DODGE & COX FUNDS PART C"
+          strip_page_numbers: true
+          page_sequence: true
