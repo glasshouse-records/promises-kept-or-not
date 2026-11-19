@@ -489,6 +489,8 @@ def cmd_ingest_commitments(args) -> int:
         n = commitments.purge_error_pages(conn)
         print(f"  purged {n} error-page or truncated-PDF rows masquerading as policy versions")
         commitments.backfill_text_hashes(conn)   # also re-reads placeholder PDF dates
+        n = commitments.backfill_identity_hashes(conn)
+        print(f"  identity hashes recomputed for {n} rows")
         return 0
     insts = registry.load()
     new = commitments.fetch_live(conn, insts)

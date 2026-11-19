@@ -194,13 +194,20 @@ POLICY = "The Adviser votes proxies in the best interests of the Funds and their
 def test_victory_sai_section_runs_from_the_1940_act_paragraph_to_the_next_heading_and_skips_the_contents_list():
     label = "victory-proxy-voting-policy-as-printed-in-sai"
     doc = ("CODE OF ETHICS 54 PROXY VOTING POLICIES AND PROCEDURES 56 PORTFOLIO TRANSACTIONS AND BROKERAGE 58 body "
-           f"PROXY VOTING POLICIES AND PROCEDURES In accordance with the 1940 Act, the Trust has adopted policies. {POLICY}"
+           "PROXY VOTING POLICIES AND PROCEDURES In accordance with the 1940 Act, the Trust has adopted policies and "
+           f"procedures for voting proxies related to equity securities held by the Funds. {POLICY} "
+           "Page 49 is a page number: 49 The Adviser. Calling 800-539-FUND (800-539-3863), 800-235-8396 for Member Class, or "
            "available at www.sec.gov. PORTFOLIO TRANSACTIONS AND BROKERAGE Decisions to buy.")
     got = _extract(label, doc)
     assert got is not None and got.startswith("PROXY VOTING POLICIES AND PROCEDURES In accordance")
     assert got.endswith("available at www.sec.gov.") and "Decisions to buy" not in got and "CODE OF ETHICS" not in got
     # a multi-trust SAI prints the heading several times: nothing is taken, never a guess
     assert _extract(label, doc + " " + doc) is None
+    # page numbers (44-64) and the Member Class phone clause are furniture, June 30 is not
+    assert " 49 The Adviser" not in got and "Member Class" not in got
+    assert "(800-539-3863) or available" in got
+    # a single-fund SAI ("held by the Fund") prints an older summary: not read (2026-11-19)
+    assert _extract(label, doc.replace("held by the Funds", "held by the Fund")) is None
 
 
 def test_h12_section_in_the_n_csr_stops_before_the_portfolio_manager_item():

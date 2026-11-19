@@ -273,3 +273,22 @@ def test_backfill_recomputes_when_the_normaliser_version_changes(tmp_path):
               "content_path='/nonexistent'")
     assert cm.backfill_identity_hashes(c, reprints={}) == 0
     assert c.execute("SELECT identity_sha256 FROM commitments").fetchone()[0] == "kept"
+
+
+def test_identity_text_folds_line_break_hyphens_and_soft_hyphens():
+    """Found 2026-11-19: Victory's SAI prints split versions on "pay-for- performance"
+    vs "pay-for-performance" and "N- PX" vs "N-PX" (a line break after a hyphen), and
+    Principal's on "pre\\xadpopulated" (a soft hyphen). Layout, not policy."""
+    from glasshouse.contradictions import identity_text
+    assert identity_text("pay-for- performance") == identity_text("pay-for-performance")
+    assert identity_text("Form N- PX filings") == identity_text("Form N-PX filings")
+    assert identity_text("pre­ populated") == identity_text("prepopulated")
+    assert identity_text("proxy­ voting") == identity_text("proxyvoting")
+    # a spaced dash is still a dash, and real words still differ
+    assert identity_text("votes - FOR") == identity_text("votes — FOR")
+    assert identity_text("pay-for-performance") != identity_text("pay for performance")
+
+
+def test_identity_version_bumped_for_hyphen_folding():
+    from glasshouse.contradictions import IDENTITY_VERSION
+    assert IDENTITY_VERSION >= 3

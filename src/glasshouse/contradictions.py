@@ -138,19 +138,26 @@ _TM = re.compile(r"\s*(?:\{sup\}|<sup>)?\s*([\u00ae\u2122\u00a9])(?:\s*(?:\{/sup
 # Typography never changes meaning: curly vs straight quotes, em/en dashes vs a spaced
 # hyphen, and "15 %" vs "15%". Bump IDENTITY_VERSION whenever identity_text changes so
 # the backfill recomputes every stored identity.
-IDENTITY_VERSION = 2
+IDENTITY_VERSION = 3
 _QUOTES = str.maketrans({"\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"'})
 _DASH = re.compile(r"\s*[\u2013\u2014]\s*|\s-\s")
 _PCT = re.compile(r"(\d) %")
+# Layout, not wording (v3): a soft hyphen and the space after it, and the space a line
+# break leaves after a hyphen inside a word ("pay-for- performance", "N- PX").
+_SOFT_HYPHEN = re.compile("\u00ad\\s*")
+_BROKEN_HYPHEN = re.compile(r"(?<=[A-Za-z0-9])-\s+(?=[A-Za-z])")
 _MIN_IDENTITY_CHARS = 200      # below this, extraction is untrustworthy: identity is the bytes
 
 
 def identity_text(text: str) -> str:
     """The text a policy version's identity is made of: whitespace-normalised, with
     no whitespace before a trademark sign or a percent sign, typographic quotes as
-    ASCII and every dash (em, en, spaced hyphen) as " - "."""
-    t = _TM.sub(r"\1", re.sub(r"\s+", " ", text or "").strip())
+    ASCII, every dash (em, en, spaced hyphen) as " - ", no soft hyphens, and no space
+    after a hyphen inside a word (a line break)."""
+    t = _SOFT_HYPHEN.sub("", text or "")
+    t = _TM.sub(r"\1", re.sub(r"\s+", " ", t).strip())
     t = _DASH.sub(" - ", t.translate(_QUOTES))
+    t = _BROKEN_HYPHEN.sub("-", t)
     return _PCT.sub(r"\1%", t)
 
 

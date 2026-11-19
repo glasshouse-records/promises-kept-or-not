@@ -4208,10 +4208,24 @@ institutions:
           cik: "0001547580"
           forms: ["485BPOS"]
           since: "2021-01-01"
+          # Victory Portfolios II files two SAI families: the multi-fund SAI ("held by the
+          # Funds") and single-fund SAIs ("held by the Fund"). Read only the multi-fund one,
+          # and strip the run of page numbers; mixing them produced phantom versions
+          # (Fund/Funds wording and page numbers alternating, found 2026-11-19).
           start:
-            - "PROXY VOTING POLICIES AND PROCEDURES In accordance with the 1940 Act"
+            - "PROXY VOTING POLICIES AND PROCEDURES In accordance with the 1940 Act, the Trust has adopted policies and procedures for voting proxies related to equity securities held by the Funds"
           end:
             - "PORTFOLIO TRANSACTIONS AND BROKERAGE"
+          page_sequence: true
+          # Lone page numbers (44 to 64 in the 2021-26 printings). The only other lone
+          # numbers in the section are "June 30" and "August 1", which stay. The space a line
+          # break leaves after a hyphen ("pay-for- performance") is folded by identity_text.
+          # Some printings add a share-class phone number to the voting-record sentence
+          # ("(800-539-3863), 800-235-8396 for Member Class, or"): share-class furniture,
+          # not policy, and it alternates between same-season SAIs.
+          strip_patterns:
+            - '(?<=\s)[4-6]\d(?=\s)'
+            - ',\s*800-235-8396 for Member Class,'
       # Victory's H-12 Proxy Voting policy as printed in Item 7 of the Pioneer Diversified High Income Fund N-CSR (first printed in the report filed 2025-07-09, the first after Victory became adviser).
       - label: victory-h-12-proxy-voting-policy-as-printed-in-n-csr
         adviser: "Victory Capital Management Inc."
