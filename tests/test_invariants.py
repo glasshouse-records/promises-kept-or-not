@@ -112,3 +112,17 @@ def test_meeting_dates_without_zero_padding_still_sort_as_dates():
     got = [c.execute(f"SELECT {iso_meeting_date('?')}".replace("?", "?1"), (v,)).fetchone()[0]
            for v in ("9/30/2025", "1/6/2026", "12/1/2025", "06/30/2025", "2024-05-20", "", "n/a")]
     assert got == ["2025-09-30", "2026-01-06", "2025-12-01", "2025-06-30", "2024-05-20", "", "n/a"]
+
+
+def test_two_digit_year_meeting_dates_become_iso():
+    """Found 2026-11-19: one Wellington N-PX (0001104659-24-093332) writes
+    01/23/24 and 11/02/23. The ISO helper passed them through unchanged, so
+    they sorted before every 20xx date (coverage showed '01/23/24 -> ...')
+    and 2 shipped proposal_decisions rows had a non-ISO meeting_date."""
+    import sqlite3
+
+    from glasshouse.ledger import iso_meeting_date
+    c = sqlite3.connect(":memory:")
+    got = [c.execute(f"SELECT {iso_meeting_date('?1')}", (v,)).fetchone()[0]
+           for v in ("01/23/24", "11/02/23", "1/6/26", "06/30/2025", "2024-05-20", "")]
+    assert got == ["2024-01-23", "2023-11-02", "2026-01-06", "2025-06-30", "2024-05-20", ""]

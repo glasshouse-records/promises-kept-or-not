@@ -28,11 +28,17 @@ DB_PATH = DATA_DIR / "glasshouse.db"
 # "most recent evidence" LIMIT picked the wrong rows. Sort on this instead.
 # The GLOB guard passes any value already in ISO through untouched.
 def iso_meeting_date(col: str = "meeting_date") -> str:
-    # Filers write 06/30/2025 or, since 2026, 9/30/2025 — both are M/D/YYYY.
+    # Filers write 06/30/2025 or, since 2026, 9/30/2025 — both are M/D/YYYY;
+    # one filing writes M/D/YY.
     rest = f"substr({col}, instr({col},'/')+1)"
     return (f"CASE WHEN {col} GLOB '[0-9]*/[0-9]*/[0-9][0-9][0-9][0-9]' "
             f"AND length({col}) <= 10 "
             f"THEN substr({rest}, instr({rest},'/')+1)||'-'||"
+            f"printf('%02d', substr({col},1,instr({col},'/')-1))||'-'||"
+            f"printf('%02d', substr({rest},1,instr({rest},'/')-1)) "
+            # one 2024 Wellington N-PX writes M/D/YY (01/23/24): N-PX began in 2003
+            f"WHEN {col} GLOB '[0-9]*/[0-9]*/[0-9][0-9]' AND length({col}) <= 8 "
+            f"THEN '20'||substr({rest}, instr({rest},'/')+1)||'-'||"
             f"printf('%02d', substr({col},1,instr({col},'/')-1))||'-'||"
             f"printf('%02d', substr({rest},1,instr({rest},'/')-1)) "
             f"ELSE {col} END")
