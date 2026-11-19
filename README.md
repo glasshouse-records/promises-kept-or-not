@@ -11,8 +11,8 @@ On top sit an evidence engine (`glasshouse ask`, cited queries) and a checker
 (`glasshouse desk verify`, which re-runs every claim in a draft). The dataset is
 the product.
 
-**Status, 2026-11-18:** published. Data: Zenodo,
-[doi:10.5281/zenodo.24353272](https://doi.org/10.5281/zenodo.24353272) (latest version, 2026-11-18.3;
+**Status, 2026-11-19:** published. Data: Zenodo,
+[doi:10.5281/zenodo.24357331](https://doi.org/10.5281/zenodo.24357331) (latest version, 2026-11-19;
 all versions: [10.5281/zenodo.24321606](https://doi.org/10.5281/zenodo.24321606)).
 Code: <https://github.com/glasshouse-records/promises-kept-or-not>.
 The `findings` table is empty: no claim has passed human review. Drafts in
@@ -20,15 +20,15 @@ The `findings` table is empty: no claim has passed human review. Drafts in
 
 ## What is in it
 
-Figures below are from the release `v2026-11-18.3` (its `DATASHEET.md` and
+Figures below are from the release `v2026-11-19` (its `DATASHEET.md` and
 `COVERAGE.json` are authoritative). Counts drift; the commands print current ones.
 
 | Layer | Table(s) | What it holds, honestly |
 |---|---|---|
-| Archived policy versions | `commitments`, `policy_versions` | 187 captures of 26 managers' proxy-voting documents, 163 distinct text versions (77 from Wayback, 30 our own fetch, 56 printed in fund SAIs on EDGAR). Hashes, dates, URLs; no policy text. Dated by the capture day, or for SAI-printed text by the SAI's filing date (text was public by then). 98 of the 107 non-SAI versions also carry the date the manager's own software wrote the file. Gaps exist. |
-| Proxy votes | `votes`, `fund_series`, `voting_advisers`, `voting_scope_notes` | US-registered funds only, from N-PX. Meeting dates 2023-07-01 to 2026-06-30 (three N-PX seasons, named 2024, 2025, 2026: July to June, named by end year). 20,022,329 vote lines after removing duplicates. Only the funds on file, not whole firms. |
-| Director votes (DERIVED) | `director_decisions` | 2,288,878 rows: one per director-nominee item per manager and adviser. Rebuilt from `votes` by `glasshouse engine build`. |
-| Shareholder proposals (DERIVED) | `proposal_decisions` | 128,474 rows: one per (manager, adviser, company, meeting, proposal). Same rebuild. Other management items (auditors, pay) are in `votes` but not here. |
+| Archived policy versions | `commitments`, `policy_versions` | 226 captures of 29 managers' proxy-voting documents, 198 distinct text versions (90 from Wayback, 32 our own fetch, 76 printed in fund SAIs on EDGAR). Hashes, dates, URLs; no policy text. Dated by the capture day, or for SAI-printed text by the SAI's filing date (text was public by then). 106 of the 122 non-SAI versions also carry the date the manager's own software wrote the file. Gaps exist. |
+| Proxy votes | `votes`, `fund_series`, `voting_advisers`, `voting_scope_notes` | US-registered funds only, from N-PX. Meeting dates 2023-07-01 to 2026-06-30 (three N-PX seasons, named 2024, 2025, 2026: July to June, named by end year). 20,663,049 vote lines after removing duplicates. Only the funds on file, not whole firms. |
+| Director votes (DERIVED) | `director_decisions` | 2,406,590 rows: one per director-nominee item per manager and adviser. Rebuilt from `votes` by `glasshouse engine build`. |
+| Shareholder proposals (DERIVED) | `proposal_decisions` | 134,360 rows: one per (manager, adviser, company, meeting, proposal). Same rebuild. Other management items (auditors, pay) are in `votes` but not here. |
 | Holdings | `holdings` | 580,106 rows from 13-F (long US equity only) and two N-PORT filings. Mostly one quarter (2026-03-31). BlackRock also has 2023-06-30 to 2024-06-30; Vanguard 2025-09-30 to 2026-03-31. A snapshot, not a time series. |
 | Enforcement record | `enforcement_actions` | 14,887 rows. 12,533 are OFAC sanctions designations (names on a list, not findings about any manager). 236 are curated snapshots. 489 are `unverified`. 30 are `allegation` (dockets). Each row has a `resolution_type` from a closed list. |
 | Findings | `findings` | 0 rows. |
@@ -121,7 +121,7 @@ No network needed once you hold the bundle; it is not downloadable yet. Nothing
 here assumes any library is installed. Check the files with the shell alone:
 
 ```sh
-cd data/releases/v2026-11-18.3
+cd data/releases/v2026-11-19
 shasum -a 256 -c MANIFEST.sha256 | grep -vc OK   # Linux: sha256sum -c ... ; prints 0 when every file is OK
 ```
 
@@ -298,8 +298,8 @@ quotations not in the archived text, and words that assert motive or wrongdoing.
 Cite the version you used:
 
 > Glasshouse (2026). *Glasshouse — institutional accountability evidence dataset
-> (say vs. do)*, version 2026-11-18.3 [Data set]. Zenodo.
-> https://doi.org/10.5281/zenodo.24353272
+> (say vs. do)*, version 2026-11-19 [Data set]. Zenodo.
+> https://doi.org/10.5281/zenodo.24357331
 
 To refer to the dataset in general (every version), use
 https://doi.org/10.5281/zenodo.24321606. The bundle's `DATASHEET.md` records the
