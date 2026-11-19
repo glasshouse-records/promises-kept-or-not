@@ -705,6 +705,30 @@ AMUNDI_US 20,709, UNRESOLVED 14,003; 1,133 duplicates marked). Not ingested: the
 registrants, the two insurance-linked interval funds, the institutional-manager N-PX of Victory Capital Management
 and Amundi US, and the legacy-HTML N-PX before 2024.
 
+Thrivent (Thrivent Asset Management, LLC and Thrivent Financial for Lutherans; added 2026-11-19): every Thrivent SAI says
+"The Board has delegated to [Thrivent Financial / Thrivent Asset Mgt. / the Adviser] ... the responsibility for voting any
+proxies with respect to each Portfolio [Fund] in accordance with the proxy voting policies adopted by [it]". The two
+Thrivent entities adopted one policy "collectively", so Thrivent Series Fund, Thrivent Mutual Funds, Thrivent Core Funds
+and Thrivent ETF Trust are keyed `THRIVENT` from the filing date of the earliest SAI read (2021-02-26 to 2022-10-03; the
+ETF Trust's first SAI is the 497 of its effectiveness). The non-obvious part is the subadvisers: until 2023 the SAIs add
+"The Board has authorized the Adviser to delegate ... its proxy voting authority to a Portfolio's subadviser ... a
+subadviser who has delegated authority ... does so in accordance with proxy voting policies adopted by the subadviser",
+and Appendix A prints Goldman Sachs Asset Management's, Aberdeen's and BlackRock's policies. The Form N-CEN (every one
+2021-01 to 2026-03) names the subadviser of three Series Fund portfolios (International Allocation, Partner Emerging
+Markets Equity, Partner Healthcare) and of the Mutual Funds International Allocation Fund. Those series are `EXTERNAL`
+while an SAI and the N-CEN name the subadviser (the N-PX does not split a sleeve, so a partly subadvised series is
+EXTERNAL whole): to 2022-12-31 for the Series Fund, to 2023-04-30 for the Mutual Funds fund ("until April 30, 2023" in
+its SAI). The Series Fund portfolios are `UNRESOLVED` from 2023-01-01 to 2023-04-27 (the N-CEN period ends 2022-12-31,
+the SAI of 2023-04-28 is the first to name no subadviser) and THRIVENT afterwards; these windows precede the first
+ingested meeting (2023-07-04), so every ingested vote is THRIVENT. Policy text: Thrivent publishes no stand-alone
+proxy voting policy (its responsible-investing page names "Thrivent's Proxy Voting Guidelines" without a link and the
+SAI says the detailed guidelines are available to clients on request; no Wayback capture of any such address), so the
+only public text is the summary printed as Appendix A of the SAI, archived from the Thrivent Mutual Funds multi-fund SAI
+as 6 versions (2021-2026). The Series Fund, Core Funds and ETF Trust SAIs print the same summary and are not mixed in.
+Ingested N-PX 2024-26: 693,860 non-duplicate votes (1,068 duplicates marked). Not ingested: Thrivent Cash Management
+Trust (notice-only N-PX), Thrivent Church Loan and Income Fund ("did not hold any votable positions"), Thrivent
+Financial for Lutherans' institutional-manager N-PX and the legacy-HTML N-PX before 2024.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting
