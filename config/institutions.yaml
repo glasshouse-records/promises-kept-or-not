@@ -3893,3 +3893,351 @@ institutions:
           strip_page_numbers: true
           strip_patterns:
             - 'PGIM Muni High Income Fund(?: \d{1,3})?'
+  victory_capital:
+    display_name: "Victory Capital (Victory Capital Management Inc., with the Pioneer funds acquired from Amundi US)"
+    short_name: "Victory Capital"
+    cik: "0001040188"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Victory Capital Management Inc., San Antonio TX (CIK 1040188, the 13-F filer and the investment adviser, a subsidiary of Victory Capital Holdings, Inc. 1570827). Its investment franchises (RS Investments, Sycamore, Munder, Integrity, Trivalent, NewBridge, Sophus, THB, the VictoryShares ETFs, the USAA funds acquired in 2019) are teams of the one legal adviser, so every Victory-run fund is voted by Victory Capital Management under its one Proxy Voting Policy (H-12). Victory also closed its acquisition of Amundi Asset Management US, Inc. (Pioneer Investments, CIK 1102598) on 2025-04-01: the Pioneer funds were advised by Amundi US, under Amundi's own policy, until 2025-03-31 and are keyed AMUNDI_US to that date, never VICTORY; the 2025-04-01 onward weeks are UNRESOLVED until a Victory document names the voter. Victory Capital Management's own institutional-manager N-PX (CIK 1040188) overlaps the fund registrants' tables and is not ingested. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-19. Victory's own US fund registrants that file N-PX vote tables (Victory Portfolios, II, III (formerly USAA Mutual Funds Trust), IV and Variable Insurance Funds, II) plus the Pioneer registrants
+      # that Victory inherited. Every Victory SAI says 'The Proxy Voting Policy delegates to the Adviser the obligation to vote the Funds' proxies ... subject to oversight by the Board' (the Adviser is Victory Capital
+      # Management Inc.); the registrant default is VICTORY and the exceptions are listed per series (`series_adviser`), read from each trust's Form N-CEN Item C.3 sub-adviser table (every N-CEN filed 2021-06 to 2026-11
+      # read) and from the SAI sentence that says the sub-adviser votes:
+      #  - EXTERNAL: a series whose sub-adviser an SAI says votes its own sleeve (Victory Portfolios III: 'For USAA Mutual Funds with subadvisers, the Manager has delegated responsibility for voting to the applicable
+      #    subadvisers'; Victory Portfolios and Variable Insurance Funds: Park Avenue Institutional Advisers and SailingStone Capital Partners 'is authorized to vote proxies').
+      #  - UNRESOLVED: the window in which an SAI still names Park Avenue but the N-CEN and the next SAI say it is gone (2024-01-01 to 2025-04-24); the weeks after Amundi US was combined into Victory (2025-04-01) in which no
+      #    document says whose policy voted the Pioneer funds' proxies.
+      #  - AMUNDI_US: the Pioneer funds to 2025-03-31 (Amundi Asset Management US, Inc., formerly Pioneer Investment Management / Amundi Pioneer; every predecessor SAI: 'Each of the Pioneer Funds ... have delegated
+      #    responsibility to vote proxies related to portfolio holdings to Amundi US'). The Pioneer trusts that kept their CIK filed N-PX to 2024-06-30 (the new Victory Portfolios IV / Variable Insurance Funds II tables
+      #    carry the predecessor funds' votes from 2024-07-01 and are keyed by meeting date).
+      # `from` is the EDGAR filing date of the earliest SAI (or N-CSR / N-2 for the closed-end funds) read, so earlier meetings stay unlabelled. Not ingested: the Pioneer municipal and money-market registrants (Pioneer Money
+      # Market Trust 812195, the three municipal closed-end funds 1258943, 1223026, 1864290, Pioneer Core Trust I 1823387 whose N-CSR prints no policy), the two insurance-linked interval funds (Pioneer ILS Interval 1616037
+      # and ILS Bridge 1679751: no Item 7 policy, no equity votes), and the institutional-manager N-PX of Victory Capital Management (1040188) and Amundi Asset Management US (1102598).
+      - cik: "802716"
+        adviser: "Victory Capital Management Inc. (the Adviser); sub-advisers per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/802716/000168386321001022/vp-20210226.htm"  # 485BPOS (SAI) filed 2021-02-25 (0001683863-21-001022), 'Proxy Voting Policies and Procedures': the Proxy Voting Policy delegates to the Adviser, Victory Capital Management Inc.
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Proxy Voting Policy delegates to the Adviser the obligation to vote the Funds' proxies in the best interests of the Funds and their shareholders, subject to oversight by the Board'; the Adviser is Victory Capital Management Inc. and its own Proxy Voting Policy is summarised in the SAI. The SAIs of 2021-04-29 and 2022-04-27 to 2026-04-29 add: 'The Board has authorized the Adviser to delegate proxy voting authority with respect to a sub-advised Fund to that Fund's sub-adviser. Pursuant to such delegations, each of Park Avenue and SailingStone is authorized to vote proxies on behalf of the applicable Fund or Funds for which it serves as sub-adviser, in accordance with the proxy voting policies and procedures of each such sub-adviser' (Park Avenue is named to the SAI of 2024-04-26, not the one of 2025-04-25; SailingStone to 2026). So the series run by Park Avenue Institutional Advisers (High Yield, Floating Rate, Strategic Income) and SailingStone (Global Energy Transition) are EXTERNAL while the sub-adviser is named; every other series is VICTORY."
+        adviser_key_history: [{key: VICTORY, from: "2021-02-25"}]
+        series_adviser:
+          S000053572: [{key: EXTERNAL, from: "2021-02-25", until: "2023-12-31"}, {key: UNRESOLVED, from: "2024-01-01", until: "2025-04-24"}, {key: VICTORY, from: "2025-04-25"}]   # Victory High Yield Fund: Park Avenue Institutional Advisers (N-CEN to FY2023); SAI of 2024-04-26 still names it, N-CEN FY2024 and the SAI of 2025-04-25 do not
+          S000053576: [{key: EXTERNAL, from: "2021-02-25", until: "2023-12-31"}, {key: UNRESOLVED, from: "2024-01-01", until: "2025-04-24"}, {key: VICTORY, from: "2025-04-25"}]   # Victory Strategic Income Fund: Park Avenue (same)
+          S000053575: [{key: EXTERNAL, from: "2021-02-25", until: "2023-12-31"}, {key: UNRESOLVED, from: "2024-01-01", until: "2025-04-24"}, {key: VICTORY, from: "2025-04-25"}]   # Victory Floating Rate Fund: Park Avenue to FY2023; the N-CEN of FY2024 names Amundi Asset Management US as sub-adviser but no SAI says it votes
+          S000053568: [{key: EXTERNAL, from: "2021-02-25"}]   # Victory Global Energy Transition Fund (formerly Global Natural Resources): SailingStone Capital Partners, named as voting sub-adviser in every SAI to 2026
+        name: "VICTORY PORTFOLIOS"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1547580"
+        adviser: "Victory Capital Management Inc. (the Adviser); no sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1547580/000168386321005579/f9885d1.htm"  # 485BPOS (SAI) filed 2021-09-28 (0001683863-21-005579), 'Proxy Voting Policies and Procedures': the Proxy Voting Policy delegates to the Adviser
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Proxy Voting Policy delegates to the Adviser the obligation to vote the Funds' proxies in the best interests of the Funds and their shareholders, subject to oversight by the Board'; the Adviser is Victory Capital Management Inc. and its own Proxy Voting Policy is summarised in the SAI. The VictoryShares ETFs and the two index / market-neutral mutual funds of the trust have no sub-adviser in any N-CEN (2021-2026). The same wording is in every SAI read (19 filings 2021-09-28 to 2026-10-27)."
+        adviser_key_history: [{key: VICTORY, from: "2021-09-28"}]
+        name: "Victory Portfolios II"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "908695"
+        adviser: "Victory Capital Management Inc. (the Manager); sub-advisers per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/908695/000168386321000546/usaa-20210205.htm"  # 485BPOS (SAI) filed 2021-02-05 (0001683863-21-000546), 'Proxy Voting Policies and Procedures': the Board delegated to the Manager; for funds with subadvisers the Manager delegated voting to the subadvisers
+        adviser_verified: "2026-11-19"
+        voting_note: "Formerly USAA Mutual Funds Trust (USAA's investment-management business was acquired by Victory in 2019). SAI 'Victory Capital Proxy Voting Policies and Procedures': 'The Board has delegated to the Manager authority to vote on proposals presented to shareholders of portfolio securities held by the USAA Mutual Funds ... For USAA Mutual Funds with subadvisers, the Manager has delegated responsibility for voting to the applicable subadvisers.' So the six series with an unaffiliated sub-adviser in the N-CEN (Wellington: International, Science & Technology; Lazard: Emerging Markets; Loomis Sayles: Growth; Granahan: Small Cap Stock; Northern Trust: Growth and Tax Strategy to FY2023) are EXTERNAL; every other series is VICTORY."
+        adviser_key_history: [{key: VICTORY, from: "2021-02-05"}]
+        series_adviser:
+          S000012903: [{key: EXTERNAL, from: "2021-02-05"}]   # Victory International Fund: Wellington Management
+          S000012911: [{key: EXTERNAL, from: "2021-02-05"}]   # Victory Science & Technology Fund: Wellington Management
+          S000012927: [{key: EXTERNAL, from: "2021-02-05"}]   # Victory Emerging Markets Fund: Lazard Asset Management
+          S000012895: [{key: EXTERNAL, from: "2021-02-05"}]   # Victory Growth Fund: Loomis, Sayles & Company
+          S000012914: [{key: EXTERNAL, from: "2021-02-05"}]   # Victory Small Cap Stock Fund: Granahan Investment Management
+          S000012897: [{key: EXTERNAL, from: "2021-02-05", until: "2023-02-28"}, {key: VICTORY, from: "2023-03-01"}]   # Victory Growth and Tax Strategy Fund: Northern Trust Investments in the N-CEN of FY2021-FY2023, none in FY2024 (period from 2023-03-01)
+        name: "VICTORY PORTFOLIOS III"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1068663"
+        adviser: "Victory Capital Management Inc. (the Adviser); sub-advisers per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1068663/000168386321001958/vvif-20210430.htm"  # 485BPOS (SAI) filed 2021-04-19 (0001683863-21-001958), 'Proxy Voting Policies and Procedures': delegated to the Adviser; Park Avenue is authorized to vote for the sub-advised Fund
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Proxy Voting Policy delegates to the Adviser the obligation to vote the Funds' proxies in the best interests of the Funds and their shareholders, subject to oversight by the Board'; the Adviser is Victory Capital Management Inc. and its own Proxy Voting Policy is summarised in the SAI. The SAIs of 2021-04-19 to 2024-04-15 add: 'The Board has authorized Victory Capital to delegate proxy voting authority with respect to a sub-advised Fund to that Fund's sub-adviser. Pursuant to such delegation, Park Avenue is authorized to vote proxies ... in accordance with Park Avenue's proxy voting policies and procedures' (High Yield VIP Series); the SAI of 2025-04-14 no longer says it."
+        adviser_key_history: [{key: VICTORY, from: "2021-04-19"}]
+        series_adviser:
+          S000053590: [{key: EXTERNAL, from: "2021-04-19", until: "2023-12-31"}, {key: UNRESOLVED, from: "2024-01-01", until: "2025-04-13"}, {key: VICTORY, from: "2025-04-14"}]   # Victory High Yield VIP Series: Park Avenue Institutional Advisers (N-CEN to FY2023; SAI of 2024-04-15 still names it, N-CEN FY2024 and the SAI of 2025-04-14 do not)
+        name: "VICTORY VARIABLE INSURANCE FUNDS"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "2042316"
+        adviser: "Victory Capital Management Inc. (the Adviser) since 2025-04-01; before that Amundi Asset Management US, Inc. advised the predecessor Pioneer funds"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/2042316/000168386325006195/f42579d1.htm"  # 485BPOS (SAI) filed 2025-07-25 (0001683863-25-006195), 'Proxy Voting Policies and Procedures': the Proxy Voting Policy delegates to the Adviser; Appendix B summarises Victory Capital's policy
+        adviser_verified: "2026-11-19"
+        voting_note: "Created 2024-12 for the Pioneer open-end funds (reorganised from the Pioneer trusts from 2025-05-02, the later ones through 2025). Its first N-PX (period to 2025-06-30) reports the predecessor funds' votes from 2024-07-01, so three eras sit in one table. (1) To 2025-03-31 the funds' adviser was Amundi Asset Management US, Inc. (every predecessor SAI read, 2021: 'Each of the Pioneer Funds ... have delegated responsibility to vote proxies ... to Amundi US'): AMUNDI_US. (2) The 497 supplement of 2025-04-01: Amundi US 'has been combined with Victory Capital Holdings' effective 2025-04-01, its advisory agreement 'terminated automatically' and an interim advisory agreement with Victory Capital took over; the SAIs then in force still describe Amundi's policy and no document read says whose policy voted the 2025-04-01 to 2025-07-24 meetings: UNRESOLVED. (3) From the first Victory Portfolios IV SAI (2025-07-25): VICTORY."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-12-22", until: "2025-03-31"}, {key: UNRESOLVED, from: "2025-04-01", until: "2025-07-24"}, {key: VICTORY, from: "2025-07-25"}]
+        name: "Victory Portfolios IV"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "2042317"
+        adviser: "Victory Capital Management Inc. (the Adviser) since 2025-04-01; before that Amundi Asset Management US, Inc. advised the predecessor Pioneer VCT portfolios"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/2042317/000119312526191884/f45205d1.htm"  # 485BPOS (SAI) filed 2026-04-29 (0001193125-26-191884), 'Proxy Voting Policies and Procedures': the Proxy Voting Policy delegates to the Adviser; Appendix B summarises Victory Capital's policy
+        adviser_verified: "2026-11-19"
+        voting_note: "The Pioneer VCT (variable-insurance) portfolios, reorganised into this trust (first SAI 2026-04-29). Its N-PX reports the predecessor Pioneer Variable Contracts Trust portfolios' votes from 2024-07-01. To 2025-03-31 the adviser was Amundi US (predecessor SAI of 2021-04-28: 'delegated responsibility to vote proxies ... to Amundi US'): AMUNDI_US; from 2025-04-01 Victory Capital was adviser (interim agreement) but no document read before this trust's first SAI says whose policy voted: UNRESOLVED to 2026-04-28; VICTORY from the first SAI."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-04-28", until: "2025-03-31"}, {key: UNRESOLVED, from: "2025-04-01", until: "2026-04-28"}, {key: VICTORY, from: "2026-04-29"}]
+        name: "Victory Variable Insurance Funds II"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "78713"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000078713&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/78713/000119312521136579/d78613d485bpos.htm"  # 485BPOS (SAI) filed 2021-04-28 (0001193125-21-136579), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-04-28", until: "2025-03-31"}]
+        name: "PIONEER FUND /MA/"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1288255"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001288255&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1288255/000119312521338513/d231450d485bpos.htm"  # 485BPOS (SAI) filed 2021-11-23 (0001193125-21-338513), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-11-23", until: "2025-03-31"}]
+        name: "PIONEER ASSET ALLOCATION TRUST"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "276776"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000276776&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/276776/000119312521307903/d218221d485bpos.htm"  # 485BPOS (SAI) filed 2021-10-26 (0001193125-21-307903), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-10-26", until: "2025-03-31"}]
+        name: "PIONEER BOND FUND /DE/"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "869356"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000869356&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/869356/000119312521054473/d131838d485bpos.htm"  # 485BPOS (SAI) filed 2021-02-24 (0001193125-21-054473), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-02-24", until: "2025-03-31"}]
+        name: "PIONEER EQUITY INCOME FUND"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1094521"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001094521&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1094521/000119312521054297/d125350d485bpos.htm"  # 485BPOS (SAI) filed 2021-02-24 (0001193125-21-054297), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-02-24", until: "2025-03-31"}]
+        name: "PIONEER HIGH YIELD FUND"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "863334"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000863334&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/863334/000119312521054456/d118236d485bpos.htm"  # 485BPOS (SAI) filed 2021-02-24 (0001193125-21-054456), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-02-24", until: "2025-03-31"}]
+        name: "PIONEER MID CAP VALUE FUND"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1265389"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001265389&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1265389/000119312521094080/d134929d485bpos.htm"  # 485BPOS (SAI) filed 2021-03-25 (0001193125-21-094080), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-03-25", until: "2025-03-31"}]
+        name: "PIONEER SERIES TRUST II"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1140157"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001140157&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1140157/000119312521054305/d269399d485bpos.htm"  # 485BPOS (SAI) filed 2021-02-24 (0001193125-21-054305), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-02-24", until: "2025-03-31"}]
+        name: "PIONEER SERIES TRUST VII"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "893660"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000893660&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/893660/000119312521094234/d135979d485bpos.htm"  # 485BPOS (SAI) filed 2021-03-25 (0001193125-21-094234), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-03-25", until: "2025-03-31"}]
+        name: "PIONEER SERIES TRUST VIII"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1174520"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001174520&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1174520/000119312521225686/d173018d485bpos.htm"  # 485BPOS (SAI) filed 2021-07-27 (0001193125-21-225686), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-07-27", until: "2025-03-31"}]
+        name: "PIONEER SERIES TRUST X"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "78758"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000078758&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/78758/000119312521136668/d96464d485bpos.htm"  # 485BPOS (SAI) filed 2021-04-28 (0001193125-21-136668), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-04-28", until: "2025-03-31"}]
+        name: "PIONEER SERIES TRUST XI"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1051010"
+        npx_ended: {last_period: "2025-06-30", reason: "last N-PX is a notice report for the year to 2025-06-30 (its votes are in the Victory Portfolios IV table); the trust's funds were reorganised into Victory Portfolios IV through 2025 (N-14 filed 2024-12), no 2026 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001051010&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1051010/000119312521364965/d262982d485bpos.htm"  # 485BPOS (SAI) filed 2021-12-22 (0001193125-21-364965), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its N-PX of 2025-08-29 for the year to 2025-06-30 is a notice report (the votes are in the Victory Portfolios IV table, keyed there); were it to carry votes, meetings from 2025-04-01 are UNRESOLVED (Amundi US was combined with Victory Capital Holdings on 2025-04-01 and Victory Capital became adviser under an interim agreement; no document read says whose policy voted them)."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-12-22", until: "2025-03-31"}, {key: UNRESOLVED, from: "2025-04-01"}]
+        name: "PIONEER SERIES TRUST XII"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1077452"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001077452&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1077452/000119312521017629/d20918d485bpos.htm"  # 485BPOS (SAI) filed 2021-01-26 (0001193125-21-017629), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi Pioneer'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-01-26", until: "2025-03-31"}]
+        name: "PIONEER SERIES TRUST XIV"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1286364"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001286364&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1286364/000119312521364896/d262808d485bpos.htm"  # 485BPOS (SAI) filed 2021-12-22 (0001193125-21-364896), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-12-22", until: "2025-03-31"}]
+        name: "PIONEER SHORT TERM INCOME FUND"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "930709"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000930709&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/930709/000119312521136637/d126638d485bpos.htm"  # 485BPOS (SAI) filed 2021-04-28 (0001193125-21-136637), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-04-28", until: "2025-03-31"}]
+        name: "PIONEER VARIABLE CONTRACTS TRUST /MA/"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "908996"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000908996&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/908996/000119312521136553/d39016d485bpos.htm"  # 485BPOS (SAI) filed 2021-04-28 (0001193125-21-136553), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-04-28", until: "2025-03-31"}]
+        name: "PIONEER REAL ESTATE SHARES"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1306349"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001306349&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1306349/000119312521364884/d236501d485bpos.htm"  # 485BPOS (SAI) filed 2021-12-22 (0001193125-21-364884), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-12-22", until: "2025-03-31"}]
+        name: "Pioneer Series Trust III"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1331854"
+        npx_ended: {last_period: "2025-06-30", reason: "last N-PX is a notice report for the year to 2025-06-30 (its votes are in the Victory Portfolios IV table); the trust's funds were reorganised into Victory Portfolios IV through 2025 (N-14 filed 2024-12), no 2026 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001331854&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1331854/000119312521193117/d175922d485bpos.htm"  # 485BPOS (SAI) filed 2021-06-17 (0001193125-21-193117), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its N-PX of 2025-08-29 for the year to 2025-06-30 is a notice report (the votes are in the Victory Portfolios IV table, keyed there); were it to carry votes, meetings from 2025-04-01 are UNRESOLVED (Amundi US was combined with Victory Capital Holdings on 2025-04-01 and Victory Capital became adviser under an interim agreement; no document read says whose policy voted them)."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-06-17", until: "2025-03-31"}, {key: UNRESOLVED, from: "2025-04-01"}]
+        name: "Pioneer Series Trust IV"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1341256"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001341256&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1341256/000119312521364924/d236503d485bpos.htm"  # 485BPOS (SAI) filed 2021-12-22 (0001193125-21-364924), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-12-22", until: "2025-03-31"}]
+        name: "Pioneer Series Trust V"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1380192"
+        npx_ended: {last_period: "2024-06-30", reason: "last N-PX covers the year to 2024-06-30; the trust's funds were reorganised into Victory Portfolios IV / Victory Variable Insurance Funds II from 2025-05 (N-14 filed 2024-12), no 2025 N-PX on EDGAR as of 2026-11-19", source: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001380192&type=N-PX", checked: "2026-11-19"}
+        adviser: "Amundi Asset Management US, Inc. (Pioneer funds; adviser to 2025-03-31)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1380192/000119312521054324/d116391d485bpos.htm"  # 485BPOS (SAI) filed 2021-02-24 (0001193125-21-054324), Appendix B 'Proxy voting policies and procedures': the Pioneer Funds delegated voting to Amundi US
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI Appendix B 'Proxy voting policies and procedures': 'Each of the Pioneer Funds and certain other clients of Amundi Asset Management US, Inc. (\"Amundi US\") have delegated responsibility to vote proxies related to portfolio holdings to Amundi US'; no sub-adviser named as voting in any N-CEN read (2021-2025). Pioneer funds were advised by Amundi US to 2025-03-31 and its policy is AMUNDI_US (a pre-acquisition key, never VICTORY). Its last N-PX covers the year to 2024-06-30, so no meeting after 2025-03-31 is in the ledger."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-02-24", until: "2025-03-31"}]
+        name: "Pioneer Series Trust VI"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1388126"
+        adviser: "Amundi Asset Management US, Inc. to 2025-03-31, Victory Capital Management Inc. from 2025-04-01"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1388126/000182126821000299/pio82329.htm"  # N-CSR filed 2021-07-01 (0001821268-21-000299): the Pioneer fund's proxy policy is its adviser's (Amundi US / Pioneer Investment Management)
+        adviser_verified: "2026-11-19"
+        voting_note: "Closed-end fund (one fund per registrant). N-CSR Item 7 filed 2021-07-01 prints 'Proxy Voting Policies and Procedures of Pioneer Investment Management, Inc.' (Amundi US's earlier name). Its N-CSR of 2025-07-09 says 'Effective April 1, 2025, Victory Capital Management Inc. serves as the Adviser' and prints Victory's 'H-12 Proxy Voting' policy as Item 7: VICTORY from that filing."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-07-01", until: "2025-03-31"}, {key: UNRESOLVED, from: "2025-04-01", until: "2025-07-08"}, {key: VICTORY, from: "2025-07-09"}]
+        name: "Pioneer Diversified High Income Fund, Inc."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1166258"
+        adviser: "Amundi Asset Management US, Inc. to 2025-03-31, Victory Capital Management Inc. from 2025-04-01"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1166258/000119312521239005/d192796dn2.htm"  # N-2 filed 2021-08-06 (0001193125-21-239005): the Pioneer fund's proxy policy is its adviser's (Amundi US / Pioneer Investment Management)
+        adviser_verified: "2026-11-19"
+        voting_note: "Closed-end fund (one fund per registrant). N-2 SAI filed 2021-08-06: 'delegated responsibility to vote proxies related to portfolio holdings to Amundi US'. Victory Capital became adviser on 2025-04-01 (N-CSR of 2025-06-06, interim agreement) but this fund's N-CSR prints Victory's 'H-12 Proxy Voting' policy only from 2026-06-04: UNRESOLVED between, VICTORY from that filing."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-08-06", until: "2025-03-31"}, {key: UNRESOLVED, from: "2025-04-01", until: "2026-06-03"}, {key: VICTORY, from: "2026-06-04"}]
+        name: "PIONEER HIGH INCOME FUND, INC."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1305767"
+        adviser: "Amundi Asset Management US, Inc. to 2025-03-31, Victory Capital Management Inc. from 2025-04-01"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1305767/000182126821000037/pio81340ncsr.htm"  # N-CSR filed 2021-02-05 (0001821268-21-000037): the Pioneer fund's proxy policy is its adviser's (Amundi US / Pioneer Investment Management)
+        adviser_verified: "2026-11-19"
+        voting_note: "Closed-end fund (one fund per registrant). N-CSR Item 7 filed 2021-02-05 prints 'Proxy Voting Policies and Procedures of Pioneer Investment Management, Inc.'. Victory Capital was its adviser from 2025-04-01 to 2025-08-29 (interim agreement; N-CSR of 2026-02-05) and no N-CSR read prints Victory's policy for it: UNRESOLVED from 2025-04-01."
+        adviser_key_history: [{key: AMUNDI_US, from: "2021-02-05", until: "2025-03-31"}, {key: UNRESOLVED, from: "2025-04-01"}]
+        name: "Pioneer Floating Rate Fund, Inc."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed VICTORY, per registrant, from the EDGAR filing date of the earliest SAI read: Victory Portfolios (802716) 2021-02-25 (0001683863-21-001022); Victory Portfolios III (908695, formerly USAA Mutual Funds Trust) 2021-02-05 (-000546); Victory Variable Insurance Funds (1068663) 2021-04-19 (-001958); Victory Portfolios II (1547580) 2021-09-28 (-005579). Earlier meetings stay unlabelled."
+      - "Series exceptions: EXTERNAL for the five Victory Portfolios III series with an unaffiliated sub-adviser (Wellington: International, Science & Technology; Lazard: Emerging Markets; Loomis Sayles: Growth; Granahan: Small Cap Stock; Northern Trust: Growth and Tax Strategy to FY2023) and for the Victory Portfolios Global Energy Transition Fund (SailingStone); Park Avenue's High Yield, Floating Rate and Strategic Income series (and the Variable Insurance Funds High Yield VIP Series) are EXTERNAL to 2023-12-31 (last N-CEN naming Park Avenue), UNRESOLVED from 2024-01-01 (the SAIs of April 2024 still name it, the N-CEN of FY2024 does not) and VICTORY from the first SAI that no longer names it (2025-04-25 / 2025-04-14)."
+      - "The Pioneer funds: AMUNDI_US to 2025-03-31 for every registrant (Amundi Asset Management US, Inc. was their adviser; Pioneer Series Trust XII and IV and the new Victory Portfolios IV / Variable Insurance Funds II tables also cover 2025 meetings). On 2025-04-01 Amundi US was combined with Victory Capital Holdings, its advisory agreements terminated and an interim agreement with Victory Capital took over (497 supplement of 2025-04-01); the open-end funds are VICTORY only from the first Victory Portfolios IV SAI (2025-07-25; Variable Insurance Funds II: 2026-04-29), the closed-end funds from their own first N-CSR that prints Victory's H-12 policy (Diversified High Income 2025-07-09, High Income 2026-06-04, Floating Rate never read). The weeks between are UNRESOLVED, not guessed."
+      - "Pre-acquisition votes (Pioneer trusts, 2024 N-PX and the 2024-07 to 2025-03 part of the 2025 N-PX) are ingested under this institution because the registrants now belong to Victory, but they are NOT Victory's votes: the AMUNDI_US key keeps them apart in the engine. The Pioneer registrants that reported only to the year ended 2024-06-30 carry `npx_ended`."
+      - "Policy text: Victory Capital's Proxy Voting Guidelines memo (vcm.com/assets/policies, one page a year: 2022 [dated 15 June 2023], the unnamed 'Proxy Voting Guidelines' [24 June 2024], 2025 [19 February 2025], 2026 [12 February 2026]; the memos document the guidelines adopted under Victory's internal Proxy Voting Policy, which is available on request) walked on the Wayback index under one label. Victory's full policy 'H-12 Proxy Policy' was at vcm.com/assets/policies/H-12 Proxy Policy.pdf and now answers 404 (two Wayback captures, 2021-01-20 and 2021-05-08, are not archived here). Under separate labels: the Adviser's Proxy Voting Policy and Procedures summary as printed in the Victory Portfolios II SAI (in-body section, one 485BPOS a year, single-trust SAIs only), Victory's H-12 policy as printed in Item 7 of the Pioneer Diversified High Income Fund N-CSR (2025, 2026), and Amundi US's policy as printed in Appendix B of the Pioneer Fund SAI (2021-2024)."
+    commitments:
+      # Verified 2026-11-19 (200, application/pdf, honest client). A one-page PDF memo, so no `body` bound; the memo date is printed on it. The file name changes each year (former_urls, read from the Wayback CDX index of
+      # vcm.com/assets/policies: 2022-08-14, 2023-09-23, 2025-04-17, 2026-05-09 captures), walked by `glasshouse ingest commitments --wayback` under this one label.
+      - label: proxy-voting-guidelines-memo
+        url: "https://vcm.com/assets/policies/Proxy-Voting-Guidelines-2026.pdf"
+        former_urls:
+          - "https://vcm.com/assets/policies/Proxy-Voting-Guidelines-2025.pdf"
+          - "https://vcm.com/assets/policies/Proxy%20Voting%20Guidelines.pdf"
+          - "https://vcm.com/assets/policies/2022%20Proxy%20Voting%20Guidelines.pdf"
+        adviser: "Victory Capital Management Inc."
+        adviser_key: "VICTORY"
+      # Victory's Proxy Voting Policies and Procedures section as printed in the Victory Portfolios II SAI (485BPOS, dated by EDGAR filing date): an in-body section from the 1940 Act paragraph to the next
+      # heading. Separate label from the website memo. Single-trust SAIs only: the multi-trust SAIs print the heading several times and contribute nothing (the extractor wants exactly one).
+      - label: victory-proxy-voting-policy-as-printed-in-sai
+        adviser: "Victory Capital Management Inc."
+        adviser_key: "VICTORY"
+        sai_appendix:
+          cik: "0001547580"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "PROXY VOTING POLICIES AND PROCEDURES In accordance with the 1940 Act"
+          end:
+            - "PORTFOLIO TRANSACTIONS AND BROKERAGE"
+      # Victory's H-12 Proxy Voting policy as printed in Item 7 of the Pioneer Diversified High Income Fund N-CSR (first printed in the report filed 2025-07-09, the first after Victory became adviser).
+      - label: victory-h-12-proxy-voting-policy-as-printed-in-n-csr
+        adviser: "Victory Capital Management Inc."
+        adviser_key: "VICTORY"
+        sai_appendix:
+          cik: "0001388126"
+          forms: ["N-CSR"]
+          since: "2025-01-01"
+          start:
+            - "H-12 PROXY VOTING BACKGROUND AND RISKS"
+          end:
+            - "ITEM 13. PORTFOLIO MANAGERS OF CLOSED-END MANAGEMENT INVESTMENT COMPANIES"
+      # Amundi US's policy (the Pioneer Funds' Proxy voting policies and procedures) as printed in Appendix B of the Pioneer Fund SAI (one 485BPOS a year, to 2024), dated by EDGAR filing date. Pre-acquisition
+      # policy: keyed AMUNDI_US, never VICTORY. The section runs to the Part C heading; the running 'Table of Contents' links, the run of page numbers (75, 76, ...) and the SAI's document code ('22123-14-0521 86') are stripped, so the 2021 and 2022 printings (and the 2023 and 2024 ones) are one version each.
+      - label: amundi-us-proxy-voting-policy-as-printed-in-sai
+        adviser: "Amundi Asset Management US, Inc."
+        adviser_key: "AMUNDI_US"
+        sai_appendix:
+          cik: "0000078713"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "Appendix B — Proxy voting policies and procedures Policy Each of the Pioneer Funds"
+          end:
+            - "PART C - OTHER INFORMATION"
+          page_sequence: true
+          strip_patterns:
+            - 'Table of Contents'
+            - '\d{5}-\d{2}-\d{4}(?:\s+\d{1,3})?\s*$'

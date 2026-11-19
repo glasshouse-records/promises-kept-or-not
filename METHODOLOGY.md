@@ -668,6 +668,43 @@ almost all EXTERNAL; no duplicate group left in the PGIM CIKs). Not ingested: th
 Securities Investment Trust Enterprise (1666044), PGIM Private Credit Fund (no N-PX), the PGIM institutional-manager and
 private / collective-trust / offshore funds, and the legacy-HTML N-PX before 2024.
 
+Victory Capital (Victory Capital Management Inc., with the Pioneer funds acquired from Amundi Asset Management
+US, Inc.; added 2026-11-19): every Victory SAI says "The Proxy Voting Policy delegates to the Adviser the obligation
+to vote the Funds' proxies ... subject to oversight by the Board", the Adviser being Victory Capital Management Inc.
+(its franchises RS, Sycamore, Munder, Integrity, Trivalent, NewBridge, Sophus and USAA are teams of that one
+adviser), so Victory Portfolios, II, III (formerly USAA Mutual Funds Trust) and the Variable Insurance Funds are keyed
+`VICTORY` from the filing date of the earliest SAI read (2021-02-05 to 2021-09-28). Exceptions are per series and
+come from each trust's Form N-CEN Item C.3 (every N-CEN 2021-06 to 2026-11) plus the SAI sentence that says the
+sub-adviser votes (USAA trust: "the Manager has delegated responsibility for voting to the applicable subadvisers";
+Victory Portfolios and Variable Insurance Funds: "Park Avenue [and] SailingStone is authorized to vote proxies"): `EXTERNAL`.
+Park Avenue's series are EXTERNAL to 2023-12-31 (last N-CEN naming it), `UNRESOLVED` from 2024-01-01 (the April
+2024 SAIs still name it, the N-CEN of FY2024 does not) and `VICTORY` from the first SAI that no longer names it
+(2025-04-25 / 2025-04-14). The Pioneer funds are the non-obvious part. Their SAIs (2021) say "Each of the Pioneer
+Funds ... have delegated responsibility to vote proxies ... to Amundi US", under Amundi US's own policy, so every
+Pioneer registrant is keyed `AMUNDI_US` to 2025-03-31 and that key is never paired with a Victory policy. On 2025-04-01
+Amundi US was combined with Victory Capital Holdings; the Pioneer funds' advisory agreements terminated and an interim
+advisory agreement with Victory Capital took over (497 supplement of 2025-04-01), but no document read says whose
+proxy policy voted the meetings of the following weeks, so they are `UNRESOLVED` until the registrant's own first
+Victory document: the first Victory Portfolios IV SAI (2025-07-25; its N-PX of 2025 reports the predecessor funds' votes
+from 2024-07-01, so three eras sit in one table and are separated by meeting date), the first Variable Insurance Funds
+II SAI (2026-04-29), or the closed-end fund's first N-CSR that prints Victory's H-12 policy (Pioneer Diversified High
+Income 2025-07-09, Pioneer High Income 2026-06-04; Pioneer Floating Rate none). The Pioneer trusts that kept their
+own CIK reported only to 2024-06-30 (two filed a 2025 notice report pointing nowhere) and carry `npx_ended`; they
+are ingested under this institution because the registrants now belong to Victory, but their votes are not Victory's:
+the key keeps them apart in the engine. Policy text: Victory Capital publishes only a one-page "Proxy Voting Guidelines"
+memo a year (vcm.com/assets/policies, 200 `application/pdf` to honest clients, probed 2026-11-19; 2022, 2023, 2024,
+2025 and 2026 editions, the file name changing each year, walked on the Wayback index under one label); the full policy
+H-12 (`H-12 Proxy Policy.pdf`) answers 404 on vcm.com and investor.vcm.com (two 2021 Wayback captures exist and are not
+archived). Under separate labels: the Adviser's summary as printed in the Victory Portfolios II SAI (13 prints
+2021-2026, which alternate because SAIs of different fund sets filed the same month carry different editions and
+typesetting: read them as per-SAI prints, not as an edit history), Victory's H-12 policy as printed in Item 7 of the
+Pioneer Diversified High Income Fund N-CSR (2025-07-09), and Amundi US's policy as printed in Appendix B of the Pioneer
+Fund SAI (two editions, 2021 and 2023; the running "Table of Contents" links, the run of page numbers and the SAI's
+document code are removed). Ingested N-PX 2024-26: 637,837 non-duplicate votes (VICTORY 550,761, EXTERNAL 52,364,
+AMUNDI_US 20,709, UNRESOLVED 14,003; 1,133 duplicates marked). Not ingested: the Pioneer municipal and money-market
+registrants, the two insurance-linked interval funds, the institutional-manager N-PX of Victory Capital Management
+and Amundi US, and the legacy-HTML N-PX before 2024.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting
