@@ -740,6 +740,26 @@ single-fund family printing an older edition and is not mixed in. The original 2
 N-PX/A restates every vote. Ingested N-PX 2024-26: 25,757 non-duplicate votes (9,098 duplicates marked). Not ingested:
 Dodge & Cox's institutional-manager N-PX and the legacy-HTML N-PX before 2024.
 
+First Trust (added 2026-11-19): twelve open-end registrants file N-PX vote tables with operating-company votes (First Trust
+Exchange-Traded Fund I to VIII, the two AlphaDEX trusts, First Trust Series Fund, First Trust Variable Insurance Trust; ETF V
+and VII file notice reports only). Every SAI says "The Board has delegated to First Trust the proxy voting responsibilities"
+and that First Trust uses ISS for recommendations and execution, so ISS executing the votes does not decide the key; what
+the SAI says the policy is does. The earliest SAIs read (2021-01-15 to 2021-11-24) say "First Trust has adopted the ISS Proxy
+Voting Guidelines" and attach ISS's own guideline book as the exhibit: those meetings are keyed `FIRST_TRUST_ISS`, a key that
+does not claim the policy is First Trust's own. From the SAI that first says "The First Trust Proxy Voting Guidelines
+[Policies and Procedures] are attached hereto" (First Trust Advisors L.P.'s own written policy; 2022-09-30 to 2023-04-28,
+per trust, and no later SAI reverts) the trust is keyed `FIRST_TRUST`. A series whose OWN single-fund SAI says the Board
+delegated day-to-day voting to a sub-adviser (Vest, WCM, Energy Income Partners, Janus Henderson, Confluence, First Trust
+Capital Management) is `EXTERNAL`; the multi-fund annual SAIs list every series of the trust and say First Trust, but the
+own SAI is the more specific statement and the N-CEN names the same sub-adviser. A series whose N-CEN names a sub-adviser
+while every SAI says First Trust votes keeps the registrant key. ISS's own guideline book (the exhibit of the 2021-22 SAIs)
+is copyrighted and not archived; the policy archive is First Trust's own text as printed in the ETF V SAI (6 versions in 3
+labels, one per era and one for Exhibit B). The 2026 N-PX/A of four trusts restate every vote with corrected shares, so
+56,909 original lines stay non-duplicate beside the amendment's lines (summing shares for those four filings double-counts;
+see ROADMAP). Ingested N-PX 2024-26: 674,170 non-duplicate votes (44,779 duplicates marked). Not ingested: the closed-end
+funds, the FT Vest series funds, First Trust's private-credit funds, First Trust Advisors' institutional-manager N-PX and the
+legacy-HTML N-PX before 2024.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting

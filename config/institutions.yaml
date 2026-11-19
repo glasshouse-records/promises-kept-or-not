@@ -4387,3 +4387,202 @@ institutions:
             - "DODGE & COX FUNDS PART C"
           strip_page_numbers: true
           page_sequence: true
+  first_trust:
+    display_name: "First Trust (First Trust Advisors L.P.)"
+    short_name: "First Trust"
+    cik: "0001125816"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "First Trust Advisors L.P., Wheaton IL (CIK 1125816, the 13-F filer and the investment adviser of the First Trust open-end fund trusts and closed-end funds; affiliated sub-advisers First Trust Global Portfolios, First Trust Capital Management and, since 2024, Vest Financial). Twelve open-end fund registrants that file N-PX vote tables are ingested: First Trust Exchange-Traded Fund I to VIII, the two AlphaDEX trusts, First Trust Series Fund and First Trust Variable Insurance Trust. Every SAI says the Board delegated proxy voting to First Trust, which uses ISS for recommendations and execution; until the SAI that first attaches First Trust Advisors' own written policy, the SAI says First Trust has adopted the ISS Proxy Voting Guidelines (key FIRST_TRUST_ISS), afterwards First Trust's own policy (key FIRST_TRUST). Series whose own SAI says the Board delegated day-to-day voting to a sub-adviser (Vest, WCM, Energy Income Partners, Janus Henderson, Confluence, First Trust Capital Management) are EXTERNAL. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-19. The twelve First Trust open-end registrants that file N-PX vote tables (ETF V and VII file notice reports only: no operating-company votes). Every SAI read prints the same section 'Proxy Voting Policies
+      # and Procedures': 'The Board has delegated to First Trust the proxy voting responsibilities for the Fund[s] ... First Trust has engaged ISS to make recommendations to First Trust on the voting of proxies ... First Trust
+      # has adopted the ISS Proxy Voting Guidelines. While these guidelines are not intended to be all-inclusive, they do provide guidance on First Trust's general voting policies ... First Trust retains final authority and
+      # fiduciary responsibility for proxy voting.' Two eras, dated per trust from the EDGAR filing date of the SAI that shows them (no SAI of any trust reverts):
+      #  - FIRST_TRUST_ISS: from the earliest SAI read (2021-01-15 to 2021-11-24) until the day before the SAI that first says 'The First Trust Proxy Voting Guidelines [Policies and Procedures] are attached hereto'. Until then the
+      #    exhibit is ISS's own Concise Proxy Voting Guidelines (Benchmark Policy), which is not archived here (ISS copyright); the key does not pretend the policy is First Trust's own.
+      #  - FIRST_TRUST: from that SAI (2022-09-30 to 2023-04-28), because the SAI then attaches First Trust Advisors L.P.'s own written Proxy Voting Guidelines / Policies and Procedures (Exhibit B), which says FTA will generally
+      #    follow the ISS guidelines (the SAIs of 2024 still say so) and, from the 2025 SAIs, the 'First Trust U.S. / International Proxy Voting Guidelines'. ISS executes the votes in both eras.
+      #  - EXTERNAL: a series whose OWN single-fund SAI says 'The Board has delegated to [Cboe] Vest / WCM / the Sub-Advisor the day-to-day proxy voting responsibilities' (the Sub-Advisor's policy is its Exhibit). The multi-fund annual
+      #    SAIs of the same trust still say First Trust for these series (they list every series of the trust); the series' own SAI is the more specific statement and the N-CEN names the same sub-adviser, so the own SAI wins. A series
+      #    whose N-CEN names a sub-adviser (Stonebridge, RiverFront, Horizon, SSI, Confluence, Energy Income Partners on the older funds, TCW, Wellington/Sands, SkyBridge) but whose SAIs all say First Trust votes keeps the registrant key.
+      #    Only series with N-PX votes carry a rule: a series with no votes yet needs none, but a future one must be read from its own SAI.
+      - cik: "1329377"
+        adviser: "First Trust Advisors L.P. (the Adviser); sub-advisers named per series in the N-CEN"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1329377/000144554621002214/ftetf-20210503.htm"  # 485BPOS (SAI) filed 2021-04-29 (0001445546-21-002214), 'Proxy Voting Policies and Procedures': the Board delegated voting to First Trust
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated to First Trust the proxy voting responsibilities for the Fund[s] and has directed First Trust to vote proxies consistent with the Fund[s]' best interests. First Trust has engaged ISS to make recommendations to First Trust on the voting of proxies ... First Trust has adopted the ISS Proxy Voting Guidelines ... they do provide guidance on First Trust's general voting policies' (earliest SAI read 2021-04-29, 0001445546-21-002214; the exhibit it attaches is ISS's own Concise Proxy Voting Guidelines, Benchmark Policy, not a First Trust document), so FIRST_TRUST_ISS until 2022-10-18. From the SAI of 2022-10-19 (0001445546-22-006941) the SAI says 'The First Trust Proxy Voting Guidelines [Policies and Procedures] are attached hereto' (First Trust Advisors L.P.'s own written policy, which says FTA will generally follow ISS guidelines), so FIRST_TRUST from 2022-10-19; no later SAI of the trust reverts. The SAIs of 2025-26 add 'First Trust has adopted the First Trust Proxy Voting Guidelines' in place of the ISS guidelines. Series whose own single-fund SAI says the Board delegated day-to-day voting to the Sub-Advisor are EXTERNAL from that SAI (see series_adviser); a series whose N-CEN lists a sub-adviser but whose SAI says First Trust votes stays under the registrant key."
+        adviser_key_history: [{key: FIRST_TRUST_ISS, from: "2021-04-29", until: "2022-10-18"}, {key: FIRST_TRUST, from: "2022-10-19"}]
+        series_adviser:
+          S000086663: [{key: EXTERNAL, from: "2024-10-02"}]   # First Trust WCM Developing World Equity ETF: WCM; own SAI 0001445546-24-006674 says delegated to WCM
+          S000086665: [{key: EXTERNAL, from: "2024-10-02"}]   # First Trust WCM International Equity ETF: WCM; own SAI 0001445546-24-006676 says delegated to WCM
+          S000102669: [{key: EXTERNAL, from: "2026-04-13"}]   # WCM-sub-advised ETF launched 2026: WCM; own SAI 0001445546-26-002699 says delegated to WCM
+        name: "FIRST TRUST EXCHANGE-TRADED FUND"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1364608"
+        adviser: "First Trust Advisors L.P. (the Adviser); sub-advisers named per series in the N-CEN"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1364608/000144554621000592/ftetfii-20210201.htm"  # 485BPOS (SAI) filed 2021-01-28 (0001445546-21-000592), 'Proxy Voting Policies and Procedures': the Board delegated voting to First Trust
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated to First Trust the proxy voting responsibilities for the Fund[s] and has directed First Trust to vote proxies consistent with the Fund[s]' best interests. First Trust has engaged ISS to make recommendations to First Trust on the voting of proxies ... First Trust has adopted the ISS Proxy Voting Guidelines ... they do provide guidance on First Trust's general voting policies' (earliest SAI read 2021-01-28, 0001445546-21-000592; the exhibit it attaches is ISS's own Concise Proxy Voting Guidelines, Benchmark Policy, not a First Trust document), so FIRST_TRUST_ISS until 2022-09-29. From the SAI of 2022-09-30 (0001445546-22-006585) the SAI says 'The First Trust Proxy Voting Guidelines [Policies and Procedures] are attached hereto' (First Trust Advisors L.P.'s own written policy, which says FTA will generally follow ISS guidelines), so FIRST_TRUST from 2022-09-30; no later SAI of the trust reverts. The SAIs of 2025-26 add 'First Trust has adopted the First Trust Proxy Voting Guidelines' in place of the ISS guidelines."
+        adviser_key_history: [{key: FIRST_TRUST_ISS, from: "2021-01-28", until: "2022-09-29"}, {key: FIRST_TRUST, from: "2022-09-30"}]
+        name: "FIRST TRUST EXCHANGE-TRADED FUND II"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1424212"
+        adviser: "First Trust Advisors L.P. (the Adviser); sub-advisers named per series in the N-CEN"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1424212/000144554621001189/ft-20210301.htm"  # 485BPOS (SAI) filed 2021-02-26 (0001445546-21-001189), 'Proxy Voting Policies and Procedures': the Board delegated voting to First Trust
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated to First Trust the proxy voting responsibilities for the Fund[s] and has directed First Trust to vote proxies consistent with the Fund[s]' best interests. First Trust has engaged ISS to make recommendations to First Trust on the voting of proxies ... First Trust has adopted the ISS Proxy Voting Guidelines ... they do provide guidance on First Trust's general voting policies' (earliest SAI read 2021-02-26, 0001445546-21-001189; the exhibit it attaches is ISS's own Concise Proxy Voting Guidelines, Benchmark Policy, not a First Trust document), so FIRST_TRUST_ISS until 2022-11-27. From the SAI of 2022-11-28 (0001445546-22-008198) the SAI says 'The First Trust Proxy Voting Guidelines [Policies and Procedures] are attached hereto' (First Trust Advisors L.P.'s own written policy, which says FTA will generally follow ISS guidelines), so FIRST_TRUST from 2022-11-28; no later SAI of the trust reverts. The SAIs of 2025-26 add 'First Trust has adopted the First Trust Proxy Voting Guidelines' in place of the ISS guidelines. Series whose own single-fund SAI says the Board delegated day-to-day voting to the Sub-Advisor are EXTERNAL from that SAI (see series_adviser); a series whose N-CEN lists a sub-adviser but whose SAI says First Trust votes stays under the registrant key."
+        adviser_key_history: [{key: FIRST_TRUST_ISS, from: "2021-02-26", until: "2022-11-27"}, {key: FIRST_TRUST, from: "2022-11-28"}]
+        series_adviser:
+          S000067481: [{key: EXTERNAL, from: "2023-11-16", until: "2026-06-17"}]   # First Trust Equity Market Neutral ETF (was Merger Arbitrage ETF): First Trust Capital Management L.P.; own SAI 0001445546-23-007562 says delegated to First Trust Capital Management
+        name: "FIRST TRUST EXCHANGE-TRADED FUND III"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1517936"
+        adviser: "First Trust Advisors L.P. (the Adviser); sub-advisers named per series in the N-CEN"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1517936/000144554621001201/ftetfiv-20210301.htm"  # 485BPOS (SAI) filed 2021-02-26 (0001445546-21-001201), 'Proxy Voting Policies and Procedures': the Board delegated voting to First Trust
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated to First Trust the proxy voting responsibilities for the Fund[s] and has directed First Trust to vote proxies consistent with the Fund[s]' best interests. First Trust has engaged ISS to make recommendations to First Trust on the voting of proxies ... First Trust has adopted the ISS Proxy Voting Guidelines ... they do provide guidance on First Trust's general voting policies' (earliest SAI read 2021-02-26, 0001445546-21-001201; the exhibit it attaches is ISS's own Concise Proxy Voting Guidelines, Benchmark Policy, not a First Trust document), so FIRST_TRUST_ISS until 2023-02-27. From the SAI of 2023-02-28 (0001445546-23-001646) the SAI says 'The First Trust Proxy Voting Guidelines [Policies and Procedures] are attached hereto' (First Trust Advisors L.P.'s own written policy, which says FTA will generally follow ISS guidelines), so FIRST_TRUST from 2023-02-28; no later SAI of the trust reverts. The SAIs of 2025-26 add 'First Trust has adopted the First Trust Proxy Voting Guidelines' in place of the ISS guidelines. Series whose own single-fund SAI says the Board delegated day-to-day voting to the Sub-Advisor are EXTERNAL from that SAI (see series_adviser); a series whose N-CEN lists a sub-adviser but whose SAI says First Trust votes stays under the registrant key."
+        adviser_key_history: [{key: FIRST_TRUST_ISS, from: "2021-02-26", until: "2023-02-27"}, {key: FIRST_TRUST, from: "2023-02-28"}]
+        series_adviser:
+          S000066179: [{key: EXTERNAL, from: "2025-09-04"}]   # First Trust EIP Power Solutions ETF: Energy Income Partners; own SAI 0001445546-25-005916 says delegated to Sub-Advisor
+          S000070911: [{key: EXTERNAL, from: "2021-02-26"}]   # FT Vest S&P 500 Dividend Aristocrats Target Income ETF (FT Cboe Vest until 2024): Cboe Vest / Vest; own SAI 0001445546-21-001203 says delegated to Cboe Vest
+          S000077479: [{key: EXTERNAL, from: "2022-10-18"}]   # FT Vest Rising Dividend Achievers Target Income ETF: Cboe Vest / Vest; own SAI 0001445546-22-006836 says delegated to Cboe Vest
+          S000077877: [{key: EXTERNAL, from: "2022-10-27"}]   # FT Energy Income Partners Strategy ETF: Energy Income Partners; own SAI 0001445546-22-007097 says delegated to Sub-Advisor
+          S000080125: [{key: EXTERNAL, from: "2023-04-24"}]   # FT Vest DJIA Dogs 10 Target Income ETF: Cboe Vest / Vest; own SAI 0001445546-23-002515 says delegated to Cboe Vest
+          S000081275: [{key: EXTERNAL, from: "2023-08-03"}]   # FT Vest SMID Rising Dividend Achievers Target Income ETF: Cboe Vest / Vest; own SAI 0001445546-23-004819 says delegated to Cboe Vest
+          S000081278: [{key: EXTERNAL, from: "2023-08-03"}]   # FT Vest Technology Dividend Target Income ETF: Cboe Vest / Vest; own SAI 0001445546-23-004821 says delegated to Cboe Vest
+          S000083969: [{key: EXTERNAL, from: "2024-03-13"}]   # FT Vest Dow Jones Internet Target Income ETF: Vest; own SAI 0001445546-24-002014 says delegated to Vest
+          S000090698: [{key: EXTERNAL, from: "2025-06-20"}]   # FT Vest Growth Strength Target Income ETF: Vest; own SAI 0001445546-25-004229 says delegated to Vest
+        name: "FIRST TRUST EXCHANGE-TRADED FUND IV"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1549548"
+        adviser: "First Trust Advisors L.P. (the Adviser); sub-advisers named per series in the N-CEN"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1549548/000144554621002206/ftetfv-20210503.htm"  # 485BPOS (SAI) filed 2021-04-29 (0001445546-21-002206), 'Proxy Voting Policies and Procedures': the Board delegated voting to First Trust
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated to First Trust the proxy voting responsibilities for the Fund[s] and has directed First Trust to vote proxies consistent with the Fund[s]' best interests. First Trust has engaged ISS to make recommendations to First Trust on the voting of proxies ... First Trust has adopted the ISS Proxy Voting Guidelines ... they do provide guidance on First Trust's general voting policies' (earliest SAI read 2021-04-29, 0001445546-21-002206; the exhibit it attaches is ISS's own Concise Proxy Voting Guidelines, Benchmark Policy, not a First Trust document), so FIRST_TRUST_ISS until 2023-04-27. From the SAI of 2023-04-28 (0001445546-23-002824) the SAI says 'The First Trust Proxy Voting Guidelines [Policies and Procedures] are attached hereto' (First Trust Advisors L.P.'s own written policy, which says FTA will generally follow ISS guidelines), so FIRST_TRUST from 2023-04-28; no later SAI of the trust reverts. The SAIs of 2025-26 add 'First Trust has adopted the First Trust Proxy Voting Guidelines' in place of the ISS guidelines."
+        adviser_key_history: [{key: FIRST_TRUST_ISS, from: "2021-04-29", until: "2023-04-27"}, {key: FIRST_TRUST, from: "2023-04-28"}]
+        name: "FIRST TRUST EXCHANGE-TRADED FUND V"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1552740"
+        adviser: "First Trust Advisors L.P. (the Adviser); sub-advisers named per series in the N-CEN"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1552740/000144554621000593/ftetfvi-20210201.htm"  # 485BPOS (SAI) filed 2021-01-28 (0001445546-21-000593), 'Proxy Voting Policies and Procedures': the Board delegated voting to First Trust
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated to First Trust the proxy voting responsibilities for the Fund[s] and has directed First Trust to vote proxies consistent with the Fund[s]' best interests. First Trust has engaged ISS to make recommendations to First Trust on the voting of proxies ... First Trust has adopted the ISS Proxy Voting Guidelines ... they do provide guidance on First Trust's general voting policies' (earliest SAI read 2021-01-28, 0001445546-21-000593; the exhibit it attaches is ISS's own Concise Proxy Voting Guidelines, Benchmark Policy, not a First Trust document), so FIRST_TRUST_ISS until 2023-01-26. From the SAI of 2023-01-27 (0001445546-23-000792) the SAI says 'The First Trust Proxy Voting Guidelines [Policies and Procedures] are attached hereto' (First Trust Advisors L.P.'s own written policy, which says FTA will generally follow ISS guidelines), so FIRST_TRUST from 2023-01-27; no later SAI of the trust reverts. The SAIs of 2025-26 add 'First Trust has adopted the First Trust Proxy Voting Guidelines' in place of the ISS guidelines."
+        adviser_key_history: [{key: FIRST_TRUST_ISS, from: "2021-01-28", until: "2023-01-26"}, {key: FIRST_TRUST, from: "2023-01-27"}]
+        name: "FIRST TRUST EXCHANGE-TRADED FUND VI"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1561785"
+        adviser: "First Trust Advisors L.P. (the Adviser); sub-advisers named per series in the N-CEN"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1561785/000144554621002208/ftetfvii-20210503.htm"  # 485BPOS (SAI) filed 2021-04-29 (0001445546-21-002208), 'Proxy Voting Policies and Procedures': the Board delegated voting to First Trust
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated to First Trust the proxy voting responsibilities for the Fund[s] and has directed First Trust to vote proxies consistent with the Fund[s]' best interests. First Trust has engaged ISS to make recommendations to First Trust on the voting of proxies ... First Trust has adopted the ISS Proxy Voting Guidelines ... they do provide guidance on First Trust's general voting policies' (earliest SAI read 2021-04-29, 0001445546-21-002208; the exhibit it attaches is ISS's own Concise Proxy Voting Guidelines, Benchmark Policy, not a First Trust document), so FIRST_TRUST_ISS until 2023-04-27. From the SAI of 2023-04-28 (0001445546-23-002826) the SAI says 'The First Trust Proxy Voting Guidelines [Policies and Procedures] are attached hereto' (First Trust Advisors L.P.'s own written policy, which says FTA will generally follow ISS guidelines), so FIRST_TRUST from 2023-04-28; no later SAI of the trust reverts. The SAIs of 2025-26 add 'First Trust has adopted the First Trust Proxy Voting Guidelines' in place of the ISS guidelines."
+        adviser_key_history: [{key: FIRST_TRUST_ISS, from: "2021-04-29", until: "2023-04-27"}, {key: FIRST_TRUST, from: "2023-04-28"}]
+        name: "FIRST TRUST EXCHANGE-TRADED FUND VII"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1667919"
+        adviser: "First Trust Advisors L.P. (the Adviser); sub-advisers named per series in the N-CEN"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1667919/000144554621000208/ft-20210115.htm"  # 485BPOS (SAI) filed 2021-01-15 (0001445546-21-000208), 'Proxy Voting Policies and Procedures': the Board delegated voting to First Trust
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated to First Trust the proxy voting responsibilities for the Fund[s] and has directed First Trust to vote proxies consistent with the Fund[s]' best interests. First Trust has engaged ISS to make recommendations to First Trust on the voting of proxies ... First Trust has adopted the ISS Proxy Voting Guidelines ... they do provide guidance on First Trust's general voting policies' (earliest SAI read 2021-01-15, 0001445546-21-000208; the exhibit it attaches is ISS's own Concise Proxy Voting Guidelines, Benchmark Policy, not a First Trust document), so FIRST_TRUST_ISS until 2022-12-28. From the SAI of 2022-12-29 (0001445546-22-008838) the SAI says 'The First Trust Proxy Voting Guidelines [Policies and Procedures] are attached hereto' (First Trust Advisors L.P.'s own written policy, which says FTA will generally follow ISS guidelines), so FIRST_TRUST from 2022-12-29; no later SAI of the trust reverts. The SAIs of 2025-26 add 'First Trust has adopted the First Trust Proxy Voting Guidelines' in place of the ISS guidelines. Series whose own single-fund SAI says the Board delegated day-to-day voting to the Sub-Advisor are EXTERNAL from that SAI (see series_adviser); a series whose N-CEN lists a sub-adviser but whose SAI says First Trust votes stays under the registrant key."
+        adviser_key_history: [{key: FIRST_TRUST_ISS, from: "2021-01-15", until: "2022-12-28"}, {key: FIRST_TRUST, from: "2022-12-29"}]
+        series_adviser:
+          S000081234: [{key: EXTERNAL, from: "2023-11-16"}]   # First Trust Active Global Quality Income ETF: Janus Henderson; own SAI 0001445546-23-007566 says delegated to the Sub-Advisor
+          S000083823: [{key: EXTERNAL, from: "2024-05-01"}]   # FT Energy Income Partners Enhanced Income ETF: Energy Income Partners; own SAI 0001445546-24-003213 says delegated to Sub-Advisor
+          S000090298: [{key: EXTERNAL, from: "2025-06-20"}]   # FT Confluence BDC & Specialty Finance Income ETF: Confluence Investment Management; own SAI 0001445546-25-004234 says delegated to Sub-Advisor
+        name: "FIRST TRUST EXCHANGE-TRADED FUND VIII"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1383496"
+        adviser: "First Trust Advisors L.P. (the Adviser); sub-advisers named per series in the N-CEN"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1383496/000144554621005947/ftetaf-20211201.htm"  # 485BPOS (SAI) filed 2021-11-24 (0001445546-21-005947), 'Proxy Voting Policies and Procedures': the Board delegated voting to First Trust
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated to First Trust the proxy voting responsibilities for the Fund[s] and has directed First Trust to vote proxies consistent with the Fund[s]' best interests. First Trust has engaged ISS to make recommendations to First Trust on the voting of proxies ... First Trust has adopted the ISS Proxy Voting Guidelines ... they do provide guidance on First Trust's general voting policies' (earliest SAI read 2021-11-24, 0001445546-21-005947; the exhibit it attaches is ISS's own Concise Proxy Voting Guidelines, Benchmark Policy, not a First Trust document), so FIRST_TRUST_ISS until 2022-11-27. From the SAI of 2022-11-28 (0001445546-22-008196) the SAI says 'The First Trust Proxy Voting Guidelines [Policies and Procedures] are attached hereto' (First Trust Advisors L.P.'s own written policy, which says FTA will generally follow ISS guidelines), so FIRST_TRUST from 2022-11-28; no later SAI of the trust reverts. The SAIs of 2025-26 add 'First Trust has adopted the First Trust Proxy Voting Guidelines' in place of the ISS guidelines."
+        adviser_key_history: [{key: FIRST_TRUST_ISS, from: "2021-11-24", until: "2022-11-27"}, {key: FIRST_TRUST, from: "2022-11-28"}]
+        name: "FIRST TRUST EXCHANGE-TRADED ALPHADEX FUND"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1510337"
+        adviser: "First Trust Advisors L.P. (the Adviser); sub-advisers named per series in the N-CEN"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1510337/000144554621002210/ftetafii-20210503.htm"  # 485BPOS (SAI) filed 2021-04-29 (0001445546-21-002210), 'Proxy Voting Policies and Procedures': the Board delegated voting to First Trust
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated to First Trust the proxy voting responsibilities for the Fund[s] and has directed First Trust to vote proxies consistent with the Fund[s]' best interests. First Trust has engaged ISS to make recommendations to First Trust on the voting of proxies ... First Trust has adopted the ISS Proxy Voting Guidelines ... they do provide guidance on First Trust's general voting policies' (earliest SAI read 2021-04-29, 0001445546-21-002210; the exhibit it attaches is ISS's own Concise Proxy Voting Guidelines, Benchmark Policy, not a First Trust document), so FIRST_TRUST_ISS until 2023-04-27. From the SAI of 2023-04-28 (0001445546-23-002828) the SAI says 'The First Trust Proxy Voting Guidelines [Policies and Procedures] are attached hereto' (First Trust Advisors L.P.'s own written policy, which says FTA will generally follow ISS guidelines), so FIRST_TRUST from 2023-04-28; no later SAI of the trust reverts. The SAIs of 2025-26 add 'First Trust has adopted the First Trust Proxy Voting Guidelines' in place of the ISS guidelines."
+        adviser_key_history: [{key: FIRST_TRUST_ISS, from: "2021-04-29", until: "2023-04-27"}, {key: FIRST_TRUST, from: "2023-04-28"}]
+        name: "FIRST TRUST EXCHANGE-TRADED ALPHADEX FUND II"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1497778"
+        adviser: "First Trust Advisors L.P. (the Adviser); sub-advisers named per series in the N-CEN"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1497778/000144554621001193/ftsf-20210301.htm"  # 485BPOS (SAI) filed 2021-02-26 (0001445546-21-001193), 'Proxy Voting Policies and Procedures': the Board delegated voting to First Trust
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated to First Trust the proxy voting responsibilities for the Fund[s] and has directed First Trust to vote proxies consistent with the Fund[s]' best interests. First Trust has engaged ISS to make recommendations to First Trust on the voting of proxies ... First Trust has adopted the ISS Proxy Voting Guidelines ... they do provide guidance on First Trust's general voting policies' (earliest SAI read 2021-02-26, 0001445546-21-001193; the exhibit it attaches is ISS's own Concise Proxy Voting Guidelines, Benchmark Policy, not a First Trust document), so FIRST_TRUST_ISS until 2023-02-27. From the SAI of 2023-02-28 (0001445546-23-001644) the SAI says 'The First Trust Proxy Voting Guidelines [Policies and Procedures] are attached hereto' (First Trust Advisors L.P.'s own written policy, which says FTA will generally follow ISS guidelines), so FIRST_TRUST from 2023-02-28; no later SAI of the trust reverts. The SAIs of 2025-26 add 'First Trust has adopted the First Trust Proxy Voting Guidelines' in place of the ISS guidelines. Series whose own single-fund SAI says the Board delegated day-to-day voting to the Sub-Advisor are EXTERNAL from that SAI (see series_adviser); a series whose N-CEN lists a sub-adviser but whose SAI says First Trust votes stays under the registrant key."
+        adviser_key_history: [{key: FIRST_TRUST_ISS, from: "2021-02-26", until: "2023-02-27"}, {key: FIRST_TRUST, from: "2023-02-28"}]
+        series_adviser:
+          S000086667: [{key: EXTERNAL, from: "2024-10-02"}]   # First Trust WCM Focused Global Growth Fund: WCM; own SAI 0001445546-24-006678 says delegated to WCM
+        name: "FIRST TRUST SERIES FUND"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1537395"
+        adviser: "First Trust Advisors L.P. (the Adviser); sub-advisers named per series in the N-CEN"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1537395/000144554621001969/ftvit-20210503.htm"  # 485BPOS (SAI) filed 2021-04-19 (0001445546-21-001969), 'Proxy Voting Policies and Procedures': the Board delegated voting to First Trust
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated to First Trust the proxy voting responsibilities for the Fund[s] and has directed First Trust to vote proxies consistent with the Fund[s]' best interests. First Trust has engaged ISS to make recommendations to First Trust on the voting of proxies ... First Trust has adopted the ISS Proxy Voting Guidelines ... they do provide guidance on First Trust's general voting policies' (earliest SAI read 2021-04-19, 0001445546-21-001969; the exhibit it attaches is ISS's own Concise Proxy Voting Guidelines, Benchmark Policy, not a First Trust document), so FIRST_TRUST_ISS until 2023-04-27. From the SAI of 2023-04-28 (0001445546-23-002833) the SAI says 'The First Trust Proxy Voting Guidelines [Policies and Procedures] are attached hereto' (First Trust Advisors L.P.'s own written policy, which says FTA will generally follow ISS guidelines), so FIRST_TRUST from 2023-04-28; no later SAI of the trust reverts. The SAIs of 2025-26 add 'First Trust has adopted the First Trust Proxy Voting Guidelines' in place of the ISS guidelines. Series whose own single-fund SAI says the Board delegated day-to-day voting to the Sub-Advisor are EXTERNAL from that SAI (see series_adviser); a series whose N-CEN lists a sub-adviser but whose SAI says First Trust votes stays under the registrant key."
+        adviser_key_history: [{key: FIRST_TRUST_ISS, from: "2021-04-19", until: "2023-04-27"}, {key: FIRST_TRUST, from: "2023-04-28"}]
+        series_adviser:
+          S000080226: [{key: EXTERNAL, from: "2023-08-09"}]   # First Trust Capital Strength Hedged Equity Portfolio: Cboe Vest / Vest; own SAI 0001445546-23-004897 says delegated to Cboe Vest
+        name: "FIRST TRUST VARIABLE INSURANCE TRUST"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed per registrant from the EDGAR filing date of the earliest SAI read (2021-01-15 to 2021-11-24) with two eras: FIRST_TRUST_ISS (the SAI says First Trust has adopted the ISS Proxy Voting Guidelines; ISS's own guidelines are the attached exhibit) until the SAI that first attaches First Trust Advisors L.P.'s own written policy, FIRST_TRUST afterwards (cutovers 2022-09-30 ETF II, 2022-10-19 ETF I, 2022-11-28 ETF III and AlphaDEX, 2022-12-29 ETF VIII, 2023-01-27 ETF VI, 2023-02-28 ETF IV and Series Fund, 2023-04-28 ETF V, VII, AlphaDEX II and Variable Insurance Trust). Earlier meetings stay unlabelled."
+      - "Series exceptions: EXTERNAL for the 18 series with N-PX votes whose own SAI delegates day-to-day voting to a sub-adviser: WCM (ETF I, Series Fund), Cboe Vest / Vest (ETF IV target-income ETFs, Variable Insurance Trust Capital Strength Hedged Equity), Energy Income Partners (EIP Power Solutions, EIP Strategy, EIP Enhanced Income), Janus Henderson (Active Global Quality Income), Confluence (BDC & Specialty Finance) and First Trust Capital Management (Equity Market Neutral, 2023-11-16 to 2026-06-17, when its own SAI says First Trust again). The N-PX does not split a sleeve, so the whole series is EXTERNAL."
+      - "Not ingested (left out): the closed-end funds advised by First Trust Advisors (First Trust Dividend & Income, Enhanced Equity Income, Energy Income & Growth, Energy Infrastructure, Mortgage Income, MLP & Energy Income, High Income Long/Short, Specialty Finance, Strategic High Income I to III, Tax-Advantaged Preferred, Senior Floating Rate, Intermediate Duration Preferred, High Yield Opportunities 2027, Dynamic Europe, Alternative Opportunities, the abrdn and Macquarie sub-advised funds), the FT Vest hedged-equity and total-return series funds and First Trust Private Credit / Private Assets / Real Assets / Hedged Strategies / Enhanced Private Credit funds, First Trust Advisors' own institutional-manager N-PX (CIK 1125816, overlaps the fund tables), First Trust Capital Management (1604488), and the legacy-HTML N-PX before 2024 (not ingested without --legacy; pre-2013 covers answer 404 and are recorded as legacy)."
+      - "Policy text: First Trust publishes its guidelines on the 'News and Literature' page of each fund on ftportfolios.com, which is rendered by script (no static address; the ContentFileLoader links on the home page are unrelated brochures and the Wayback CDX index holds no proxy-voting document), so no website label is configured. The policy is archived as printed in the SAI of First Trust Exchange-Traded Fund V, the one trust that files a single multi-year SAI family with no sub-advised funds: the voting statement under each key and Exhibit B, First Trust Advisors L.P.'s own Proxy Voting Guidelines / Policies and Procedures (the ISS guidelines exhibit of the 2021-22 SAIs is ISS's copyrighted document and is not archived). The other trusts print the same text and are not mixed in: their annual filings bundle several single-fund SAIs with different wording, so a label read across them would alternate."
+    commitments:
+      # The voting statement of the SAI, split by era at the sentence that names the guidelines (a start marker may open mid-section), so each version is stored under the key the SAI supports. Read from the ETF V SAI
+      # (485BPOS, dated by EDGAR filing date): one filing a year, no sub-adviser. A stray page number can sit mid-sentence ('Rule 12d1-4 under the 1940 Act or 30 when agreed'), which `strip_patterns` removes.
+      - label: first-trust-voting-statement-iss-guidelines-as-printed-in-sai
+        adviser: "First Trust Advisors L.P."
+        adviser_key: "FIRST_TRUST_ISS"
+        sai_appendix:
+          cik: "0001549548"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          allow_identical_copies: true
+          start:
+            - "First Trust has adopted the ISS Proxy Voting Guidelines. While these guidelines are not intended to be all-inclusive, they do provide guidance on First Trust\u2019s general voting policies."
+          end:
+            - "Information regarding how the Funds"
+            - "Information regarding how the Fund"
+          strip_page_numbers: true
+          strip_patterns:
+            - '(?<=[a-z]) \d{1,3}(?= [a-z])'
+      - label: first-trust-voting-statement-first-trust-guidelines-as-printed-in-sai
+        adviser: "First Trust Advisors L.P."
+        adviser_key: "FIRST_TRUST"
+        sai_appendix:
+          cik: "0001549548"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          allow_identical_copies: true
+          start:
+            - "First Trust has adopted the First Trust Proxy Voting Guidelines. While these guidelines are not intended to be all-inclusive, they do provide guidance on First Trust\u2019s general voting policies."
+          end:
+            - "Information regarding how the Funds"
+            - "Information regarding how the Fund"
+          strip_page_numbers: true
+          strip_patterns:
+            - '(?<=[a-z]) \d{1,3}(?= [a-z])'
+      # Exhibit B of the SAI: First Trust Advisors L.P.'s own Proxy Voting Guidelines (2023 edition) / Policies and Procedures (2024 onward), with the 'Adopted / Amended' dates printed at its foot.
+      - label: first-trust-proxy-voting-policies-and-procedures-as-printed-in-sai
+        adviser: "First Trust Advisors L.P."
+        adviser_key: "FIRST_TRUST"
+        sai_appendix:
+          cik: "0001549548"
+          forms: ["485BPOS"]
+          since: "2023-01-01"
+          allow_identical_copies: true
+          start:
+            - "FIRST TRUST ADVISORS L.P. PROXY VOTING GUIDELINES First Trust Advisors L.P. ( \u201cFTA\u201d or the \u201cAdviser\u201d ) serves as investment adviser"
+            - "FIRST TRUST ADVISORS L.P. PROXY VOTING POLICIES AND PROCEDURES First Trust Advisors L.P. ( \u201cFTA\u201d or the \u201cAdviser\u201d ) serves as investment adviser"
+          end:
+            - "Exhibit C \u2014 Credit Rating Definitions"
+            - "Exhibit C \u2014Credit Rating Definitions"
+          strip_page_numbers: true
+          strip_patterns:
+            - '\bB ?- ?\d\b'
