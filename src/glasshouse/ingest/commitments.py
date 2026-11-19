@@ -176,6 +176,12 @@ def version_identity(content: bytes, content_type: str = "", url: str = "",
 # It is NOT proof of publication — a file's creation date is not the day it went
 # on a website — and nothing here may present it as such.
 
+# The PDF format dates from 1993: an earlier /CreationDate is a placeholder some
+# generators write for "no date" (two Neuberger Berman captures carry D:00010101).
+PDF_EPOCH_YEAR = 1993
+_PLACEHOLDER_DATE_SQL = (f"((doc_created_at != '' AND substr(doc_created_at, 1, 4) < '{PDF_EPOCH_YEAR}')"
+                         f" OR (doc_modified_at != '' AND substr(doc_modified_at, 1, 4) < '{PDF_EPOCH_YEAR}'))")
+
 _PDF_DATE = re.compile(
     r"D:(\d{4})(\d{2})(\d{2})(\d{2})?(\d{2})?(\d{2})?"
     r"(?:([+-Z])(\d{2})'?(\d{2})?'?)?")
@@ -192,6 +198,8 @@ def _pdf_date_to_iso(raw: str | None) -> str:
     if not m:
         return ""
     y, mo, d, hh, mm, ss, sign, oh, om = m.groups()
+    if int(y) < PDF_EPOCH_YEAR:
+        return ""                         # a placeholder (D:00010101), not a date
     try:
         stamp = (f"{int(y):04d}-{int(mo):02d}-{int(d):02d}"
                  f"T{int(hh or 0):02d}:{int(mm or 0):02d}:{int(ss or 0):02d}")
@@ -403,10 +411,13 @@ def backfill_text_hashes(conn: sqlite3.Connection) -> int:
         conn.execute("UPDATE commitments SET text_sha256=? WHERE id=?",
                      (text_sha, row["id"] if isinstance(row, sqlite3.Row) else row[0]))
         filled += 1
-    # Origin metadata for everything captured before this existed.
+    # Origin metadata for everything captured before this existed, and a re-read
+    # of any row still holding a placeholder date from before the epoch rule.
     for row in conn.execute(
-            "SELECT id, content_path, content_type, url, wayback_timestamp "
-            "FROM commitments WHERE doc_created_at = '' AND doc_producer = ''"
+            "SELECT id, content_path, content_type, url, wayback_timestamp, "
+            f"{_PLACEHOLDER_DATE_SQL} AS placeholder "
+            "FROM commitments WHERE (doc_created_at = '' AND doc_producer = '') "
+            f"OR {_PLACEHOLDER_DATE_SQL}"
     ).fetchall():
         path = Path(row["content_path"])
         if not path.exists():
@@ -415,7 +426,7 @@ def backfill_text_hashes(conn: sqlite3.Connection) -> int:
             origin = origin_metadata(path.read_bytes(), row["content_type"], row["url"])
         except OSError:
             continue
-        if not any(origin.values()):
+        if not any(origin.values()) and not row["placeholder"]:
             continue
         if not dating_is_consistent(origin["doc_created_at"], row["wayback_timestamp"]):
             logger.warning("commitment %s: authored %s, captured %s — dating "

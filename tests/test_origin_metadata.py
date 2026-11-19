@@ -141,3 +141,38 @@ def test_self_dated_count_uses_the_same_denominator_as_versions(tmp_path):
     assert row["policies_self_dated"] <= row["policy_versions"], (
         f"{row['policies_self_dated']} self-dated cannot exceed "
         f"{row['policy_versions']} versions")
+
+
+@pytest.mark.parametrize("raw", ["D:00010101000000-04'00'", "D:19700101000000Z",
+                                 "D:19920101000000Z"])
+def test_placeholder_dates_are_not_authoring_dates(raw):
+    """Found 2026-11-19 in two Neuberger Berman captures: their PDF software
+    wrote /CreationDate D:00010101 (a null date), and the release shipped
+    "authored 0001-01-01" and counted both as self-dated. The PDF format dates
+    from 1993; an earlier date is a placeholder, not evidence."""
+    md = cm.origin_metadata(_pdf(raw), "application/pdf", "https://x/p.pdf")
+    assert md["doc_created_at"] == ""
+
+
+def test_backfill_clears_a_stored_placeholder_date(tmp_path):
+    """Rows captured before the plausibility rule keep their bad date unless
+    the backfill re-reads them."""
+    import hashlib
+
+    from glasshouse import ledger
+    c = ledger.connect(tmp_path / "t.db")
+    c.execute("INSERT INTO institutions (id, display_name) VALUES ('nb','NB')")
+    doc = tmp_path / "p.pdf"
+    content = _pdf("D:00010101000000-04'00'")
+    doc.write_bytes(content)
+    c.execute(
+        "INSERT INTO commitments (institution_id, doc_label, url, retrieval_date,"
+        " sha256, content_path, content_type, size_bytes, wayback_timestamp,"
+        " text_sha256, doc_created_at, doc_modified_at) VALUES ('nb','p','https://x/p.pdf',"
+        "'2026-01-01',?,?,'application/pdf',?,'20251102110612','t',"
+        "'0001-01-01T00:00:00-04:00','0001-01-01T00:00:00-04:00')",
+        (hashlib.sha256(content).hexdigest(), str(doc), len(content)))
+    c.commit()
+    cm.backfill_text_hashes(c)
+    row = c.execute("SELECT doc_created_at, doc_modified_at FROM commitments").fetchone()
+    assert (row[0], row[1]) == ("", "")
