@@ -3303,3 +3303,593 @@ institutions:
             - "SPECTRUM ASSET MANAGEMENT, INC. Policy on Proxy Voting For Investment Advisory Clients 2024"
           strip_patterns:
             - 'Principal Global Investors PGI Global Compliance Manual'
+
+  pgim:
+    display_name: "PGIM (Prudential Financial: PGIM Investments LLC and its subadvisers)"
+    short_name: "PGIM"
+    cik: "0000946754"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "PGIM, Inc., Newark NJ, the global investment-management business of Prudential Financial, Inc. (CIK 1137774). PGIM, Inc. (CIK 946754) files only 13F-NT notices (13F holdings are reported by affiliates: Jennison Associates LLC 53417 files the 13F-HR), so the 13-F side is not ingested here. The US mutual funds are managed by PGIM Investments LLC (CIK 1038001), to which each trust's Board delegates proxy voting; PGIM Investments in turn delegates voting to each series' subadviser, which votes under its OWN policy (Jennison Associates, PGIM Quantitative Solutions, PGIM, Inc.'s investment groups such as PGIM Fixed Income and PGIM Real Estate, or an unaffiliated subadviser). Each series is therefore keyed by its voting subadviser (series_adviser), never by registrant. PGIM Investments (1038001), PGIM, Inc. (946754) and PGIM Quantitative Solutions (1316541) also file institutional-manager N-PX reports that are not ingested. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-19. PGIM's own US fund registrants (the Prudential Investment Portfolios trusts, Prudential Jennison / World / Sector / Short-Term Corporate Bond / Global Total Return funds, Target Portfolio
+      # Trust, PGIM ETF Trust and PGIM Rock ETF Trust, the Prudential Series Fund and Advanced Series Trust variable-insurance trusts, and five closed-end / interval funds) that file N-PX vote tables. Every SAI says
+      # 'The Board has delegated to the Manager the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies' and prints the subadviser's own
+      # policy in Appendix I (the closed-end funds' N-CSR say the same of the Fund's subadviser). So there is NO registrant default; each series carries a rule (`series_adviser`), read from the trust's own Form N-CEN
+      # Item C.3 sub-adviser table (every N-CEN filed 2023-01 to 2026-11 read; the SAIs name the subadvisers only in prose and one SAI covers several funds):
+      #  - JENNISON / PGIM_QUANT / PGIM_INC: every subadviser named is that PGIM affiliate (PGIM Quantitative Solutions LLC, formerly QMA LLC, is PGIM_QUANT; PGIM, Inc., PGIM Limited and PGIM Real Estate (UK) Limited
+      #    are PGIM_INC: the SAIs print one 'PGIM, Inc.' appendix for them, covering PGIM Fixed Income, PGIM Real Estate and the other investment groups).
+      #  - EXTERNAL: any unaffiliated subadviser named for any part of the series (the N-PX does not split sleeves).
+      #  - UNRESOLVED: two different PGIM voters (e.g. Jennison plus Quant Solutions), an affiliate whose own policy no SAI read prints (PGIM Wadhwani, PGIM DC Solutions), or a subadviser change inside the window.
+      #  - no rule (unlabelled): no subadviser at all (funds of funds run by PGIM Investments), or a series absent from every N-CEN read.
+      # `from` is the filing date of the first N-CEN read for that series (2023-01 to 2025), so earlier meetings stay unlabelled; the ledger holds votes from 2023-07 onward only.
+      - cik: "1052118"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1052118/000168386321000349/pip18-20201130.htm"  # 485BPOS (SAI) filed 2021-01-29 (0001683863-21-000349), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-01-29; 6 SAIs 2021-2026 listed."
+        series_adviser:
+          S000043468: [{key: JENNISON, from: "2023-02-09"}]   # PGIM Jennison Energy Infrastructure Fund: Jennison Associates LLC
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS 18"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "949512"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/949512/000168386321006608/f10314d0.htm"  # 485BPOS (SAI) filed 2021-11-24 (0001683863-21-006608), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-11-24; 5 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004632: [{key: UNRESOLVED, from: "2023-12-13"}]   # PGIM Balanced Fund: PGIM Limited, PGIM Quantitative Solutions LLC, PGIM, INC.
+          S000004633: [{key: JENNISON, from: "2023-12-13"}]   # PGIM Jennison Growth Fund: Jennison Associates LLC
+          S000004634: [{key: JENNISON, from: "2023-12-13"}]   # PGIM Jennison Focused Value Fund: Jennison Associates LLC
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS, INC."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1099692"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1099692/000168386321000496/pip2-20201031.htm"  # 485BPOS (SAI) filed 2021-02-03 (0001683863-21-000496), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-02-03; 14 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004538: [{key: PGIM_INC, from: "2023-04-13"}]   # PGIM Core Short-Term Bond Fund: PGIM Limited, PGIM, INC.
+          S000004539: [{key: PGIM_INC, from: "2023-04-13"}]   # PGIM Core Ultra Short Bond Fund: PGIM Limited, PGIM, INC.
+          S000055237: [{key: PGIM_INC, from: "2023-04-13"}]   # PGIM Institutional Money Market Fund: PGIM Limited, PGIM, INC.
+          S000055760: [{key: PGIM_QUANT, from: "2023-10-13"}]   # PGIM Quant Solutions Commodity Strategies Fund: PGIM Quantitative Solutions LLC
+          S000055761: [{key: PGIM_INC, from: "2023-10-13"}]   # PGIM Core Conservative Bond Fund: PGIM Limited, PGIM, INC.
+          S000055762: [{key: JENNISON, from: "2023-10-13"}]   # PGIM Jennison Small-Cap Core Equity Fund: Jennison Associates LLC
+          S000055763: [{key: PGIM_QUANT, from: "2023-01-17"}]   # PGIM Quant Solutions Emerging Markets Equity Fund: PGIM Quantitative Solutions LLC
+          S000055764: [{key: PGIM_QUANT, from: "2023-01-17"}]   # PGIM Quant Solutions International Developed Markets Index Fund: PGIM Quantitative Solutions LLC
+          S000055765: [{key: PGIM_QUANT, from: "2023-10-13"}]   # PGIM Quant Solutions Mid-Cap Index Fund: PGIM Quantitative Solutions LLC
+          S000055766: [{key: PGIM_QUANT, from: "2023-10-13"}]   # PGIM Quant Solutions US Broad Market Index Fund: PGIM Quantitative Solutions LLC
+          S000055767: [{key: PGIM_INC, from: "2023-10-13"}]   # PGIM TIPS Fund: PGIM, INC.
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS 2"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1104631"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1104631/000168386321000476/pip3-20201031.htm"  # 485BPOS (SAI) filed 2021-02-03 (0001683863-21-000476), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-02-03; 14 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004751: [{key: JENNISON, from: "2023-05-11"}]   # PGIM Jennison Focused Growth Fund: Jennison Associates LLC
+          S000004753: [{key: PGIM_QUANT, from: "2023-05-11"}]   # PGIM Quant Solutions Large-Cap Value Fund: PGIM Quantitative Solutions LLC
+          S000030542: [{key: PGIM_QUANT, from: "2024-01-16"}]   # PGIM Real Assets Fund: PGIM Quantitative Solutions LLC
+          S000050053: [{key: PGIM_INC, from: "2023-05-11"}]   # PGIM Strategic Bond Fund: PGIM Limited, PGIM, INC.
+          S000070253: [{key: UNRESOLVED, from: "2024-01-16"}]   # PGIM Wadhwani Systematic Absolute Return Fund: affiliate with no printed policy read: PGIM Wadhwani LLP
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS 3"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "807394"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/807394/000168386321004062/pip4-20210628.htm"  # 485BPOS (SAI) filed 2021-06-28 (0001683863-21-004062), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-06-28; 7 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004643: [{key: PGIM_INC, from: "2023-11-13"}]   # PGIM Muni High Income Fund: PGIM, INC.
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS 4"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1090155"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1090155/000168386321005777/f9918d0.htm"  # 485BPOS (SAI) filed 2021-09-29 (0001683863-21-005777), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-09-29; 7 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004718: [{key: JENNISON, from: "2023-10-13"}]   # PGIM Jennison Diversified Growth Fund: Jennison Associates LLC
+          S000044406: [{key: JENNISON, from: "2023-10-13"}]   # PGIM Jennison Rising Dividend Fund: Jennison Associates LLC
+          S000055689: [{key: UNRESOLVED, from: "2023-10-13"}]   # PGIM Target Date 2055 Fund: subadviser changed in window: PGIM_QUANT -> OTHER_AFFILIATE
+          S000055690: [{key: UNRESOLVED, from: "2023-10-13"}]   # PGIM Target Date 2060 Fund: subadviser changed in window: PGIM_QUANT -> OTHER_AFFILIATE
+          S000055691: [{key: UNRESOLVED, from: "2023-10-13"}]   # PGIM Target Date Income Fund: subadviser changed in window: PGIM_QUANT -> OTHER_AFFILIATE
+          S000055692: [{key: UNRESOLVED, from: "2023-10-13"}]   # PGIM Target Date 2015 Fund: subadviser changed in window: PGIM_QUANT -> OTHER_AFFILIATE
+          S000055693: [{key: UNRESOLVED, from: "2023-10-13"}]   # PGIM Target Date 2020 Fund: subadviser changed in window: PGIM_QUANT -> OTHER_AFFILIATE
+          S000055694: [{key: UNRESOLVED, from: "2023-10-13"}]   # PGIM Target Date 2025 Fund: subadviser changed in window: PGIM_QUANT -> OTHER_AFFILIATE
+          S000055695: [{key: UNRESOLVED, from: "2023-10-13"}]   # PGIM Target Date 2030 Fund: subadviser changed in window: PGIM_QUANT -> OTHER_AFFILIATE
+          S000055696: [{key: UNRESOLVED, from: "2023-10-13"}]   # PGIM Target Date 2035 Fund: subadviser changed in window: PGIM_QUANT -> OTHER_AFFILIATE
+          S000055697: [{key: UNRESOLVED, from: "2023-10-13"}]   # PGIM Target Date 2040 Fund: subadviser changed in window: PGIM_QUANT -> OTHER_AFFILIATE
+          S000055698: [{key: UNRESOLVED, from: "2023-10-13"}]   # PGIM Target Date 2045 Fund: subadviser changed in window: PGIM_QUANT -> OTHER_AFFILIATE
+          S000055699: [{key: UNRESOLVED, from: "2023-10-13"}]   # PGIM Target Date 2050 Fund: subadviser changed in window: PGIM_QUANT -> OTHER_AFFILIATE
+          S000058935: [{key: PGIM_QUANT, from: "2023-10-13"}]   # PGIM 60/40 Allocation Fund: PGIM Quantitative Solutions LLC
+          S000067274: [{key: UNRESOLVED, from: "2023-10-13"}]   # PGIM Target Date 2065 Fund: subadviser changed in window: PGIM_QUANT -> OTHER_AFFILIATE
+          S000089025: [{key: UNRESOLVED, from: "2025-10-10"}]   # PGIM Target Date 2070 Fund: affiliate with no printed policy read: PGIM DC Solutions LLC
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS 5"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "746518"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/746518/000168386321006208/f10117d1.htm"  # 485BPOS (SAI) filed 2021-10-28 (0001683863-21-006208), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-10-28; 6 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004572: [{key: PGIM_INC, from: "2023-11-13"}]   # PGIM California Muni Income Fund: PGIM, INC.
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS 6"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "803191"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/803191/000168386321006170/f10121d0.htm"  # 485BPOS (SAI) filed 2021-10-28 (0001683863-21-006170), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-10-28; 6 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004659: [{key: JENNISON, from: "2023-11-13"}]   # PGIM Jennison Value Fund: Jennison Associates LLC
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS 7"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "887991"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/887991/000168386321006588/f10310d0.htm"  # 485BPOS (SAI) filed 2021-11-24 (0001683863-21-006588), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-11-24; 5 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004627: [{key: PGIM_QUANT, from: "2023-12-13"}]   # PGIM Quant Solutions Large-Cap Index Fund: PGIM Quantitative Solutions LLC
+          S000065752: [{key: PGIM_INC, from: "2023-12-13"}]   # PGIM Securitized Credit Fund: PGIM Limited, PGIM, INC.
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS 8"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1070287"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1070287/000168386320015521/pip9-20201031.htm"  # 485BPOS (SAI) filed 2020-12-29 (0001683863-20-015521), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2020-12-29; 12 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004644: [{key: PGIM_QUANT, from: "2023-01-17"}]   # PGIM Quant Solutions Large-Cap Core Fund: PGIM Quantitative Solutions LLC
+          S000031707: [{key: PGIM_INC, from: "2023-01-17"}]   # PGIM Absolute Return Bond Fund: PGIM Limited, PGIM, INC.
+          S000046124: [{key: PGIM_INC, from: "2023-01-17"}]   # PGIM Select Real Estate Fund: PGIM REAL ESTATE (UK) LIMITED, PGIM, INC.
+          S000049489: [{key: PGIM_INC, from: "2023-01-17"}]   # PGIM Real Estate Income Fund: PGIM REAL ESTATE (UK) LIMITED, PGIM, INC.
+          S000055822: [{key: PGIM_INC, from: "2023-01-17"}]   # PGIM International Bond Fund: PGIM Limited, PGIM, INC.
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS 9"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1035018"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1035018/000168386320015531/pipi10-20201031.htm"  # 485BPOS (SAI) filed 2020-12-29 (0001683863-20-015531), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2020-12-29; 7 SAIs 2021-2026 listed."
+        series_adviser:
+          S000002179: [{key: PGIM_QUANT, from: "2023-01-17"}]   # PGIM Quant Solutions Mid-Cap Value Fund: PGIM Quantitative Solutions LLC
+          S000002192: [{key: JENNISON, from: "2023-01-17"}]   # PGIM Jennison Global Equity Income Fund: Jennison Associates LLC
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS, INC. 10"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1051562"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1051562/000168386320015524/pip12-20201231.htm"  # 485BPOS (SAI) filed 2020-12-29 (0001683863-20-015524), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2020-12-29; 18 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004628: [{key: PGIM_INC, from: "2023-01-17"}]   # PGIM Global Real Estate Fund: PGIM Limited, PGIM REAL ESTATE (UK) LIMITED, PGIM, INC.
+          S000030621: [{key: PGIM_INC, from: "2023-06-13"}]   # PGIM US Real Estate Fund: PGIM REAL ESTATE (UK) LIMITED, PGIM, INC.
+          S000045516: [{key: PGIM_INC, from: "2023-06-13"}]   # PGIM Short Duration Muni Fund: PGIM, INC.
+          S000062123: [{key: JENNISON, from: "2023-01-17"}]   # PGIM Jennison Technology Fund: Jennison Associates LLC
+          S000073504: [{key: JENNISON, from: "2023-01-17"}]   # PGIM Jennison International Small-Mid Cap Opportunities Fund: Jennison Associates LLC
+          S000073505: [{key: JENNISON, from: "2023-01-17"}]   # PGIM Jennison NextGeneration Global Opportunities Fund: Jennison Associates LLC
+          S000084504: [{key: UNRESOLVED, from: "2025-06-12"}]   # PGIM Enhanced Retirement Spending Fund: affiliate with no printed policy read: PGIM DC Solutions LLC
+          S000084505: [{key: UNRESOLVED, from: "2025-06-12"}]   # PGIM Moderate Retirement Spending Fund: affiliate with no printed policy read: PGIM DC Solutions LLC
+          S000084506: [{key: UNRESOLVED, from: "2025-06-12"}]   # PGIM Conservative Retirement Spending Fund: affiliate with no printed policy read: PGIM DC Solutions LLC
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS 12"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "717819"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/717819/000168386321002732/pipi14-20210429.htm"  # 485BPOS (SAI) filed 2021-04-28 (0001683863-21-002732), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-04-28; 6 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004573: [{key: PGIM_INC, from: "2023-05-11"}]   # PGIM Government Income Fund: PGIM, INC.
+          S000031692: [{key: PGIM_INC, from: "2023-05-11"}]   # PGIM Floating Rate Income Fund: PGIM Limited, PGIM, INC.
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS, INC. 14"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "278187"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/278187/000168386321006169/f10118d0.htm"  # 485BPOS (SAI) filed 2021-10-28 (0001683863-21-006169), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-10-28; 7 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004516: [{key: PGIM_INC, from: "2023-11-13"}]   # PGIM High Yield Fund: PGIM Limited, PGIM, INC.
+          S000038590: [{key: PGIM_INC, from: "2023-11-13"}]   # PGIM Short Duration High Yield Income Fund: PGIM Limited, PGIM, INC.
+          S000074587: [{key: PGIM_INC, from: "2023-11-13"}]   # PGIM ESG High Yield Fund: PGIM Limited, PGIM, INC.
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS, INC. 15"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1067442"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1067442/000168386320015527/pip16-20201231.htm"  # 485BPOS (SAI) filed 2020-12-29 (0001683863-20-015527), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2020-12-29; 6 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004703: [{key: UNRESOLVED, from: "2023-01-17"}]   # PGIM Income Builder Fund: Jennison Associates LLC, PGIM Quantitative Solutions LLC
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS 16"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "929523"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/929523/000168386320015529/pipi17-20201231.htm"  # 485BPOS (SAI) filed 2020-12-29 (0001683863-20-015529), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2020-12-29; 9 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004536: [{key: PGIM_INC, from: "2023-01-17"}]   # PGIM Total Return Bond Fund: PGIM Limited, PGIM, INC.
+          S000043499: [{key: PGIM_INC, from: "2023-01-17"}]   # PGIM Short Duration Multi-Sector Bond Fund: PGIM Limited, PGIM, INC.
+          S000073608: [{key: PGIM_INC, from: "2023-01-17"}]   # PGIM ESG Total Return Bond Fund: PGIM Limited, PGIM, INC.
+          S000076422: [{key: PGIM_INC, from: "2023-01-17"}]   # PGIM ESG Short Duration Multi-Sector Bond Fund: PGIM Limited, PGIM, INC.
+        name: "PRUDENTIAL INVESTMENT PORTFOLIOS, INC. 17"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "356683"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/356683/000168386321006171/f10120d0.htm"  # 485BPOS (SAI) filed 2021-10-28 (0001683863-21-006171), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-10-28; 6 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004514: [{key: JENNISON, from: "2023-11-13"}]   # PGIM Jennison Blend Fund: Jennison Associates LLC
+        name: "PRUDENTIAL JENNISON BLEND FUND, INC."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1022624"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1022624/000168386321006172/f10119d0.htm"  # 485BPOS (SAI) filed 2021-10-28 (0001683863-21-006172), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-10-28; 6 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004657: [{key: JENNISON, from: "2023-11-13"}]   # PGIM Jennison Mid-Cap Growth Fund: Jennison Associates LLC
+        name: "PRUDENTIAL JENNISON MID-CAP GROWTH FUND, INC."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "816753"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/816753/000168386320015517/pjnrfi-20201231.htm"  # 485BPOS (SAI) filed 2020-12-29 (0001683863-20-015517), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2020-12-29; 6 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004515: [{key: JENNISON, from: "2023-01-17"}]   # PGIM Jennison Natural Resources Fund: Jennison Associates LLC
+        name: "PRUDENTIAL JENNISON NATURAL RESOURCES FUND, INC."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "318531"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/318531/000168386321006580/f10304d1.htm"  # 485BPOS (SAI) filed 2021-11-24 (0001683863-21-006580), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-11-24; 5 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004629: [{key: JENNISON, from: "2023-12-13"}]   # PGIM Jennison Small Company Fund: Jennison Associates LLC
+        name: "PRUDENTIAL JENNISON SMALL CO FUND, INC."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "834126"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/834126/000168386321001137/pstcbfi-20210226.htm"  # 485BPOS (SAI) filed 2021-02-26 (0001683863-21-001137), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-02-26; 6 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004769: [{key: PGIM_INC, from: "2023-03-16"}]   # PGIM Short-Term Corporate Bond Fund: PGIM Limited, PGIM, INC.
+        name: "PRUDENTIAL SHORT-TERM CORPORATE BOND FUND, INC."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "793159"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/793159/000168386320015530/pgtrf-20201231.htm"  # 485BPOS (SAI) filed 2020-12-29 (0001683863-20-015530), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2020-12-29; 7 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004375: [{key: PGIM_INC, from: "2023-01-17"}]   # PGIM Global Total Return Fund: PGIM Limited, PGIM, INC.
+          S000059804: [{key: PGIM_INC, from: "2023-01-17"}]   # PGIM Global Total Return (USD Hedged) Fund: PGIM Limited, PGIM, INC.
+        name: "PRUDENTIAL GLOBAL TOTAL RETURN FUND, INC."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "741350"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/741350/000168386320015540/pwfi-20201031.htm"  # 485BPOS (SAI) filed 2020-12-29 (0001683863-20-015540), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2020-12-29; 12 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004671: [{key: PGIM_QUANT, from: "2023-01-17"}]   # PGIM Quant Solutions International Equity Fund: PGIM Quantitative Solutions LLC
+          S000031677: [{key: PGIM_INC, from: "2023-01-17"}]   # PGIM Emerging Markets Debt Local Currency Fund: PGIM Limited, PGIM, INC.
+          S000036439: [{key: JENNISON, from: "2023-01-17"}]   # PGIM Jennison Global Opportunities Fund: Jennison Associates LLC
+          S000037257: [{key: JENNISON, from: "2023-01-17"}]   # PGIM Jennison International Opportunities Fund: Jennison Associates LLC
+          S000042106: [{key: JENNISON, from: "2023-01-17"}]   # PGIM Jennison Global Infrastructure Fund: Jennison Associates LLC
+          S000046704: [{key: JENNISON, from: "2023-01-17"}]   # PGIM Jennison Emerging Markets Equity Opportunities Fund: Jennison Associates LLC
+          S000059803: [{key: PGIM_INC, from: "2023-01-17"}]   # PGIM Emerging Markets Debt Hard Currency Fund: PGIM Limited, PGIM, INC.
+        name: "PRUDENTIAL WORLD FUND, INC."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "352665"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/352665/000168386321000364/psfi-20201130.htm"  # 485BPOS (SAI) filed 2021-01-29 (0001683863-21-000364), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-01-29; 6 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004379: [{key: JENNISON, from: "2023-02-09"}]   # PGIM Jennison Financial Services Fund: Jennison Associates LLC
+          S000004380: [{key: JENNISON, from: "2023-02-09"}]   # PGIM Jennison Health Sciences Fund: Jennison Associates LLC
+          S000004382: [{key: JENNISON, from: "2023-02-09"}]   # PGIM Jennison Utility Fund: Jennison Associates LLC
+        name: "PRUDENTIAL SECTOR FUNDS, INC."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "890339"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/890339/000168386321005613/f9828d0.htm"  # 485BPOS (SAI) filed 2021-09-29 (0001683863-21-005613), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-09-29; 6 SAIs 2021-2026 listed."
+        series_adviser:
+          S000004687: [{key: PGIM_INC, from: "2023-10-13"}]   # PGIM Corporate Bond Fund: PGIM Limited, PGIM, INC.
+          S000004689: [{key: PGIM_QUANT, from: "2023-10-13"}]   # PGIM Quant Solutions Small-Cap Value Fund: PGIM Quantitative Solutions LLC
+          S000004691: [{key: PGIM_INC, from: "2023-10-13"}]   # PGIM Core Bond Fund: PGIM Limited, PGIM, INC.
+        name: "TARGET PORTFOLIO TRUST"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1727074"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1727074/000168386321001770/pet-20210412.htm"  # 485BPOS (SAI) filed 2021-04-12 (0001683863-21-001770), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-04-12; 16 SAIs 2021-2026 listed."
+        series_adviser:
+          S000061589: [{key: PGIM_INC, from: "2023-04-24"}]   # PGIM Ultra Short Bond ETF: PGIM Limited, PGIM, Inc.
+          S000063094: [{key: PGIM_INC, from: "2023-04-24"}]   # PGIM Active High Yield Bond ETF: PGIM, Inc.
+          S000063180: [{key: PGIM_QUANT, from: "2023-04-24"}]   # PGIM QMA Strategic Alpha International Equity ETF: QMA,LLC
+          S000063181: [{key: PGIM_QUANT, from: "2023-04-24"}]   # PGIM QMA Strategic Alpha Large-Cap Core ETF: QMA,LLC
+          S000063182: [{key: PGIM_QUANT, from: "2023-04-24"}]   # PGIM QMA Strategic Alpha Small-Cap Growth ETF: QMA,LLC
+          S000063183: [{key: PGIM_QUANT, from: "2023-04-24"}]   # PGIM QMA Strategic Alpha Small-Cap Value ETF: QMA,LLC
+          S000071448: [{key: PGIM_INC, from: "2023-11-13"}]   # PGIM Active Aggregate Bond ETF: PGIM, INC.
+          S000074500: [{key: PGIM_INC, from: "2023-11-13"}]   # PGIM Total Return Bond ETF: PGIM Limited, PGIM, INC.
+          S000075490: [{key: PGIM_INC, from: "2023-11-13"}]   # PGIM Floating Rate Income ETF: PGIM Limited, PGIM, INC.
+          S000079105: [{key: JENNISON, from: "2023-11-13"}]   # PGIM Jennison Focused Value ETF: Jennison Associates LLC
+          S000079106: [{key: JENNISON, from: "2023-11-13"}]   # PGIM Jennison Focused Growth ETF: Jennison Associates LLC
+          S000079107: [{key: UNRESOLVED, from: "2023-11-13"}]   # PGIM Portfolio Ballast ETF: subadviser changed in window: PGIM_QUANT -> PGIM_INC
+          S000080946: [{key: PGIM_INC, from: "2023-11-13"}]   # PGIM Short Duration Multi-Sector Bond ETF: PGIM, INC.
+          S000080947: [{key: PGIM_INC, from: "2023-11-13"}]   # PGIM AAA CLO ETF: PGIM Limited, PGIM, INC.
+          S000083331: [{key: JENNISON, from: "2024-11-13"}]   # PGIM Jennison Better Future ETF: Jennison Associates LLC
+          S000083332: [{key: JENNISON, from: "2024-11-13"}]   # PGIM Jennison Focused International Equity ETF: Jennison Associates LLC
+          S000083333: [{key: JENNISON, from: "2024-11-13"}]   # PGIM Jennison Focused Mid-Cap ETF: Jennison Associates LLC
+          S000083334: [{key: PGIM_INC, from: "2024-11-13"}]   # PGIM Short Duration High Yield ETF: PGIM Limited, PGIM, INC.
+          S000085146: [{key: PGIM_INC, from: "2024-11-13"}]   # PGIM Ultra Short Municipal Bond ETF: PGIM, INC.
+          S000085147: [{key: PGIM_INC, from: "2024-11-13"}]   # PGIM Municipal Income Opportunities ETF: PGIM, INC.
+          S000093924: [{key: PGIM_INC, from: "2025-11-13"}]   # PGIM Corporate Bond 0-5 Year ETF: PGIM, INC.
+          S000093925: [{key: PGIM_INC, from: "2025-11-13"}]   # PGIM Corporate Bond 5-10 Year ETF: PGIM, INC.
+          S000093926: [{key: PGIM_INC, from: "2025-11-13"}]   # PGIM Corporate Bond 10+ Year ETF: PGIM, INC.
+          S000104986: [{key: PGIM_INC, from: "2026-11-16"}]   # PGIM AAA CLO Aggregate Duration ETF: PGIM, INC.
+          S000104987: [{key: PGIM_INC, from: "2026-11-16"}]   # PGIM Securitized Income ETF: PGIM, INC.
+          S000104988: [{key: JENNISON, from: "2026-11-16"}]   # PGIM Jennison U.S. Core Equity ETF: Jennison Associates LLC
+        name: "PGIM ETF TRUST"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1992104"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1992104/000168386324004211/f38855d0.htm"  # 485BPOS (SAI) filed 2024-06-12 (0001683863-24-004211), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2024-06-12; 5 SAIs 2021-2026 listed."
+        series_adviser:
+          S000083268: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 20 ETF - December: PGIM Quantitative Solutions LLC
+          S000083269: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 20 ETF - March: PGIM Quantitative Solutions LLC
+          S000083270: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 20 ETF - February: PGIM Quantitative Solutions LLC
+          S000083271: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 20 ETF - January: PGIM Quantitative Solutions LLC
+          S000083272: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 12 ETF - December: PGIM Quantitative Solutions LLC
+          S000083273: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 12 ETF - November: PGIM Quantitative Solutions LLC
+          S000083274: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 12 ETF - October: PGIM Quantitative Solutions LLC
+          S000083275: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 12 ETF - September: PGIM Quantitative Solutions LLC
+          S000083276: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 12 ETF - August: PGIM Quantitative Solutions LLC
+          S000083277: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 12 ETF - July: PGIM Quantitative Solutions LLC
+          S000083278: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 12 ETF - June: PGIM Quantitative Solutions LLC
+          S000083279: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 20 ETF - November: PGIM Quantitative Solutions LLC
+          S000083280: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 12 ETF - May: PGIM Quantitative Solutions LLC
+          S000083281: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 12 ETF - April: PGIM Quantitative Solutions LLC
+          S000083282: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 12 ETF - March: PGIM Quantitative Solutions LLC
+          S000083283: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 12 ETF - February: PGIM Quantitative Solutions LLC
+          S000083284: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 12 ETF - January: PGIM Quantitative Solutions LLC
+          S000083285: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 20 ETF - October: PGIM Quantitative Solutions LLC
+          S000083286: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 20 ETF - September: PGIM Quantitative Solutions LLC
+          S000083287: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 20 ETF - August: PGIM Quantitative Solutions LLC
+          S000083288: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 20 ETF - July: PGIM Quantitative Solutions LLC
+          S000083289: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 20 ETF - June: PGIM Quantitative Solutions LLC
+          S000083290: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 20 ETF - May: PGIM Quantitative Solutions LLC
+          S000083291: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM S&P 500 Buffer 20 ETF - April: PGIM Quantitative Solutions LLC
+          S000085401: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM Laddered S&P 500 Buffer 12 ETF: PGIM Quantitative Solutions LLC
+          S000085402: [{key: PGIM_QUANT, from: "2025-01-14"}]   # PGIM Laddered S&P 500 Buffer 20 ETF: PGIM Quantitative Solutions LLC
+          S000089293: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM S&P 500 Max Buffer ETF - January: PGIM Quantitative Solutions LLC
+          S000089294: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM S&P 500 Max Buffer ETF - October: PGIM Quantitative Solutions LLC
+          S000089295: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM S&P 500 Max Buffer ETF - November: PGIM Quantitative Solutions LLC
+          S000089297: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM Nasdaq-100 Buffer 12 ETF - January: PGIM Quantitative Solutions LLC
+          S000089298: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM Nasdaq-100 Buffer 12 ETF - April: PGIM Quantitative Solutions LLC
+          S000089299: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM Nasdaq-100 Buffer 12 ETF - July: PGIM Quantitative Solutions LLC
+          S000089300: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM Nasdaq-100 Buffer 12 ETF - October: PGIM Quantitative Solutions LLC
+          S000089301: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM Laddered Nasdaq-100 Buffer 12 ETF: PGIM Quantitative Solutions LLC
+          S000089302: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM S&P 500 Max Buffer ETF - February: PGIM Quantitative Solutions LLC
+          S000089303: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM S&P 500 Max Buffer ETF - March: PGIM Quantitative Solutions LLC
+          S000089304: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM S&P 500 Max Buffer ETF - April: PGIM Quantitative Solutions LLC
+          S000089305: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM S&P 500 Max Buffer ETF - May: PGIM Quantitative Solutions LLC
+          S000089306: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM S&P 500 Max Buffer ETF - June: PGIM Quantitative Solutions LLC
+          S000089307: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM S&P 500 Max Buffer ETF - July: PGIM Quantitative Solutions LLC
+          S000089308: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM S&P 500 Max Buffer ETF - August: PGIM Quantitative Solutions LLC
+          S000089309: [{key: PGIM_QUANT, from: "2026-01-13"}]   # PGIM S&P 500 Max Buffer ETF - September: PGIM Quantitative Solutions LLC
+        name: "PGIM Rock ETF Trust"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "711175"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/711175/000168386321001835/psf-20210415.htm"  # 485BPOS (SAI) filed 2021-04-15 (0001683863-21-001835), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2021-04-15; 8 SAIs 2021-2026 listed."
+        series_adviser:
+          S000002195: [{key: PGIM_INC, from: "2023-03-16"}]   # PSF PGIM Government Money Market Portfolio: PGIM, INC.
+          S000002196: [{key: EXTERNAL, from: "2023-03-16"}]   # PSF NATURAL RESOURCES PORTFOLIO: T. Rowe Price Associates, Inc.
+          S000002197: [{key: UNRESOLVED, from: "2023-03-16"}]   # PSF Global Portfolio: subadviser changed in window: EXTERNAL -> PGIM_QUANT
+          S000002198: [{key: PGIM_INC, from: "2023-03-16"}]   # PSF PGIM Government Income Portfolio: PGIM, INC.
+          S000002200: [{key: JENNISON, from: "2023-03-16"}]   # PSF PGIM Jennison Growth Portfolio: Jennison Associates LLC
+          S000002201: [{key: JENNISON, from: "2023-03-16"}]   # PSF PGIM Jennison Focused Blend Portfolio: Jennison Associates LLC
+          S000002204: [{key: EXTERNAL, from: "2023-03-16"}]   # PSF Small-Cap Value Portfolio: Goldman Sachs Asset Management, L.P.
+          S000002206: [{key: PGIM_INC, from: "2023-03-16"}]   # PSF PGIM Total Return Bond Portfolio: PGIM Limited, PGIM, INC.
+          S000002210: [{key: EXTERNAL, from: "2023-03-16"}]   # PSF International Growth Portfolio: Jennison Associates LLC, Neuberger Berman Investment Advisers LLC, William Blair Investment Management, LLC
+          S000002217: [{key: JENNISON, from: "2023-03-16"}]   # PSF PGIM Jennison Blend Portfolio: Jennison Associates LLC
+          S000002222: [{key: EXTERNAL, from: "2023-03-16"}]   # PSF Mid-Cap Growth Portfolio: J.P. Morgan Investment Management Inc.
+          S000002225: [{key: UNRESOLVED, from: "2023-03-16"}]   # PSF PGIM Flexible Managed Portfolio: PGIM Limited, PGIM Quantitative Solutions LLC, PGIM, INC.
+          S000002226: [{key: UNRESOLVED, from: "2023-03-16"}]   # PSF PGIM 50/50 Balanced Portfolio: PGIM Limited, PGIM Quantitative Solutions LLC, PGIM, INC.
+          S000002227: [{key: PGIM_QUANT, from: "2023-03-16"}]   # PSF Small-Cap Stock Index Portfolio: PGIM Quantitative Solutions LLC
+          S000002228: [{key: PGIM_INC, from: "2023-03-16"}]   # PSF PGIM High Yield Bond Portfolio: PGIM Limited, PGIM, INC.
+          S000002229: [{key: PGIM_QUANT, from: "2023-03-16"}]   # PSF Stock Index Portfolio: PGIM Quantitative Solutions LLC
+          S000002230: [{key: JENNISON, from: "2023-03-16"}]   # PSF PGIM Jennison Value Portfolio: Jennison Associates LLC
+          S000093076: [{key: PGIM_QUANT, from: "2026-03-13"}]   # PSF PGIM Laddered Allocation S&P 500 Buffer 12 Portfolio: PGIM Quantitative Solutions LLC
+          S000093077: [{key: PGIM_QUANT, from: "2026-03-13"}]   # PSF PGIM Laddered Allocation S&P 500 Buffer 20 Portfolio: PGIM Quantitative Solutions LLC
+          S000093078: [{key: PGIM_QUANT, from: "2026-03-13"}]   # PSF PGIM Ballast Portfolio: PGIM Quantitative Solutions LLC
+        name: "PRUDENTIAL SERIES FUND"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "814679"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/814679/000168386320015142/ast-20201231.htm"  # 485BPOS (SAI) filed 2020-12-15 (0001683863-20-015142), 'Proxy Voting' and Appendix I
+        adviser_verified: "2026-11-19"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to the Fund's subadviser(s) the responsibility for voting proxies', and 'a summary of the proxy voting policies of the subadviser(s) is set forth in its respective Appendix to this SAI' (Appendix I). So no registrant-wide key: each series is keyed by its voting subadviser, read from the trust's Form N-CEN sub-adviser tables (filed 2023-2026). Series with a PGIM-affiliated subadviser only: JENNISON, PGIM_QUANT or PGIM_INC (PGIM, Inc.'s investment groups, one printed policy); any unaffiliated subadviser: EXTERNAL; two different PGIM voters, or a subadviser change inside the window: UNRESOLVED; no subadviser (fund of funds run by PGIM Investments): unlabelled. Earliest SAI read 2020-12-15; 12 SAIs 2021-2026 listed."
+        series_adviser:
+          S000001976: [{key: EXTERNAL, from: "2023-03-16"}]   # AST J.P. Morgan International Equity Portfolio: J.P. Morgan Investment Management Inc.
+          S000001977: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Large-Cap Value Portfolio: Hotchkis & Wiley Capital Management, LLC, Massachusetts Financial Services Company, T. Rowe Price Associates, Inc., Wellington Management Company LLP
+          S000001978: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Small-Cap Equity Portfolio: Driehaus Capital Management LLC, Emerald Mutual Fund Advisors Trust, Massachusetts Financial Services Company, UBS Asset Management (Americas) Inc., Victory Capital Management Inc.
+          S000001981: [{key: EXTERNAL, from: "2023-03-16"}]   # AST International Value Portfolio: LSV Asset Management, Lazard Asset Management LLC
+          S000001982: [{key: EXTERNAL, from: "2023-03-16"}]   # AST T. Rowe Price Natural Resources Portfolio: T. Rowe Price Associates, Inc.
+          S000001984: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Large-Cap Growth Portfolio: ClearBridge Investments, LLC, Jennison Associates LLC, Massachusetts Financial Services Company, T. Rowe Price Associates, Inc.
+          S000001985: [{key: EXTERNAL, from: "2023-03-16"}]   # AST International Equity Portfolio: Jennison Associates LLC, Neuberger Berman Investment Advisers LLC, William Blair Investment Management, LLC
+          S000001989: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Small-Cap Value Portfolio: BOSTON PARTNERS GLOBAL INVESTORS, INC., Goldman Sachs Asset Management, L.P., Hotchkis & Wiley Capital Management, LLC, J.P. Morgan Investment Management Inc.
+          S000001991: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Cohen & Steers Realty Portfolio: Cohen & Steers Capital Management, Inc.
+          S000001995: [{key: EXTERNAL, from: "2023-03-16"}]   # AST MFS Global Equity Portfolio: Massachusetts Financial Services Company
+          S000001999: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Mid-Cap Growth Portfolio: Delaware Investments Fund Advisers, J.P. Morgan Investment Management Inc., Massachusetts Financial Services Company, TimesSquare Capital Management LLC
+          S000002007: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Government Money Market Portfolio: PGIM, INC.
+          S000002008: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Mid-Cap Value Portfolio: Massachusetts Financial Services Company, Victory Capital Management Inc., Wellington Management Company LLP
+          S000002009: [{key: EXTERNAL, from: "2023-03-16"}]   # AST J.P. Morgan Conservative Multi-Asset Portfolio: J.P. Morgan Investment Management Inc.
+          S000002010: [{key: EXTERNAL, from: "2023-03-16"}]   # AST High Yield Portfolio: J.P. Morgan Investment Management Inc., PGIM, INC.
+          S000002011: [{key: EXTERNAL, from: "2023-03-16"}]   # AST T. Rowe Price Asset Allocation Portfolio: T. Rowe Price Associates, Inc., T. Rowe Price International Ltd.
+          S000006790: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Wellington Management Hedged Equity Portfolio: Wellington Management Company LLP
+          S000006791: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Aggressive Asset Allocation Portfolio: ClearBridge Investments, LLC, J.P. Morgan Investment Management Inc., Jennison Associates LLC, Massachusetts Financial Services Company, PGIM Limited, PGIM Quantitative Solutions LLC, PGIM, INC., Wellington Management Company LLP
+          S000006792: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Multi-Asset Diversified Plus Portfolio: J.P. Morgan Investment Management Inc., Jennison Associates LLC, Massachusetts Financial Services Company, Morgan Stanley Investment Management Inc., PGIM Limited, PGIM Quantitative Solutions LLC, PGIM, INC., SYSTEMATICA INVESTMENTS LIMITED, Wellington Management Company LLP, Western Asset Management Company Limited, Western Asset Management Company, LLC
+          S000006793: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Balanced Asset Allocation Portfolio: ClearBridge Investments, LLC, J.P. Morgan Investment Management Inc., Jennison Associates LLC, Massachusetts Financial Services Company, PGIM Limited, PGIM Quantitative Solutions LLC, PGIM, INC., Wellington Management Company LLP
+          S000006794: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Preservation Asset Allocation Portfolio: ClearBridge Investments, LLC, J.P. Morgan Investment Management Inc., Jennison Associates LLC, Massachusetts Financial Services Company, PGIM Limited, PGIM Quantitative Solutions LLC, PGIM, INC., Wellington Management Company LLP
+          S000006796: [{key: UNRESOLVED, from: "2023-03-16"}]   # AST PGIM Aggressive Multi-Asset Portfolio: Jennison Associates LLC, PGIM Limited, PGIM Quantitative Solutions LLC, PGIM, INC.
+          S000006797: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Multi-Asset Diversified Portfolio: LSV Asset Management, Massachusetts Financial Services Company, PACIFIC INVESTMENT MANAGEMENT COMPANY LLC, PGIM Limited, PGIM Quantitative Solutions LLC, PGIM, INC., T. Rowe Price Associates, Inc., William Blair Investment Management, LLC
+          S000019378: [{key: EXTERNAL, from: "2023-03-16"}]   # AST J.P. Morgan Moderate Multi-Asset Portfolio: J.P. Morgan Investment Management Inc.
+          S000019381: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Core Fixed Income Portfolio: PGIM Limited, PGIM, INC., Wellington Management Company LLP, Western Asset Management Company Limited
+          S000020634: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Investment Grade Bond Portfolio: PGIM Limited, PGIM, INC.
+          S000021743: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Cohen & Steers Global Realty Portfolio: Cohen & Steers Asia Limited, Cohen & Steers Capital Management, Inc., Cohen & Steers UK Limited
+          S000021744: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Emerging Markets Equity Portfolio: AQR Capital Management, LLC, J.P. Morgan Investment Management Inc., MARTIN CURRIE INC.
+          S000030880: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Bond Portfolio 2022: PGIM Limited, PGIM, INC.
+          S000031887: [{key: EXTERNAL, from: "2023-03-16"}]   # AST BlackRock Global Strategies Portfolio: BlackRock Financial Management, Inc., BlackRock International Limited
+          S000031888: [{key: UNRESOLVED, from: "2023-03-16"}]   # AST Quantitative Modeling Portfolio: Jennison Associates LLC, PGIM Quantitative Solutions LLC, PGIM, INC.
+          S000035437: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Bond Portfolio 2023: PGIM Limited, PGIM, INC.
+          S000036492: [{key: EXTERNAL, from: "2023-03-16"}]   # AST MFS Growth Allocation Portfolio: Massachusetts Financial Services Company
+          S000037841: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Western Asset Emerging Markets Debt Portfolio: Western Asset Management Company Limited, Western Asset Management Company, LLC
+          S000038999: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Bond Portfolio 2024: PGIM Limited, PGIM, INC.
+          S000039713: [{key: EXTERNAL, from: "2023-03-16"}]   # AST ClearBridge Dividend Growth Portfolio: ClearBridge Investments, LLC
+          S000039716: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Multi-Sector Fixed Income Portfolio: PGIM Limited, PGIM, INC.
+          S000040444: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Large-Cap Equity Portfolio: J.P. Morgan Investment Management Inc., Massachusetts Financial Services Company, PGIM Quantitative Solutions LLC
+          S000043712: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Bond Portfolio 2025: PGIM Limited, PGIM, INC.
+          S000043713: [{key: EXTERNAL, from: "2023-03-16"}]   # AST J.P. Morgan Aggressive Multi-Asset Portfolio: T. Rowe Price Associates, Inc., T. Rowe Price Hong Kong Limited, T. Rowe Price International Ltd., T. Rowe Price Japan, Inc.
+          S000045116: [{key: UNRESOLVED, from: "2023-03-16"}]   # AST Prudential Flexible Multi-Strategy Portfolio: Jennison Associates LLC, PGIM Limited, PGIM Quantitative Solutions LLC, PGIM, INC.
+          S000045117: [{key: EXTERNAL, from: "2023-03-16"}]   # AST T. Rowe Price Diversified Real Growth Portfolio: T. Rowe Price Associates, Inc., T. Rowe Price Hong Kong Limited, T. Rowe Price International Ltd., T. Rowe Price Japan, Inc., T. Rowe Price Singapore Private Ltd.
+          S000045123: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Franklin 85/15 Diversified Allocation Portfolio: ClearBridge Investments, LLC, Franklin Advisers, Inc., Western Asset Management Company Limited, Western Asset Management Company, LLC
+          S000047529: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Bond Portfolio 2026: PGIM Limited, PGIM, INC.
+          S000047530: [{key: PGIM_QUANT, from: "2023-03-16"}]   # AST QMA International Core Equity Portfolio: PGIM Quantitative Solutions LLC
+          S000050071: [{key: EXTERNAL, from: "2023-03-16"}]   # AST Global Bond Portfolio: AllianceBernstein L.P., Goldman Sachs Asset Management, L.P., Wellington Management Company LLP
+          S000052152: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Bond Portfolio 2027: PGIM Limited, PGIM, INC.
+          S000055935: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Bond Portfolio 2028: PGIM Limited, PGIM, INC.
+          S000059814: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Bond Portfolio 2029: PGIM Limited, PGIM, INC.
+          S000061662: [{key: EXTERNAL, from: "2023-03-16"}]   # AST American Funds Growth Allocation Portfolio: Capital International, Inc.
+          S000063776: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Bond Portfolio 2030: PGIM Limited, PGIM, INC.
+          S000063946: [{key: EXTERNAL, from: "2023-03-16"}]   # AST BlackRock 60/40 Target Allocation ETF Portfolio: BlackRock Financial Management, Inc.
+          S000063947: [{key: EXTERNAL, from: "2023-03-16"}]   # AST BlackRock 80/20 Target Allocation ETF Portfolio: BlackRock Financial Management, Inc.
+          S000067337: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Bond Portfolio 2031: PGIM Limited, PGIM, INC.
+          S000070335: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Bond Portfolio 2032: PGIM Limited, PGIM, INC.
+          S000074732: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Bond Portfolio 2033: PGIM Limited, PGIM, INC.
+          S000076800: [{key: PGIM_INC, from: "2023-03-16"}]   # AST Target Maturity Central Portfolio: PGIM Limited, PGIM, INC.
+          S000077474: [{key: PGIM_INC, from: "2023-03-16"}]   # AST PGIM Fixed Income Central Portfolio: PGIM Limited, PGIM, INC.
+          S000079237: [{key: PGIM_INC, from: "2024-03-15"}]   # AST Bond Portfolio 2034: PGIM Limited, PGIM, INC.
+          S000079426: [{key: EXTERNAL, from: "2023-03-16"}]   # AST T. Rowe Price Fixed Income Central Portfolio: T. Rowe Price Associates, Inc.
+          S000079726: [{key: EXTERNAL, from: "2023-03-16"}]   # AST J.P. Morgan Fixed Income Central Portfolio: J.P. Morgan Investment Management Inc.
+          S000083449: [{key: PGIM_INC, from: "2025-03-14"}]   # AST Bond Portfolio 2035: PGIM Limited, PGIM, INC.
+          S000089134: [{key: PGIM_INC, from: "2026-03-13"}]   # AST Bond Portfolio 2036: PGIM Limited, PGIM, INC.
+        name: "ADVANCED SERIES TRUST"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1554697"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1554697/000119312521286777/d170268dncsr.htm"  # N-CSR filed 2021-09-29 (0001193125-21-286777)
+        adviser_verified: "2026-11-19"
+        voting_note: "N-CSR 'Proxy Voting': 'The Board ... has delegated to the Fund's subadviser(s) the responsibility for voting any proxies'; the closed-end fund has no 485BPOS SAI and prints no policy. Series keyed from the trust's Form N-CEN sub-adviser table (filed 2023-2026): PGIM-affiliated subadviser only -> JENNISON / PGIM_QUANT / PGIM_INC, any unaffiliated subadviser -> EXTERNAL, mixed PGIM voters -> UNRESOLVED."
+        adviser_key_history: [{key: PGIM_INC, from: "2023-10-13"}]   # PGIM Global High Yield Fund, Inc.: PGIM Limited, PGIM, INC.
+        name: "PGIM Global High Yield Fund, Inc."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1534880"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1534880/000119312521224342/d158598dncsr.htm"  # N-CSR filed 2021-07-26 (0001193125-21-224342)
+        adviser_verified: "2026-11-19"
+        voting_note: "N-CSR 'Proxy Voting': 'The Board ... has delegated to the Fund's subadviser(s) the responsibility for voting any proxies'; the closed-end fund has no 485BPOS SAI and prints no policy. Series keyed from the trust's Form N-CEN sub-adviser table (filed 2023-2026): PGIM-affiliated subadviser only -> JENNISON / PGIM_QUANT / PGIM_INC, any unaffiliated subadviser -> EXTERNAL, mixed PGIM voters -> UNRESOLVED."
+        adviser_key_history: [{key: PGIM_INC, from: "2023-10-13"}]   # PGIM High Yield Bond Fund, Inc.: PGIM Limited, PGIM, INC.
+        name: "PGIM High Yield Bond Fund, Inc."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1812923"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1812923/000119312521286358/d183911dncsr.htm"  # N-CSR filed 2021-09-29 (0001193125-21-286358)
+        adviser_verified: "2026-11-19"
+        voting_note: "N-CSR 'Proxy Voting': 'The Board ... has delegated to the Fund's subadviser(s) the responsibility for voting any proxies'; the closed-end fund has no 485BPOS SAI and prints no policy. Series keyed from the trust's Form N-CEN sub-adviser table (filed 2023-2026): PGIM-affiliated subadviser only -> JENNISON / PGIM_QUANT / PGIM_INC, any unaffiliated subadviser -> EXTERNAL, mixed PGIM voters -> UNRESOLVED."
+        adviser_key_history: [{key: PGIM_INC, from: "2023-10-13"}]   # PGIM Short Duration High Yield Opportunities Fund: PGIM Limited, PGIM, INC.
+        name: "PGIM Short Duration High Yield Opportunities Fund"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1875084"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1875084/000119312523061621/d645400dncsr.htm"  # N-CSR filed 2023-03-07 (0001193125-23-061621)
+        adviser_verified: "2026-11-19"
+        voting_note: "N-CSR 'Proxy Voting': 'The Board ... has delegated to the Fund's subadviser(s) the responsibility for voting any proxies'; the closed-end fund has no 485BPOS SAI and prints no policy. Series keyed from the trust's Form N-CEN sub-adviser table (filed 2023-2026): PGIM-affiliated subadviser only -> JENNISON / PGIM_QUANT / PGIM_INC, any unaffiliated subadviser -> EXTERNAL, mixed PGIM voters -> UNRESOLVED."
+        adviser_key_history: [{key: PGIM_INC, from: "2023-03-16"}]   # PGIM Private Real Estate Fund, INC.: PGIM, INC.
+        name: "PGIM Real Estate Fund Inc."
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1989582"
+        adviser: "PGIM Investments LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1989582/000119312524059076/d136467dncsr.htm"  # N-CSR filed 2024-03-05 (0001193125-24-059076)
+        adviser_verified: "2026-11-19"
+        voting_note: "N-CSR 'Proxy Voting': 'The Board ... has delegated to the Fund's subadviser(s) the responsibility for voting any proxies'; the closed-end fund has no 485BPOS SAI and prints no policy. Series keyed from the trust's Form N-CEN sub-adviser table (filed 2023-2026): PGIM-affiliated subadviser only -> JENNISON / PGIM_QUANT / PGIM_INC, any unaffiliated subadviser -> EXTERNAL, mixed PGIM voters -> UNRESOLVED."
+        adviser_key_history: [{key: PGIM_INC, from: "2024-03-15"}]   # PGIM Credit Income Fund: PGIM Limited, PGIM, INC.
+        name: "PGIM Credit Income Fund"
+        validated: "2026-11-19"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed per SERIES, never per registrant: every PGIM SAI says the Board delegated proxy voting to the Manager (PGIM Investments LLC), which delegates to each Fund's subadviser(s); the SAI prints that subadviser's own policy in Appendix I. The voting subadviser per series is read from Form N-CEN (Item C.3), filed 2023-2026 for each trust (34 registrants). PGIM Quantitative Solutions LLC (formerly QMA LLC) is PGIM_QUANT, Jennison Associates LLC is JENNISON and PGIM, Inc. (with PGIM Limited and PGIM Real Estate (UK) Limited, whose SAIs print the one PGIM, Inc. appendix) is PGIM_INC."
+      - "EXTERNAL = any unaffiliated subadviser named in any N-CEN read for the series (Prudential Series Fund and Advanced Series Trust portfolios run by J.P. Morgan, T. Rowe Price, Wellington, MFS, ClearBridge, Putnam and others, plus a few PGIM funds with outside sleeves). UNRESOLVED = two different PGIM voters in one series (the sleeve split is not in the N-PX), an affiliate whose own policy is not printed in any SAI read (PGIM Wadhwani LLP, PGIM DC Solutions LLC) or a subadviser change inside 2023-2026 (the Target Date funds moved from Quant Solutions to PGIM DC Solutions in 2024; PSF Global Portfolio and the PGIM Portfolio Ballast ETF also changed). N-CEN flags are not trusted over the name: a handful of rows flag Jennison Associates or PGIM Limited as unaffiliated and Wellington Management as affiliated; the keys follow the firm."
+      - "Not ingested, not keyed: PGIM Investments LLC (1038001), PGIM, Inc. (946754) and PGIM Quantitative Solutions LLC (1316541), whose institutional-manager N-PX reports overlap the fund tables or are notices; Jennison Associates (53417, 13-F filer); the municipal and money-market trusts (Prudential National Muni Fund 314612, Prudential Government Money Market Fund 67590, Prudential Tax Free Money Fund 311561; municipal series inside the Investment Portfolios trusts are ingested and simply add no operating-company rows); PGIM Securities Investment Trust Enterprise (1666044, a Taiwan fund filing N-PX); PGIM Private Credit Fund (1923622, no N-PX); the Prudential Trust Company collective trusts, the PGIM real-estate, senior-loan and fixed-income private funds and the offshore (Ireland / Luxembourg / Cayman) vehicles, which file no US fund vote table."
+      - "Policy text: the Jennison Associates Proxy Voting Policy and Procedures PDF on jennison.com (200 application/pdf to honest clients, file name 20260228, Wayback holds only that edition), and under separate labels the three affiliates' policies as printed in an SAI Appendix I: Jennison (Prudential Jennison Blend Fund SAIs), PGIM Quantitative Solutions (Target Portfolio Trust SAIs) and PGIM, Inc. (Investment Portfolios 4 SAIs). PGIM Quantitative Solutions and PGIM, Inc. publish no stand-alone policy document (their web pages are overviews saying the policy is available on request), so those two are archived through the SAI route only. The SAI Appendix I prints a description of the PGIM Quantitative Solutions and PGIM, Inc. policies and the full Jennison policy; the printed PGIM, Inc. text differs by trust (PGIM Real Estate approach, PGIM Credit)."
+    commitments:
+      # Verified 2026-11-19 (200, application/pdf, honest client). A PDF, so no `body` bound. The edition is named in the file ('20260228'); the Wayback index holds one capture (2026-05-16).
+      - label: proxy-voting-policy-and-procedures
+        url: "https://www.jennison.com/content/dam/jennison/us/en/active/documents/reports/proxy-voting/20260228%20Proxy%20Voting%20Policy%20and%20Procedures%20FINAL.pdf"
+        adviser: "Jennison Associates LLC"
+        adviser_key: "JENNISON"
+      # The Jennison policy as printed in Appendix I of the Prudential Jennison Blend Fund SAI (one heading per annual 485BPOS, to Appendix II), dated by EDGAR filing date; page marks "NN Table of Contents"
+      # and the fund-name footer are removed. Separate label from the website PDF. Stray page numbers inside a sentence (73, 75, 77) are not removed, so a page-number shift can read as an edit.
+      - label: jennison-proxy-voting-policy-as-printed-in-sai
+        adviser: "Jennison Associates LLC"
+        adviser_key: "JENNISON"
+        sai_appendix:
+          cik: "0000356683"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "APPENDIX I: PROXY VOTING POLICIES OF THE SUBADVISER JENNISON ASSOCIATES LLC Proxy Voting Policy and Procedures"
+          end:
+            - "APPENDIX II: DESCRIPTIONS OF SECURITY RATINGS"
+          strip_page_numbers: true
+          strip_patterns:
+            - 'PGIM Jennison Blend Fund \d{1,3}(?: Table of Contents)?'
+            - '\d{1,3} Table of Contents'
+      # The PGIM Quantitative Solutions description of its proxy voting policies as printed in Appendix I of the Target Portfolio Trust SAI. Retitled across editions (QMA, 'PGIM Quant Solutions').
+      - label: pgim-quantitative-solutions-proxy-voting-policy-as-printed-in-sai
+        adviser: "PGIM Quantitative Solutions LLC"
+        adviser_key: "PGIM_QUANT"
+        sai_appendix:
+          cik: "0000890339"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "APPENDIX I: PROXY VOTING POLICIES OF THE SUBADVISER PGIM Quantitative Solutions LLC Description of PGIM Quantitative Solutions LLC Proxy Voting Policies"
+            - "APPENDIX I: PROXY VOTING POLICIES OF THE SUBADVISER PGIM QUANTITATIVE SOLUTIONS LLC (“PGIM Quant Solutions”) Description of Proxy Voting Policies"
+            - "APPENDIX I: PROXY VOTING POLICIES OF THE SUBADVISER PGIM QUANTITATIVE SOLUTIONS LLC (“PGIM Quantitative Solutions”) PROXY VOTING Description of Proxy Voting Policies"
+          end:
+            - "APPENDIX II: DESCRIPTIONS OF SECURITY RATINGS"
+          strip_page_numbers: true
+      # The PGIM, Inc. policy (PGIM Fixed Income, PGIM Real Estate and other investment groups) as printed in Appendix I of the Prudential Investment Portfolios 4 SAI (PGIM Muni High Income Fund); the
+      # fund-name footer is removed. The 2026 edition prints a shorter PGIM Credit description.
+      - label: pgim-inc-proxy-voting-policy-as-printed-in-sai
+        adviser: "PGIM, Inc."
+        adviser_key: "PGIM_INC"
+        sai_appendix:
+          cik: "0000807394"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "APPENDIX I: PROXY VOTING POLICIES OF THE SUBADVISER PGIM, INC."
+          end:
+            - "APPENDIX II: DESCRIPTIONS OF SECURITY RATINGS"
+          strip_page_numbers: true
+          strip_patterns:
+            - 'PGIM Muni High Income Fund(?: \d{1,3})?'

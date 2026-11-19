@@ -640,6 +640,34 @@ institutional-manager N-PX of Principal Global Investors (769734) and Principal 
 Investors (1218333), which overlap the fund tables; the Principal Real Estate Income Fund
 (1557523), whose adviser is ALPS Advisors, Inc.; the private and interval funds with no vote table.
 
+PGIM (PGIM Investments LLC and its subadvisers, Prudential Financial; added 2026-11-19): unlike the
+other managers, no PGIM registrant has one voter. Every SAI of the 29 SAI-filing trusts says "The Board has
+delegated to the Manager [PGIM Investments LLC] the responsibility for voting any proxies ... The Manager delegates to
+the Fund's subadviser(s) the responsibility for voting proxies" and prints each subadviser's own policy in "Appendix
+I: Proxy voting policies of the subadviser"; the five closed-end funds' N-CSR say the same of the Fund's subadviser. So
+the registry keys every SERIES (`series_adviser`) by its voting subadviser, read from the trust's own Form N-CEN
+(Item C.3, sub-advisers per series; every N-CEN filed 2023-01 to 2026-11 for the 34 registrants), because the SAIs name the
+subadvisers only in prose and one SAI covers several funds. Keys: `JENNISON` (Jennison Associates LLC), `PGIM_QUANT`
+(PGIM Quantitative Solutions LLC, formerly QMA LLC) and `PGIM_INC` (PGIM, Inc. with PGIM Limited and PGIM Real Estate (UK)
+Limited: the SAIs print one "PGIM, Inc." appendix for its investment groups, PGIM Fixed Income and PGIM Real Estate among
+them, so those are one key, not two); any unaffiliated subadviser named for any part of a series makes it `EXTERNAL`
+(Prudential Series Fund and Advanced Series Trust portfolios run by J.P. Morgan, T. Rowe Price, Wellington, MFS,
+ClearBridge and others); two different PGIM voters in one series, an affiliate whose policy no SAI prints (PGIM Wadhwani,
+PGIM DC Solutions) or a subadviser change inside the window (the Target Date funds, PSF Global Portfolio, PGIM Portfolio
+Ballast ETF) is `UNRESOLVED`; a series with no subadviser, or absent from every N-CEN read, stays unlabelled. N-CEN's
+affiliated flag is not trusted over the firm's name (a few rows flag Jennison or PGIM Limited as unaffiliated). Rules start
+on the filing date of the first N-CEN read for the series, so meetings before 2023 stay unlabelled (the ledger holds
+votes from 2023-07 only). Policy text: the Jennison Proxy Voting Policy and Procedures PDF on jennison.com (200,
+`application/pdf`, honest client, probed 2026-11-19; Wayback holds one capture of it), plus the three affiliates' policies
+as printed in an SAI: Jennison (Prudential Jennison Blend Fund, six editions 2021-2026), PGIM Quantitative Solutions
+(Target Portfolio Trust, five) and PGIM, Inc. (Prudential Investment Portfolios 4, five). PGIM Quantitative Solutions and
+PGIM, Inc. publish no stand-alone policy (their pages are overviews saying it is available on request), and the SAI prints
+a description of those two, with the PGIM, Inc. text differing by trust; the SAI-printed Jennison text can leave a stray
+page number inside a sentence. Ingested N-PX 2024-26: 1,034,699 non-duplicate votes (Advanced Series Trust alone 672,550,
+almost all EXTERNAL; no duplicate group left in the PGIM CIKs). Not ingested: the municipal and money-market trusts, PGIM
+Securities Investment Trust Enterprise (1666044), PGIM Private Credit Fund (no N-PX), the PGIM institutional-manager and
+private / collective-trust / offshore funds, and the legacy-HTML N-PX before 2024.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting
