@@ -194,23 +194,28 @@ def _kinds_note(kinds: list[str]) -> str:
     return "shipped vote kinds: " + ", ".join(names)
 
 
+def coverage_vote_sql() -> tuple[str, str]:
+    """The two per-institution vote queries of `coverage` (parameter: institution id).
+    The institution's votes are reached through its filings' accessions, so SQLite
+    uses the votes.accession index; joining filings to a subquery over all shipped
+    votes scanned all 26M lines twice per institution (2026-11-20, >2 h)."""
+    shipped = (f"(SELECT * FROM votes {PUBLIC_TABLES['votes']} AND accession IN "
+               f"(SELECT accession FROM filings WHERE institution_id = ?))")
+    return (f"SELECT COUNT(DISTINCT v.accession) n, MIN({_ISO}) lo, MAX({_ISO}) hi, "
+            f"COUNT(*) rows FROM {shipped} v",
+            f"SELECT {_KIND_SQL} k, COUNT(*) n FROM {shipped} v GROUP BY k")
+
+
 def coverage(conn: sqlite3.Connection) -> list[dict]:
     """Honest per-institution coverage of the rows that SHIP. Every vote figure
     is computed over publish.PUBLIC_TABLES['votes'] (the very filter the release
     applies), so it equals the row count of the emitted votes file. Counting the
     raw ledger published 3,809,093 BlackRock lines beside 3,669,405 shipped."""
     rows = []
-    shipped_votes = f"(SELECT * FROM votes {PUBLIC_TABLES['votes']})"
+    npx_sql, kind_sql = coverage_vote_sql()
     for inst in conn.execute("SELECT id, display_name FROM institutions ORDER BY id"):
-        npx = conn.execute(
-            f"SELECT COUNT(DISTINCT f.accession) n, MIN({_ISO}) lo, "
-            f"MAX({_ISO}) hi, COUNT(*) rows FROM filings f "
-            f"JOIN {shipped_votes} v ON v.accession=f.accession "
-            "WHERE f.institution_id=?", (inst["id"],)).fetchone()
-        by_kind = {r["k"]: r["n"] for r in conn.execute(
-            f"SELECT {_KIND_SQL} k, COUNT(*) n FROM filings f "
-            f"JOIN {shipped_votes} v ON v.accession=f.accession "
-            "WHERE f.institution_id=? GROUP BY k", (inst["id"],))}
+        npx = conn.execute(npx_sql, (inst["id"],)).fetchone()
+        by_kind = {r["k"]: r["n"] for r in conn.execute(kind_sql, (inst["id"],))}
         kinds = [k for k in _KINDS if by_kind.get(k)]
         hold = conn.execute(
             "SELECT COUNT(*) FROM holdings h JOIN filings f ON f.accession=h.accession "
