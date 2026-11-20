@@ -12,7 +12,7 @@ On top sit an evidence engine (`glasshouse ask`, cited queries) and a checker
 the product.
 
 **Status, 2026-11-20:** published. Data: Zenodo,
-[doi:10.5281/zenodo.24384338](https://doi.org/10.5281/zenodo.24384338) (latest version, 2026-11-20;
+[doi:10.5281/zenodo.24405538](https://doi.org/10.5281/zenodo.24405538) (latest version, 2026-11-20.2;
 all versions: [10.5281/zenodo.24321606](https://doi.org/10.5281/zenodo.24321606)).
 Code: <https://github.com/glasshouse-records/promises-kept-or-not>.
 The `findings` table is empty: no claim has passed human review. Drafts in
@@ -20,13 +20,13 @@ The `findings` table is empty: no claim has passed human review. Drafts in
 
 ## What is in it
 
-Figures below are from the release `v2026-11-20` (its `DATASHEET.md` and
+Figures below are from the release `v2026-11-20.2` (its `DATASHEET.md` and
 `COVERAGE.json` are authoritative). Counts drift; the commands print current ones.
 
 | Layer | Table(s) | What it holds, honestly |
 |---|---|---|
-| Archived policy versions | `commitments`, `policy_versions` | 292 captures of 35 managers' proxy-voting documents, 263 distinct text versions (99 from Wayback, 36 our own fetch, 128 printed in fund SAIs on EDGAR). Hashes, dates, URLs; no policy text. Dated by the capture day, or for SAI-printed text by the SAI's filing date (text was public by then). 119 of the 135 non-SAI versions also carry the date the manager's own software wrote the file. Gaps exist. |
-| Proxy votes | `votes`, `fund_series`, `voting_advisers`, `voting_scope_notes` | US-registered funds only, from N-PX. Votes from the N-PX voting years July 2023 to June 2026 (three N-PX seasons, named 2024, 2025, 2026: July to June, named by end year). 24,034,092 vote lines after removing duplicates and lines restated by an amended filing. A few filings list meetings shortly before July 2023, kept as filed. Only the funds on file, not whole firms. |
+| Archived policy versions | `commitments`, `policy_versions` | 343 captures of 38 managers' proxy-voting documents, 269 distinct text versions (102 from Wayback, 36 our own fetch, 131 printed in fund SAIs on EDGAR). Hashes, dates, URLs; no policy text. Dated by the capture day, or for SAI-printed text by the SAI's filing date (text was public by then). 119 of the 138 non-SAI versions also carry the date the manager's own software wrote the file. Gaps exist. |
+| Proxy votes | `votes`, `fund_series`, `voting_advisers`, `voting_scope_notes` | US-registered funds only, from N-PX. Votes from the N-PX voting years July 2023 to June 2026 (three N-PX seasons, named 2024, 2025, 2026: July to June, named by end year). 26,397,066 vote lines after removing duplicates and lines restated by an amended filing. A few filings list meetings shortly before July 2023, kept as filed. Only the funds on file, not whole firms. |
 | Director votes (DERIVED) | `director_decisions` | 2,406,590 rows: one per director-nominee item per manager and adviser. Rebuilt from `votes` by `glasshouse engine build`. |
 | Shareholder proposals (DERIVED) | `proposal_decisions` | 134,360 rows: one per (manager, adviser, company, meeting, proposal). Same rebuild. Other management items (auditors, pay) are in `votes` but not here. |
 | Holdings | `holdings` | 580,106 rows from 13-F (long US equity only) and two N-PORT filings. Mostly one quarter (2026-03-31). BlackRock also has 2023-06-30 to 2024-06-30; Vanguard 2025-09-30 to 2026-03-31. A snapshot, not a time series. |
@@ -130,7 +130,7 @@ No network needed once you hold the bundle; it is not downloadable yet. Nothing
 here assumes any library is installed. Check the files with the shell alone:
 
 ```sh
-cd data/releases/v2026-11-20
+cd data/releases/v2026-11-20.2
 shasum -a 256 -c MANIFEST.sha256 | grep -vc OK   # Linux: sha256sum -c ... ; prints 0 when every file is OK
 ```
 
@@ -307,8 +307,8 @@ quotations not in the archived text, and words that assert motive or wrongdoing.
 Cite the version you used:
 
 > Glasshouse (2026). *Glasshouse — institutional accountability evidence dataset
-> (say vs. do)*, version 2026-11-20 [Data set]. Zenodo.
-> https://doi.org/10.5281/zenodo.24384338
+> (say vs. do)*, version 2026-11-20.2 [Data set]. Zenodo.
+> https://doi.org/10.5281/zenodo.24405538
 
 To refer to the dataset in general (every version), use
 https://doi.org/10.5281/zenodo.24321606. The bundle's `DATASHEET.md` records the

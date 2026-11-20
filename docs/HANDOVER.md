@@ -17,7 +17,9 @@ doi:10.5281/zenodo.24357331;
 version 2026-11-19.2, adding Principal, PGIM, Victory Capital and Thrivent,
 doi:10.5281/zenodo.24376068;
 version 2026-11-20, adding First Trust and Dodge & Cox and correcting 290 Morgan Stanley
-lines counted twice, doi:10.5281/zenodo.24384338) and the code at
+lines counted twice, doi:10.5281/zenodo.24384338;
+version 2026-11-20.2, adding VanEck, WisdomTree, Global X and ProShares,
+doi:10.5281/zenodo.24405538) and the code at
 https://github.com/glasshouse-records/promises-kept-or-not, both credited to
 "Glasshouse". Nothing else has been sent or shown to anyone; the drafts below
 are still private.

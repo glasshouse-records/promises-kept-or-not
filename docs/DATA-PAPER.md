@@ -1,7 +1,7 @@
 # Glasshouse: archived proxy-voting policies of US fund managers beside their funds' recorded votes, 2023–2026
 
 *Data descriptor. DRAFT for the owner's review: not submitted anywhere.
-Figures are from release 2026-11-20 (see its DATASHEET for the commit); every one is reproducible
+Figures are from release 2026-11-20.2 (see its DATASHEET for the commit); every one is reproducible
 from the files named beside it.*
 
 ## Abstract
@@ -11,15 +11,15 @@ every vote they cast on Form N-PX. The two records are rarely put side by side,
 because policies are rewritten in place on corporate websites and earlier
 versions disappear. Glasshouse is an open dataset that archives dated versions
 of these policies and links them to the N-PX votes they governed. Release
-2026-11-20 covers 37 institutions with votes on file: 24,034,092 de-duplicated
-vote lines from 972 N-PX filings (voting years July 2023 – June 2026), and 263
-archived policy versions: 135 from manager websites (119 of them carrying a
-creation date written by the manager's own document software) and 128 printed in
+2026-11-20.2 covers 41 institutions with votes on file: 26,397,066 de-duplicated
+vote lines from 1,005 N-PX filings (voting years July 2023 – June 2026), and 269
+archived policy versions: 138 from manager websites (119 of them carrying a
+creation date written by the manager's own document software) and 131 printed in
 fund SAIs on EDGAR, dated by the filing. Each vote is attributed to the adviser that cast
 it, and a policy version is paired only with votes by the same adviser at
 meetings held on or after the day the version was demonstrably public. Three
-derived tables count each decision once (163,259 shareholder-proposal decisions,
-3,058,910 director-election items, 242,572 say-on-pay items). The dataset makes no
+derived tables count each decision once (173,563 shareholder-proposal decisions,
+3,378,186 director-election items, 270,674 say-on-pay items). The dataset makes no
 claim about any institution; it is a register of public records, each traceable
 to its source filing or archived document. Data: CC BY 4.0,
 doi:10.5281/zenodo.24321606 (all versions). Code: MIT licence,
@@ -59,7 +59,7 @@ Filings of type FUND NOTICE REPORT carry no votes and are skipped.
 **Duplicates.** N-PX as filed repeats records: the same vote once per share class
 within an exhibit, and the same series filed in two exhibits for one period. A
 line restated by a later N-PX/A of the same filer and period is superseded by it. Of
-25,997,107 vote lines in the working ledger, 1,110,524 (4.3%) are marked
+29,159,338 vote lines in the working ledger, 1,871,775 (6.4%) are marked
 `is_duplicate` and excluded from every shipped table and count. Lines are never
 deleted from the ledger, only marked.
 
@@ -135,24 +135,24 @@ The release is one directory, with every table as Parquet and CSV:
 
 | Table | Rows | What |
 |---|--:|---|
-| `institutions` | 40 | Tracked institutions (37 with votes on file) |
-| `filings` | 7,909 | Source filings, each with source URL and retrieval date |
-| `votes` | 24,034,092 | De-duplicated cast votes, with adviser key |
-| `proposal_decisions` | 163,259 | One row per shareholder-proposal decision |
-| `director_decisions` | 3,058,910 | One row per director-nominee item |
-| `pay_decisions` | 242,572 | One row per say-on-pay approval item |
-| `policy_versions` | 263 | Dated policy versions, with adviser key |
-| `commitments` | 292 | Policy captures, with URL and retrieval date |
-| `voting_advisers` | 785 | Registrant/series → adviser rules, with sources |
-| `voting_scope_notes` | 112 | Per-institution caveats, to read before pooling |
+| `institutions` | 44 | Tracked institutions (41 with votes on file) |
+| `filings` | 8,109 | Source filings, each with source URL and retrieval date |
+| `votes` | 26,397,066 | De-duplicated cast votes, with adviser key |
+| `proposal_decisions` | 173,563 | One row per shareholder-proposal decision |
+| `director_decisions` | 3,378,186 | One row per director-nominee item |
+| `pay_decisions` | 270,674 | One row per say-on-pay approval item |
+| `policy_versions` | 269 | Dated policy versions, with adviser key |
+| `commitments` | 343 | Policy captures, with URL and retrieval date |
+| `voting_advisers` | 831 | Registrant/series → adviser rules, with sources |
+| `voting_scope_notes` | 125 | Per-institution caveats, to read before pooling |
 | `holdings` | 580,106 | 13-F holdings rows |
 | `enforcement_actions`, `entities`, `findings` | — | See DATASHEET.md |
 
 `DATASHEET.md` describes every column; `COVERAGE.json` gives per-institution
 counts by kind of vote; `MANIFEST.sha256` lists a checksum for every file.
 
-**Coverage by kind of vote** (shipped lines): director elections 12,583,939; other
-management proposals 9,544,259; say-on-pay 1,176,616; shareholder proposals 729,278.
+**Coverage by kind of vote** (shipped lines): director elections 14,001,604; other
+management proposals 10,278,198; say-on-pay 1,325,497; shareholder proposals 791,767.
 
 **Coverage by institution.** The five largest by vote lines are BlackRock
 (3,669,405), Dimensional (3,084,222), Vanguard (2,587,321), State Street
@@ -204,7 +204,7 @@ Coverage is a set of named fund registrants per institution, not the whole firm.
 
 ## Limitations
 
-- Coverage is partial: named fund registrants for 37 institutions. Several large
+- Coverage is partial: named fund registrants for 41 institutions. Several large
   voters are absent because their policies cannot be retrieved honestly (a site
   blocks declared clients), or because their votes sit in other firms' fund
   trusts without a series-level statement of who votes (documented in the
@@ -229,6 +229,6 @@ working ledger. The DATASHEET records the exact commit used.
 
 ## Data availability
 
-Zenodo: this release doi:10.5281/zenodo.24384338; all versions
+Zenodo: this release doi:10.5281/zenodo.24405538; all versions
 doi:10.5281/zenodo.24321606 (resolves to the latest).
 Licence CC BY 4.0. Corrections via GitHub issues.
