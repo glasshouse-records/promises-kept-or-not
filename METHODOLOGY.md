@@ -774,6 +774,18 @@ N-PX 2024-26: 108,669 non-duplicate votes (32,808 duplicates marked, most of the
 N-PX/A). Not ingested: VanEck CLO Opportunities Fund, VanEck Associates' institutional-manager N-PX and the legacy-HTML N-PX
 before 2024.
 
+WisdomTree (added 2026-11-20): two open-end registrants file N-PX vote tables (WisdomTree Trust, WisdomTree Digital Trust).
+Every SAI read (2021-2026) says "The Trust has adopted as its proxy voting policies for each Fund the proxy voting
+guidelines of each Fund's applicable Sub-Adviser. The Trust has delegated to the Sub-Advisers the authority and
+responsibility for voting proxies", and the Form N-CEN of 2021-2026 lists an unaffiliated sub-adviser (Mellon, Voya IM,
+Newton, Insight North America) for all 117 series. WisdomTree Asset Management therefore votes no series itself and has no
+proxy voting policy to key or archive: both trusts are keyed `EXTERNAL` from the earliest SAI read, and the sub-advisers'
+policies printed in the SAI are not archived as WisdomTree's (EXTERNAL votes are never paired with a policy document;
+`policy_in_force` answers `none_in_force`). Source access: wisdomtree.com answers honest clients with 403 on every address
+tried (2026-11-20), so nothing was read from it; it is not evaded. Ingested N-PX 2024-26: 917,066 non-duplicate votes
+(587,555 marked, most of them originals superseded by N-PX/A). Not ingested: WisdomTree Ethereum Trust and the legacy-HTML
+N-PX before 2024.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting

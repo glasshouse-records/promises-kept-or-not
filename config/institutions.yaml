@@ -4645,3 +4645,35 @@ institutions:
           strip_page_numbers: true
           strip_patterns:
             - '\bA-\d\b'
+  wisdomtree:
+    display_name: "WisdomTree (WisdomTree Asset Management, Inc.)"
+    short_name: "WisdomTree"
+    cik: "0001360025"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "WisdomTree Asset Management, Inc., New York NY (CIK 1360025, the investment adviser of the WisdomTree open-end fund trusts; it files no 13-F, and the parent WisdomTree, Inc., CIK 880631, files none either, so the institution CIK is the adviser's). Two open-end fund registrants that file N-PX vote tables are ingested: WisdomTree Trust (CIK 1350487) and WisdomTree Digital Trust (CIK 1859001). Every SAI read says 'The Trust has adopted as its proxy voting policies for each Fund the proxy voting guidelines of each Fund's applicable Sub-Adviser. The Trust has delegated to the Sub-Advisers the authority and responsibility for voting proxies', and every one of the 117 series in the Form N-CEN of 2021-2026 names an unaffiliated sub-adviser (Mellon Investments Corporation, Voya Investment Management Co. LLC, Newton Investment Management North America, Insight North America). WisdomTree Asset Management therefore votes no series itself and no WisdomTree proxy voting policy exists to archive: both registrants are keyed EXTERNAL. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-20. WisdomTree Trust (1350487) and WisdomTree Digital Trust (1859001) are the only WisdomTree registrants that file N-PX vote tables (WisdomTree Ethereum Trust, 1864519, is a commodity trust with no 40-Act filings; WisdomTree Asset Management, 1360025, files no N-PX).
+      # Every SAI of both trusts (WisdomTree Trust 2021-01-15 to 2026-07-29, Digital Trust 2022-09-26 to 2026-10-27) delegates voting to the sub-adviser under the sub-adviser's own policy, so the key is EXTERNAL
+      # (no archived policy of the institution governs the votes). The N-CEN of each trust (18 for the Trust, 4 for the Digital Trust, 2021-2026) names an unaffiliated sub-adviser for every series.
+      - cik: "1350487"
+        adviser: "WisdomTree Asset Management, Inc. (the Adviser); every series sub-advised: Mellon Investments Corporation, Voya Investment Management Co. LLC, Newton Investment Management North America, LLC, Insight North America LLC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1350487/000119312521010234/d106629d485bpos.htm"  # 485BPOS (SAI) filed 2021-01-15 (0001193125-21-010234), 'Proxy Voting Policy': the Trust adopts the Sub-Adviser's proxy voting guidelines and delegates voting to the Sub-Adviser
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Policy': 'The Trust has adopted as its proxy voting policies for the Fund the proxy voting guidelines of the Fund's Sub-Adviser. The Trust has delegated to the Sub-Adviser the authority and responsibility for voting proxies on the portfolio securities held by the Fund' (earliest SAI read 2021-01-15, 0001193125-21-010234); the multi-fund SAI of 2021-07-28 says the same 'for each Fund' and then describes the Mellon policy; the SAIs of 2023-2026 say 'each Fund's applicable Sub-Adviser' and describe Mellon, Voya IM and Newton policies. No SAI prints a WisdomTree Asset Management policy."
+        adviser_key_history: [{key: EXTERNAL, from: "2021-01-15"}]
+        name: "WISDOMTREE TRUST"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1859001"
+        adviser: "WisdomTree Asset Management, Inc. (the Adviser); every series sub-advised: Voya Investment Management Co. LLC, Mellon Investments Corporation, Newton Investment Management North America, LLC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1859001/000121465922011519/p923220497.htm"  # 485BPOS (SAI) filed 2022-09-26 (0001214659-22-011519), 'Proxy Voting Policy': the Trust adopts the Sub-Adviser's guidelines (Voya IM)
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Policy': 'The Trust has adopted as its proxy voting policies for the Fund the proxy voting guidelines of the Fund's Sub-Adviser. The Trust has delegated to the Sub-Adviser the authority and responsibility for voting proxies on the portfolio securities held by the Fund' (earliest SAI read 2022-09-26, 0001214659-22-011519, a Voya IM sub-advised fund); the SAIs of 2023-2026 say 'each Fund's applicable Sub-Adviser' (Voya IM, Mellon, Newton). No SAI prints a WisdomTree Asset Management policy."
+        adviser_key_history: [{key: EXTERNAL, from: "2022-09-26"}]
+        name: "WISDOMTREE DIGITAL TRUST"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Both registrants are keyed EXTERNAL from the EDGAR filing date of the earliest SAI read (WisdomTree Trust 2021-01-15, WisdomTree Digital Trust 2022-09-26); earlier meetings stay unlabelled. Every SAI delegates voting to each series' sub-adviser under the sub-adviser's own policy and every series in the Form N-CEN of 2021-2026 (117 series) lists an unaffiliated sub-adviser, so WisdomTree Asset Management votes no series and has no proxy voting policy of its own to key. Sub-advisers by series changed over the period (Mellon to Voya for the AI Enhanced Value funds, Mellon to Newton for Managed Futures, Equity Premium Income and Enhanced Commodity Strategy, Insight North America added to the laddered Treasury and municipal funds) but each stays an unaffiliated outside manager, so every series stays EXTERNAL and the dated changes are not needed as rules."
+      - "Policy text: none archived. The Mellon, Voya IM and Newton policies printed in the SAI are those sub-advisers' policies, not WisdomTree's, and EXTERNAL votes are never paired with a policy document. wisdomtree.com answers honest clients with 403 on every address tried (home page and three proxy-voting addresses, 2026-11-20), documented, not evaded; the Wayback CDX index holds no wisdomtree.com proxy capture."
+      - "Not ingested (left out): WisdomTree Ethereum Trust (1864519), WisdomTree Asset Management's own institutional-manager N-PX (none on file), and the legacy-HTML N-PX before 2024 (not ingested without --legacy)."
