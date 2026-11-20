@@ -15,7 +15,9 @@ doi:10.5281/zenodo.24353272;
 version 2026-11-19, adding Neuberger Berman, Allspring, Lord Abbett and Putnam,
 doi:10.5281/zenodo.24357331;
 version 2026-11-19.2, adding Principal, PGIM, Victory Capital and Thrivent,
-doi:10.5281/zenodo.24376068) and the code at
+doi:10.5281/zenodo.24376068;
+version 2026-11-20, adding First Trust and Dodge & Cox and correcting 290 Morgan Stanley
+lines counted twice, doi:10.5281/zenodo.24384338) and the code at
 https://github.com/glasshouse-records/promises-kept-or-not, both credited to
 "Glasshouse". Nothing else has been sent or shown to anyone; the drafts below
 are still private.

@@ -33,7 +33,10 @@ Morgan Stanley's shipped lines). No other institution is affected.
 filer and period carries the same ballot item (issuer, CUSIP, meeting, proposal,
 series); the latest amendment wins, an amendment that only adds records leaves
 the original's other lines alone, and two original N-PX are never collapsed
-(`tests/test_amendment_supersession.py`). Fixed in the next release.
+(`tests/test_amendment_supersession.py`). Fixed in release 2026-11-20
+(doi:10.5281/zenodo.24384338): none of its shipped votes is a marked duplicate or a
+superseded line. A correction note was added to the description of each affected
+Zenodo version on 2026-11-20.
 
 ## 2026-11-18: duplicate vote lines shipped as distinct votes
 
