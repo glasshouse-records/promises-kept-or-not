@@ -793,7 +793,7 @@ voting" and votes per its recommendations "overseen by the Advisor" unless the A
 is Global X's own and Glass Lewis executes it (the SAI never says the Adviser adopted Glass Lewis's guidelines), so the trust is
 keyed `GLOBAL_X` from the earliest SAI read, as VanEck is and unlike First Trust's early `FIRST_TRUST_ISS` period. No SAI says
 a sub-adviser votes, so there is no series exception. Policy text: Parts I and II of the SAI voting statement (1 version,
-unchanged 2021-2026); Glass Lewis's own guidelines are not archived. Source access: globalxetfs.com answers honest clients with
+unchanged 2021-2026); Glass Lewis's own guidelines are not archived. Sixteen series that the SAIs name under a Catholic or ESG voting-policy addendum (not printed, so not held) are keyed `GLOBAL_X_CATHOLIC` / `GLOBAL_X_ESG` for the window the SAIs support and `UNRESOLVED` outside it, never paired with the general text. Source access: globalxetfs.com answers honest clients with
 429 on every address tried, robots.txt included (2026-11-20), so nothing was read from it; it is not evaded. Ingested N-PX
 2024-26: 374,527 non-duplicate votes (127,201 marked, most of them the original 2024 N-PX superseded by its same-day N-PX/A).
 Not ingested: Global X Venture & Innovation Fund, the Canadian and Japanese Global X managers and the legacy-HTML N-PX before 2024.
