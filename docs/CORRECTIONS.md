@@ -4,6 +4,37 @@ Every error found in a published release is recorded here: what was wrong, which
 releases carry it, how big it is, and which release fixes it. Published files on
 Zenodo cannot be changed, so earlier versions stay as they were; use the latest.
 
+## 2026-11-19: votes restated by an N-PX/A shipped twice
+
+**What was wrong.** When a fund files an amended N-PX (N-PX/A) that restates
+votes with different share counts, the original line and the amended line are
+not exact duplicates, so both stayed live and both shipped. Duplicate marking
+only collapsed identical lines. Found while adding First Trust, whose 2026
+N-PX/A for four trusts restated 56,840 lines (never published).
+
+**Which releases, how many lines** (shipped vote `id`s matched against the
+ledger's flags after re-running the marking with the fix):
+
+| Release | DOI | Shipped votes | Superseded lines | Share | By institution |
+|---|---|--:|--:|--:|---|
+| 2026-11-18.3 | 10.5281/zenodo.24353272 | 20,022,329 | 290 | 0.001% | Morgan Stanley 290 |
+| 2026-11-19 | 10.5281/zenodo.24357331 | 20,663,049 | 290 | 0.001% | Morgan Stanley 290 |
+| 2026-11-19.2 | 10.5281/zenodo.24376068 | 23,395,801 | 290 | 0.001% | Morgan Stanley 290 |
+
+Releases before 2026-11-18.3 are unaffected (re-checked: their only marked lines
+are the ones in the 2026-11-18 correction below).
+
+**Effect.** The 290 lines are votes of one Morgan Stanley ETF registrant (CIK
+1676326) for the 2025 season, as filed on 2025-08-11; its N-PX/A of 2025-12-09
+restated them and is also shipped, so those votes are counted twice (0.09% of
+Morgan Stanley's shipped lines). No other institution is affected.
+
+**Fix.** Duplicate marking now also marks a line when a later N-PX/A of the same
+filer and period carries the same ballot item (issuer, CUSIP, meeting, proposal,
+series); the latest amendment wins, an amendment that only adds records leaves
+the original's other lines alone, and two original N-PX are never collapsed
+(`tests/test_amendment_supersession.py`). Fixed in the next release.
+
 ## 2026-11-18: duplicate vote lines shipped as distinct votes
 
 **What was wrong.** N-PX filings repeat some vote records (the same vote once per

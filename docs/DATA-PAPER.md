@@ -57,7 +57,8 @@ are parsed with a streaming parser; every `voteRecord` in a `proxyTable` is kept
 Filings of type FUND NOTICE REPORT carry no votes and are skipped.
 
 **Duplicates.** N-PX as filed repeats records: the same vote once per share class
-within an exhibit, and the same series filed in two exhibits for one period. Of
+within an exhibit, and the same series filed in two exhibits for one period. A
+line restated by a later N-PX/A of the same filer and period is superseded by it. Of
 22,451,515 vote lines in the working ledger, 990,948 (4.4%) are marked
 `is_duplicate` and excluded from every shipped table and count. Lines are never
 deleted from the ledger, only marked.

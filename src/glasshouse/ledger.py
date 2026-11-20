@@ -421,8 +421,9 @@ def _migrate(conn: sqlite3.Connection) -> None:
 
 
 def dedupe_votes(conn: sqlite3.Connection, ciks: list[str] | None = None) -> int:
-    """Mark exact-duplicate vote rows (same filing, security, meeting,
-    proposal, series, direction, AND share count) so analytics never sum the
+    """Mark exact-duplicate vote rows (same filer and period, security, meeting,
+    proposal, series, direction, AND share count), plus lines a later N-PX/A
+    restates (`_supersede_amended`), so analytics never sum the
     same shares twice. Found in the wild 2026-06-11: ~105k redundant rows
     (e.g. the same voteRecord repeated x2/x4 within one exhibit, likely one
     copy per share class). Rows are marked, never deleted — the ledger
@@ -462,7 +463,7 @@ def dedupe_votes(conn: sqlite3.Connection, ciks: list[str] | None = None) -> int
                GROUP BY f.cik, f.period_of_report, v.issuer_name, v.cusip,
                         v.meeting_date, v.vote_description, v.vote_series,
                         v.how_voted, v.shares_voted)""", args + args)
-    marked = cur.rowcount
+    marked = cur.rowcount + _supersede_amended(conn, ciks)
     from datetime import datetime
     top = conn.execute("SELECT COALESCE(MAX(id), 0) FROM votes").fetchone()[0]
     covers_all = True
@@ -475,6 +476,46 @@ def dedupe_votes(conn: sqlite3.Connection, ciks: list[str] | None = None) -> int
         conn.execute("INSERT INTO dedupe_runs (run_at, max_vote_id, marked) VALUES (?,?,?)",
                      (datetime.now().astimezone().isoformat(timespec="seconds"), top, marked))
     conn.commit()
+    return marked
+
+
+def _supersede_amended(conn: sqlite3.Connection, ciks: list[str] | None) -> int:
+    """Mark lines that a later N-PX/A of the same filer and period restates.
+
+    Found 2026-11-19: First Trust's 2026 N-PX/A restated share counts, so the
+    original lines were not exact duplicates and stayed live (56,840 lines;
+    Morgan Stanley 290 in 2025). Supersession is per ballot item (issuer,
+    cusip, meeting, proposal, series): a line is marked when an N-PX/A filed
+    later (filing_date, then accession) carries the same item, so an amendment
+    that only adds missing records leaves the original's other lines alone.
+    Two original N-PX of one period never supersede each other."""
+    scope, args = "", []
+    if ciks is not None:
+        scope = f" AND cik IN ({','.join('?' * len(ciks))})"
+        args = list(ciks)
+    pairs = conn.execute(
+        f"SELECT DISTINCT cik, period_of_report FROM filings "
+        f"WHERE form_type = 'N-PX/A'{scope}", args).fetchall()
+    marked = 0
+    for cik, period in pairs:
+        filings = conn.execute(
+            "SELECT accession, form_type FROM filings WHERE cik = ? AND period_of_report IS ? "
+            "AND form_type IN ('N-PX', 'N-PX/A') ORDER BY filing_date, accession",
+            (cik, period)).fetchall()
+        rank = {acc: i for i, (acc, _form) in enumerate(filings)}
+        amended = {acc for acc, form in filings if form == "N-PX/A"}
+        rows = conn.execute(
+            f"SELECT id, accession, issuer_name, cusip, meeting_date, vote_description, "
+            f"vote_series FROM votes WHERE is_duplicate = 0 AND accession IN "
+            f"({','.join('?' * len(rank))})", list(rank)).fetchall()
+        latest: dict[tuple, int] = {}
+        for r in rows:
+            if r[1] in amended:
+                key = tuple(r[2:])
+                latest[key] = max(latest.get(key, -1), rank[r[1]])
+        ids = [(r[0],) for r in rows if rank[r[1]] < latest.get(tuple(r[2:]), -1)]
+        conn.executemany("UPDATE votes SET is_duplicate = 1 WHERE id = ?", ids)
+        marked += len(ids)
     return marked
 
 
