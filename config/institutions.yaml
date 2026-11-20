@@ -4822,3 +4822,325 @@ institutions:
             - '(?<=value of )(?:a|the) (?=Fund.s investment)'
             - '(?<=indicate that )(?:a|the) (?=Fund.s proxy voting)'
             - '(?<=behalf of )(?:each|the) (?=Fund it advises)'
+  lazard:
+    display_name: "Lazard (Lazard Asset Management LLC)"
+    short_name: "Lazard"
+    cik: "0001207017"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Lazard Asset Management LLC, New York NY (CIK 1207017, the investment adviser of the Lazard Funds and the 13-F / institutional-manager N-PX filer; a subsidiary of Lazard, Inc.). Four fund registrants that file N-PX vote tables with operating-company votes are ingested: Lazard Funds Inc (CIK 874964), Lazard Retirement Series Inc (1033669), Lazard Global Total Return & Income Fund Inc (1278211, closed-end) and Lazard Active ETF Trust (2051630). Every SAI says 'The Board has delegated to the Investment Manager the authority to vote proxies ... The Investment Manager has adopted a Global Proxy Voting Policy, attached as Appendix B', and Appendix B is Lazard Asset Management LLC's own policy (ISS and Glass Lewis supply research only; Lazard 'retains complete authority for voting all proxies'), so every registrant is keyed LAZARD. The closed-end fund's N-CSR Item 7 says it 'has delegated voting of proxies ... to Lazard, to vote ... in accordance with Lazard's proxy voting policy and guidelines'. No N-CEN (FY2020 to FY2025) names a sub-adviser. Lazard's own institutional-manager N-PX (CIK 1207017, separate accounts) is not ingested. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-20. Four Lazard registrants file N-PX vote tables with operating-company votes (Lazard World Dividend & Income Fund 1323206 last filed in 2020; Lazard Alternative Strategies Fund 1141766 and Lazard Alternative Emerging Markets 1099 Fund 1525873 in 2013-2015; Lazard Asset Management LLC's own institutional-manager N-PX, 1207017, is not ingested).
+      # Every SAI read prints 'The Board has delegated to the Investment Manager the authority to vote proxies of companies held in the Fund's portfolio. The Investment Manager has adopted a Global Proxy Voting Policy, attached as Appendix B' (Investment Manager = Lazard Asset Management LLC); Appendix B 'LAZARD ASSET MANAGEMENT LLC GLOBAL PROXY VOTING POLICY'
+      # says Lazard 'retains complete authority for voting all proxies on behalf of its clients' and uses ISS / Glass Lewis for research only. No N-CEN (six read per registrant, FY2020 to FY2025; one for the ETF Trust) lists a sub-adviser, so there is no series exception. Each registrant is dated from the EDGAR filing date of the earliest SAI (or N-CSR) read.
+      - cik: "874964"
+        adviser: "Lazard Asset Management LLC (the Investment Manager); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/874964/000093041321000868/c101228_485bpos-ixbrl.htm"  # 485BPOS (SAI) filed 2021-04-23 (0000930413-21-000868), 'Proxy Voting': delegated to the Investment Manager, Global Proxy Voting Policy in Appendix B
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Investment Manager the authority to vote proxies of companies held in the Fund's portfolio. The Investment Manager has adopted a Global Proxy Voting Policy, attached as Appendix B' (earliest SAI read 2021-04-23, 0000930413-21-000868; same wording in 2023-04-28). Appendix B is 'LAZARD ASSET MANAGEMENT LLC GLOBAL PROXY VOTING POLICY' (Revised As Of March 31, 2020; December 7, 2022 from the 2022 SAI). Every Form N-CEN filed 2021-03 to 2026-03 names Lazard Asset Management LLC as the only adviser and no sub-adviser."
+        adviser_key_history: [{key: LAZARD, from: "2021-04-23"}]
+        name: "LAZARD FUNDS INC"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1033669"
+        adviser: "Lazard Asset Management LLC (the Investment Manager); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1033669/000093041321000764/c101042_485bpos-ixbrl.htm"  # 485BPOS (SAI) filed 2021-04-12 (0000930413-21-000764), 'Proxy Voting': delegated to the Investment Manager, Global Proxy Voting Policy in Appendix B
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated to the Investment Manager the authority to vote proxies of companies held in the Fund's portfolio. The Investment Manager has adopted a Global Proxy Voting Policy, attached as Appendix B' (earliest SAI read 2021-04-12, 0000930413-21-000764; same wording in 2023-04-07). Appendix B is the same Lazard Asset Management LLC Global Proxy Voting Policy. No sub-adviser in any Form N-CEN (2021-03 to 2026-03)."
+        adviser_key_history: [{key: LAZARD, from: "2021-04-12"}]
+        name: "LAZARD RETIREMENT SERIES INC"
+        validated: "2026-11-20"
+      - cik: "1278211"
+        adviser: "Lazard Asset Management LLC (the Investment Manager); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1278211/000093041321000507/c101014_ncsr.htm"  # N-CSR filed 2021-03-01 (0000930413-21-000507), Item 7: voting delegated to Lazard under Lazard's proxy voting policy and guidelines
+        adviser_verified: "2026-11-20"
+        voting_note: "Closed-end fund; no SAI or N-2 in 2021-2023. N-CSR Item 7 (earliest 2021 filing read, 2021-03-01, 0000930413-21-000507; also 2022-03-01 and 2023-02-27): 'The Registrant has delegated voting of proxies in respect of portfolio holdings to Lazard, to vote the Registrant's proxies in accordance with Lazard's proxy voting policy and guidelines (the \"Voting Guidelines\")'. No sub-adviser in any Form N-CEN (2021-03 to 2026-03)."
+        adviser_key_history: [{key: LAZARD, from: "2021-03-01"}]
+        name: "LAZARD GLOBAL TOTAL RETURN & INCOME FUND INC"
+        validated: "2026-11-20"
+      - cik: "2051630"
+        adviser: "Lazard Asset Management LLC (the Investment Manager); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/2051630/000093041325000091/c110998_n1a.htm"  # N-1A (SAI) filed 2025-01-15 (0000930413-25-000091), 'Proxy Voting': delegated to the Investment Manager, Global Proxy Voting Policy in Appendix B
+        adviser_verified: "2026-11-20"
+        voting_note: "No SAI before 2025 (trust registered 2025). Earliest SAI read: the initial N-1A of 2025-01-15 (0000930413-25-000091), then 485BPOS 2025-02-21 (0000930413-25-000652) and 2026-04-23 (0000930413-26-001180): 'The Board has delegated to the Investment Manager the authority to vote proxies of companies held in the Trust's portfolio. The Investment Manager has adopted a Global Proxy Voting Policy, attached as Appendix B' (Revised As Of November 15, 2023; Revised: April 2024 in the 2026 SAI). Form N-CEN 2026-03-13 names no sub-adviser."
+        adviser_key_history: [{key: LAZARD, from: "2025-01-15"}]
+        name: "Lazard Active ETF Trust"
+        validated: "2026-11-20"
+    voting_scope_notes:
+      - "Keyed LAZARD per registrant from the EDGAR filing date of the earliest SAI (or, for the closed-end fund, N-CSR) read: Lazard Funds 2021-04-23, Lazard Retirement Series 2021-04-12, Lazard Global Total Return & Income Fund 2021-03-01, Lazard Active ETF Trust 2025-01-15; earlier meetings stay unlabelled. Appendix B of every SAI is Lazard Asset Management LLC's own Global Proxy Voting Policy; ISS and Glass Lewis supply research and Lazard's portfolio managers decide ('retains complete authority')."
+      - "Not ingested (left out): Lazard Asset Management LLC's institutional-manager N-PX (CIK 1207017), Lazard World Dividend & Income Fund (1323206; last N-PX 2020), Lazard Alternative Strategies Fund (1141766) and Lazard Alternative Emerging Markets 1099 Fund (1525873), and the legacy-HTML N-PX before 2024 (not ingested without --legacy)."
+      - "Policy text: two sources, different editions. The website document 'Lazard Proxy Voting Policy and Procedures Overview' (May 2026, a short overview) is NOT the SAI's long Global Proxy Voting Policy; they are archived under separate labels and never mixed. The closed-end fund has only the website label (its N-CSR gives a bullet summary, not the policy)."
+    commitments:
+      # Verified 2026-11-20 (200 application/pdf to honest client; robots.txt allows; the alias below 30x-redirects to /docs/16376/LazardProxyVotingPolicyAndProceduresOverview.pdf). Wayback holds the alias: 2022-03-20 (200), 2023-05-18 (200).
+      - label: lazard-proxy-voting-policy-overview
+        url: "https://www.lazardassetmanagement.com/docs/-m0-/16376/LazardProxyVotingPolicyAndProcedures.pdf"
+        adviser: "Lazard Asset Management LLC"
+        adviser_key: "LAZARD"
+      # Appendix B as printed in the SAI (edition revised 2020-03-31, 2022-12-07, 2024-04), dated by EDGAR filing date. One label per trust (three trusts, own CIK). Page numbers 'B-12' / 'B- 12' removed by strip_page_numbers.
+      - label: lazard-global-proxy-voting-policy-as-printed-in-sai-funds
+        adviser: "Lazard Asset Management LLC"
+        adviser_key: "LAZARD"
+        sai_appendix:
+          cik: "0000874964"
+          forms: ["485BPOS"]
+          since: "2021-04-01"
+          start:
+            - "Appendix B LAZARD ASSET MANAGEMENT LLC GLOBAL PROXY VOTING POLICY A. Introduction"
+          end:
+            - "THE LAZARD FUNDS, INC. PART C. OTHER INFORMATION"
+          strip_page_numbers: true
+      - label: lazard-global-proxy-voting-policy-as-printed-in-sai-retirement
+        adviser: "Lazard Asset Management LLC"
+        adviser_key: "LAZARD"
+        sai_appendix:
+          cik: "0001033669"
+          forms: ["485BPOS"]
+          since: "2021-04-01"
+          start:
+            - "Appendix B LAZARD ASSET MANAGEMENT LLC GLOBAL PROXY VOTING POLICY A. Introduction"
+          end:
+            - "LAZARD RETIREMENT SERIES, INC. PART C. OTHER INFORMATION"
+          strip_page_numbers: true
+      - label: lazard-global-proxy-voting-policy-as-printed-in-sai-etf
+        adviser: "Lazard Asset Management LLC"
+        adviser_key: "LAZARD"
+        sai_appendix:
+          cik: "0002051630"
+          forms: ["485BPOS"]
+          since: "2025-01-01"
+          start:
+            - "Appendix B LAZARD ASSET MANAGEMENT LLC GLOBAL PROXY VOTING POLICY A. Introduction"
+          end:
+            - "LAZARD ACTIVE ETF TRUST PART C. OTHER INFORMATION"
+            - "PART C OTHER INFORMATION"
+          strip_page_numbers: true
+  artisan_partners:
+    display_name: "Artisan Partners (Artisan Partners Limited Partnership)"
+    short_name: "Artisan Partners"
+    cik: "0001010643"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Artisan Partners Limited Partnership, Milwaukee WI, the investment adviser of the Artisan Partners Funds (the operating partnership of Artisan Partners Asset Management Inc., CIK 1517302; CIK 1010643, Artisan Partners Holdings LP, is the 13-F filer used as the institution CIK; the adviser entity itself has no CIK of its own that was found). One US fund registrant files N-PX vote tables: Artisan Partners Funds Inc (CIK 935015, 21 series). Every SAI says 'The Funds [Artisan Partners Funds] have [has] delegated responsibility for proxy voting to Artisan Partners. Artisan Partners votes proxies ... When making proxy voting decisions, Artisan Partners generally adheres to proxy voting guidelines that set forth Artisan Partners' proxy voting positions', with a proxy service provider (ISS) in a research and administrative role only; no Form N-CEN (FY2021 to FY2025) names a sub-adviser. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-20. The only Artisan US fund registrant that files N-PX vote tables is Artisan Partners Funds Inc (CIK 935015; the open-end series list is in the 2024-2026 N-PX). Every SAI read (2021-01-28, 2023-01-30, 2026-01-28) prints, in the section 'Proxy Voting', 'The Funds have delegated responsibility for proxy voting to Artisan Partners. Artisan Partners votes proxies solicited by or
+      # with respect to the issuers of securities held by the Funds' (2023 and 2026: 'Artisan Partners Funds has delegated ...'); 'Artisan Partners' is Artisan Partners Limited Partnership. No N-CEN (five read, FY2021 to FY2025) lists a sub-adviser, so there is no series exception. ARTISAN_PARTNERS is dated from the EDGAR filing date of the earliest SAI read.
+      - cik: "935015"
+        adviser: "Artisan Partners Limited Partnership (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/935015/000119312521020845/d43626d485bpos.htm"  # 485BPOS (SAI) filed 2021-01-28 (0001193125-21-020845), 'Proxy Voting': the Funds delegated voting to Artisan Partners, which votes under its guidelines
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting': 'The Funds have delegated responsibility for proxy voting to Artisan Partners. Artisan Partners votes proxies solicited by or with respect to the issuers of securities held by the Funds' (earliest SAI read 2021-01-28, 0001193125-21-020845; 2023-01-30 and 2026-01-28 read 'Artisan Partners Funds has delegated ...'). 'Artisan Partners generally adheres to proxy voting guidelines that set forth Artisan Partners' proxy voting positions'; the proxy service provider only executes under Artisan Partners' instructions and 'Artisan Partners retains final authority'. Every Form N-CEN (2021-12 to 2025-12) names Artisan Partners Limited Partnership as the only adviser and no sub-adviser."
+        adviser_key_history: [{key: ARTISAN_PARTNERS, from: "2021-01-28"}]
+        name: "ARTISAN PARTNERS FUNDS INC"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed ARTISAN_PARTNERS from the EDGAR filing date of the earliest SAI read (485BPOS 2021-01-28, 0001193125-21-020845); earlier meetings stay unlabelled. No SAI or N-CEN names a sub-adviser, so every series carries the registrant key."
+      - "Not ingested (left out): Artisan Partners Limited Partnership has no institutional-manager N-PX found, Artisan Partners Asset Management Inc. (1517302) and Holdings LP (1010643) file none, the Irish Artisan Partners Global Funds plc is not a US registrant, and the legacy-HTML N-PX before 2024 are not ingested without --legacy."
+      - "Policy text: the Artisan Partners Proxy Voting Policy PDF on artisanpartners.com (28 pages, 200 application/pdf to honest clients 2026-11-20; robots.txt does not disallow it for this UA; Wayback captures 2015-09 to 2026-04) and the section 'Proxy Voting' as printed in the Artisan Partners Funds SAI. The website policy (an adviser-wide policy with Appendix A guidelines; ISS named) and the SAI section (a ten-thousand-character summary naming no vendor in 2021) are different documents and are archived under separate labels."
+    commitments:
+      # Verified 2026-11-20 (200, application/pdf, honest client). Applies to Artisan Partners Limited Partnership and Artisan Partners UK LLP; PDF metadata dates are 2026-11-02/03, so an edition date is printed inside it. Wayback: 2015-09-05, 2017-03-18, 2023-05-06, 2023-11-29, 2024-02-05, 2025-04-01, 2026-04-03.
+      - label: artisan-partners-proxy-voting-policy
+        url: "https://www.artisanpartners.com/content/dam/documents/legal/proxy-voting/Proxy-Voting-Policy.pdf"
+        adviser: "Artisan Partners Limited Partnership"
+        adviser_key: "ARTISAN_PARTNERS"
+      # The SAI 'Proxy Voting' section (no appendix), dated by EDGAR filing date. Two spellings of the first sentence ('The Funds have' to 2022, 'Artisan Partners Funds has' from 2023): both starts listed. The table of contents also contains 'Proxy Voting 51', so the start strings include the first sentence.
+      - label: artisan-partners-proxy-voting-as-printed-in-sai
+        adviser: "Artisan Partners Limited Partnership"
+        adviser_key: "ARTISAN_PARTNERS"
+        sai_appendix:
+          cik: "0000935015"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          allow_identical_copies: true
+          start:
+            - "Proxy Voting The Funds have delegated responsibility for proxy voting to Artisan Partners."
+            - "Proxy Voting Artisan Partners Funds has delegated responsibility for proxy voting to Artisan Partners."
+          end:
+            - "Disclosure of Portfolio Holdings The board of directors has"
+          strip_page_numbers: true
+  russell:
+    display_name: "Russell Investments (Russell Investment Management, LLC)"
+    short_name: "Russell"
+    cik: "0001415227"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Russell Investment Management, LLC (RIM), Seattle WA (CIK 1415227, the investment adviser of the Russell Investment Company, Russell Investment Funds and Russell Investments Exchange Traded Funds, part of Russell Investments Group, LLC; its own N-PX and those of its affiliates are institutional-manager notice reports). Three open-end fund registrants that file N-PX vote tables are ingested: Russell Investment Company (CIK 351601), Russell Investment Funds (CIK 824036) and Russell Investments Exchange Traded Funds (CIK 2042513). The funds are multi-manager, but every SAI read (2021-2026) says the Board delegated proxy voting to RIM, which votes under its own written Proxy Voting Policies and Guidelines (a proxy administrator researches and executes under them; RIM, through its Committee, retains final authority); no SAI says a money manager votes. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-20. Russell Investment Company, Russell Investment Funds and Russell Investments Exchange Traded Funds are the only Russell registrants that file N-PX vote tables with operating-company votes
+      # (RIM 1415227, Russell Investments Trust Co 400007, Capital LLC 1843723 and the other affiliates file institutional-manager notice reports). Every SAI read says 'The Board has delegated to RIM, as [RIC's | RIF and RIC's]
+      # investment adviser, the primary responsibility for monitoring, evaluating and voting proxies ... RIM has established a Proxy Voting and Engagement Committee [from 2023: an Active Ownership Committee] and has
+      # adopted written Proxy Voting and Engagement Policies and Procedures and written proxy voting guidelines ... RIM (whether acting directly or through the Committee) retains final authority with respect to proxy voting'.
+      # The proxy administrator is obliged 'to vote all proxies as set forth in the Guidelines'. Funds of funds vote in proportion to the other holders of the underlying funds. The Russell Investments ETF Trust has no 2021-2023 SAI
+      # (first 485BPOS 2025-04-01), so its key starts there. No series_adviser rules: no SAI names a sub-adviser as voter.
+      - cik: "351601"
+        adviser: "Russell Investment Management, LLC (RIM, the Adviser; the money managers do not vote)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/351601/000119312521061230/d88551d485bpos.htm"  # 485BPOS (SAI) filed 2021-03-01 (0001193125-21-061230), 'Proxy Voting Policies and Procedures': delegated to RIM
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated to RIM, as RIC's investment adviser, the primary responsibility for monitoring, evaluating and voting proxies solicited by or with respect to issuers of securities in which assets of the Funds may be invested. RIM has established a Proxy Voting and Engagement Committee ... and has adopted written Proxy Voting and Engagement Policies and Procedures ... and written proxy voting guidelines ... RIM (whether acting directly or through the Committee) retains final authority with respect to proxy voting' (earliest SAI read 2021-03-01, 0001193125-21-061230; same through 2026-02-27, committee renamed Active Ownership Committee by 2023-02-28; the 2026 SAI prints the Guidelines as Appendix B)."
+        adviser_key_history: [{key: RUSSELL, from: "2021-03-01"}]
+        name: "RUSSELL INVESTMENT CO"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "824036"
+        adviser: "Russell Investment Management, LLC (RIM, the Adviser; the money managers do not vote)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/824036/000119312521144533/d110096d485bpos.htm"  # 485BPOS (SAI) filed 2021-04-30 (0001193125-21-144533), 'Proxy Voting Policies and Procedures': delegated to RIM
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has delegated to RIM, as RIF and RIC's investment adviser, the primary responsibility for monitoring, evaluating and voting proxies solicited by or with respect to issuers of securities in which assets of the Funds may be invested' (earliest SAI read 2021-04-30, 0001193125-21-144533; same through 2026-04-30). Funds of funds vote in the same proportion as other holders of the underlying funds."
+        adviser_key_history: [{key: RUSSELL, from: "2021-04-30"}]
+        name: "RUSSELL INVESTMENT FUNDS"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "2042513"
+        adviser: "Russell Investment Management, LLC (RIM, the Adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/2042513/000119312525070104/d940284d485bpos.htm"  # 485BPOS (SAI) filed 2025-04-01 (0001193125-25-070104), first SAI of the trust
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'RIM, as the Trust's investment adviser, is primarily responsible for monitoring, evaluating and voting proxies ... RIM has established an Active Ownership Committee ... RIM ... retains final authority with respect to proxy voting' (earliest SAI 2025-04-01, 0001193125-25-070104; the trust's N-1A was filed 2024-11-19, so there is no 2021-2023 SAI)."
+        adviser_key_history: [{key: RUSSELL, from: "2025-04-01"}]
+        name: "Russell Investments Exchange Traded Funds"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed RUSSELL, per registrant, from the EDGAR filing date of the earliest SAI read (RIC 2021-03-01, RIF 2021-04-30, ETF trust 2025-04-01); earlier meetings stay unlabelled. The funds are multi-manager, but RIM votes under its own Proxy Voting Policies and Guidelines (a proxy administrator executes under them); no SAI says a money manager votes, so there is no EXTERNAL series rule."
+      - "Duplicate filings: the 2024-08-27 RIC N-PX were filed three times (0001021408-24-005072, -005073, -005074, identical 14-series documents) and twice (-005078, -005079, identical 3-series documents); dedupe must run after ingest."
+      - "Not ingested (left out): Russell Investment Management LLC (1415227) and its affiliates' institutional-manager notice reports, and the legacy-.txt N-PX before 2024 (not ingested without --legacy)."
+      - "Policy text: the Guidelines PDF on russellinvestments.com answers honest clients with 200 and robots.txt does not disallow it; it carries a 'may not be reproduced' copyright legend (decision for the owner). The 2021-2025 SAIs only point to the website; the 2026 SAIs print the Guidelines as Appendix B."
+    commitments:
+      - label: russell-proxy-voting-policies-and-guidelines
+        url: "https://russellinvestments.com/-/media/files/us/corporate/russell-investments-proxy-voting-guidelines.pdf"
+        adviser: "Russell Investment Management, LLC"
+        adviser_key: "RUSSELL"
+        # Wayback captures found (CDX, 200): 2022-01-20 (January 2021 edition), 2022-12-04 (January 2022 edition), 2024-04-18 (content not read). Walked by `ingest commitments --wayback`.
+  calamos:
+    display_name: "Calamos (Calamos Advisors LLC)"
+    short_name: "Calamos"
+    cik: "0001316507"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Calamos Advisors LLC, Naperville IL (CIK 1316507, the 13-F filer and the investment adviser of the Calamos open-end and closed-end funds). Ten US fund registrants that file N-PX vote tables are ingested: Calamos Advisors Trust, Calamos ETF Trust, Calamos Antetokounmpo Sustainable Equities Trust and seven closed-end funds. Every SAI, closed-end SAI or N-CSR Item 7 read (2021-2023) says the fund 'has delegated proxy voting responsibilities to Calamos Advisors' under 'its own Proxy Voting Policies and Procedures', with Glass Lewis applying Calamos' custom rules: the policy is Calamos Advisors' own. Calamos has two custom rule sets, a general one (CALAMOS) and an ESG 'Sustainable Investment Strategies' one (CALAMOS_SUSTAINABLE) that governs the Antetokounmpo funds. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-20. Not ingested: Calamos Advisors LLC's own institutional-manager N-PX (CIK 1316507, separate accounts, not a fund registrant), Calamos Aksia Private Equity & Alternatives Fund (2047442) and Calamos Aksia Hedged Strategies Fund (2063706) (one N-PX each, no vote table), and the legacy-HTML N-PX before 2024 (not ingested without --legacy).
+      - cik: "1079575"
+        adviser: "Calamos Advisors LLC (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1079575/000110465921050134/tm2111601-1_485bpos.htm"  # 485BPOS (SAI) filed 2021-04-14 (0001104659-21-050134), 'Proxy Voting Procedures': delegated to Calamos Advisors
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Procedures': 'The Portfolio has delegated proxy voting responsibilities to Calamos Advisors, subject to the board of trustees' general oversight ... Calamos Advisors has adopted its own Proxy Voting Policies and Procedures' (earliest SAI read 2021-04-14, 0001104659-21-050134; same in 2022-04-14 and 2023-04-13). N-CEN 2021 and 2026 name Calamos Advisors as the only adviser."
+        adviser_key_history: [{key: CALAMOS, from: "2021-04-14"}]
+        name: "CALAMOS ADVISORS TRUST/IL"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1579881"
+        adviser: "Calamos Advisors LLC (the Adviser); Calamos Antetokounmpo Asset Management LLC (CGAM) is the adviser of the SROI ETF only"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1579881/000110465923104692/"  # 485BPOS (SAI) filed 2023-09-28 (0001104659-23-104692); SROI SAI 2023-01-23 (0001104659-23-005496). Replace with the SAI main-document URL when recorded.
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Procedures': 'The Fund has delegated proxy voting responsibilities to Calamos Advisors, subject to the board of trustees' general oversight' (earliest non-sustainable SAI read 2023-09-28, 0001104659-23-104692; 'Each Fund has delegated' in the multi-fund SAIs of 2024-04-22 and 2025-01-17). The SROI ETF (Calamos Antetokounmpo Global Sustainable Equities ETF, S000079464) SAI of 2023-01-23 (0001104659-23-005496) names the separate 'Proxy Voting Policies and Procedures for Sustainable Investment Strategies' ('ESG Custom Voting Policy') and 'any specific written instructions to the contrary provided to Calamos Advisors by CGAM', so SROI is keyed CALAMOS_SUSTAINABLE by series_adviser."
+        adviser_key_history: [{key: CALAMOS, from: "2023-09-28"}]
+        series_adviser:
+          S000079464: [{key: CALAMOS_SUSTAINABLE, from: "2023-01-23"}]   # Calamos Antetokounmpo Global Sustainable Equities ETF (SROI)
+        name: "Calamos ETF Trust"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1943291"
+        adviser: "Calamos Antetokounmpo Asset Management LLC (CGAM, the Adviser); Calamos Advisors LLC (sub-adviser, votes)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1943291/000110465923007604/a22-23398_7497.htm"  # 497 (prospectus + SAI) filed 2023-01-30 (0001104659-23-007604), 'Proxy Voting Procedures': delegated to Calamos Advisors, ESG Custom Voting Policy
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Procedures': 'The Fund has delegated proxy voting responsibilities to Calamos Advisors, subject to the board of trustees' general oversight and any specific written instructions to the contrary provided to Calamos Advisors by CGAM ... Calamos Advisors has adopted its own Proxy Voting Policies and Procedures for Sustainable Investment Strategies' (earliest SAI read 2023-01-30, 0001104659-23-007604). The ESG Custom Voting Policy, applied by Glass Lewis, is Calamos Advisors' own; CGAM may instruct otherwise in writing (no instance known)."
+        adviser_key_history: [{key: CALAMOS_SUSTAINABLE, from: "2023-01-30"}]
+        name: "Calamos Antetokounmpo Sustainable Equities Trust"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+      # Closed-end funds: no SAI of their own in the 2021-2023 filing list for 1717457, so the date is the N-CSR (Item 7) of 2021-12-29; the other six carry the SAI 'Proxy Voting Procedures' in a 2021 424B5 / N-2 / N-2/A.
+      - cik: "1171471"
+        adviser: "Calamos Advisors LLC (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1171471/000110465921032477/"  # 424B5 filed 2021-03-05 (0001104659-21-032477), SAI 'Proxy Voting Procedures'
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Procedures': 'The Fund has delegated proxy voting responsibilities to Calamos, subject to the board of trustees' general oversight ... Calamos has adopted its own Proxy Voting Policies and Procedures' (earliest read 2021-03-05, 0001104659-21-032477). N-CEN 2021 and 2026 name Calamos Advisors only."
+        adviser_key_history: [{key: CALAMOS, from: "2021-03-05"}]
+        name: "CALAMOS CONVERTIBLE OPPORTUNITIES & INCOME FUND"
+        validated: "2026-11-20"
+      - cik: "1222719"
+        adviser: "Calamos Advisors LLC (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1222719/000110465921032475/"  # 424B5 filed 2021-03-05 (0001104659-21-032475)
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Procedures': 'The Fund has delegated proxy voting responsibilities to Calamos ... Calamos has adopted its own Proxy Voting Policies and Procedures' (earliest read 2021-03-05, 0001104659-21-032475)."
+        adviser_key_history: [{key: CALAMOS, from: "2021-03-05"}]
+        name: "CALAMOS CONVERTIBLE & HIGH INCOME FUND"
+        validated: "2026-11-20"
+      - cik: "1275214"
+        adviser: "Calamos Advisors LLC (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1275214/000110465921061385/"  # 424B5 filed 2021-05-05 (0001104659-21-061385)
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Procedures': 'The Fund has delegated proxy voting responsibilities to Calamos ... Calamos has adopted its own Proxy Voting Policies and Procedures' (earliest read 2021-05-05, 0001104659-21-061385)."
+        adviser_key_history: [{key: CALAMOS, from: "2021-05-05"}]
+        name: "CALAMOS STRATEGIC TOTAL RETURN FUND"
+        validated: "2026-11-20"
+      - cik: "1285650"
+        adviser: "Calamos Advisors LLC (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1285650/000110465921025833/"  # N-2/A filed 2021-02-19 (0001104659-21-025833)
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Procedures': 'The Fund has delegated proxy voting responsibilities to Calamos ... Calamos has adopted its own Proxy Voting Policies and Procedures' (earliest read 2021-02-19, 0001104659-21-025833)."
+        adviser_key_history: [{key: CALAMOS, from: "2021-02-19"}]
+        name: "CALAMOS GLOBAL TOTAL RETURN FUND"
+        validated: "2026-11-20"
+      - cik: "1396277"
+        adviser: "Calamos Advisors LLC (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1396277/000110465921082034/"  # N-2 filed 2021-06-16 (0001104659-21-082034)
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Procedures': 'The Fund has delegated proxy voting responsibilities to Calamos ... Calamos has adopted its own Proxy Voting Policies and Procedures' (earliest read 2021-06-16, 0001104659-21-082034)."
+        adviser_key_history: [{key: CALAMOS, from: "2021-06-16"}]
+        name: "Calamos Global Dynamic Income Fund"
+        validated: "2026-11-20"
+      - cik: "1602584"
+        adviser: "Calamos Advisors LLC (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1602584/000110465921076112/"  # 424B5 filed 2021-06-03 (0001104659-21-076112)
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Procedures': 'The Fund has delegated proxy voting responsibilities to Calamos ... Calamos has adopted its own Proxy Voting Policies and Procedures' (earliest read 2021-06-03, 0001104659-21-076112)."
+        adviser_key_history: [{key: CALAMOS, from: "2021-06-03"}]
+        name: "Calamos Dynamic Convertible & Income Fund"
+        validated: "2026-11-20"
+      - cik: "1717457"
+        adviser: "Calamos Advisors LLC (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1717457/000138713121012346/cpz-ncsr_103121.htm"  # N-CSR filed 2021-12-29 (0001387131-21-012346), Item 7
+        adviser_verified: "2026-11-20"
+        voting_note: "N-CSR Item 7: 'The registrant has delegated authority to vote all proxies relating to the Fund's portfolio securities to the Fund's investment advisor, Calamos Advisors LLC. The Calamos Advisors Proxy Voting Policies and Procedures are included as an Exhibit hereto.' (earliest read 2021-12-29, 0001387131-21-012346; no prospectus or SAI of the trust is in the 2021-2023 filing list)."
+        adviser_key_history: [{key: CALAMOS, from: "2021-12-29"}]
+        name: "Calamos Long/Short Equity & Dynamic Income Trust"
+        validated: "2026-11-20"
+      - cik: "1937073"
+        adviser: "Calamos Advisors LLC (the Adviser) and Aksia LLC (Sub-Advisor); both vote"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1937073/000110465923061942/tm2220436d14_424b3.htm"  # 424B3 filed 2023-05-17 (0001104659-23-061942), SAI 'Proxy Voting Policy and Proxy Voting Record'
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI: 'The Fund has delegated its proxy voting responsibility to the Advisor ... to the Fund's Advisor and Sub-Advisor as a part of the Advisor's and Sub-Advisor's general management of the Fund's portfolio' (0001104659-23-061942, 2023-05-17); the sub-advisor is Aksia. Whose policy governs a given vote is not stated, so UNRESOLVED. Only the 2025 N-PX carries a vote table (3.7 KB)."
+        adviser_key_history: [{key: UNRESOLVED, from: "2023-05-17"}]
+        name: "Calamos Aksia Alternative Credit & Income Fund"
+        validated: "2026-11-20"
+    voting_scope_notes:
+      - "Keyed from the EDGAR filing date of the earliest SAI-equivalent read per registrant (see each voting_note); earlier meetings stay unlabelled. The Calamos ETF Trust is keyed CALAMOS from the first non-sustainable SAI read (2023-09-28); its 2023-01-23 SAI covers only the SROI sustainable ETF."
+      - "CALAMOS_SUSTAINABLE: Calamos Advisors' 'Proxy Voting Policies and Procedures for Sustainable Investment Strategies' (ESG Custom Voting Policy), the Antetokounmpo Trust (from 2023-01-30) and the SROI ETF series (from 2023-01-23). Its full text is in the SAI proxy section; it is not archived separately."
+      - "Not ingested: Calamos Advisors LLC's institutional-manager N-PX (CIK 1316507), Calamos Aksia Private Equity & Alternatives Fund (2047442), Calamos Aksia Hedged Strategies Fund (2063706), and the legacy-HTML N-PX before 2024 (not ingested without --legacy)."
+    commitments:
+      # 200 application/pdf (honest client, 2026-11-20, 191,555 bytes; PDF CreationDate 2024-10-23). A DESCRIPTION of both rule sets ('two sets of custom proxy voting rules: ... Sustainable Strategies ... and non-Sustainable Strategies'), so it is keyed CALAMOS and carries a note; Wayback holds captures 2021-03-02, 2024-03-03, 2024-07-14, 2025-07-14, 2026-01-03.
+      - label: calamos-description-of-proxy-voting-policies
+        url: "https://www.calamos.com/globalassets/media/shared/legalpdfs/descriptionofproxyvotingpoliciesandprocedures.pdf"
+        adviser: "Calamos Advisors LLC"
+        adviser_key: "CALAMOS"
+      # Full general policy as printed in the Calamos Advisors Trust SAI ('PROXY VOTING PROCEDURES ... DISCLOSURE OF PORTFOLIO HOLDINGS'); a stray page number sits mid-sentence ('32 In general'), so strip_page_numbers. Not run through the extractor yet: verify start/end on the 2022 and 2023 editions before enabling.
+      - label: calamos-proxy-voting-policy-as-printed-in-sai
+        adviser: "Calamos Advisors LLC"
+        adviser_key: "CALAMOS"
+        sai_appendix:
+          cik: "0001079575"
+          forms: ["485BPOS"]
+          since: "2021-04-01"
+          start:
+            - "PROXY VOTING PROCEDURES. The Portfolio has delegated proxy voting responsibilities to Calamos Advisors"
+          end:
+            - "DISCLOSURE OF PORTFOLIO HOLDINGS."
+          strip_page_numbers: true
+      - label: calamos-sustainable-proxy-voting-policy-as-printed-in-sai
+        adviser: "Calamos Advisors LLC"
+        adviser_key: "CALAMOS_SUSTAINABLE"
+        sai_appendix:
+          cik: "0001579881"
+          forms: ["485BPOS"]
+          since: "2023-01-01"
+          start:
+            - "Calamos Advisors has adopted its own Proxy Voting Policies and Procedures for Sustainable Investment Strategies"
+          end:
+            - "DISCLOSURE OF PORTFOLIO HOLDINGS"
+          strip_page_numbers: true
