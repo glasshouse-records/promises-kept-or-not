@@ -786,6 +786,18 @@ tried (2026-11-20), so nothing was read from it; it is not evaded. Ingested N-PX
 (587,555 marked, most of them originals superseded by N-PX/A). Not ingested: WisdomTree Ethereum Trust and the legacy-HTML
 N-PX before 2024.
 
+Global X (added 2026-11-20): one open-end registrant files N-PX vote tables (Global X Funds). Every SAI read (2021-2026) says
+"The Funds have delegated proxy voting responsibilities to the Adviser" and that "the Adviser has adopted proxy voting
+policies and guidelines for this purpose", which "have been adopted by the Trust"; Glass Lewis "is responsible for the actual
+voting" and votes per its recommendations "overseen by the Advisor" unless the Adviser gives "different direction". The policy
+is Global X's own and Glass Lewis executes it (the SAI never says the Adviser adopted Glass Lewis's guidelines), so the trust is
+keyed `GLOBAL_X` from the earliest SAI read, as VanEck is and unlike First Trust's early `FIRST_TRUST_ISS` period. No SAI says
+a sub-adviser votes, so there is no series exception. Policy text: Parts I and II of the SAI voting statement (1 version,
+unchanged 2021-2026); Glass Lewis's own guidelines are not archived. Source access: globalxetfs.com answers honest clients with
+429 on every address tried, robots.txt included (2026-11-20), so nothing was read from it; it is not evaded. Ingested N-PX
+2024-26: 374,527 non-duplicate votes (127,201 marked, most of them the original 2024 N-PX superseded by its same-day N-PX/A).
+Not ingested: Global X Venture & Innovation Fund, the Canadian and Japanese Global X managers and the legacy-HTML N-PX before 2024.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting

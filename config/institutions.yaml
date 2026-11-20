@@ -4677,3 +4677,49 @@ institutions:
       - "Both registrants are keyed EXTERNAL from the EDGAR filing date of the earliest SAI read (WisdomTree Trust 2021-01-15, WisdomTree Digital Trust 2022-09-26); earlier meetings stay unlabelled. Every SAI delegates voting to each series' sub-adviser under the sub-adviser's own policy and every series in the Form N-CEN of 2021-2026 (117 series) lists an unaffiliated sub-adviser, so WisdomTree Asset Management votes no series and has no proxy voting policy of its own to key. Sub-advisers by series changed over the period (Mellon to Voya for the AI Enhanced Value funds, Mellon to Newton for Managed Futures, Equity Premium Income and Enhanced Commodity Strategy, Insight North America added to the laddered Treasury and municipal funds) but each stays an unaffiliated outside manager, so every series stays EXTERNAL and the dated changes are not needed as rules."
       - "Policy text: none archived. The Mellon, Voya IM and Newton policies printed in the SAI are those sub-advisers' policies, not WisdomTree's, and EXTERNAL votes are never paired with a policy document. wisdomtree.com answers honest clients with 403 on every address tried (home page and three proxy-voting addresses, 2026-11-20), documented, not evaded; the Wayback CDX index holds no wisdomtree.com proxy capture."
       - "Not ingested (left out): WisdomTree Ethereum Trust (1864519), WisdomTree Asset Management's own institutional-manager N-PX (none on file), and the legacy-HTML N-PX before 2024 (not ingested without --legacy)."
+  global_x:
+    display_name: "Global X (Global X Management Company LLC)"
+    short_name: "Global X"
+    cik: "0001432354"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Global X Management Company LLC, New York NY (CIK 1432354, the investment adviser of the Global X Funds ETFs and a subsidiary of Mirae Asset Global Investments; its own institutional-manager N-PX is a cover page only). One open-end fund registrant that files N-PX vote tables is ingested: Global X Funds (CIK 1432353). Every SAI read (2021-2026) says 'The Funds have delegated proxy voting responsibilities to the Adviser ... The Adviser has adopted proxy voting policies and guidelines for this purpose (Proxy Voting Policies) ... The Proxy Voting Policies have been adopted by the Trust', with Glass Lewis responsible for the actual voting; the policy is Global X's own (Glass Lewis executes it and Global X may give 'different direction'), so the trust is keyed GLOBAL_X. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-20. Global X Funds (1432353) is the only Global X registrant that files N-PX vote tables with operating-company votes (Global X Venture & Innovation Fund, 1997641, is a closed-end N-2 filer whose N-PX is a cover page;
+      # Global X Management CO LLC, 1432354, files an institutional-manager N-PX that is a cover page; Global X Investments Canada Inc., 1573668, and Global X Japan Co., Ltd., 2027450, are foreign managers of non-US funds).
+      # Every SAI read (about 85 of 2021-2026, one hash-compared per edition) says 'The Fund[s] ha[ve] delegated proxy voting responsibilities to the Adviser, subject to the Board of Trustees' oversight ... The Adviser has adopted proxy voting policies and guidelines for this purpose ("Proxy Voting Policies") and the
+      # Adviser has engaged ... Glass Lewis ... responsible for the actual voting of all proxies ... The Proxy Voting Policies have been adopted by the Trust as the policies and procedures that the Adviser will use when voting proxies'. The policy is the Adviser's; Glass Lewis executes it
+      # (the SAI does not say the Adviser adopted Glass Lewis's guidelines, so there is no GLASS_LEWIS variant as FIRST_TRUST_ISS is for ISS). No SAI says a sub-adviser votes.
+      - cik: "1432353"
+        adviser: "Global X Management Company LLC (the Adviser); Mirae Asset Global Investments (USA) LLC and (Hong Kong) Limited are named as sub-advisers in the registration statement but no SAI says they vote"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1432353/000143235321000002/ck0001432353-20201130.htm"  # 485BPOS (SAI) filed 2021-01-04 (0001432353-21-000002), 'Proxy Voting': delegated to the Adviser, Proxy Voting Policies adopted by the Trust, Glass Lewis votes
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting': 'The Fund has delegated proxy voting responsibilities to the Adviser, subject to the Board of Trustees' oversight ... The Adviser has adopted proxy voting policies and guidelines for this purpose (Proxy Voting Policies) and the Adviser has engaged ... Glass Lewis & Co. ... responsible for the actual voting of all proxies ... The Proxy Voting Policies have been adopted by the Trust as the policies and procedures that the Adviser will use when voting proxies' (earliest SAI read 2021-01-04, 0001432353-21-000002; same wording through the SAI of 2026-11-04; the multi-fund SAIs of 2021-2025 add that the Adviser has adopted a Catholic or ESG voting policy addendum for named funds, which are also the Adviser's policies)."
+        adviser_key_history: [{key: GLOBAL_X, from: "2021-01-04"}]
+        name: "GLOBAL X FUNDS"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed GLOBAL_X from the EDGAR filing date of the earliest SAI read (Global X Funds 2021-01-04); earlier meetings stay unlabelled. The policy is the Adviser's own written Proxy Voting Policies, adopted by the Trust, which Glass Lewis executes ('Except in instances where the Adviser has provided Glass Lewis with different direction, Glass Lewis has agreed to vote proxies in accordance with recommendations developed by Glass Lewis and overseen by the Advisor'). No SAI says a sub-adviser or any other party votes under its own policy."
+      - "Not ingested (left out): Global X Venture & Innovation Fund (1997641, closed-end, cover-page N-PX), Global X Management CO LLC (1432354, institutional-manager N-PX, cover page), Global X Investments Canada Inc. (1573668) and Global X Japan Co., Ltd. (2027450) (foreign managers of non-US funds), and the legacy-HTML N-PX before 2024 (not ingested without --legacy)."
+      - "Policy text: globalxetfs.com answers honest clients with 429 on every address tried, robots.txt included (home page, /filings-and-tax-supplements and a guessed /proxy-voting/, 2026-11-20, repeated after a back-off), so nothing was read from it live; it is not evaded. The one Wayback capture of /filings-and-tax-supplements (2026-03-12) lists the N-PX records only and links no policy document, and the Wayback CDX index holds no globalxetfs.com proxy-voting capture, so no website label is configured. The policy is archived as the voting statement the SAI prints (Parts I and II of 'Proxy Voting', from the 'I. General Guidelines' heading), which is Global X's own text; the SAI's first paragraph (delegation, Glass Lewis, the Catholic and ESG addenda for named funds) is not part of the stored text because it alternates between 'Fund' and 'Funds' and in the list of addenda by SAI family. Glass Lewis's own guideline book is not archived (copyrighted, never printed in the SAI). The SAIs of 2025-05-28 (two single-fund SAIs) say the policies are 'attached hereto as Appendix B' but the filing carries no appendix text, so they contribute nothing."
+    commitments:
+      # Parts I and II of the SAI 'Proxy Voting' statement, one wording from 2021 to 2026. Read from the Global X Funds SAIs (485BPOS, dated by EDGAR filing date): one trust, many single-fund and multi-fund SAIs a year,
+      # which differ in a printed page number (mid-sentence, 'various 29 shareholder proposals', 'Firm 27 The Advisor') and in 'the interests of the Fund[s] and the interests of the Adviser' (singular in single-fund SAIs):
+      # both are removed by `strip_patterns` so the families do not alternate.
+      - label: global-x-proxy-voting-statement-as-printed-in-sai
+        adviser: "Global X Management Company LLC"
+        adviser_key: "GLOBAL_X"
+        sai_appendix:
+          cik: "0001432353"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          allow_identical_copies: true
+          start:
+            - "I. General Guidelines Except in instances where the Adviser has provided Glass Lewis with different direction"
+          end:
+            - "III. Record of Proxy Voting"
+          strip_page_numbers: true
+          strip_patterns:
+            - '(?<=[A-Za-z]) \d{1,3}(?= [A-Za-z])'
+            - '(?<=interests of the )Funds?(?= and the interests of the Adviser)'
