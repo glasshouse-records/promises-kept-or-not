@@ -798,6 +798,17 @@ unchanged 2021-2026); Glass Lewis's own guidelines are not archived. Sixteen ser
 2024-26: 374,527 non-duplicate votes (127,201 marked, most of them the original 2024 N-PX superseded by its same-day N-PX/A).
 Not ingested: Global X Venture & Innovation Fund, the Canadian and Japanese Global X managers and the legacy-HTML N-PX before 2024.
 
+ProShares (added 2026-11-20): two open-end registrants file N-PX vote tables, ProShares Trust (adviser ProShare Advisors LLC) and
+ProFunds (adviser ProFund Advisors LLC). Every SAI read (2021-2026) says the Board delegated voting to the adviser and attaches
+one joint written policy for both advisers ("collectively, the Advisor"), under which proxies are generally voted in accordance
+with the ISS Guidelines that ISS "maintains and implements"; the Advisor "reserves the right to modify any of the
+recommendations". The document is the advisers' own, so both trusts are keyed `PROSHARES` from the earliest 2021 SAI read (one
+key for one policy, not one per legal entity), as First Trust's own written policy is `FIRST_TRUST` and not `FIRST_TRUST_ISS`. No
+SAI names a sub-adviser that votes or an addendum, so there is no series exception. Policy text: Appendix C of the ProShares Trust
+SAIs (1 version, unchanged 2021-2026) and the short form on proshares.com and profunds.com (honest clients get 200; archived
+from the Wayback Machine back to 2022); ISS's own guidelines are not archived. Ingested N-PX 2024-26: 1,000,718 non-duplicate
+votes (13,687 marked, exact repeats inside an exhibit). Not ingested: Access One Trust and the legacy-HTML N-PX before 2024.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting

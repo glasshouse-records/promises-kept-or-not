@@ -4743,3 +4743,82 @@ institutions:
           strip_patterns:
             - '(?<=[A-Za-z]) \d{1,3}(?= [A-Za-z])'
             - '(?<=interests of the )Funds?(?= and the interests of the Adviser)'
+  proshares:
+    display_name: "ProShares (ProShare Advisors LLC)"
+    short_name: "ProShares"
+    cik: "0001357955"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "ProShare Advisors LLC, Bethesda MD (CIK 1357955, the 13-F filer and investment adviser of the ProShares Trust ETFs; its affiliate ProFund Advisors LLC, CIK 1129919, advises the ProFunds mutual funds). Two open-end fund registrants that file N-PX vote tables are ingested: ProShares Trust (CIK 1174610) and ProFunds (CIK 1039803). Every SAI read (2021-2026) says the Board delegated proxy voting to the trust's adviser and attaches ONE joint written policy, 'Proxy Voting Policies and Procedures FOR: ProShare Advisors LLC, ProFund Advisors LLC ... (collectively, the Advisor)', under which proxies are generally voted in accordance with Institutional Shareholder Services (ISS) Guidelines that ISS maintains and implements; the policy document is the advisers' own, so both trusts are keyed PROSHARES. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-20. ProShares Trust (1174610) and ProFunds (1039803) are the only ProShare Advisors / ProFund Advisors registrants that file N-PX vote tables with operating-company votes ingested here.
+      # Not ingested: ProShares Trust II (1415311, a commodity-pool trust with no N-PX), ProShares Trust III (2019448) and ProShares Private Equity Access Fund (2087385) (no N-PX), and Access One Trust (1301123,
+      # a ProFund Advisors trust whose last N-PX, 2021-08-25, and 15 before it are legacy HTML (not ingested without --legacy); it files no XML N-PX, so it carries no key).
+      # Every SAI read (60 of 2021-2026, 45 ProShares Trust and 15 ProFunds, plus Access One Trust's 2021 SAI; statement compared per edition: only the adviser name, 'each'/'the' Fund and the page number differ) says 'The Board of Trustees has adopted policies and procedures with respect to voting proxies relating to portfolio securities of [each] Fund,
+      # pursuant to which the Board of Trustees has delegated responsibility for voting such proxies to ProShare Advisors [ProFund Advisors] subject to the Board's continuing oversight. The Advisor's proxy voting policies and procedures
+      # (the Guidelines) ... the Advisor has retained Institutional Shareholder Services (ISS) as an expert' and 'See Appendix C for a copy of the proxy voting policy and procedures'. Appendix C is ONE document titled 'Proxy Voting Policies
+      # and Procedures FOR: ProShare Advisors LLC ProFund Advisors LLC, DATED March 1, 2008, AS REVISED May 1, 2015' (unchanged in every SAI to 2026): 'It is the policy of ProFund Advisors LLC and ProShare Advisors LLC (collectively, the Advisor) ...
+      # utilizing a set of proxy voting guidelines maintained and implemented by an independent service provider, ISS ... Proxies generally will be voted in accordance with the ISS Guidelines'. It is the advisers' own written policy (the
+      # Advisor 'reserves the right to modify any of the recommendations'), attached by the SAI as theirs, so PROSHARES is the key, as FIRST_TRUST (not FIRST_TRUST_ISS) is for First Trust's own written policy that follows ISS. One document covers both advisers, so there is
+      # ONE key (not one per legal entity). No SAI names a sub-adviser that votes, an addendum, or a series under a different policy, so there are no series rules.
+      - cik: "1174610"
+        adviser: "ProShare Advisors LLC (the Advisor; ISS executes the votes under the Guidelines it maintains)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1174610/000168386321000126/pt-20210115.htm"  # 485BPOS (SAI) filed 2021-01-15 (0001683863-21-000126), 'Proxy Voting Policy and Procedures': delegated to ProShare Advisors; Appendix C the advisers' joint policy
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Policy and Procedures': 'the Board of Trustees has delegated responsibility for voting such proxies to ProShare Advisors subject to the Board's continuing oversight. The Advisor's proxy voting policies and procedures (the Guidelines) are reasonably designed to maximize shareholder value ... the Advisor has retained Institutional Shareholder Services (ISS) as an expert ... See Appendix C for a copy of the proxy voting policy and procedures' (earliest SAI read 2021-01-15, 0001683863-21-000126; same wording through the SAI of 2026-11-05). Appendix C, the joint ProShare Advisors / ProFund Advisors policy (as revised May 1, 2015), says proxies generally will be voted in accordance with the ISS Guidelines that ISS maintains and implements; the document is the advisers' own, so PROSHARES."
+        adviser_key_history: [{key: PROSHARES, from: "2021-01-15"}]
+        name: "PROSHARES TRUST"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1039803"
+        adviser: "ProFund Advisors LLC (the Advisor; ISS executes the votes under the Guidelines it maintains)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1039803/000168386321002202/pf-20210421.htm"  # 485BPOS (SAI) filed 2021-04-21 (0001683863-21-002202), 'Proxy Voting Policy and Procedures': delegated to ProFund Advisors; Appendix C the advisers' joint policy
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Policy and Procedures': 'the Board of Trustees has delegated responsibility for voting such proxies to ProFund Advisors subject to the Board's continuing oversight. The Advisor's proxy voting policies and procedures (the Guidelines) are reasonably designed to maximize shareholder value ... the Advisor has retained Institutional Shareholder Services (ISS) as an expert ... See Appendix C for a copy of the proxy voting policy and procedures' (earliest 2021 SAI read 2021-04-21, 0001683863-21-002202; a 2020-11-23 SAI says the same and is not used; same wording through the SAI of 2026-04-28). Appendix C is the same joint policy as in the ProShares Trust SAI (word for word), so PROSHARES."
+        adviser_key_history: [{key: PROSHARES, from: "2021-04-21"}]
+        name: "PROFUNDS"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed PROSHARES, per registrant, from the EDGAR filing date of the earliest 2021 SAI read (ProShares Trust 2021-01-15, ProFunds 2021-04-21); earlier meetings stay unlabelled. The trusts' SAIs attach one joint written policy for ProShare Advisors LLC and ProFund Advisors LLC ('collectively, the Advisor'), so there is one key, not one per adviser. The policy follows the ISS Guidelines (ISS 'maintains and implements' them and executes the votes) but the Advisor 'reserves the right to modify any of the recommendations', and the document is the advisers' own, so the key is not an ISS key (contrast FIRST_TRUST_ISS, where the SAI said the adviser adopted ISS's own guidelines and attached ISS's document). No SAI names a sub-adviser that votes, an ESG or faith-based addendum, or a series under another policy."
+      - "Not ingested (left out): ProShares Trust II (1415311), ProShares Trust III (2019448) and ProShares Private Equity Access Fund (2087385) (no N-PX vote tables), Access One Trust (1301123, ProFund Advisors; its N-PX are legacy HTML to 2021, not ingested without --legacy), and the legacy-HTML N-PX before 2024 of the other two trusts."
+      - "Policy text: proshares.com/legal/proxy-voting-policy and profunds.com/legal/proxy-voting-policy-and-procedures (HTML pages that answer honest clients with 200; robots.txt does not disallow either path), archived as two labels and, under a third, Appendix C as printed in the ProShares Trust SAIs. The website text and the SAI appendix are different editions of the policy (the web page is a short form), so they are separate labels. ISS's own guideline book is not archived (copyrighted, never printed in the SAI)."
+    commitments:
+      # Verified 2026-11-20 (200, text/html, honest client). Short-form policy on each adviser's site: the page body from 'The Board of Trustees has delegated' to the SEC web-site sentence; navigation is excluded from the version identity.
+      - label: proxy-voting-policy-proshares-site
+        url: "https://www.proshares.com/legal/proxy-voting-policy"
+        adviser: "ProShare Advisors LLC"
+        adviser_key: "PROSHARES"
+        body:
+          start: "The Board of Trustees has delegated responsibility for voting proxies"
+          end: 'Securities and Exchange Commission.s website at http://www\.sec\.gov ?\.'
+      - label: proxy-voting-policy-and-procedures-profunds-site
+        url: "https://www.profunds.com/legal/proxy-voting-policy-and-procedures"
+        adviser: "ProFund Advisors LLC"
+        adviser_key: "PROSHARES"
+        body:
+          start: "The Board of Trustees has delegated responsibility for voting proxies"
+          end: 'Securities and Exchange Commission.s website at http://www\.sec\.gov ?\.'
+      # Appendix C of the ProShares Trust SAI (the joint policy), dated by EDGAR filing date; page marks 'C-2' are stripped (a strip match is replaced by a space).
+      - label: proshares-proxy-voting-policies-and-procedures-as-printed-in-sai
+        adviser: "ProShare Advisors LLC and ProFund Advisors LLC (joint policy)"
+        adviser_key: "PROSHARES"
+        sai_appendix:
+          cik: "0001174610"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          allow_identical_copies: true
+          start:
+            - "Proxy Voting Policies and Procedures to Maximize Shareholder Value and Protect Shareowner Interests It is the policy of ProFund Advisors LLC"
+          # Combined filings print several SAIs, each with its own Appendix C: the section ends at the next SAI cover or at Part C, whichever comes first.
+          end:
+            - "PART C. OTHER INFORMATION"
+            - "STATEMENT OF ADDITIONAL INFORMATION"
+          # Single-fund SAIs and multi-fund SAIs print the same policy with 'the Fund' / 'a Fund' / 'each Fund' in five places (singular/plural edition wording, not an edit):
+          # the determiner is stripped in exactly those five contexts so the families do not alternate.
+          strip_patterns:
+            - '(?<![A-Za-z])C-\d{1,2}(?![\d-])'
+            - '(?<=Under )(?:each|the) (?=Fund.s securities lending)'
+            - '(?<=agreements, )(?:a|the) (?=Fund generally retains)'
+            - '(?<=value of )(?:a|the) (?=Fund.s investment)'
+            - '(?<=indicate that )(?:a|the) (?=Fund.s proxy voting)'
+            - '(?<=behalf of )(?:each|the) (?=Fund it advises)'
