@@ -760,6 +760,20 @@ see ROADMAP). Ingested N-PX 2024-26: 674,170 non-duplicate votes (44,779 duplica
 funds, the FT Vest series funds, First Trust's private-credit funds, First Trust Advisors' institutional-manager N-PX and the
 legacy-HTML N-PX before 2024.
 
+VanEck (added 2026-11-20): three open-end registrants file N-PX vote tables with operating-company votes (VanEck ETF Trust,
+VanEck Funds, VanEck VIP Trust). Every SAI read (2021-2026) says "Proxies for each Fund's portfolio securities are voted in
+accordance with the [applicable] Adviser's proxy voting policies and procedures, which are set forth in Appendix A", and
+Appendix A is VanEck's own policy: VanEck engaged Glass Lewis for research, recommendations and vote execution, has reviewed
+the Glass Lewis guidelines and "generally follows" them, and "retains the right, on any specific proxy, to vote differently".
+Because the policy belongs to VanEck and Glass Lewis only executes it, the trusts are keyed `VANECK` (contrast First Trust,
+whose early SAIs say the adviser adopted ISS's guidelines and are keyed `FIRST_TRUST_ISS`), from the earliest 2021 SAI read.
+The SAI names a sub-adviser only for the China funds, and says only that it places orders, so no series exception is made
+(see ROADMAP). Policy text: Appendix A as printed in the VIP Trust SAI (1 version, unchanged 2021-2026); the Glass Lewis
+guideline book that follows it in each SAI is copyrighted and not archived, and vaneck.com has no US policy page. Ingested
+N-PX 2024-26: 108,669 non-duplicate votes (32,808 duplicates marked, most of them the 2024 ETF Trust N-PX superseded by its
+N-PX/A). Not ingested: VanEck CLO Opportunities Fund, VanEck Associates' institutional-manager N-PX and the legacy-HTML N-PX
+before 2024.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting

@@ -4586,3 +4586,62 @@ institutions:
           strip_page_numbers: true
           strip_patterns:
             - '\bB ?- ?\d\b'
+  vaneck:
+    display_name: "VanEck (Van Eck Associates Corporation)"
+    short_name: "VanEck"
+    cik: "0000869178"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Van Eck Associates Corporation, New York NY (CIK 869178, the 13-F filer and the investment adviser of the VanEck open-end fund trusts; affiliated adviser Van Eck Absolute Return Advisers Corporation, VEARA, for the Real Asset Allocation ETF and earlier VanEck Funds portfolios). Three open-end fund registrants that file N-PX vote tables are ingested: VanEck ETF Trust (formerly Market Vectors ETF Trust), VanEck Funds and VanEck VIP Trust. Every SAI says 'Proxies for each Fund's portfolio securities are voted in accordance with the [applicable] Adviser's proxy voting policies and procedures, which are set forth in Appendix A', and Appendix A is VanEck's own written policy: VanEck has engaged Glass Lewis for research, recommendations and vote execution, has reviewed the Glass Lewis guidelines and 'generally follows' them, and retains the right to vote differently on any proxy. The votes therefore follow a VanEck policy (executed by Glass Lewis), key VANECK. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-20. The three VanEck open-end registrants that file N-PX vote tables (Van Eck Funds II Inc, CIK 1168644, last filed in 2007; VanEck CLO Opportunities Fund, 2095816, is a closed-end fund with a single N-PX (2026); Van Eck Associates' own institutional-manager N-PX, 869178, is not ingested). Every SAI read prints, under 'Proxy Voting Policies and Procedures',
+      # 'Proxies for each Fund's portfolio securities are voted in accordance with the Adviser's [applicable Adviser's] proxy voting policies and procedures, which are set forth in Appendix A to this SAI', and Appendix A is 'VanEck Proxy
+      # Voting Policies': 'VanEck (the Adviser or VanEck) has adopted the following policies and procedures ... the Adviser has engaged an independent third party proxy voting specialist, Glass Lewis & Co., LLC ... research, global issuer
+      # analysis, and voting recommendations as well as vote execution' and, under Proxy Voting Policy, 'While it is the Adviser's policy to generally follow the Guidelines, the Adviser retains the right, on any specific proxy, to vote
+      # differently from the Guidelines'. That is VanEck's own policy with Glass Lewis as executor (the Glass Lewis guidelines are attached to the SAI as an exhibit, a copyrighted document that is not archived here), so VANECK, dated
+      # from the EDGAR filing date of the earliest 2021 SAI read. The wording is identical in the SAIs of 2021 to 2026 of all three trusts.
+      - cik: "1137360"
+        adviser: "Van Eck Associates Corporation (the Adviser); Van Eck Absolute Return Advisers Corporation (Real Asset Allocation ETF); ChinaAMC sub-adviser (China funds)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1137360/000113736021000028/cik0001137360-20200930.htm"  # 485BPOS (SAI) filed 2021-01-28 (0001137360-21-000028), 'Proxy Voting Policies and Procedures': voted under the Adviser's policy, Appendix A
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'Proxies for each Fund's portfolio securities are voted in accordance with the Adviser's proxy voting policies and procedures, which are set forth in Appendix A to this SAI' (earliest SAI read 2021-01-28, 0001137360-21-000028); Appendix A 'VanEck Proxy Voting Policies': Glass Lewis executes, VanEck 'generally follows' its guidelines and retains the right to vote differently. The 2021 SAI names a sub-adviser only for the China funds (ChinaAMC China Bond ETF, China Growth Leaders ETF, ChinaAMC SME-ChiNext ETF; it says the sub-adviser places purchase and sale orders and says nothing about voting) and VEARA for the Real Asset Allocation ETF (VEARA is VanEck's own affiliate and Appendix A of the VanEck Funds SAI is titled 'VEAC and VEARA proxy voting policies'), so no series exception is made."
+        adviser_key_history: [{key: VANECK, from: "2021-01-28"}]
+        name: "VANECK ETF TRUST"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "768847"
+        adviser: "Van Eck Associates Corporation and Van Eck Absolute Return Advisers Corporation (the Advisers)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/768847/000076884721000031/ck0000768847-20201231.htm"  # 485BPOS (SAI) filed 2021-04-28 (0000768847-21-000031), 'Proxy Voting Policies and Procedures': voted under the applicable Adviser's policy, Appendix A
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'Proxies for each Fund's portfolio securities are voted in accordance with the applicable Adviser's proxy voting policies and procedures, which are set forth in Appendix A to this SAI' (earliest SAI read 2021-04-28, 0000768847-21-000031); Appendix A 'VEAC and VEARA Proxy Voting Policies' is the one 'VanEck Proxy Voting Policies' text (Glass Lewis executes, VanEck generally follows its guidelines and may vote differently). No sub-adviser is named in the 2021 SAI (the Adviser 'may hire' one under an exemptive order), so no series exception is made."
+        adviser_key_history: [{key: VANECK, from: "2021-04-28"}]
+        name: "VANECK FUNDS"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "811976"
+        adviser: "Van Eck Associates Corporation (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/811976/000081197621000011/ck0000811976-20201231.htm"  # 485BPOS (SAI) filed 2021-04-28 (0000811976-21-000011), 'Proxy Voting Policies and Procedures': voted under the Adviser's policy, Appendix A
+        adviser_verified: "2026-11-20"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'Proxies for each Fund's portfolio securities are voted in accordance with the Adviser's proxy voting policies and procedures, which are set forth in Appendix A to this SAI' (earliest SAI read 2021-04-28, 0000811976-21-000011); Appendix A 'Adviser's Proxy Voting Policies' is the 'VanEck Proxy Voting Policies' text (Glass Lewis executes, VanEck generally follows its guidelines and may vote differently). No sub-adviser is named in the 2021 SAI."
+        adviser_key_history: [{key: VANECK, from: "2021-04-28"}]
+        name: "VANECK VIP TRUST"
+        validated: "2026-11-20"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed VANECK per registrant from the EDGAR filing date of the earliest 2021 SAI read (ETF Trust 2021-01-28, VanEck Funds and VIP Trust 2021-04-28); earlier meetings stay unlabelled. Votes are executed by Glass Lewis under VanEck's own written policy, which VanEck generally follows and may depart from on any proxy, so the key is VANECK and not a Glass Lewis key. No SAI says a sub-adviser or any other party votes under its own policy."
+      - "Not ingested (left out): VanEck CLO Opportunities Fund (2095816, closed-end, one N-PX), Van Eck Funds II Inc (last N-PX 2007), Van Eck Associates' own institutional-manager N-PX (CIK 869178, overlaps the fund tables), and the legacy-HTML N-PX before 2024 (not ingested without --legacy)."
+      - "Policy text: vaneck.com publishes no US proxy voting policy at a static address (the site sits behind a cookie gate that an honest client passes; the legal, about-us and responsible-investing pages link no proxy policy, the 'about-us/proxy-voting' address redirects to the home page, and the Wayback CDX index holds no proxy-voting capture; the Australian vaneck.com.au policy belongs to VanEck Investments Limited and is not these funds' policy), so no website label is configured. The policy is archived as printed in Appendix A of the VanEck VIP Trust SAI, the one VanEck trust that files a single SAI a year with one adviser. Appendix A is followed in each SAI by Glass Lewis's own proxy paper guidelines, a copyrighted document that is not archived: the section ends where the VanEck text ends."
+    commitments:
+      - label: vaneck-proxy-voting-policies-as-printed-in-sai
+        adviser: "Van Eck Associates Corporation"
+        adviser_key: "VANECK"
+        sai_appendix:
+          cik: "0000811976"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          allow_identical_copies: true
+          start:
+            - "VANECK PROXY VOTING POLICIES VanEck (the “Adviser” or “VanEck”) has adopted the following policies and procedures"
+          end:
+            - "A-2"
+          strip_page_numbers: true
+          strip_patterns:
+            - '\bA-\d\b'
