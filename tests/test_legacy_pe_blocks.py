@@ -79,7 +79,9 @@ def test_real_excerpt_subrows_novote_split_star_and_empty_fund():
     # 'Split ..' votes, 'No vote' and '*' for/against are dropped, never guessed
     reasons = stats["dropped_reasons"]
     assert reasons.get("vote_not_in_vocab", 0) >= 2
-    assert reasons.get("for_against_not_in_vocab", 0) >= 1
+    assert "for_against_not_in_vocab" not in reasons  # "*" now emits with empty F/A
+    assert any(r["issuer_name"].startswith("Icahn".upper()) or r["proposal_text"].startswith("ICAHN")
+               for r in rows)
     assert all(r["vote"] in pe.VOTE_VOCAB for r in rows)
     assert not any(r["proposal_text"].startswith("Non-Voting agenda") for r in rows)
 
@@ -184,3 +186,34 @@ def test_trailing_space_and_line_ending_invariance(pad, crlf):
 def test_vocab_votes_roundtrip(vote, fa):
     rows = pe.parse(_doc(_row("9", "Thing", "Mgmt", vote, fa)))
     assert [(r["vote"], r["for_against_management"]) for r in rows] == [(vote, fa)]
+
+
+# --- Amendment 1 ---------------------------------------------------------------
+
+
+def test_amend1_director_heading_subrows():
+    d = _doc(_row("1.", "DIRECTOR", "", "", "") + _row("", "Jane  Doe", "Mgmt", "For", "For")
+             + _row("", "John Roe", "Mgmt", "Withheld", "Against"))
+    got = [(r["proposal_id"], r["proposal_text"], r["vote"]) for r in pe.parse(d)]
+    assert got == [("1.", "DIRECTOR Jane Doe", "For"), ("1.", "DIRECTOR John Roe", "Withheld")]
+
+
+def test_amend1_star_for_against_emitted_empty():
+    rows = pe.parse(_doc(_row("1a.", "ICAHN NOMINEE: X", "Mgmt", "For", "*")))
+    assert [(r["vote"], r["for_against_management"]) for r in rows] == [("For", "")]
+    assert pe.parse_stats(_doc(_row("1a.", "N", "Mgmt", "For", "*")))["proposals_dropped"] == 0
+
+
+def test_amend1_other_for_against_garbage_still_dropped():
+    assert pe.parse(_doc(_row("1", "N", "Mgmt", "For", "Maybe"))) == []
+
+
+def test_amend1_fund_and_issuer_whitespace_normalised():
+    rows = pe.parse(_doc(_row("1", "A", "Mgmt", "For", "For"), fund="Test   Fund", issuer="ACME    CORP"))
+    assert (rows[0]["fund_name"], rows[0]["issuer_name"]) == ("Test Fund", "ACME CORP")
+
+
+def test_amend1_no_vote_and_split_dropped_ids_literal():
+    d = _doc(_row("2)", "A", "Mgmt", "No vote", "") + _row("3.", "B", "Mgmt", "Split 50% For 50% Against", "Split")
+             + _row("4.", "C", "Mgmt", "For", "For"))
+    assert [r["proposal_id"] for r in pe.parse(d)] == ["4."]

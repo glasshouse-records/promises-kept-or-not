@@ -279,5 +279,7 @@ def _fill(r: _Row, line: str, c_text: int, c_type: int, c_vote: int, c_fa: int) 
     r.type = line[c_type:c_vote].strip()
     r.vote = line[c_vote:c_fa].strip()
     r.fa = line[c_fa:].strip()
+    if r.fa == "*":  # the documents' own footnote: management position unknown
+        r.fa = ""
     if r.type == NONVOTING_TYPE:
         r.vote = r.fa = ""
