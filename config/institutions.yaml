@@ -827,8 +827,176 @@ institutions:
         adviser_key: "TRPA"
         name: "T. Rowe Price U.S. Equity Research Fund, Inc."
         validated: "2026-06-26"
+      # Coverage sweep 2026-11-21 (docs/research/sweep.md): equity registrants over $5B. Voter per fund read from the Price SAI (485BPOS) sub-advisory table; see tests/test_t_rowe_price_sweep.py.
+      - cik: "80257"
+        adviser: "T. Rowe Price Associates, Inc. (no TRPIM sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/80257/000174177322001343/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Voted under the TRPA policy. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). No sub-adviser named in the SAI table is stated to vote; the TRPA policy covers T. Rowe Price Associates and its adviser affiliates."
+        adviser_key_history: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price Growth Stock Fund, Inc."
+        validated: "2026-11-21"
+      - cik: "1012968"
+        adviser: "T. Rowe Price Associates, Inc.; per-series voter keys (TRPIM sub-advises some series)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1012968/000174177322001340/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Per-series keys. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). Series in the SAI table of TRPIM-sub-advised funds are TRPIM; the rest vote under the TRPA policy. Series: S000002092 TRPIM, S000002093 TRPA, S000002094 TRPIM, S000002095 TRPA, S000002096 TRPA, S000080479 TRPA."
+        series_adviser:
+          S000002092: [{key: TRPIM, from: "2022-04-28"}]
+          S000002093: [{key: TRPA, from: "2022-04-28"}]
+          S000002094: [{key: TRPIM, from: "2022-04-28"}]
+          S000002095: [{key: TRPA, from: "2022-04-28"}]
+          S000002096: [{key: TRPA, from: "2022-04-28"}]
+          S000080479: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price Equity Funds, Inc."
+        validated: "2026-11-21"
+      - cik: "927845"
+        adviser: "T. Rowe Price Associates, Inc. (no TRPIM sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/927845/000174177322001351/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Voted under the TRPA policy. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). No sub-adviser named in the SAI table is stated to vote; the TRPA policy covers T. Rowe Price Associates and its adviser affiliates."
+        adviser_key_history: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price Value Fund, Inc."
+        validated: "2026-11-21"
+      - cik: "887147"
+        adviser: "T. Rowe Price Associates, Inc.; sub-adviser T. Rowe Price Investment Management, Inc. (responsible for voting policies)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/887147/000174177322001339/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "TRPIM is the sub-adviser and votes under proxy-voting-guidelines-trpim. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113)."
+        adviser_key_history: [{key: TRPIM, from: "2022-04-28"}]
+        name: "T. Rowe Price Mid-Cap Growth Fund, Inc."
+        validated: "2026-11-21"
+      - cik: "894024"
+        adviser: "T. Rowe Price Associates, Inc. (no TRPIM sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/894024/000174177322001328/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Voted under the TRPA policy. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). No sub-adviser named in the SAI table is stated to vote; the TRPA policy covers T. Rowe Price Associates and its adviser affiliates."
+        adviser_key_history: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price Dividend Growth Fund, Inc."
+        validated: "2026-11-21"
+      - cik: "1462712"
+        adviser: "T. Rowe Price Associates, Inc. (no TRPIM sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1462712/000174177322001322/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Voted under the TRPA policy. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). No sub-adviser named in the SAI table is stated to vote; the TRPA policy covers T. Rowe Price Associates and its adviser affiliates."
+        adviser_key_history: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price U.S. Large-Cap Core Fund, Inc."
+        validated: "2026-11-21"
+      - cik: "80248"
+        adviser: "T. Rowe Price Associates, Inc. (no TRPIM sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/80248/000174177322001344/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Voted under the TRPA policy. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). No sub-adviser named in the SAI table is stated to vote; the TRPA policy covers T. Rowe Price Associates and its adviser affiliates."
+        adviser_key_history: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price New Horizons Fund, Inc."
+        validated: "2026-11-21"
+      - cik: "1012678"
+        adviser: "T. Rowe Price Associates, Inc. (no TRPIM sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1012678/000174177322001341/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Voted under the TRPA policy. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). No sub-adviser named in the SAI table is stated to vote; the TRPA policy covers T. Rowe Price Associates and its adviser affiliates."
+        adviser_key_history: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price Mid-Cap Value Fund, Inc."
+        validated: "2026-11-21"
+      - cik: "1002624"
+        adviser: "T. Rowe Price Associates, Inc. (no TRPIM sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1002624/000174177322001345/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Voted under the TRPA policy. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). No sub-adviser named in the SAI table is stated to vote; the TRPA policy covers T. Rowe Price Associates and its adviser affiliates."
+        adviser_key_history: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price Health Sciences Fund, Inc."
+        validated: "2026-11-21"
+      - cik: "1486048"
+        adviser: "T. Rowe Price Associates, Inc.; sub-advisers T. Rowe Price International Ltd, Hong Kong, Japan and Singapore (affiliates; discretionary investment decisions and trading only)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1486048/000174177322001317/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Voted under the TRPA policy. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). Price International, Hong Kong, Japan and Singapore are stated only to trade and make discretionary investment decisions, not to vote; the TRPA policy covers T. Rowe Price Associates and its adviser affiliates."
+        adviser_key_history: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price Real Assets Fund, Inc."
+        validated: "2026-11-21"
+      - cik: "819930"
+        adviser: "T. Rowe Price Associates, Inc. (no TRPIM sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/819930/000174177322001316/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Voted under the TRPA policy. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). No sub-adviser named in the SAI table is stated to vote; the TRPA policy covers T. Rowe Price Associates and its adviser affiliates."
+        adviser_key_history: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price Science & Technology Fund, Inc."
+        validated: "2026-11-21"
+      - cik: "834798"
+        adviser: "T. Rowe Price Associates, Inc.; sub-adviser T. Rowe Price Investment Management, Inc. (responsible for voting policies)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/834798/000174177322001334/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "TRPIM is the sub-adviser and votes under proxy-voting-guidelines-trpim. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113)."
+        adviser_key_history: [{key: TRPIM, from: "2022-04-28"}]
+        name: "T. Rowe Price Small-Cap Value Fund, Inc."
+        validated: "2026-11-21"
+      - cik: "1038469"
+        adviser: "T. Rowe Price Associates, Inc. (no TRPIM sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1038469/000174177322001318/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Voted under the TRPA policy. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). No sub-adviser named in the SAI table is stated to vote; the TRPA policy covers T. Rowe Price Associates and its adviser affiliates."
+        adviser_key_history: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price Integrated Equity Funds, Inc."
+        validated: "2026-11-21"
+      - cik: "75170"
+        adviser: "T. Rowe Price Associates, Inc.; sub-adviser T. Rowe Price Investment Management, Inc. (responsible for voting policies)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/75170/000174177322001338/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "TRPIM is the sub-adviser and votes under proxy-voting-guidelines-trpim. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113)."
+        adviser_key_history: [{key: TRPIM, from: "2022-04-28"}]
+        name: "T. Rowe Price Small-Cap Stock Fund, Inc."
+        validated: "2026-11-21"
+      - cik: "918294"
+        adviser: "T. Rowe Price Associates, Inc.; per-series voter keys (TRPIM sub-advises some series)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/918294/000174177322001336/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Per-series keys. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). Series in the SAI table of TRPIM-sub-advised funds are TRPIM; the rest vote under the TRPA policy. Series: S000002077 TRPA, S000002078 TRPA, S000002079 UNRESOLVED, S000002080 TRPIM, S000002081 TRPA, S000002082 TRPA, S000002083 TRPA. S000002079 (Moderate Allocation Portfolio) is a fund of funds whose votes on underlying Price funds are mirror votes, so it is UNRESOLVED."
+        series_adviser:
+          S000002077: [{key: TRPA, from: "2022-04-28"}]
+          S000002078: [{key: TRPA, from: "2022-04-28"}]
+          S000002079: [{key: UNRESOLVED, from: "2022-04-28"}]
+          S000002080: [{key: TRPIM, from: "2022-04-28"}]
+          S000002081: [{key: TRPA, from: "2022-04-28"}]
+          S000002082: [{key: TRPA, from: "2022-04-28"}]
+          S000002083: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price Equity Series, Inc."
+        validated: "2026-11-21"
+      - cik: "775688"
+        adviser: "T. Rowe Price Associates, Inc. (no TRPIM sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/775688/000174177322001330/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Voted under the TRPA policy. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). No sub-adviser named in the SAI table is stated to vote; the TRPA policy covers T. Rowe Price Associates and its adviser affiliates."
+        adviser_key_history: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price Equity Income Fund, Inc."
+        validated: "2026-11-21"
+      - cik: "910671"
+        adviser: "T. Rowe Price Associates, Inc. (no TRPIM sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/910671/000174177322001321/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Voted under the TRPA policy. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). No sub-adviser named in the SAI table is stated to vote; the TRPA policy covers T. Rowe Price Associates and its adviser affiliates."
+        adviser_key_history: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price Communications & Technology Fund, Inc."
+        validated: "2026-11-21"
+      - cik: "858581"
+        adviser: "T. Rowe Price Associates, Inc. (no TRPIM sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/858581/000174177322001333/c485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "Voted under the TRPA policy. The 2022-04-28 SAI says TRPIM is responsible for voting policies for the listed funds; the shared Price SAI table is unchanged in the 2023, 2024, 2025 and 2026 SAIs read (Growth Stock Fund 0001741773-23-001270, 0001741773-24-001706, 0001741773-25-000625, 0001999371-26-004113). No sub-adviser named in the SAI table is stated to vote; the TRPA policy covers T. Rowe Price Associates and its adviser affiliates."
+        adviser_key_history: [{key: TRPA, from: "2022-04-28"}]
+        name: "T. Rowe Price Index Trust, Inc."
+        validated: "2026-11-21"
+      - cik: "313212"
+        adviser: "T. Rowe Price Associates, Inc. (no TRPIM sub-adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/313212/000174177323000345/c485bpos.htm"  # 485BPOS filed 2023-02-27
+        adviser_verified: "2026-11-21"
+        voting_note: "Voted under the TRPA policy. The 2023-02-27 SAI is the earliest read; its sub-advisory table lists TRPIM only for other funds. No sub-adviser named in the SAI table is stated to vote; the TRPA policy covers T. Rowe Price Associates and its adviser affiliates."
+        adviser_key_history: [{key: TRPA, from: "2023-02-27"}]
+        name: "T. Rowe Price International Funds, Inc."
+        validated: "2026-11-21"
     voting_scope_notes:
       - "Three of the four funds on file are advised by T. Rowe Price Associates (TRPA, guidelines proxy-voting-guidelines-trpa); Capital Appreciation Fund is sub-advised by T. Rowe Price Investment Management (TRPIM), which holds discretionary voting authority and votes under proxy-voting-guidelines-trpim; TRPA and TRPIM run controls preventing sharing of proxy voting decisions (this institution's `notes`)."
+      - "Coverage sweep 2026-11-21. Voter per fund: the Price SAI lists sub-advisers per fund and only T. Rowe Price Investment Management (TRPIM) is stated to be responsible for voting policies (SAI of 2022-04-28); funds sub-advised by TRPIM (Mid-Cap Growth, Small-Cap Stock, Small-Cap Value, Equity Funds' Institutional Mid-Cap Equity Growth and Institutional Small-Cap Stock, Equity Series' Mid-Cap Growth Portfolio) are keyed TRPIM, every other series TRPA. Price International, Hong Kong, Japan and Singapore only trade and make discretionary investment decisions (Real Assets, Index Trust, International Funds), so those funds stay TRPA. Meetings before each entry's `from` date (earliest SAI read) are unlabelled."
+      - "Not ingested, not keyed: Spectrum Funds II (923084; Moderate, Moderate Growth and Conservative Allocation, fund of funds whose N-PX hold only mirror votes on underlying Price funds), Spectrum Fund (808303) and Retirement Funds (1177017) (fund of funds / target-date), Institutional Income Funds (1169187; High Yield, Floating Rate and Long Duration Credit, bond-only), Summit Funds (912028; cash reserves), International Series (918292; about 0.2B), and equity registrants under the 5B sweep threshold that were not assessed (Global Technology 1116626, Balanced 871839, Diversified Mid-Cap Growth 1267862, New Era 216907). Equity Series' Moderate Allocation Portfolio (S000002079) is ingested with its registrant but keyed UNRESOLVED (fund of funds)."
     commitments:
       # Canonical TRPA Proxy Voting Guidelines, verified 2026-06-26 (200, pdf).
       - label: proxy-voting-guidelines-trpa
