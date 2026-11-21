@@ -7197,6 +7197,7 @@ institutions:
         adviser_verified: "2026-11-21"
         voting_note: "SAI 'Proxy Voting': 'The Funds' Boards of Directors have delegated to the Advisor and, as applicable, the Subadvisors the responsibility for voting proxies on behalf of each Fund ... A summary of the proxy voting policies and procedures for the Advisor and each Subadvisor is set forth in Appendix A' and Appendix A is headed 'Proxy Voting Policies and Procedures for the Advisor, CNS Asia and CNS UK' (one policy; the Subadvisors, Cohen & Steers Asia Limited and Cohen & Steers UK Limited, are the Advisor's own affiliates, so the voter is always Cohen & Steers). Earliest read: 485BPOS (SAI) filed 2021-02-26 (0001193125-21-060936). Open-end fund (S000001230). Deregistered: N-8F order 2024-12-27; the last N-PX is 2024-08-20 (388 vote rows), so no meetings after mid-2024 exist."
         adviser_key_history: [{key: COHEN_STEERS, from: "2021-02-26"}]
+        npx_ended: {last_period: "2024-06-30", reason: "deregistered: N-8F filed 2024-10-31, order 2024-12-27", source: "https://www.sec.gov/Archives/edgar/data/1307144/999999999724004706/9999999997-24-004706-index.htm", checked: "2026-11-21"}
         name: "Cohen & Steers Alternative Income Fund, Inc."
         validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
       - cik: "1590402"

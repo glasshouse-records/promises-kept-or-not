@@ -87,3 +87,10 @@ def test_commitments_are_keyed_and_extractable():
             assert sa["forms"] and sa["since"] >= "2021-01-01"
     assert any(c.get("url", "").endswith(".pdf") for c in D["commitments"])
     assert sum("sai_appendix" in c for c in D["commitments"]) == 2
+
+
+def test_alternative_income_fund_npx_ended_on_deregistration():
+    e = next(e for e in D["npx_ciks"] if str(e["cik"]) == "1307144")
+    end = e["npx_ended"]
+    assert end["last_period"] == "2024-06-30"
+    assert "N-8F" in end["reason"] and end["source"].startswith("https://www.sec.gov/Archives/") and end["checked"]
