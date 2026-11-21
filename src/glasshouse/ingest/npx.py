@@ -249,10 +249,11 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
         else:
             upgrade_no_cover = False
 
-        def drop_no_cover_record() -> None:
-            if upgrade_no_cover:
+        def drop_no_cover_record(upgrade: bool = upgrade_no_cover,
+                                 accession: str = filing.accession_number) -> None:
+            if upgrade:
                 conn.execute("DELETE FROM filings WHERE accession = ? AND report_type = 'LEGACY_NO_COVER'",
-                             (filing.accession_number,))
+                             (accession,))
 
         try:
             cover_bytes = http.get(f"{filing.directory_url}/primary_doc.xml").content
