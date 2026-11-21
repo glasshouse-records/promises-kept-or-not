@@ -7119,6 +7119,11 @@ institutions:
           strip_page_numbers: true
           strip_patterns:
             - '(?<![A-Za-z])C-\s?\d{1,2}(?![\d-])'
+          reprints:
+            - accession: "0001193125-26-290521"
+              same_as_previous: true
+              reason: "re-print of the 2025 edition: footnote 1 (the GMO entities it covers) moved from mid-sentence to after the paragraph; no wording change (diffed 2026-11-21)"
+              checked: "2026-11-21"
   cohen_steers:
     display_name: "Cohen & Steers (Cohen & Steers Capital Management, Inc.)"
     short_name: "Cohen & Steers"
@@ -7555,6 +7560,7 @@ institutions:
           end: ["The Advisor and the Advisory Agreement Security Investors", "Investment Advisory Services Pursuant to an Advisory Agreement"]
           strip_patterns:
             - '(?<=[.;:!?”’)]) \d{2,3}(?= [A-Z(•])'
+            - '(?<=all other) \d{2,3}(?= shareholders)'   # SAI page number mid-sentence (55, 74, 52, 70 in the 2021-2023 SAIs; diffed 2026-11-21)
   natixis:
     display_name: "Natixis Investment Managers (Natixis Advisors) US funds"
     short_name: "Natixis"

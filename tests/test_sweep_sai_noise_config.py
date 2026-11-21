@@ -42,3 +42,27 @@ def test_gqg_trailing_page_header_is_not_text():
     body = "the guidelines also should serve for voting on all accounts under management."
     assert _sec(cfg, body + " The Advisors’", "Inner Circle Fund III") == _sec(cfg, body)
     assert _sec(cfg, body + " The Advisors'", "Inner Circle Fund III") == _sec(cfg, body)
+
+
+GUGGENHEIM = ("guggenheim", "guggenheim-advisor-proxy-voting-procedures-as-printed-in-sai")
+
+
+def test_guggenheim_page_number_mid_sentence_is_not_text():
+    cfg = _cfg(*GUGGENHEIM)
+    a = _sec(cfg, "in the same proportion as the vote of all other 55 shareholders of the fund.")
+    b = _sec(cfg, "in the same proportion as the vote of all other 74 shareholders of the fund.")
+    c = _sec(cfg, "in the same proportion as the vote of all other shareholders of the fund.")
+    assert a == b == c
+
+
+def test_guggenheim_real_numbers_kept():
+    cfg = _cfg(*GUGGENHEIM)
+    assert "30 days" in _sec(cfg, "the Advisor votes within 30 days of the meeting.")
+
+
+def test_gmo_2026_footnote_move_is_a_declared_reprint():
+    for d in registry.load()["gmo"]["commitments"]:
+        if d["label"] == "gmo-proxy-voting-policy-as-printed-in-sai":
+            reps = {r["accession"]: r for r in d["sai_appendix"].get("reprints") or []}
+    r = reps["0001193125-26-290521"]
+    assert r["same_as_previous"] is True and r["reason"] and r["checked"]
