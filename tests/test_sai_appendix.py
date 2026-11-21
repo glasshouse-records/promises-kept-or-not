@@ -56,6 +56,20 @@ def test_identical_copies_allowed_only_when_opted_in():
     assert sai.extract_section(differing, START, END, allow_identical_copies=True) is None
 
 
+def test_copies_differing_only_by_non_breaking_hyphens_are_the_same_text():
+    """Domini's 2021 SAI embeds the appendix twice; one copy prints U+2011, the other
+    an ASCII hyphen (case\u2011by\u2011case vs case-by-case). Same wording: one section."""
+    soft = doc(BODY + " case\u2011by\u2011case review.")
+    plain = doc(BODY + " case-by-case review.")
+    out = sai.extract_section(soft + " " + plain, START, END, allow_identical_copies=True)
+    assert out is not None and "case-by-case review." in out and "\u2011" not in out
+    # a real wording difference still refuses
+    other = doc(BODY + " case-by-case reviews.")
+    assert sai.extract_section(soft + " " + other, START, END, allow_identical_copies=True) is None
+    # and it stays opt-in
+    assert sai.extract_section(soft + " " + plain, START, END) is None
+
+
 def test_whitespace_only_difference_is_same_text():
     a = sai.extract_section(doc(), START, END)
     b = sai.extract_section(doc().replace(" ", "\n  \t"), START, END)

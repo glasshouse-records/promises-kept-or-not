@@ -5440,3 +5440,271 @@ institutions:
         access: {status: blocked, reason: "manulifeim.com answers honest clients with 403; documented in METHODOLOGY, never evaded", checked: "2026-11-20"}
       # Not configured: an `sai_appendix` label for the Manulife policy as printed in the SAI (research docs/research/john_hancock.md section 6): its `end` markers were verified on only 4 of the 5 SAIs read,
       # and the heading after the policy differs by SAI. Add it only after a dry run confirms one edition per filing.
+  parnassus:
+    display_name: "Parnassus Investments"
+    short_name: "Parnassus"
+    cik: "0000948669"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Parnassus Investments, LLC, San Francisco CA (CIK 948669, the 13-F filer and the investment adviser of the Parnassus Funds; Affiliated Managers Group, Inc. holds a majority interest since the 2022 transaction). Two open-end fund registrants that file N-PX vote tables with operating-company votes are ingested: Parnassus Funds (CIK 747546) and Parnassus Funds II (CIK 866256, named Parnassus Income Funds until 2025-04-28). Every SAI says the proxy voting policies are those of Parnassus Investments (Annex B / Annex A) and the policy states 'We do not delegate our proxy voting authority or rely solely on third-party recommendations to vote our shares'; ISS is the voting agent and research provider only. No N-CEN (FY2020 to FY2025) names a sub-adviser. Parnassus Investments, LLC's own institutional-manager N-PX (CIK 948669) is not ingested. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. Two Parnassus fund registrants file N-PX vote tables with operating-company votes in 2024-2026 (Parnassus Investments, LLC's institutional-manager N-PX, CIK 948669, is not ingested).
+      # Every SAI read prints 'Proxy voting policies and procedures for the portfolios of the Parnassus Funds are included as Annex B' and the annex says 'We do not delegate our proxy voting authority'.
+      # No N-CEN lists a sub-adviser, so there is no series exception. AMG's majority stake (2022) did not change who votes; the annex was rewritten between the 2021 and 2022 SAIs and keyed PARNASSUS throughout.
+      - cik: "747546"
+        adviser: "Parnassus Investments, LLC (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/747546/000119312521144778/d366417d485bpos.htm"  # 485BPOS (SAI) filed 2021-04-30 (0001193125-21-144778), 'Proxy Voting': policies in Annex B
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting': 'Proxy voting policies and procedures for the portfolios of the Parnassus Funds are included as Annex B attached to this statement of additional information.' Annex B 'PARNASSUS INVESTMENTS PROXY VOTING POLICIES AND PROCEDURES': 'We do not delegate our proxy voting authority or rely solely on third-party recommendations to vote our shares.' Earliest SAI read 2021-04-30 (0001193125-21-144778); same authority wording in 2022-04-29, 2023-04-28 and 2026-04-30. Affiliated Managers Group holds a majority interest in Parnassus Investments, LLC from 2022; the annex was rewritten (2021 vs 2022 edition) but voting stays with Parnassus. Every Form N-CEN 2021-03 to 2026-03 names Parnassus Investments as the only adviser and no sub-adviser."
+        adviser_key_history: [{key: PARNASSUS, from: "2021-04-30"}]
+        name: "PARNASSUS FUNDS"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "866256"
+        adviser: "Parnassus Investments, LLC (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/866256/000119312521144848/d370153d485bpos.htm"  # 485BPOS (SAI) filed 2021-04-30 (0001193125-21-144848), 'Proxy Voting': policies in Annex B
+        adviser_verified: "2026-11-21"
+        voting_note: "Named Parnassus Income Funds until 2025-04-28, then Parnassus Funds II. Same SAI wording as Parnassus Funds: 'Proxy voting policies and procedures for the portfolios of the Parnassus Funds are included as Annex B' and the annex's 'We do not delegate our proxy voting authority or rely solely on third-party recommendations to vote our shares.' Earliest SAI read 2021-04-30 (0001193125-21-144848); re-read 2022-04-29, 2023-04-28, 2026-04-30. No sub-adviser in any Form N-CEN."
+        adviser_key_history: [{key: PARNASSUS, from: "2021-04-30"}]
+        name: "PARNASSUS FUNDS II"
+        validated: "2026-11-21"
+    voting_scope_notes:
+      - "Keyed PARNASSUS per registrant from the EDGAR filing date of the earliest SAI read (2021-04-30 for both); earlier meetings stay unlabelled. Votes follow Parnassus Investments' own proxy voting policies (ISS is voting agent and research only; no sub-adviser in any N-CEN). Affiliated Managers Group's majority stake (2022) did not change who votes."
+      - "Not ingested (left out): Parnassus Investments, LLC's institutional-manager N-PX (CIK 948669) and the legacy-text N-PX of 2021-2023 (not ingested without --legacy)."
+      - "Policy text: the website page (a JavaScript-rendered page, no policy document link recoverable without a browser; UNRESOLVED, see section 4) and the policy as printed in the SAI annex, whose edition changes (2021, 2022, 2023, 2024, 2026) are genuine rewrites."
+    commitments:
+      # Annex as printed in the SAI (485BPOS), dated by EDGAR filing date. One label per trust. Start heading varies: 'ANNEX B PARNASSUS INVESTMENTS PROXY ...' (2021), 'ANNEX B PARNASSUS INVESTMENTS, LLC PROXY ...' (2022 to 2025), 'ANNEX A PARNASSUS INVESTMENTS, LLC PROXY ...' (2022-12 single-fund SAI and 2026).
+      # Page furniture 'AB-8' / 'AA-11' printed mid-text.
+      - label: parnassus-proxy-voting-policy-as-printed-in-sai-funds
+        adviser: "Parnassus Investments, LLC"
+        adviser_key: "PARNASSUS"
+        sai_appendix:
+          cik: "0000747546"
+          forms: ["485BPOS"]
+          since: "2021-04-01"
+          start:
+            - "ANNEX B PARNASSUS INVESTMENTS PROXY VOTING POLICIES AND PROCEDURES I. Overview"
+            - "ANNEX B PARNASSUS INVESTMENTS, LLC PROXY VOTING POLICIES AND PROCEDURES I. Overview"
+            - "ANNEX A PARNASSUS INVESTMENTS, LLC PROXY VOTING POLICIES AND PROCEDURES I. Overview"
+          end:
+            - "PART C OTHER INFORMATION Item 28. Exhibits"
+          strip_page_numbers: true
+          strip_patterns:
+            - '(?<![A-Za-z])A[AB]-\s?\d{1,2}(?![\d-])'
+            - '(?<![A-Za-z])ANNEX [AB](?![A-Za-z])'
+      - label: parnassus-proxy-voting-policy-as-printed-in-sai-funds-ii
+        adviser: "Parnassus Investments, LLC"
+        adviser_key: "PARNASSUS"
+        sai_appendix:
+          cik: "0000866256"
+          forms: ["485BPOS"]
+          # The 2026-04-30 filing (0001193125-26-195360) prints the annex twice (Funds II SAI and a second ETF SAI) and the two copies differ in punctuation ("company," / "related" vs "-related"), so nothing is recorded for it (precision); the Funds label above carries the 2026 edition.
+          since: "2021-04-01"
+          start:
+            - "ANNEX B PARNASSUS INVESTMENTS PROXY VOTING POLICIES AND PROCEDURES I. Overview"
+            - "ANNEX B PARNASSUS INVESTMENTS, LLC PROXY VOTING POLICIES AND PROCEDURES I. Overview"
+            - "ANNEX A PARNASSUS INVESTMENTS, LLC PROXY VOTING POLICIES AND PROCEDURES I. Overview"
+          end:
+            - "PART C OTHER INFORMATION Item 28. Exhibits"
+          strip_page_numbers: true
+          strip_patterns:
+            - '(?<![A-Za-z])A[AB]-\s?\d{1,2}(?![\d-])'
+            - '(?<![A-Za-z])ANNEX [AB](?![A-Za-z])'
+  domini:
+    display_name: "Domini Impact Investments"
+    short_name: "Domini"
+    cik: "0001399069"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Domini Impact Investments LLC, New York NY (CIK 1399069, formerly Domini Social Investments LLC, the investment adviser and sponsor of the Domini Funds). One US fund registrant that files N-PX vote tables with operating-company votes is ingested: Domini Investment Trust (CIK 851680, series S000003423 Impact Equity, S000014393 Impact International Equity, S000067792 Sustainable Solutions, S000069966 International Opportunities until 2024; the Impact Bond Fund S000003424 files only notice reports). Every SAI says 'The Board of Trustees has delegated the responsibility to vote proxies for the Funds to Domini' and Appendix B (Domini's Proxy Voting Guidelines and Procedures) says the Board 'delegates the responsibility to vote proxies for the Funds to Domini Impact Investments LLC'. SSGA Funds Management, Inc. (Equity, International Opportunities, Sustainable Solutions) and Wellington Management Company LLP (International Equity, Bond) are sub-advisers in every N-CEN but the SAI gives them no proxy-voting authority, so Domini's own guidelines govern every series. Domini Impact Investments LLC's own institutional-manager N-PX (CIK 1399069) is not ingested. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. The only Domini fund registrant that files N-PX vote tables with operating-company votes in 2024-2026 is Domini Investment Trust (CIK 851680). Its Bond Fund series S000003424 files notice reports only; Domini Impact Investments LLC's institutional-manager N-PX (CIK 1399069) is not ingested.
+      # Every SAI read says 'The Board of Trustees has delegated the responsibility to vote proxies for the Funds to Domini' and Appendix B delegates to 'Domini Impact Investments LLC, the Funds' investment adviser'. SSGA FM and Wellington are sub-advisers in every N-CEN (2021-10 to 2026-10) but the SAI gives them no voting authority, so no series exception: DOMINI for every series.
+      - cik: "851680"
+        adviser: "Domini Impact Investments LLC (the Adviser); sub-advisers SSGA Funds Management, Inc. and Wellington Management Company LLP do not vote proxies"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/851680/000119312521339751/d212702d485bpos.htm"  # 485BPOS (SAI) filed 2021-11-24 (0001193125-21-339751), 'Proxy Voting Policies': voting delegated to Domini, Appendix B
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'PROXY VOTING POLICIES': 'The Board of Trustees has delegated the responsibility to vote proxies for the Funds to Domini.' Appendix B: 'The Board of Trustees (\"Board\") of the Domini Funds delegates the responsibility to vote proxies for the Funds to Domini Impact Investments LLC, the Funds' investment adviser'. Earliest SAI read 2021-11-24 (0001193125-21-339751); same wording in 2023-11-22 (0001193125-23-281955) and 2025-11-21 (0001193125-25-291191). SSGA Funds Management, Inc. (801-60103) and Wellington Management Company LLP (801-15908) are sub-advisers in every Form N-CEN 2021-10 to 2026-10 but the SAI describes them only as investing in securities the Adviser selects; neither is given proxy-voting authority."
+        adviser_key_history: [{key: DOMINI, from: "2021-11-24"}]
+        name: "DOMINI INVESTMENT TRUST"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed DOMINI from the EDGAR filing date of the earliest SAI read (2021-11-24, the first 485BPOS from 2021 on); earlier meetings stay unlabelled. Domini's own Proxy Voting Guidelines and Procedures govern every series; SSGA FM and Wellington, sub-advisers in every N-CEN, have no proxy-voting authority in the SAI."
+      - "Not ingested (left out): Domini Impact Investments LLC's institutional-manager N-PX (CIK 1399069), the Impact Bond Fund notice reports (no vote table), and the legacy-HTML N-PX before 2024 (not ingested without --legacy)."
+      - "Policy text: two sources, different documents. The website 'Domini Proxy Voting Guidelines' (a matrix of voting instructions, 'As of November 30, 2025') and Appendix B of the SAI (the guidelines and procedures, ending with the voting matrix). They are archived under separate labels and never mixed."
+    commitments:
+      # Verified 2026-11-21 (200 application/pdf to the honest client; the alias 30x-redirects to https://domini.com/wp-content/uploads/2025/11/Proxy-Voting-Guidelines-11302025.pdf, 504,601 bytes; first page 'Domini Proxy Voting Guidelines* As of November 30, 2025'). robots.txt allows. Wayback CDX holds NO capture of the alias or of the wp-content PDF (only 2022 captures of the older /proxyvoting page, all 301).
+      - label: domini-proxy-voting-guidelines
+        url: "https://domini.com/proxyvotingguidelines"
+        adviser: "Domini Impact Investments LLC"
+        adviser_key: "DOMINI"
+      # Appendix B as printed in the SAI (485BPOS), dated by EDGAR filing date. Page furniture 'B-3' / 'B-46' printed mid-text. The 2021 SAI document contains the appendix twice (once per embedded copy); the 2023 and 2025 SAIs once.
+      - label: domini-proxy-voting-guidelines-as-printed-in-sai
+        adviser: "Domini Impact Investments LLC"
+        adviser_key: "DOMINI"
+        sai_appendix:
+          cik: "0000851680"
+          forms: ["485BPOS"]
+          allow_identical_copies: true
+          since: "2021-11-01"
+          start:
+            - "Appendix B Proxy Voting Policies and Procedures INTRODUCTION These Proxy Voting Guidelines and Procedures have been adopted by the Domini Investment Trust"
+          end:
+            - "PART C ITEM 28. EXHIBITS"
+          strip_page_numbers: true
+          strip_patterns:
+            - '(?<![A-Za-z])B-\s?\d{1,2}(?![\d-])'
+          reprints:
+            - accession: "0001193125-22-290801"
+              same_as_previous: true
+              reason: "re-print of the 2021-11-24 edition: footnote blocks moved across page breaks, bullet glyph, one broken word ('t he'), and the filing's last matrix sentence is cut off before 'referred to Domini for voting instructions'; no wording change (diffed 2026-11-21)"
+              checked: "2026-11-21"
+  voya:
+    display_name: "Voya (Voya Investments, LLC / Voya Investment Management)"
+    short_name: "Voya"
+    cik: "0001077479"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Voya Investments, LLC, Scottsdale AZ (CIK 1077479, formerly ING Investments LLC), a subsidiary of Voya Financial, Inc., is the investment adviser of the Voya mutual-fund, variable-insurance and closed-end fund registrants; Voya Investment Management Co. LLC (CIK 33670) and Voya Investment Management LLC (CIK 1068837, which files its own institutional-manager N-PX for separate accounts, not ingested) are affiliated sub-advisers. Fourteen fund registrants that file N-PX vote tables with operating-company votes are ingested: Voya Investors Trust (837276), Voya Partners Inc (1039001), Voya Equity Trust (1063946), Voya Mutual Funds (895430), Voya Variable Products Trust (916403), Voya Variable Funds (2664), Voya Balanced Portfolio Inc (846799), Voya Funds Trust (1066602, one fund, nine rows), and the closed-end Voya Asia Pacific High Dividend Equity Income Fund (1385632), Voya Global Advantage & Premium Opportunity Fund (1332943), Voya Global Equity Dividend & Premium Opportunity Fund (1285890), Voya Infrastructure, Industrials & Materials Fund (1417802), Voya Emerging Markets High Dividend Equity Fund (1496292) and Voya Credit Income Fund (1124959, nine rows). Every SAI read (2021-2026) says the Board's proxy voting procedures 'delegate to the Adviser the authority to vote proxies relating to portfolio securities' and Appendix B is the Board-approved Voya Funds policy ('Voya Funds / Voya Investments, LLC'), executed by the Adviser's Proxy Coordinator (from 2023 the Active Ownership team) through a proxy advisory firm; sub-advisers only recommend. The policy allows the Board to delegate a fund to its sub-adviser ('Sub-Advisor-Voted Fund'), but no SAI names one and the May 2026 edition says 'Appendix A: Sub-Adviser-Voted Funds - None'; so every registrant is keyed VOYA and no series is EXTERNAL. The closed-end funds' N-CSR Item 7 reprints the same policy. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. Fourteen Voya registrants file N-PX vote tables with operating-company votes (2024-2026). Not ingested: cover-only filers (Voya Variable Insurance Trust 1090682, Strategic Allocation Portfolios 935070, Government Money Market 2663, Intermediate Bond 2646, Enhanced Securitized Income 1995568), Voya Separate Portfolios Trust (1392116; 2025 votes only on Vanguard funds), the retired International HDEI (1395627, last N-PX 2021), Natural Resources Equity Income (1372117, last 2022) and Series Fund (877233, last 2019), and the institutional-manager N-PX of Voya Investment Management LLC (1068837, a different policy).
+      # Every SAI read prints 'The proxy voting procedures and guidelines delegate to the Adviser the authority to vote proxies relating to portfolio securities'; Appendix B is Voya Investments, LLC's Board-approved 'VOYA FUNDS' policy (editions Sept 11 2020, Jan 27 2022, May 25 2022, Mar 16 2023, Mar 6 2024, Feb 5 2025, May 2026). Each registrant is dated from the EDGAR filing date of the earliest SAI (or, for the closed-end funds, N-CSR) read.
+      - cik: "837276"
+        adviser: "Voya Investments, LLC (the Adviser) votes under the Board's Voya Funds policy; sub-advisers recommend only"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/837276/000168386321002494/vit-20210426.htm"  # 485BPOS (SAI) filed 2021-04-26 (0001683863-21-002494), 'Proxy Voting Procedures and Guidelines' + Appendix B
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Procedures and Guidelines': 'The Board has adopted proxy voting procedures and guidelines to govern the voting of proxies relating to each Portfolio's portfolio securities. The proxy voting procedures and guidelines delegate to the Adviser the authority to vote proxies relating to portfolio securities ... In delegating voting authority to the Adviser, the Board has also approved the Adviser's proxy voting procedures, which require the Adviser to vote proxies in accordance with each Portfolio's proxy voting procedures and guidelines.' Appendix B (VOYA FUNDS, Voya Investments, LLC, Date Last Revised September 11, 2020) delegates 'to the Advisor's Proxy Coordinator the responsibility to vote the Funds' proxies'; sub-advisors are 'Investment Professionals' who may submit a recommendation. Escape clause 'Sub-Advisor-Voted Fund' (Board may delegate to a sub-advisor): no fund named in any SAI 2021-2025; May 2026 edition: 'Appendix A: Sub-Adviser-Voted Funds None'. Earliest SAI read 2021-04-26; same delegation in 2022-04-21, 2023-04-24, 2024-04-24, 2025-04-28 and 2026-07-14."
+        adviser_key_history: [{key: VOYA, from: "2021-04-26"}]
+        name: "Voya INVESTORS TRUST"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1039001"
+        adviser: "Voya Investments, LLC (the Adviser) votes under the Board's Voya Funds policy; sub-advisers recommend only"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1039001/000168386321002493/vpi-20210426.htm"  # 485BPOS (SAI) filed 2021-04-26 (0001683863-21-002493)
+        adviser_verified: "2026-11-21"
+        voting_note: "Same SAI 'Proxy Voting Procedures and Guidelines' paragraph and Appendix B as Voya Investors Trust (earliest SAI read 2021-04-26, 0001683863-21-002493; same in 2023-04-26): 'delegate to the Adviser the authority to vote proxies relating to portfolio securities'. Includes sub-adviser series (VY American Century, Baron, Columbia, Invesco, JPMorgan, T. Rowe Price) and fund-of-funds Solution / Index Solution series (2025 votes only on Vanguard funds)."
+        adviser_key_history: [{key: VOYA, from: "2021-04-26"}]
+        name: "Voya PARTNERS INC"
+        validated: "2026-11-21"
+      - cik: "1063946"
+        adviser: "Voya Investments, LLC (the Adviser) votes under the Board's Voya Funds policy; sub-advisers recommend only"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1063946/000168386321005313/vet-20210924.htm"  # 485BPOS (SAI) filed 2021-09-24 (0001683863-21-005313)
+        adviser_verified: "2026-11-21"
+        voting_note: "Same SAI paragraph ('each Fund's portfolio securities ... delegate to the Adviser the authority to vote proxies') and Appendix B (September 11, 2020; Mar 16 2023 in 2023-09-28; Feb 5 2025 in 2025-12-10; May 2026 in 2026-09-25). Earliest SAI read 2021-09-24 (0001683863-21-005313). Equity Trust SAI: 'The investment adviser for each Fund is Voya Investments, LLC.'"
+        adviser_key_history: [{key: VOYA, from: "2021-09-24"}]
+        name: "Voya EQUITY TRUST"
+        validated: "2026-11-21"
+      - cik: "895430"
+        adviser: "Voya Investments, LLC (the Adviser) votes under the Board's Voya Funds policy; sub-advisers recommend only"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/895430/000168386321001018/vmf-20210224.htm"  # 485BPOS (SAI) filed 2021-02-25 (0001683863-21-001018)
+        adviser_verified: "2026-11-21"
+        voting_note: "Same SAI paragraph and Appendix B (Sept 11, 2020; May 25, 2022 in 2023-02-24; Feb 5, 2025 in 2025-07-23). Earliest SAI read 2021-02-25 (0001683863-21-001018). Multi-Manager funds (Emerging Markets, International Equity, International Small Cap) are still voted by the Adviser: the SAI delegates 'to the Adviser the authority to vote proxies' and names no Sub-Advisor-Voted Fund."
+        adviser_key_history: [{key: VOYA, from: "2021-02-25"}]
+        name: "Voya MUTUAL FUNDS"
+        validated: "2026-11-21"
+      - cik: "916403"
+        adviser: "Voya Investments, LLC (the Adviser) votes under the Board's Voya Funds policy; sub-advisers recommend only"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/916403/000168386321002630/voya-20210427.htm"  # 485BPOS (SAI) filed 2021-04-27 (0001683863-21-002630)
+        adviser_verified: "2026-11-21"
+        voting_note: "Same SAI paragraph and Appendix B (Sept 11, 2020; Feb 5, 2025 in 2025-04-28). Earliest SAI read 2021-04-27 (0001683863-21-002630)."
+        adviser_key_history: [{key: VOYA, from: "2021-04-27"}]
+        name: "Voya VARIABLE PRODUCTS TRUST"
+        validated: "2026-11-21"
+      - cik: "2664"
+        adviser: "Voya Investments, LLC (the Adviser) votes under the Board's Voya Funds policy; sub-advisers recommend only"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/2664/000168386321002637/voya-20210427.htm"  # 485BPOS (SAI) filed 2021-04-27 (0001683863-21-002637)
+        adviser_verified: "2026-11-21"
+        voting_note: "Same SAI paragraph and Appendix B (Sept 11, 2020; Feb 5, 2025 in 2025-04-28). Earliest SAI read 2021-04-27 (0001683863-21-002637)."
+        adviser_key_history: [{key: VOYA, from: "2021-04-27"}]
+        name: "Voya VARIABLE FUNDS"
+        validated: "2026-11-21"
+      - cik: "846799"
+        adviser: "Voya Investments, LLC (the Adviser) votes under the Board's Voya Funds policy; sub-advisers recommend only"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/846799/000168386321002640/vbpi-20210427.htm"  # 485BPOS (SAI) filed 2021-04-27 (0001683863-21-002640)
+        adviser_verified: "2026-11-21"
+        voting_note: "Same SAI paragraph and Appendix B (Sept 11, 2020; Mar 6, 2024 in 2024-04-25). Earliest SAI read 2021-04-27 (0001683863-21-002640). Last N-PX with votes is 2025-08-25 (279 rows); none in 2026."
+        adviser_key_history: [{key: VOYA, from: "2021-04-27"}]
+        name: "Voya BALANCED PORTFOLIO INC"
+        npx_ended: {last_period: "2025-06-30", reason: "Board approved 2024-01-10 the reorganisation of Voya Balanced Portfolio into Voya Balanced Income Portfolio (Voya Investors Trust), expected 2024-07-12 (Form 497 supplement 0001683863-24-000158); the registrant filed nothing on EDGAR after its 2025-08-25 N-PX and no N-8F is on file, so the closing date is not confirmed; re-check", source: "https://www.sec.gov/Archives/edgar/data/846799/000168386324000158/f37327d1.htm", checked: "2026-11-21"}
+        validated: "2026-11-21"
+      - cik: "1066602"
+        adviser: "Voya Investments, LLC (the Adviser) votes under the Board's Voya Funds policy; sub-advisers recommend only"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1066602/000168386321004353/vft-20210729.htm"  # 485BPOS (SAI) filed 2021-07-29 (0001683863-21-004353)
+        adviser_verified: "2026-11-21"
+        voting_note: "Same SAI paragraph and Appendix B (Sept 11, 2020; Mar 16 2023 in 2023-07-27; May 2026 in 2026-07-29). Earliest SAI read 2021-07-29 (0001683863-21-004353). Only Voya Floating Rate Fund (S000029692) has operating-company votes: nine Cumulus Media rows in 2024 and 2025."
+        adviser_key_history: [{key: VOYA, from: "2021-07-29"}]
+        name: "Voya FUNDS TRUST"
+        validated: "2026-11-21"
+      - cik: "1385632"
+        adviser: "Voya Investments, LLC (the Adviser) votes under the Board's Voya Funds policy; Voya Investment Management Co. LLC is sub-adviser (recommends only)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1385632/000110465921062312/tm219046d7_ncsr.htm"  # N-CSR filed 2021-05-06 (0001104659-21-062312), Item 7 reprints the Voya Funds policy
+        adviser_verified: "2026-11-21"
+        voting_note: "Closed-end fund; no SAI or N-2 in 2021-2023. N-CSR Item 7 (earliest 2021 read, 2021-05-06) reprints 'PROXY VOTING PROCEDURES and GUIDELINES VOYA FUNDS VOYA INVESTMENTS, LLC Date Last Revised: September 11, 2020', in which the Board instructs Voya Investments, LLC (the Advisor) on the voting of proxies for each fund and delegates 'to the Advisor's Proxy Coordinator the responsibility to vote the Funds' proxies'."
+        adviser_key_history: [{key: VOYA, from: "2021-05-06"}]
+        name: "Voya Asia Pacific High Dividend Equity Income Fund"
+        validated: "2026-11-21"
+      - cik: "1332943"
+        adviser: "Voya Investments, LLC (the Adviser) votes under the Board's Voya Funds policy; Voya Investment Management Co. LLC is sub-adviser (recommends only)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1332943/000110465921062320/tm219046d13_ncsr.htm"  # N-CSR filed 2021-05-06 (0001104659-21-062320)
+        adviser_verified: "2026-11-21"
+        voting_note: "Closed-end fund; N-CSR Item 7 of 2021-05-06 reprints the Voya Funds policy (Sept 11, 2020); same wording as 1385632."
+        adviser_key_history: [{key: VOYA, from: "2021-05-06"}]
+        name: "Voya Global Advantage & Premium Opportunity Fund"
+        validated: "2026-11-21"
+      - cik: "1285890"
+        adviser: "Voya Investments, LLC (the Adviser) votes under the Board's Voya Funds policy; Voya Investment Management Co. LLC is sub-adviser (recommends only)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1285890/000110465921062322/tm219046d14_ncsr.htm"  # N-CSR filed 2021-05-06 (0001104659-21-062322)
+        adviser_verified: "2026-11-21"
+        voting_note: "Closed-end fund; N-CSR Item 7 of 2021-05-06 reprints the Voya Funds policy (Sept 11, 2020); same wording as 1385632."
+        adviser_key_history: [{key: VOYA, from: "2021-05-06"}]
+        name: "Voya GLOBAL EQUITY DIVIDEND & PREMIUM OPPORTUNITY FUND"
+        validated: "2026-11-21"
+      - cik: "1417802"
+        adviser: "Voya Investments, LLC (the Adviser) votes under the Board's Voya Funds policy; Voya Investment Management Co. LLC is sub-adviser (recommends only)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1417802/000110465921062314/tm219046d8_ncsr.htm"  # N-CSR filed 2021-05-06 (0001104659-21-062314)
+        adviser_verified: "2026-11-21"
+        voting_note: "Closed-end fund; N-CSR Item 7 of 2021-05-06 reprints the Voya Funds policy (Sept 11, 2020); same wording as 1385632."
+        adviser_key_history: [{key: VOYA, from: "2021-05-06"}]
+        name: "Voya Infrastructure, Industrials & Materials Fund"
+        validated: "2026-11-21"
+      - cik: "1496292"
+        adviser: "Voya Investments, LLC (the Adviser) votes under the Board's Voya Funds policy; Voya Investment Management Co. LLC is sub-adviser (recommends only)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1496292/000110465921062316/tm219046d10_ncsr.htm"  # N-CSR filed 2021-05-06 (0001104659-21-062316)
+        adviser_verified: "2026-11-21"
+        voting_note: "Closed-end fund; N-CSR Item 7 of 2021-05-06 reprints the Voya Funds policy (Sept 11, 2020); same wording as 1385632."
+        adviser_key_history: [{key: VOYA, from: "2021-05-06"}]
+        name: "Voya Emerging Markets High Dividend Equity Fund"
+        validated: "2026-11-21"
+      - cik: "1124959"
+        adviser: "Voya Investments, LLC (the Adviser) votes under the Board's Voya Funds policy; sub-adviser recommends only"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1124959/000110465921062318/tm219046d12_ncsr.htm"  # N-CSR filed 2021-05-06 (0001104659-21-062318)
+        adviser_verified: "2026-11-21"
+        voting_note: "Closed-end interval fund (formerly Voya Senior Income Fund); N-CSR Item 7 of 2021-05-06 reprints the Voya Funds policy (Sept 11, 2020). Only nine operating-company rows (Cumulus Media) in the 2024 and 2025 N-PX."
+        adviser_key_history: [{key: VOYA, from: "2021-05-06"}]
+        name: "VOYA CREDIT INCOME FUND"
+        validated: "2026-11-21"
+    voting_scope_notes:
+      - "Keyed VOYA per registrant from the EDGAR filing date of the earliest SAI (closed-end funds: N-CSR) read: Voya Mutual Funds 2021-02-25, Investors Trust and Partners 2021-04-26, Variable Products, Variable Funds and Balanced Portfolio 2021-04-27, Funds Trust 2021-07-29, Equity Trust 2021-09-24, the six closed-end funds 2021-05-06; earlier meetings stay unlabelled. The Board's Voya Funds policy is Voya Investments, LLC's to execute whichever sub-adviser manages a series (Voya IM, JPMorgan, T. Rowe Price, Invesco, CBRE, Morgan Stanley, Baron, Columbia, American Century); sub-advisers only recommend. The Board may delegate a fund to its sub-adviser ('Sub-Adviser-Voted Fund') but no SAI names one (May 2026: 'None'), so there is no EXTERNAL series."
+      - "Paired series hold the same portfolio and report the same rows (Voya Large Cap Value Fund / Portfolio, Large-Cap Growth Fund / Portfolio, MidCap and SmallCap Opportunities Fund / Portfolio, Multi-Manager Mid Cap Value / VACS Series MCV, U.S. Stock Index Portfolio / VACS Index Series S, Invesco Growth and Income / Equity and Income, Global High Dividend Low Volatility Fund and the Global Advantage and Global Equity D&P closed-end funds); the dedupe pass after ingest must run."
+      - "Not ingested (left out): cover-only registrants (1090682, 935070, 2663, 2646, 1995568), Voya Separate Portfolios Trust (1392116, 2025 votes only on Vanguard funds), retired registrants (1395627, 1372117, 877233), Voya Investment Management LLC's institutional-manager N-PX (1068837, Voya IM's own policy for separate accounts), and the legacy-HTML N-PX before 2024 (not ingested without --legacy)."
+      - "Policy text: the SAI appendix label below is the only archived policy of the Voya Funds. The 'Proxy Voting Policy' PDF on voya.com (Voya Investment Management Co. LLC / Investment Trust Co. / Alternative Asset Management LLC / Voya Investment Management LLC, effective April 10, 2026) covers separate-account clients of the Voya advisers, is NOT the Funds' policy, and is deliberately not attached to any VOYA label."
+    commitments:
+      # Appendix B as printed in the SAI, dated by EDGAR filing date. Identical text in every trust for the same edition (hash-checked on 9 trusts), so ONE label on the trust with the longest 485BPOS history. Seven editions: Sept 11 2020, Jan 27 2022, May 25 2022, Mar 16 2023, Mar 6 2024, Feb 5 2025, May 2026 (see open doubt 1).
+      - label: voya-funds-proxy-voting-policy-as-printed-in-sai
+        adviser: "Voya Investments, LLC"
+        adviser_key: "VOYA"
+        sai_appendix:
+          cik: "0000837276"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "VOYA FUNDS VOYA INVESTMENTS, LLC Date Last Revised:"
+          end:
+            - "PART C. OTHER INFORMATION"
+            - "STATEMENT OF ADDITIONAL INFORMATION"
+          allow_identical_copies: true
+          strip_page_numbers: true
+          page_sequence: true
+          strip_patterns:
+            - '(?<![A-Za-z])B-\s?\d{1,2}(?![\d-])'

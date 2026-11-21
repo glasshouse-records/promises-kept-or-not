@@ -139,6 +139,11 @@ def extract_section(text: str, start: str | list[str], end: str | list[str],
         if page_sequence:
             sec = strip_page_sequence(sec)
         sections.add(sec)
+    if len(sections) > 1:
+        # Embedded copies of one appendix can differ only in typography: a
+        # non-breaking hyphen (U+2011) in one copy, an ASCII hyphen in the other.
+        # Same wording, so fold it; any other difference still refuses.
+        sections = {sec.replace("\u2011", "-") for sec in sections}
     return sections.pop() if len(sections) == 1 else None
 
 
