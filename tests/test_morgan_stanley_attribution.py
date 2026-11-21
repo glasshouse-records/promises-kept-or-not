@@ -22,6 +22,8 @@ REGISTRANTS = {"741375": "2023-01-27", "836487": "2023-04-28", "1011378": "2023-
                "860720": "2023-02-28", "1002427": "2023-04-28",
                "1368493": "2023-03-10", "916618": "2023-03-10"}
 ETF = "1676326"
+# Calvert fund registrants added 2026-11-21 (keyed CALVERT, see tests/test_morgan_stanley_sweep.py)
+CALVERT_REGISTRANTS = {"356682", "708950", "1121624", "319676", "884110", "1105446", "743773"}
 CALVERT_ETFS = {"S000077958", "S000077959", "S000077960", "S000077961", "S000077962", "S000077963"}
 # Series of the Morgan Stanley ETF Trust keyed MSIM, each from the effective date of its own earliest SAI read.
 ETF_SERIES = {"S000082246": "2023-10-07", "S000082247": "2023-10-07", "S000082248": "2023-10-07",
@@ -39,8 +41,8 @@ def _day_before(day):
     return (date.fromisoformat(day) - timedelta(days=1)).isoformat()
 
 
-def test_exactly_the_eight_registrants_and_no_open_default():
-    assert {str(e["cik"]) for e in MS["npx_ciks"]} == set(REGISTRANTS) | {ETF}
+def test_exactly_the_eight_msim_registrants_plus_calvert_and_no_open_default():
+    assert {str(e["cik"]) for e in MS["npx_ciks"]} == set(REGISTRANTS) | {ETF} | CALVERT_REGISTRANTS
     for e in MS["npx_ciks"]:
         assert not e.get("adviser_key"), "an undated default would label meetings before the SAI evidence"
         assert e["adviser_source"].startswith("https://www.sec.gov/Archives/")
@@ -69,16 +71,16 @@ def test_etf_trust_is_keyed_per_series_and_calvert_etfs_stay_unlabelled():
     assert engine.resolve_key(rules, "S000099999", "2025-11-15") is None   # an unknown series is never keyed
 
 
-def test_no_eaton_vance_or_calvert_trust_is_registered_here():
+def test_no_eaton_vance_trust_is_registered_here():
     ours = {str(e["cik"]) for e in MS["npx_ciks"]}
     parametric_ciks = {str(e["cik"]) for e in PA["npx_ciks"]}
     assert not ours & parametric_ciks, "a CIK must never be ingested under two institutions"
-    for cik in ("745463", "74663", "102818", "779991", "1121746", "1552324", "743773", "708950"):
+    for cik in ("745463", "74663", "102818", "779991", "1121746", "1552324"):
         assert cik not in ours
 
 
 def test_policy_is_one_sai_printed_label_keyed_msim():
-    docs = {d["label"]: d for d in MS["commitments"]}
+    docs = {d["label"]: d for d in MS["commitments"] if d["adviser_key"] == "MSIM"}
     assert len(docs) == 1
     (label, d), = docs.items()
     assert label.endswith("-as-printed-in-sai") and d["adviser_key"] == "MSIM"
