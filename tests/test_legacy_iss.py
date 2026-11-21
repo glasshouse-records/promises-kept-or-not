@@ -394,3 +394,34 @@ def test_iss_text_without_the_form_banner_is_detected():
             "#     Proposal                                Mgt Rec   Vote Cast    Sponsor\n")
     assert legacy_iss.is_iss_text(body)
     assert not legacy_iss.is_iss_text("Proposal Vote Cast Sponsor in running prose")
+
+
+def _record_no_cover(conn, filing):
+    conn.execute("""INSERT INTO filings (accession, cik, institution_id, form_type, filing_date,
+                    period_of_report, report_type, source_url, retrieval_date)
+                    VALUES (?,?,?,?,?,?,?,?,?)""",
+                 (filing.accession_number, filing.cik, "vg", "N-PX", filing.filing_date,
+                  filing.period_of_report, "LEGACY_NO_COVER", "https://www.sec.gov/x", "2026-01-01"))
+    conn.commit()
+
+
+def test_a_no_cover_filing_that_is_not_ingested_keeps_its_record(conn, monkeypatch):
+    # Regression: the legacy flags deleted LEGACY_NO_COVER rows up front, so a filing
+    # in neither format (or outside the 2023 period) vanished from `filings`.
+    _record_no_cover(conn, _filing())
+    st = _npx_run(conn, monkeypatch, {"a": "nothing"}, legacy_iss_text=True)
+    assert st.get("no_format") == 1
+    assert [tuple(r) for r in conn.execute("SELECT report_type FROM filings")] == [("LEGACY_NO_COVER",)]
+
+
+def test_a_no_cover_filing_in_iss_format_is_upgraded(conn, monkeypatch):
+    _record_no_cover(conn, _filing())
+    st = _npx_run(conn, monkeypatch, {"a": BASIC}, legacy_iss_text=True)
+    assert st["votes"] == 21
+    assert [tuple(r) for r in conn.execute("SELECT report_type FROM filings")] == [("LEGACY_ISS",)]
+
+
+def test_a_no_cover_proxyedge_filing_is_kept_when_only_the_iss_flag_is_on(conn, monkeypatch):
+    _record_no_cover(conn, _filing())
+    _npx_run(conn, monkeypatch, {"a": "Agenda Number: 1"}, legacy_iss_text=True)
+    assert [tuple(r) for r in conn.execute("SELECT report_type FROM filings")] == [("LEGACY_NO_COVER",)]

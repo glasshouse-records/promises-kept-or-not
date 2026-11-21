@@ -241,12 +241,18 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
             # legacy mode may upgrade a filing previously skipped as
             # LEGACY_NO_COVER (no votes attached) — reprocess it. Otherwise skip.
             if (legacy or legacy_proxyedge or legacy_iss_text) and exists[0] == "LEGACY_NO_COVER":
-                conn.execute("DELETE FROM filings WHERE accession = ?",
-                             (filing.accession_number,))
-                conn.commit()
+                upgrade_no_cover = True    # its record is replaced only if it is ingested below
             else:
                 stats["skipped"] += 1
                 continue
+
+        else:
+            upgrade_no_cover = False
+
+        def drop_no_cover_record() -> None:
+            if upgrade_no_cover:
+                conn.execute("DELETE FROM filings WHERE accession = ? AND report_type = 'LEGACY_NO_COVER'",
+                             (filing.accession_number,))
 
         try:
             cover_bytes = http.get(f"{filing.directory_url}/primary_doc.xml").content
@@ -279,6 +285,8 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                     if legacy_iss_text:     # decide per filing (cached after first fetch)
                         fmt = legacy_iss.detect_format(
                             legacy_pe.load_filing_texts(filing)[0])
+                    if fmt == "iss" or (fmt == "proxyedge" and legacy_proxyedge):
+                        drop_no_cover_record()
                     if fmt == "iss":
                         n = legacy_iss.ingest_filing_from_sources(
                             conn, filing, institution_id, today)
@@ -289,6 +297,7 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                         stats["no_format"] = stats.get("no_format", 0) + 1
                         continue
                 except Exception as exc:        # network or parse: retry next run
+                    conn.rollback()             # keeps the LEGACY_NO_COVER record
                     logger.warning("legacy text N-PX %s failed (%s) — not recorded",
                                    filing.accession_number, exc)
                     stats["failed"] += 1
@@ -297,6 +306,7 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                 stats["filings"] += 1
                 continue
             if legacy:
+                drop_no_cover_record()
                 n = _ingest_legacy_filing(conn, filing, institution_id, today, stats)
                 if n:
                     stats["filings"] += 1
