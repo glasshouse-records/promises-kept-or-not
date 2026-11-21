@@ -67,11 +67,11 @@ def test_swiss_fixture_nonvoting_split_and_nofund_note():
     assert st_["meetings_seen"] == 2
 
 
-def test_contested_star_kept_literally():
+def test_contested_star_is_empty():
     text = "Fund X\n" + (FIX / "icahn.txt").read_text()
     rows = parse(text)
     assert [r["vote"] for r in rows] == ["For"] * 5
-    assert {r["for_against_management"] for r in rows} == {"*"}
+    assert {r["for_against_management"] for r in rows} == {""}
     assert rows[-1]["proposal_text"] == "ACCEPTABLE COMPANY NOMINEE: Caroline D. Dorsa"
 
 
@@ -206,3 +206,46 @@ def test_wrapping_invariance(words, width, pad):
     rows = parse(_doc("\n".join([first, *cont])))
     assert len(rows) == 1
     assert rows[0]["proposal_text"] == " ".join(words)
+
+
+def _sub(name: str, vote: str = "For", fa: str = "For", typ: str = "Mgmt") -> str:
+    return f"{'':<7}{name:<58}{typ:<14}{vote:<31}{fa}".rstrip()
+
+
+def test_amend_director_subrows_become_proposals():
+    rows = parse(_doc("\n".join([
+        "1.     DIRECTOR",
+        _sub("Jane Doe"),
+        _sub("John  Roe", "Withheld", "Against"),
+        _row("2.", "Ratify auditors", "Mgmt", "For", "For"),
+    ])))
+    assert [(r["proposal_id"], r["proposal_text"], r["vote"]) for r in rows] == [
+        ("1.", "DIRECTOR Jane Doe", "For"),
+        ("1.", "DIRECTOR John Roe", "Withheld"),
+        ("2.", "Ratify auditors", "For"),
+    ]
+    assert rows[1]["for_against_management"] == "Against"
+
+
+def test_amend_heading_with_type_drops_subrows():
+    rows = parse(_doc("\n".join([
+        _row("1.", "DIRECTOR", "Mgmt", "For", "For"),
+        _sub("Jane Doe"),
+    ])))
+    assert [r["proposal_text"] for r in rows] == ["DIRECTOR"]
+
+
+def test_amend_subrows_do_not_leak_past_blank_or_next_id():
+    rows = parse(_doc("1.     DIRECTOR\n" + _sub("Jane Doe") + "\n\n" + _sub("Stray Name")))
+    assert [r["proposal_text"] for r in rows] == ["DIRECTOR Jane Doe"]
+
+
+def test_amend_star_for_against_is_empty():
+    rows = parse(_doc(_row("1", "A", "Mgmt", "For", "*")))
+    assert rows[0]["for_against_management"] == ""
+
+
+def test_amend_names_whitespace_normalised():
+    rows = parse(_doc(_row("1", "A", "Mgmt", "For", "For"), fund="Fund   One", issuer="ACME   CORP"))
+    assert rows[0]["fund_name"] == "Fund One"
+    assert rows[0]["issuer_name"] == "ACME CORP"

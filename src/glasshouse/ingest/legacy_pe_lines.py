@@ -63,6 +63,8 @@ class _Prop:
     ptype: str
     tail: str  # raw text after the type token
     wide: bool = False
+    sub: bool = False  # nominee sub-row under a heading
+    closed: bool = False  # ambiguous indented sub-rows seen: take no more text
 
 
 @dataclass
@@ -114,7 +116,7 @@ def _classify(tail: str) -> tuple[str, str, str]:
     gap = len(tail) - len(tail.lstrip())
     if vote in ("For", "Against") and not fa and gap >= AMBIGUOUS_GAP:
         return "ambiguous_vote", "", ""
-    return "", vote, fa
+    return "", vote, ("" if fa == "*" else fa)  # "*" = management position unknown
 
 
 def _is_fund_heading(lines: list[str], i: int) -> bool:
@@ -136,6 +138,7 @@ def _walk(text: str, rows: list[dict] | None, stats: Counter, reasons: Counter) 
     fund = ""
     meeting: _Meeting | None = None
     cur: _Prop | None = None
+    heading: list[str] | None = None  # [id, text] of a type-less heading row
 
     def close_prop() -> None:
         nonlocal cur
@@ -158,7 +161,7 @@ def _walk(text: str, rows: list[dict] | None, stats: Counter, reasons: Counter) 
             if i + 2 < n and _AGENDA.match(lines[i + 1]) and _DASH.match(lines[i + 2]):
                 a = _AGENDA.match(lines[i + 1])
                 assert a is not None
-                meeting = _Meeting(fund, a.group(1), a.group(2))
+                meeting = _Meeting(fund, " ".join(a.group(1).split()), a.group(2))
                 j = i + 3
                 while j < n and not _DASH.match(lines[j]):
                     ln = lines[j]
@@ -184,9 +187,10 @@ def _walk(text: str, rows: list[dict] | None, stats: Counter, reasons: Counter) 
             close_meeting()
         elif not line.strip():
             close_prop()
+            heading = None
         elif _is_fund_heading(lines, i):
             close_meeting()
-            fund = line.strip()
+            fund = " ".join(line.split())
         elif meeting is not None:
             if line.startswith("Prop.#"):
                 close_prop()
@@ -194,19 +198,38 @@ def _walk(text: str, rows: list[dict] | None, stats: Counter, reasons: Counter) 
                     i += 1
             elif (row := _split_row(line)) is not None:
                 close_prop()
+                heading = None
                 cur = _Prop(row[0], [row[1]], row[2], row[3])
             elif not line[0].isspace():
-                close_prop()  # unrecognised id-line: never attach its wrap lines elsewhere
-                stats["proposals_seen"] += 1
-                stats["proposals_dropped"] += 1
-                reasons["unrecognised_row"] += 1
-            elif cur is not None:
-                body = line.strip()
-                if re.search(r"\s{3,}", body):
-                    cur.wide = True  # something column-like inside wrapped text
-                cur.parts.append(body)
+                close_prop()  # never attach this line's wrap lines elsewhere
+                parts = line.split(None, 1)
+                if len(parts) == 2:
+                    heading = [parts[0], parts[1]]  # type-less heading: nominee rows follow
+                else:
+                    heading = None
+                    stats["proposals_seen"] += 1
+                    stats["proposals_dropped"] += 1
+                    reasons["unrecognised_row"] += 1
             else:
-                stats["orphan_lines"] += 1
+                sub = _TYPE_AT.search(line)
+                if heading is not None and sub is not None and line[: sub.start()].strip():
+                    close_prop()
+                    name = line[: sub.start()].strip()
+                    cur = _Prop(heading[0], [heading[1], name], sub.group(1),
+                                line[sub.end():], sub=True)
+                elif cur is not None and sub is not None and not cur.sub:
+                    cur.closed = True  # heading row has its own vote: sub-rows ambiguous
+                elif cur is not None:
+                    body = line.strip()
+                    if cur.closed:
+                        pass
+                    elif re.search(r"\s{3,}", body):
+                        cur.wide = True  # something column-like inside wrapped text
+                    cur.parts.append(body)
+                elif heading is not None:
+                    heading[1] += " " + line.strip()
+                else:
+                    stats["orphan_lines"] += 1
         i += 1
     close_meeting()
 
