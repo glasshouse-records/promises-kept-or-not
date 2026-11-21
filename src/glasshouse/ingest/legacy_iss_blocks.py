@@ -47,7 +47,7 @@ VOTE_VOCAB = REC_VOCAB | {"TNA", "Withheld"}
 SPONSOR_VOCAB = frozenset({"Management", "Shareholder"})
 REC_LABELS = ("Mgt Rec", "Diss Rec")
 
-_FRAME_RE = re.compile(r"^=+\s+(\S.*?)\s+=+\s*$")
+_FRAME_RE = re.compile(r"^=+\s*([^=\s].*?)\s*=+\s*$")
 _END_RE = re.compile(r"^=+\s*END NPX REPORT\b")
 _STAR_RE = re.compile(r"^\*+ FORM N-Px REPORT \*+\s*$")
 _DASH_RE = re.compile(r"^\s*-{40,}\s*$")

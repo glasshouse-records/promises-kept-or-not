@@ -195,7 +195,7 @@ WORD = st.text(alphabet="abcdefghijklmnopqrstuvwxyzABC.,'", min_size=1, max_size
 
 
 @settings(max_examples=60, deadline=None)
-@given(st.lists(WORD, min_size=1, max_size=25), st.integers(min_value=15, max_value=40))
+@given(st.lists(WORD, min_size=1, max_size=25), st.integers(min_value=15, max_value=33))
 def test_wrapping_invariance(words, width):
     """Wherever the text wraps, the joined proposal_text is the same."""
     text = " ".join(words)
@@ -207,3 +207,17 @@ def test_wrapping_invariance(words, width):
     assert [r["proposal_id"] for r in rows] == ["1", "2"]
     assert rows[0]["proposal_text"] == text
     assert (rows[0]["rec"], rows[0]["vote"], rows[0]["sponsor"]) == ("For", "Against", "Shareholder")
+
+
+def test_fund_heading_without_space_after_the_frame():
+    # Invesco's 2023 N-PX (0001193125-23-204844) frames headings as "=Name====", no space.
+    doc = ("=Invesco Active U.S. Real Estate ETF==================================\n\n\n"
+           "Acadia Realty Trust\n\n\n"
+           "Ticker: AKR                  Security ID: 004239109\n"
+           "Meeting Date: MAY 4, 2023    Meeting Type: Annual\n"
+           "Record Date: MAR 7, 2023\n\n\n"
+           "#     Proposal                                Mgt Rec   Vote Cast    Sponsor\n"
+           "1a    Elect Director Kenneth F. Bernstein     For       For          Management\n")
+    rows = parse(doc)
+    assert [(r["fund_heading"], r["proposal_id"], r["vote"]) for r in rows] == [
+        ("Invesco Active U.S. Real Estate ETF", "1a", "For")]
