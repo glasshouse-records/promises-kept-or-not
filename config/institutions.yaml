@@ -7552,3 +7552,194 @@ institutions:
           end: ["The Advisor and the Advisory Agreement Security Investors", "Investment Advisory Services Pursuant to an Advisory Agreement"]
           strip_patterns:
             - '(?<=[.;:!?”’)]) \d{2,3}(?= [A-Z(•])'
+  natixis:
+    display_name: "Natixis Investment Managers (Natixis Advisors) US funds"
+    short_name: "Natixis"
+    cik: "0001053187"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Natixis Investment Managers, LLC, Boston MA (CIK 1053187, the 13-F filer and holding company of the US business; the funds' adviser is Natixis Advisors, LLC, an affiliate, and its institutional-manager N-PX under CIK 1053187 is not ingested). Seven US fund registrants that file N-PX vote tables with operating-company votes are ingested: Natixis Funds Trust II (52136), Natixis Funds Trust IV (1095726, AEW Global Focused Real Estate Fund only), Natixis ETF Trust (1526787), Natixis ETF Trust II (1728860), Loomis Sayles Funds I (917469), Loomis Sayles Funds II (872649) and Gateway Trust (1406305). Natixis Advisors delegates proxy voting to each fund's subadviser (or Loomis Sayles as adviser), so there is no registrant-wide voter: each series is keyed by the party that votes it. Loomis Sayles (LOOMIS_SAYLES, policy archived) and Harris Associates (HARRIS_ASSOCIATES, policy archived under harris_oakmark) are keyed; Vaughan Nelson, Gateway and AEW vote under policies not archived here and are UNRESOLVED. Left out: Natixis Funds Trust III (949683; no N-PX since 2008), Natixis Funds Trust IV's twelve Sustainable Future target-date funds (funds of funds), series with no vote rows (bond). aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. Voters per series from the earliest SAI (485BPOS) read, dated by EDGAR filing date; the SAIs name the voting party per fund.
+      - cik: "52136"
+        adviser: "Natixis Advisors (adviser); subadvisers Harris Associates and Vaughan Nelson vote their series; Loomis Sayles is adviser and votes its series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/52136/000119312521140692/d129450d485bpos.htm"  # 485BPOS (SAI) filed 2021-04-29 (0001193125-21-140692), proxy voting section
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies': the Board adopted the Proxy Voting Policy and Guidelines; 'Generally, proxy voting responsibility and authority are delegated to a Fund's Subadviser' (Natixis Advisors retains it only where there is no subadviser); then one paragraph per voting party (Harris Associates, Loomis Sayles, Gateway, ...) each voting under its own policy. Loomis Sayles: 'the responsibility for voting proxies generally is delegated to Loomis Sayles, the investment adviser'. Harris: subadviser to Natixis Oakmark Fund (SAI table 'Fund Subadviser'). Earliest SAIs read: 0001193125-21-140692 (2021-04-29: Oakmark, Vaughan Nelson Mid Cap, Strategic Alpha) and 0001193125-21-098168 (2021-03-29: Senior Floating Rate, Vaughan Nelson Select, Global Growth); same wording in the 2026 SAIs (0001193125-26-128778, 0001133228-26-007261). Vaughan Nelson votes under its own policy, which is not archived: UNRESOLVED."
+        series_adviser:
+          S000008033: [{key: HARRIS_ASSOCIATES, from: "2021-04-29"}]   # Natixis Oakmark Fund: Harris Associates (777 / 735 / 877 vote rows 2026 / 2025 / 2024)
+          S000023783: [{key: UNRESOLVED, from: "2021-04-29"}]   # Vaughan Nelson Mid Cap Fund: Vaughan Nelson, no policy archived
+          S000030600: [{key: LOOMIS_SAYLES, from: "2021-04-29"}]   # Loomis Sayles Strategic Alpha Fund: Loomis Sayles is adviser
+          S000034097: [{key: LOOMIS_SAYLES, from: "2021-03-29"}]   # Loomis Sayles Senior Floating Rate and Fixed Income Fund (10 vote rows)
+          S000037523: [{key: UNRESOLVED, from: "2021-03-29"}]   # Vaughan Nelson Select Fund: Vaughan Nelson, no policy archived
+          S000053353: [{key: LOOMIS_SAYLES, from: "2021-03-29"}]   # Loomis Sayles Global Growth Fund
+        name: "Natixis Funds Trust II"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1095726"
+        adviser: "AEW Capital Management, L.P. (adviser; votes under its own policy, not archived)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1095726/000119312521176537/d345193d485bpos.htm"  # 485BPOS (SAI) filed 2021-05-28 (0001193125-21-176537), proxy voting section
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies': 'The adviser shall exercise its fiduciary responsibilities to vote proxies with respect to the Fund's investments that are managed by the adviser ... in accordance with the Procedures and the proxy voting policies of the adviser'. The adviser of AEW Global Focused Real Estate Fund is AEW Capital Management (Form N-CEN 2026-04-16). No AEW policy is archived: UNRESOLVED. The twelve Natixis Sustainable Future target-date series are funds of funds (573-581 identical underlying-fund vote rows each) and are not keyed."
+        series_adviser:
+          S000008059: [{key: UNRESOLVED, from: "2021-05-28"}]   # AEW Global Focused Real Estate Fund: AEW, no policy archived (824 / 897 vote rows 2024 / 2025)
+        name: "Natixis Funds Trust IV"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1526787"
+        adviser: "Natixis Advisors (adviser); Gateway Investment Advisers votes the Gateway ETF under its own policy (not archived)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1526787/000113322823006230/natetf-html6988_485bpos.htm"  # 485BPOS (SAI) filed 2023-12-07 (0001133228-23-006230), proxy voting section
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies': the Board adopted the Proxy Voting Policy and Guidelines; 'Generally, proxy voting responsibility and authority are delegated to a Fund's Subadviser' (Natixis Advisors retains it only where there is no subadviser); then one paragraph per voting party (Harris Associates, Loomis Sayles, Gateway, ...) each voting under its own policy. Gateway: 'the responsibility for voting proxies generally is delegated to Gateway for securities held by the Fund'. First SAI naming the Gateway Quality Income ETF is 2023-12-07 (0001133228-23-006230); the 2026 SAI (0001133228-26-007263) is unchanged. The Loomis Sayles ETFs of this trust are bond funds with no vote rows."
+        series_adviser:
+          S000083143: [{key: UNRESOLVED, from: "2023-12-07"}]   # Natixis Gateway Quality Income ETF: Gateway, no policy archived (2,922 / 1,267 / 1,266 vote rows 2024 / 2025 / 2026)
+        name: "Natixis ETF Trust"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1728860"
+        adviser: "Natixis Advisors (adviser); subadvisers Loomis Sayles and Vaughan Nelson vote their ETFs"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1728860/000119312521140461/d33642d485bpos.htm"  # 485BPOS (SAI) filed 2021-04-29 (0001193125-21-140461), proxy voting section
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies': the Board adopted the Proxy Voting Policy and Guidelines; 'Generally, proxy voting responsibility and authority are delegated to a Fund's Subadviser' (Natixis Advisors retains it only where there is no subadviser); then one paragraph per voting party (Harris Associates, Loomis Sayles, Gateway, ...) each voting under its own policy. Loomis Sayles ETF: SAI 0001193125-23-164090 (2023-06-09, the first to name the Loomis Sayles Focused Growth ETF): 'Loomis Sayles shall exercise its fiduciary responsibilities to vote proxies with respect to the Fund's investments that are managed by Loomis Sayles ... in accordance with the Procedures and the proxy voting policies'; the 2026 SAI says 'delegated to Loomis Sayles, the Subadviser'. Vaughan Nelson ETFs: SAI of 2021-04-29, voter not archived: UNRESOLVED. Natixis U.S. Equity Opportunities ETF (S000068026, several subadvisers, no vote rows 2024+) is not keyed."
+        series_adviser:
+          S000068959: [{key: UNRESOLVED, from: "2021-04-29"}]   # Natixis Vaughan Nelson Mid Cap ETF: Vaughan Nelson, no policy archived
+          S000068960: [{key: UNRESOLVED, from: "2021-04-29"}]   # Natixis Vaughan Nelson Select ETF: Vaughan Nelson, no policy archived
+          S000080571: [{key: LOOMIS_SAYLES, from: "2023-06-09"}]   # Natixis Loomis Sayles Focused Growth ETF: Loomis Sayles (335 vote rows 2026)
+        name: "Natixis ETF Trust II"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "872649"
+        adviser: "Loomis, Sayles & Company, L.P. (the investment adviser; votes under its own policy)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/872649/000119312521020873/d21131d485bpos.htm"  # 485BPOS (SAI) filed 2021-01-28 (0001193125-21-020873), proxy voting section
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies': 'Under the Procedures, the responsibility for voting proxies generally is delegated to Loomis Sayles, the investment adviser ... Loomis Sayles shall exercise its fiduciary responsibilities to vote proxies ... in accordance with the Procedures and the proxy voting policies'. Earliest SAI read 2021-01-28 (0001193125-21-020873: Global Allocation, Growth, Small Cap Growth, Strategic Income, Small/Mid Cap Growth); High Income and International Growth from 0001193125-21-140776 (2021-04-29); same wording in 2026 (0001193125-26-024273, 0001133228-26-007258). Investment Grade Bond (S000006701), Limited Term Government (S000006702) and Credit Income (S000069661) have no vote rows and are not keyed."
+        series_adviser:
+          S000006698: [{key: LOOMIS_SAYLES, from: "2021-01-28"}]   # Loomis Sayles Global Allocation Fund
+          S000006699: [{key: LOOMIS_SAYLES, from: "2021-01-28"}]   # Loomis Sayles Growth Fund
+          S000006705: [{key: LOOMIS_SAYLES, from: "2021-01-28"}]   # Loomis Sayles Small Cap Growth Fund
+          S000006706: [{key: LOOMIS_SAYLES, from: "2021-01-28"}]   # Loomis Sayles Strategic Income Fund
+          S000049859: [{key: LOOMIS_SAYLES, from: "2021-01-28"}]   # Loomis Sayles Small/Mid Cap Growth Fund
+          S000006700: [{key: LOOMIS_SAYLES, from: "2021-04-29"}]   # Loomis Sayles High Income Fund
+          S000070337: [{key: LOOMIS_SAYLES, from: "2021-04-29"}]   # Loomis Sayles International Growth Fund
+        name: "LOOMIS SAYLES FUNDS II"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "917469"
+        adviser: "Loomis, Sayles & Company, L.P. (the investment adviser; votes under its own policy)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/917469/000119312521020784/d86022d485bpos.htm"  # 485BPOS (SAI) filed 2021-01-28 (0001193125-21-020784), proxy voting section
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies': 'the responsibility for voting proxies generally is delegated to Loomis Sayles, the investment adviser' (and 'to the Adviser', defined as Loomis, Sayles & Company, L.P., in the High Income Opportunities / Securitized Asset SAI). Earliest SAI read 2021-01-28 (0001193125-21-020784, three SAIs in one filing), re-read 2021-04-29 (0001193125-21-140606) and 2026 (0001133228-26-007255). Only the series with vote rows in 2024-2026 are keyed; the remaining bond series have none."
+        series_adviser:
+          S000006638: [{key: LOOMIS_SAYLES, from: "2021-01-28"}]   # Loomis Sayles Bond / Income Fund
+          S000006640: [{key: LOOMIS_SAYLES, from: "2021-01-28"}]   # Loomis Sayles Fixed Income Fund
+          S000006642: [{key: LOOMIS_SAYLES, from: "2021-01-28"}]   # Loomis Sayles High Income Opportunities Fund
+          S000006644: [{key: LOOMIS_SAYLES, from: "2021-01-28"}]   # Loomis Sayles Institutional High Income Fund
+          S000006646: [{key: LOOMIS_SAYLES, from: "2021-01-28"}]   # Loomis Sayles Investment Grade Fixed Income Fund
+          S000006647: [{key: LOOMIS_SAYLES, from: "2021-01-28"}]   # Loomis Sayles Small Cap Value Fund
+        name: "LOOMIS SAYLES FUNDS I"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1406305"
+        adviser: "Natixis Advisors (adviser); Gateway Investment Advisers votes under its own policy (not archived)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1406305/000119312521140528/d125556d485bpos.htm"  # 485BPOS (SAI) filed 2021-04-29 (0001193125-21-140528), proxy voting section
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies': 'Gateway. Under the Procedures, the responsibility for voting proxies generally is delegated to Gateway for securities held by the Funds advised by Gateway'. Earliest SAI read 2021-04-29 (0001193125-21-140528). No Gateway policy archived: UNRESOLVED."
+        series_adviser:
+          S000019169: [{key: UNRESOLVED, from: "2021-04-29"}]   # Gateway Fund (2,618 vote rows 2026)
+          S000046840: [{key: UNRESOLVED, from: "2021-04-29"}]   # Gateway Equity Call Premium Fund (3,437 vote rows 2026)
+        name: "Gateway Trust"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed per series from the filing date of the earliest SAI read (2021 or later); earlier meetings stay unlabelled. Natixis Advisors retains proxy authority only where a fund has no subadviser (none of the keyed series)."
+      - "Not ingested (left out): Natixis Investment Managers LLC institutional N-PX (1053187), Natixis Funds Trust III (949683), the Sustainable Future target-date funds of Natixis Funds Trust IV (funds of funds), and the legacy-text N-PX of 2021-2023 (not ingested without --legacy)."
+    commitments:
+      # Verified 2026-11-21: 200 application/pdf to the honest client; the page https://www.loomissayles.com/proxy-voting/ links this PDF ('Proxy Voting Policies and Procedures', March 2022 edition). robots.txt allows. The SAIs print only a summary of the Loomis Sayles policy, so no SAI-appendix edition history is captured.
+      - label: loomis-sayles-proxy-voting-policies-and-procedures
+        url: "https://www.loomissayles.com/wp-content/uploads/2025/06/Proxy_Voting_Policies_and_Procedures_2022_03_Clean.pdf"
+        adviser: "Loomis, Sayles & Company, L.P."
+        adviser_key: "LOOMIS_SAYLES"
+  virtus:
+    display_name: "Virtus Investment Partners"
+    short_name: "Virtus"
+    cik: "0000883237"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Virtus Investment Partners, Inc., Hartford CT (CIK 883237, the holding company; funds are advised by Virtus Investment Advisers, LLC and Virtus Alternative Investment Advisers, LLC and sub-advised mostly by affiliates). Five open-end registrants that file N-PX vote tables with operating-company votes are ingested: Virtus Equity Trust (34273), Virtus Opportunities Trust (1005020), Virtus Strategy Trust (1423227), Virtus Alternative Solutions Trust (1589756) and Virtus Event Opportunities Trust (1572617). The SAIs make the adviser or subadviser managing each fund the voter under its own policy, so each series is keyed by its subadviser: Kayne Anderson Rudnick (KAR, policy archived) is keyed; Duff & Phelps, SGA, NFJ, Westchester, AlphaSimplex and the Virtus Advisers divisions are UNRESOLVED (no archived policy); Voya IM is EXTERNAL. Left out: Virtus Investment Partners' own institutional N-PX (883237), bond-only series, notice-only N-PX, and the closed-end funds (Dividend Interest & Premium 1260563, AI & Technology 1778114, Convertible & Income 1214935 / 1227857, Diversified Income & Convertible 1636289, Equity & Convertible Income 1383441, Total Return 836412, Global Multi-Sector Income 1528811, Stone Harbor EM Income 1501103): their voters (Voya IM, Duff & Phelps) are named in N-2 / N-CSR, not an SAI, and were not researched. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. Series keyed by subadviser from the SAI (485BPOS) that first names it, dated by EDGAR filing date.
+      - cik: "34273"
+        adviser: "Virtus Investment Advisers (adviser); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/34273/000110465921007656/tm213360d1_485bpos.htm"  # 485BPOS (SAI) filed 2021-01-26 (0001104659-21-007656), proxy voting section
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies': 'In the absence of a specific direction to the contrary from the Board, the Adviser or the subadviser that is managing a Fund is responsible for voting proxies for such Fund'; one paragraph per subadviser ('KAR Funds KAR has adopted and implemented policies and procedures ...'). The SAI glossary names each fund's subadviser. Glossary of 0001104659-21-007656 (2021-01-26): 'KAR ... subadviser to the Capital Growth Fund, Equity Income Fund, Global Quality Dividend Fund, Mid-Cap Core Fund, Mid-Cap Growth Fund, Small-Cap Core Fund, Small-Cap Growth Fund, Small-Cap Value Fund, Small-Mid Cap Core Fund, Small-Mid Cap Growth Fund and Tactical Allocation Fund (equity portion)'; the Small-Mid Cap Value Fund is named in 0001104659-21-098893 (2021-08-02). The 2026 N-PX lists Kayne Anderson Rudnick as an included manager."
+        series_adviser:
+          S000021170: [{key: KAR, from: "2021-01-26"}]   # Virtus KAR Small-Cap Growth Fund: KAR is subadviser
+          S000021172: [{key: KAR, from: "2021-01-26"}]   # Virtus KAR Small-Cap Core Fund: KAR is subadviser
+          S000021173: [{key: KAR, from: "2021-01-26"}]   # Virtus KAR Capital Growth Fund: KAR is subadviser
+          S000021177: [{key: KAR, from: "2021-01-26"}]   # Virtus KAR Equity Income Fund: KAR is subadviser
+          S000021180: [{key: KAR, from: "2021-01-26"}]   # Virtus KAR Mid-Cap Growth Fund: KAR is subadviser
+          S000021181: [{key: KAR, from: "2021-01-26"}]   # Virtus KAR Small-Cap Value Fund: KAR is subadviser
+          S000025925: [{key: KAR, from: "2021-01-26"}]   # Virtus KAR Mid-Cap Core Fund: KAR is subadviser
+          S000061485: [{key: KAR, from: "2021-01-26"}]   # Virtus KAR Small-Mid Cap Core Fund: KAR is subadviser
+          S000070232: [{key: KAR, from: "2021-01-26"}]   # Virtus KAR Small-Mid Cap Growth Fund: KAR is subadviser
+          S000001386: [{key: KAR, from: "2021-01-26"}]   # Virtus KAR Global Quality Dividend (34 vote rows) Fund: KAR is subadviser
+          S000072656: [{key: KAR, from: "2021-08-02"}]   # Virtus KAR Small-Mid Cap Value Fund: first SAI 2021-08-02 (0001104659-21-098893)
+          S000064774: [{key: UNRESOLVED, from: "2021-01-26"}]   # Virtus SGA Global Growth Fund: SGA, no policy archived
+          S000021179: [{key: UNRESOLVED, from: "2021-01-26"}]   # Virtus Tactical Allocation Fund: Virtus Fixed Income Advisers + KAR (equity portion), two voters
+        name: "VIRTUS EQUITY TRUST"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1005020"
+        adviser: "Virtus Investment Advisers (adviser); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1005020/000110465921007301/tm213358-1_485bpos.htm"  # 485BPOS (SAI) filed 2021-01-26 (0001104659-21-007301), proxy voting section
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies': 'In the absence of a specific direction to the contrary from the Board, the Adviser or the subadviser that is managing a Fund is responsible for voting proxies for such Fund'; one paragraph per subadviser ('KAR Funds KAR has adopted and implemented policies and procedures ...'). The SAI glossary names each fund's subadviser. Glossary of 0001104659-21-007301 (2021-01-26): 'KAR ... subadviser to the EM Small-Cap Fund, International Small-Cap Fund and International Small-Mid Cap Fund'; Developing Markets Fund named in 0001104659-21-083482 (2021-06-21). Duff & Phelps funds: own policy, copy only on written request (not archived). Emerging Markets Equity fund S000055178: Vontobel until its 2024 renaming to SGA, UNRESOLVED throughout. The Newfleet / Seix / Stone Harbor bond series (and a 2026 notice-only N-PX 0001005020-26-000004) are left out."
+        series_adviser:
+          S000042963: [{key: KAR, from: "2021-01-26"}]   # Virtus KAR Emerging Markets Small-Cap Fund
+          S000038118: [{key: KAR, from: "2021-01-26"}]   # Virtus KAR International Small-Mid Cap Fund (named International Small-Cap until 2021-09)
+          S000072168: [{key: KAR, from: "2021-06-21"}]   # Virtus KAR Developing Markets Fund: first SAI 2021-06-21
+          S000018002: [{key: UNRESOLVED, from: "2021-01-26"}]   # Virtus Duff & Phelps Real Estate Securities Fund
+          S000018009: [{key: UNRESOLVED, from: "2021-01-26"}]   # Virtus Duff & Phelps Global Infrastructure Fund
+          S000025108: [{key: UNRESOLVED, from: "2021-01-26"}]   # Virtus Duff & Phelps Global Real Estate Securities Fund
+          S000018976: [{key: UNRESOLVED, from: "2021-01-26"}]   # Virtus Duff & Phelps Real Asset Fund
+          S000055178: [{key: UNRESOLVED, from: "2021-01-26"}]   # Virtus Vontobel / SGA Emerging Markets Equity Fund
+        name: "VIRTUS OPPORTUNITIES TRUST"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1423227"
+        adviser: "Virtus Investment Advisers (adviser); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1423227/000093041323000191/c105280_485bpos-ixbrl.htm"  # 485BPOS (SAI) filed 2023-01-26 (0000930413-23-000191), proxy voting section
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies': 'In the absence of a specific direction to the contrary from the Board, the Adviser or the subadviser that is managing a Fund is responsible for voting proxies for such Fund'; one paragraph per subadviser ('KAR Funds KAR has adopted and implemented policies and procedures ...'). The SAI glossary names each fund's subadviser. Strategy Trust was Allianz Funds Multi-Strategy Trust until 2022; its SAIs before the Virtus-branded SAI of 2023-01-26 (0000930413-23-000191) are not read, so earlier meetings stay unlabelled. That SAI's glossary names Duff & Phelps (Water Fund), NFJ (Emerging Markets Value Fund) and Voya Investment Management Co. (Convertible Fund, unaffiliated: EXTERNAL); International Small-Cap and Global Allocation are run by Virtus Advisers divisions with no archived policy. Bond series (Newfleet, Seix) and a notice-only N-PX (0001423227-26-000004) are left out."
+        series_adviser:
+          S000021463: [{key: UNRESOLVED, from: "2023-01-26"}]   # Virtus Duff & Phelps Water Fund
+          S000038497: [{key: UNRESOLVED, from: "2023-01-26"}]   # Virtus NFJ Emerging Markets Value Fund
+          S000028359: [{key: EXTERNAL, from: "2023-01-26"}]   # Virtus Convertible Fund: Voya Investment Management Co. (10 vote rows)
+          S000028361: [{key: UNRESOLVED, from: "2023-01-26"}]   # Virtus International Small-Cap Fund: Virtus Systematic
+          S000025374: [{key: UNRESOLVED, from: "2023-01-26"}]   # Virtus Global Allocation Fund: Virtus Multi-Asset and Systematic
+        name: "Virtus Strategy Trust"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1589756"
+        adviser: "Virtus Alternative Investment Advisers (adviser); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1589756/000110465921028344/tm217598-1_485bpos.htm"  # 485BPOS (SAI) filed 2021-02-25 (0001104659-21-028344), proxy voting section
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies': 'In the absence of a specific direction to the contrary from the Board, the Adviser or the subadviser that is managing a Fund is responsible for voting proxies for such Fund'; one paragraph per subadviser ('KAR Funds KAR has adopted and implemented policies and procedures ...'). The SAI glossary names each fund's subadviser. Glossary of 0001104659-21-028344 (2021-02-25): 'KAR ... subadviser to Long/Short Equity Fund'. Duff & Phelps Select MLP and Energy Fund: own policy not archived. AlphaSimplex Global Alternatives Fund (first SAI 0000930413-23-001616, 2023-05-12): AlphaSimplex policy not archived. A notice-only N-PX (0001589756-26-000005, Managed Futures Strategy) is left out."
+        series_adviser:
+          S000063645: [{key: KAR, from: "2021-02-25"}]   # Virtus KAR Long/Short Equity Fund (liquidated 2025)
+          S000050625: [{key: UNRESOLVED, from: "2021-02-25"}]   # Virtus Duff & Phelps Select MLP and Energy Fund
+          S000079777: [{key: UNRESOLVED, from: "2023-05-12"}]   # Virtus AlphaSimplex Global Alternatives Fund (4,794 vote rows 2026)
+        name: "VIRTUS ALTERNATIVE SOLUTIONS TRUST"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1572617"
+        adviser: "Westchester Capital Management, LLC (subadviser; own policy not archived)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1572617/000119312521126898/d150161d485bpos.htm"  # 485BPOS (SAI) filed 2021-04-22 (0001193125-21-126898), proxy voting section
+        adviser_verified: "2026-11-21"
+        voting_note: "Formerly Westchester Capital Funds (WCM Alternatives); SAI of 2021-04-22 (0001193125-21-126898) is the earliest read and the 2026 N-PX lists Westchester Capital Management as an included manager. Westchester votes under its own policy, which is not archived: UNRESOLVED. Virtus' general SAI rule: the adviser or subadviser managing a fund votes."
+        series_adviser:
+          S000040968: [{key: UNRESOLVED, from: "2021-04-22"}]   # Virtus Westchester Event-Driven Fund
+          S000059351: [{key: UNRESOLVED, from: "2021-04-22"}]   # Virtus Westchester Credit Event Fund
+        name: "Virtus Event Opportunities Trust"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Earlier meetings than each series' `from` date stay unlabelled. Kayne Anderson Rudnick votes its funds under its own policy; every other subadviser is UNRESOLVED or EXTERNAL."
+      - "Not ingested (left out): the closed-end funds, bond-only series, notice-only N-PX, the holding company's institutional N-PX, and the legacy-text N-PX of 2021-2023 (not ingested without --legacy)."
+    commitments:
+      # Verified 2026-11-21: the alias 30x-redirects to https://kayne.com/wp-content/uploads/KAR-Proxy-Voting-Policy-and-Procedures-2026.03.pdf (200 application/pdf, 117,473 bytes). robots.txt allows (Crawl-delay 10, honoured). One fetch only.
+      - label: kar-proxy-voting-policy-and-procedures
+        url: "https://kayne.com/kar-proxy-voting-policy-and-procedures-2026-03/"
+        adviser: "Kayne Anderson Rudnick Investment Management, LLC"
+        adviser_key: "KAR"
