@@ -102,7 +102,8 @@ def cmd_ingest_npx(args) -> int:
     for cik, inst_id in targets:
         stats = npx.ingest_npx(conn, cik, institution_id=inst_id,
                                max_filings=args.max_filings, max_tables=args.max_tables,
-                               legacy=getattr(args, "legacy", False))
+                               legacy=getattr(args, "legacy", False),
+                               legacy_proxyedge=getattr(args, "legacy_proxyedge", False))
         print(f"  CIK {cik}: {stats}")
     return 0
 
@@ -185,7 +186,7 @@ def cmd_restore(args) -> int:
     for t, n in info["counts"].items():
         print(f"    {t:<22} {n:>10,} rows")
     print("  votes: the bundle holds only kept rows, so every restored vote has "
-          "is_duplicate = 0 (as-filed duplicates and legacy_html rows are not in it).")
+          "is_duplicate = 0 (as-filed duplicates and legacy rows are not in it).")
     print("  policy text is NOT in the bundle: commitments keep URLs, hashes and Wayback "
           "timestamps; re-fetch the wording with `glasshouse ingest commitments --wayback`.")
     print("  stamped in ingest_runs as 'restore:...': this is not a live ingest.")
@@ -1075,6 +1076,10 @@ def main(argv: list[str] | None = None) -> int:
     npx_p.add_argument("--legacy", action="store_true",
                        help="parse pre-2024 legacy HTML N-PX (historical depth); "
                             "votes tagged legacy_html and quarantined from releases")
+    npx_p.add_argument("--legacy-proxyedge", action="store_true",
+                       help="ingest July 2022-June 2023 Broadridge ProxyEdge text N-PX "
+                            "(rows both independent parsers agree on, gated per filing); "
+                            "tagged legacy_format and quarantined from releases and analysis")
     npx_p.set_defaults(func=cmd_ingest_npx)
     com = ing.add_parser("commitments")
     com.add_argument("--wayback", action="store_true",

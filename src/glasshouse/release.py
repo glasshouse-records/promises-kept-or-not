@@ -486,8 +486,9 @@ denominator and counts SPLIT and NONE only in its `items` column.
 
 N-PX field voteSource: `ISSUER` (item put on the ballot by the issuer) or `SECURITY HOLDER`
 (shareholder-sponsored proposal). Empty where the filer left it blank. `legacy_html` is a
-Glasshouse tag for pre-2024 votes parsed from HTML; those votes are not validated and are NOT in
-this release.
+Glasshouse tag for pre-2024 votes parsed from HTML (and `votes.legacy_format = 'proxyedge'`
+marks 2022-23 votes parsed from ProxyEdge text filings); those votes are not validated and are
+NOT in this release.
 
 ### Kinds of vote (`COVERAGE.json` `vote_kinds`, `votes_by_kind`)
 

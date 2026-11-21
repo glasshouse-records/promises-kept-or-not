@@ -27,6 +27,12 @@ DB_PATH = DATA_DIR / "glasshouse.db"
 # was 2025-06-30, so published coverage bounds were wrong and every
 # "most recent evidence" LIMIT picked the wrong rows. Sort on this instead.
 # The GLOB guard passes any value already in ISO through untouched.
+# Legacy votes (HTML-parsed `legacy_html`, ProxyEdge text `legacy_format`) are not yet
+# validated for release or analysis. ONE predicate, used everywhere votes ship or are
+# analysed; unqualified so it works with or without a `v.` alias (filings has neither column).
+NON_LEGACY_VOTE_SQL = "IFNULL(vote_source,'') != 'legacy_html' AND legacy_format IS NULL"
+
+
 def iso_meeting_date(col: str = "meeting_date") -> str:
     # Filers write 06/30/2025 or, since 2026, 9/30/2025 — both are M/D/YYYY;
     # one filing writes M/D/YY.
@@ -112,6 +118,22 @@ CREATE TABLE IF NOT EXISTS votes (
 );
 CREATE INDEX IF NOT EXISTS idx_votes_cusip  ON votes(cusip);
 CREATE INDEX IF NOT EXISTS idx_votes_issuer ON votes(issuer_name);
+
+-- Operator-only: per-document parse/agreement stats of legacy ProxyEdge N-PX filings.
+CREATE TABLE IF NOT EXISTS legacy_parse (
+    accession         TEXT NOT NULL,
+    document          TEXT NOT NULL,
+    meetings          INTEGER,
+    rows_a            INTEGER,
+    rows_b            INTEGER,
+    agreed            INTEGER,
+    a_only            INTEGER,
+    b_only            INTEGER,
+    disagreement_rate REAL,
+    funds_unmapped    TEXT,
+    rows_inserted     INTEGER,
+    parsed_at         TEXT
+);
 
 CREATE TABLE IF NOT EXISTS enforcement_actions (
     id              INTEGER PRIMARY KEY,
@@ -357,6 +379,12 @@ def _migrate(conn: sqlite3.Connection) -> None:
     if "is_duplicate" not in vcols:
         conn.execute("ALTER TABLE votes ADD COLUMN is_duplicate INTEGER NOT NULL DEFAULT 0")
         conn.commit()
+    # Legacy (2022-23) ProxyEdge text votes: NULL for XML votes, 'proxyedge' for these.
+    # for_against_management is the document's own For/Against-Management column, raw.
+    for col in ("legacy_format", "for_against_management"):
+        if col not in vcols:
+            conn.execute(f"ALTER TABLE votes ADD COLUMN {col} TEXT")
+            conn.commit()
     ecols = {r[1] for r in conn.execute("PRAGMA table_info(enforcement_actions)")}
     if "is_duplicate" not in ecols:
         conn.execute("ALTER TABLE enforcement_actions ADD COLUMN is_duplicate "

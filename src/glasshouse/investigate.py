@@ -43,7 +43,7 @@ from .contradictions import (
     score_commitment_sentence,
 )
 from .http import DATA_DIR
-from .ledger import VERSION_DATE_SQL
+from .ledger import NON_LEGACY_VOTE_SQL, VERSION_DATE_SQL
 
 MATRIX_CACHE = DATA_DIR / "investigate" / "matrix.json"
 
@@ -146,7 +146,7 @@ def _scan_one(conn: sqlite3.Connection, proposal_pats: list[str],
         f"""SELECT f.institution_id AS iid, v.accession, v.issuer_name, v.meeting_date,
                    v.vote_description, v.how_voted, v.shares_voted, f.source_url
             FROM votes v JOIN filings f ON f.accession = v.accession
-            WHERE v.is_duplicate = 0 AND IFNULL(v.vote_source,'') != 'legacy_html'
+            WHERE v.is_duplicate = 0 AND {NON_LEGACY_VOTE_SQL}
               AND ({like})""", params):
         desc = v["vote_description"] or ""
         if not rx.search(desc) or proposal_is_oppositional(desc):
@@ -235,7 +235,7 @@ def theme_trend(conn: sqlite3.Connection, theme: str | None = None, *,
     for v in conn.execute(
         f"""SELECT f.institution_id AS iid, v.meeting_date, v.vote_description, v.how_voted
             FROM votes v JOIN filings f ON f.accession=v.accession
-            WHERE v.is_duplicate=0 AND IFNULL(v.vote_source,'')!='legacy_html'
+            WHERE v.is_duplicate=0 AND {NON_LEGACY_VOTE_SQL}
               AND ({like})""", params):
         desc = v["vote_description"] or ""
         if not rx.search(desc) or proposal_is_oppositional(desc):
@@ -282,7 +282,7 @@ def holdings_weighted(conn: sqlite3.Connection, theme: str | None = None, *,
     for v in conn.execute(
         f"""SELECT f.institution_id AS iid, v.cusip, v.how_voted, v.vote_description
             FROM votes v JOIN filings f ON f.accession=v.accession
-            WHERE v.is_duplicate=0 AND IFNULL(v.vote_source,'')!='legacy_html'
+            WHERE v.is_duplicate=0 AND {NON_LEGACY_VOTE_SQL}
               AND v.cusip != '' AND ({like})""", params):
         desc = v["vote_description"] or ""
         if not rx.search(desc) or proposal_is_oppositional(desc):
@@ -341,8 +341,8 @@ def _resolve_company(conn: sqlite3.Connection, query: str):
     qword = re.compile(r"\b" + re.escape(query.strip()) + r"\b", re.IGNORECASE)
     groups: dict[str, dict] = {}
     for r in conn.execute(
-        "SELECT issuer_name, cusip FROM votes WHERE issuer_name LIKE ? AND is_duplicate=0 "
-        "AND IFNULL(vote_source,'')!='legacy_html'", (f"%{query}%",)):
+        f"SELECT issuer_name, cusip FROM votes WHERE issuer_name LIKE ? AND is_duplicate=0 "
+        f"AND {NON_LEGACY_VOTE_SQL}", (f"%{query}%",)):
         nm = r["issuer_name"] or ""
         if not qword.search(nm):
             continue                       # substring-only match (Pineapple, Ashford) → reject
@@ -389,7 +389,7 @@ def company_record(conn: sqlite3.Connection, query: str) -> dict:
                   v.how_voted, v.shares_voted, v.accession, f.source_url
            FROM votes v JOIN filings f ON f.accession=v.accession
            WHERE v.issuer_name IN ({vph}) AND v.is_duplicate=0
-             AND IFNULL(v.vote_source,'')!='legacy_html'""", (*variants,)):
+             AND {NON_LEGACY_VOTE_SQL}""", (*variants,)):
         d = per.setdefault(v["iid"], {"for": 0, "against": 0, "examples": []})
         hv = (v["how_voted"] or "").strip().upper()
         if hv == "FOR":
@@ -433,7 +433,7 @@ def _scan_matrix(conn: sqlite3.Connection) -> dict[str, dict[str, dict]]:
         f"""SELECT f.institution_id AS iid, v.accession, v.issuer_name, v.meeting_date,
                    v.vote_description, v.how_voted, v.shares_voted, f.source_url
             FROM votes v JOIN filings f ON f.accession = v.accession
-            WHERE v.is_duplicate = 0 AND IFNULL(v.vote_source,'') != 'legacy_html'
+            WHERE v.is_duplicate = 0 AND {NON_LEGACY_VOTE_SQL}
               AND ({like})""", params):
         desc = v["vote_description"] or ""
         if proposal_is_oppositional(desc):

@@ -46,7 +46,7 @@ from .contradictions import (
     proposal_is_oppositional,
 )
 from .http import DATA_DIR
-from .ledger import DB_PATH, iso_meeting_date
+from .ledger import DB_PATH, NON_LEGACY_VOTE_SQL, iso_meeting_date
 
 logger = logging.getLogger(__name__)
 
@@ -471,7 +471,7 @@ def _grouped(led: sqlite3.Connection, which: str,
                    v.vote_description AS d, v.category_type, v.how_voted, v.shares_voted,
                    v.management_recommendation AS mr, v.accession, f.source_url, f.cik AS fcik, v.vote_series AS vseries
             FROM votes v JOIN filings f ON f.accession = v.accession
-            WHERE v.is_duplicate = 0 AND {which}
+            WHERE v.is_duplicate = 0 AND {which} AND {NON_LEGACY_VOTE_SQL}
               AND f.institution_id IS NOT NULL"""):
         adv = None
         if resolvers and v["iid"] in resolvers:
@@ -543,7 +543,8 @@ def _multi_group(led: sqlite3.Connection, rules: dict, doc_rules: dict) -> dict[
         for v in led.execute(
                 f"""SELECT DISTINCT f.institution_id AS iid, f.cik, v.vote_series AS s, {iso} AS md
                     FROM votes v JOIN filings f ON f.accession = v.accession
-                    WHERE v.is_duplicate = 0 AND f.institution_id IN ({marks})""", keyed):
+                    WHERE v.is_duplicate = 0 AND {NON_LEGACY_VOTE_SQL}
+                      AND f.institution_id IN ({marks})""", keyed):
             k = resolve_key(rules.get(v["iid"], {}).get(_norm_cik(v["cik"])), v["s"], v["md"])
             (line_keys[v["iid"]].add(k) if k else unresolved.add(v["iid"]))
     out = {}
@@ -1942,7 +1943,7 @@ class Engine:
             f"""SELECT v.vote_series, v.how_voted, v.shares_voted, v.vote_description,
                        v.accession, f.cik, f.source_url
                 FROM votes v JOIN filings f ON f.accession = v.accession
-                WHERE f.institution_id=? AND v.is_duplicate=0
+                WHERE f.institution_id=? AND v.is_duplicate=0 AND {NON_LEGACY_VOTE_SQL}
                   AND v.vote_source='SECURITY HOLDER' AND {iso}=?
                   AND (v.cusip=? OR v.issuer_name=?)""",
                 (r["institution_id"], r["meeting_date"], r["cusip"], r["issuer_name"])):
