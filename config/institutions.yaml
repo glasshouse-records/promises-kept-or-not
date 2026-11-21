@@ -7040,3 +7040,233 @@ institutions:
           strip_page_numbers: true
           strip_patterns:
             - '(?<![A-Za-z])C-\s?\d{1,2}(?![\d-])'
+  cohen_steers:
+    display_name: "Cohen & Steers (Cohen & Steers Capital Management, Inc.)"
+    short_name: "Cohen & Steers"
+    cik: "0000845563"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Cohen & Steers Capital Management, Inc., New York NY (CIK 845563, the 13-F filer and the investment adviser of the Cohen & Steers funds; wholly owned by Cohen & Steers, Inc., CIK 1284812). Seventeen US fund registrants that file N-PX vote tables with operating-company votes are ingested: nine open-end registrants (Real Estate Securities Fund 1041917, Global Infrastructure Fund 1276070, Preferred Securities & Income Fund 1484750, Real Assets Fund 1533503, Future of Energy Fund 1580956, Short Duration Preferred & Income Fund 1652200, Preferred Securities & Income SMA Shares 1760077, Alternative Income Fund 1307144 until its 2024 deregistration, and the Cohen & Steers ETF Trust 1590402) and eight closed-end funds that hold listed equities and preferreds (Select Preferred & Income 1498612, Ltd Duration Preferred & Income 1548717, Quality Income Realty 1157842, REIT & Preferred & Income 1224450, Total Return Realty 891290, Infrastructure 1275617, Tax-Advantaged Preferred Securities & Income 1793882, Real Estate Opportunities & Income 1866874). Every open-end SAI says the Boards delegated voting 'to the Advisor and, as applicable, the Subadvisors' and prints one policy 'for the Advisor, CNS Asia and CNS UK' (Cohen & Steers Asia Limited and Cohen & Steers UK Limited are the Advisor's own affiliates); every closed-end fund's N-CSR says 'The registrant has delegated voting of proxies in respect of portfolio holdings to Cohen & Steers Capital Management, Inc.'. So the voter is always the Advisor under its own policy: key COHEN_STEERS, no series exception. Left out: Cohen & Steers Capital Management's own institutional-manager N-PX (845563) and the parent Cohen & Steers, Inc. (1284812), which overlap the fund tables; Cohen & Steers Closed-End Opportunity Fund (1375340, FOF), a fund of closed-end funds whose votes are other registered funds' trustee elections; Cohen & Steers MLP Income & Energy Opportunity Fund (1564216, deregistered 2022, N-8F order 2022-10-28, last N-PX 2022-08-18 in legacy text) and Global Income Builder (1395057, deregistered 2021-11-24); older funds that stopped filing before 2021 (for example 1361755, 1387640, 1385859); the four RQI/RNP/RFI/REOF Trust shells (1908921, 1908941, 1908943, 1953884, one filing each, no N-PX); the Cohen & Steers Series LP private funds (1739505, 1786040, 1920698, 2092201, no N-PX) and the Cohen & Steers Active Commodities and Global Realty partnerships (not registered funds with vote tables). aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. Open-end registrants: earliest 2021-or-later SAI read; closed-end funds: earliest N-CSR read (no SAI since 2021), RLTY: first final prospectus/SAI. Meetings before each `from` stay unlabelled.
+      # One voter everywhere: the Advisor under its own policy (CNS Asia and CNS UK, the Subadvisors, are its affiliates and share the policy). No series_adviser, no registrant-wide default.
+      - cik: "1041917"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor); Subadvisors Cohen & Steers Asia Limited and Cohen & Steers UK Limited are affiliates under the same policy"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1041917/000119312521065761/d435500d497.htm"  # 497 (SAI) filed 2021-03-02 (0001193125-21-065761)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting': 'The Funds' Boards of Directors have delegated to the Advisor and, as applicable, the Subadvisors the responsibility for voting proxies on behalf of each Fund ... A summary of the proxy voting policies and procedures for the Advisor and each Subadvisor is set forth in Appendix A' and Appendix A is headed 'Proxy Voting Policies and Procedures for the Advisor, CNS Asia and CNS UK' (one policy; the Subadvisors, Cohen & Steers Asia Limited and Cohen & Steers UK Limited, are the Advisor's own affiliates, so the voter is always Cohen & Steers). Earliest read: 497 (SAI) filed 2021-03-02 (0001193125-21-065761). Open-end fund (S000001225, Real Estate Securities Fund)."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-03-02"}]
+        name: "COHEN & STEERS REAL ESTATE SECURITIES FUND INC"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1276070"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor); Subadvisors Cohen & Steers Asia Limited and Cohen & Steers UK Limited are affiliates under the same policy"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1276070/000119312521065761/d435500d497.htm"  # 497 (SAI) filed 2021-03-02 (0001193125-21-065761)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting': 'The Funds' Boards of Directors have delegated to the Advisor and, as applicable, the Subadvisors the responsibility for voting proxies on behalf of each Fund ... A summary of the proxy voting policies and procedures for the Advisor and each Subadvisor is set forth in Appendix A' and Appendix A is headed 'Proxy Voting Policies and Procedures for the Advisor, CNS Asia and CNS UK' (one policy; the Subadvisors, Cohen & Steers Asia Limited and Cohen & Steers UK Limited, are the Advisor's own affiliates, so the voter is always Cohen & Steers). Earliest read: 497 (SAI) filed 2021-03-02 (0001193125-21-065761). Open-end fund (S000001227, Global Infrastructure Fund)."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-03-02"}]
+        name: "COHEN & STEERS GLOBAL INFRASTRUCTURE FUND INC"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1484750"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor); Subadvisors Cohen & Steers Asia Limited and Cohen & Steers UK Limited are affiliates under the same policy"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1484750/000119312521065761/d435500d497.htm"  # 497 (SAI) filed 2021-03-02 (0001193125-21-065761)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting': 'The Funds' Boards of Directors have delegated to the Advisor and, as applicable, the Subadvisors the responsibility for voting proxies on behalf of each Fund ... A summary of the proxy voting policies and procedures for the Advisor and each Subadvisor is set forth in Appendix A' and Appendix A is headed 'Proxy Voting Policies and Procedures for the Advisor, CNS Asia and CNS UK' (one policy; the Subadvisors, Cohen & Steers Asia Limited and Cohen & Steers UK Limited, are the Advisor's own affiliates, so the voter is always Cohen & Steers). Earliest read: 497 (SAI) filed 2021-03-02 (0001193125-21-065761). Open-end fund (S000028884, Preferred Securities and Income Fund); the votes are preferred-stock votes (about 26 rows a year, Lincoln National)."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-03-02"}]
+        name: "COHEN & STEERS PREFERRED SECURITIES & INCOME FUND, INC."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1533503"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor); Subadvisors Cohen & Steers Asia Limited and Cohen & Steers UK Limited are affiliates under the same policy"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1533503/000119312521065761/d435500d497.htm"  # 497 (SAI) filed 2021-03-02 (0001193125-21-065761)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting': 'The Funds' Boards of Directors have delegated to the Advisor and, as applicable, the Subadvisors the responsibility for voting proxies on behalf of each Fund ... A summary of the proxy voting policies and procedures for the Advisor and each Subadvisor is set forth in Appendix A' and Appendix A is headed 'Proxy Voting Policies and Procedures for the Advisor, CNS Asia and CNS UK' (one policy; the Subadvisors, Cohen & Steers Asia Limited and Cohen & Steers UK Limited, are the Advisor's own affiliates, so the voter is always Cohen & Steers). Earliest read: 497 (SAI) filed 2021-03-02 (0001193125-21-065761). Open-end fund (S000035709, Real Assets Fund); it also invests through a Cayman subsidiary managed by the Advisor."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-03-02"}]
+        name: "Cohen & Steers Real Assets Fund, Inc."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1580956"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor); Subadvisors Cohen & Steers Asia Limited and Cohen & Steers UK Limited are affiliates under the same policy"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1580956/000119312521065761/d435500d497.htm"  # 497 (SAI) filed 2021-03-02 (0001193125-21-065761)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting': 'The Funds' Boards of Directors have delegated to the Advisor and, as applicable, the Subadvisors the responsibility for voting proxies on behalf of each Fund ... A summary of the proxy voting policies and procedures for the Advisor and each Subadvisor is set forth in Appendix A' and Appendix A is headed 'Proxy Voting Policies and Procedures for the Advisor, CNS Asia and CNS UK' (one policy; the Subadvisors, Cohen & Steers Asia Limited and Cohen & Steers UK Limited, are the Advisor's own affiliates, so the voter is always Cohen & Steers). Earliest read: 497 (SAI) filed 2021-03-02 (0001193125-21-065761). Open-end fund (S000042155; named Cohen & Steers MLP & Energy Opportunity Fund until 2023)."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-03-02"}]
+        name: "Cohen & Steers Future of Energy Fund, INC"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1652200"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor); Subadvisors Cohen & Steers Asia Limited and Cohen & Steers UK Limited are affiliates under the same policy"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1652200/000119312521105820/d122564d497.htm"  # 497 (SAI) filed 2021-04-05 (0001193125-21-105820)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting': 'The Funds' Boards of Directors have delegated to the Advisor and, as applicable, the Subadvisors the responsibility for voting proxies on behalf of each Fund ... A summary of the proxy voting policies and procedures for the Advisor and each Subadvisor is set forth in Appendix A' and Appendix A is headed 'Proxy Voting Policies and Procedures for the Advisor, CNS Asia and CNS UK' (one policy; the Subadvisors, Cohen & Steers Asia Limited and Cohen & Steers UK Limited, are the Advisor's own affiliates, so the voter is always Cohen & Steers). Earliest read: 497 (SAI) filed 2021-04-05 (0001193125-21-105820). Open-end fund (S000051713; named Low Duration Preferred & Income Fund until 2023); preferred-stock votes only (about 44 rows a year)."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-04-05"}]
+        name: "Cohen & Steers Short Duration Preferred & Income Fund, Inc."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1760077"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor); Subadvisors Cohen & Steers Asia Limited and Cohen & Steers UK Limited are affiliates under the same policy"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1760077/000119312521060941/d16347d485bpos.htm"  # 485BPOS (SAI) filed 2021-02-26 (0001193125-21-060941)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting': 'The Funds' Boards of Directors have delegated to the Advisor and, as applicable, the Subadvisors the responsibility for voting proxies on behalf of each Fund ... A summary of the proxy voting policies and procedures for the Advisor and each Subadvisor is set forth in Appendix A' and Appendix A is headed 'Proxy Voting Policies and Procedures for the Advisor, CNS Asia and CNS UK' (one policy; the Subadvisors, Cohen & Steers Asia Limited and Cohen & Steers UK Limited, are the Advisor's own affiliates, so the voter is always Cohen & Steers). Earliest read: 485BPOS (SAI) filed 2021-02-26 (0001193125-21-060941). Open-end fund (S000064832, SMA Shares); preferred-stock votes only (about 13 rows a year)."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-02-26"}]
+        name: "Cohen & Steers Preferred Securities & Income SMA Shares, Inc."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1307144"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor); Subadvisors Cohen & Steers Asia Limited and Cohen & Steers UK Limited are affiliates under the same policy"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1307144/000119312521060936/d845503d485bpos.htm"  # 485BPOS (SAI) filed 2021-02-26 (0001193125-21-060936)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting': 'The Funds' Boards of Directors have delegated to the Advisor and, as applicable, the Subadvisors the responsibility for voting proxies on behalf of each Fund ... A summary of the proxy voting policies and procedures for the Advisor and each Subadvisor is set forth in Appendix A' and Appendix A is headed 'Proxy Voting Policies and Procedures for the Advisor, CNS Asia and CNS UK' (one policy; the Subadvisors, Cohen & Steers Asia Limited and Cohen & Steers UK Limited, are the Advisor's own affiliates, so the voter is always Cohen & Steers). Earliest read: 485BPOS (SAI) filed 2021-02-26 (0001193125-21-060936). Open-end fund (S000001230). Deregistered: N-8F order 2024-12-27; the last N-PX is 2024-08-20 (388 vote rows), so no meetings after mid-2024 exist."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-02-26"}]
+        name: "Cohen & Steers Alternative Income Fund, Inc."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1590402"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor); Subadvisors Cohen & Steers Asia Limited and Cohen & Steers UK Limited are affiliates under the same policy"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1590402/000119312524192455/d828577dn1a.htm"  # N-1A (Part B, SAI) filed 2024-08-02 (0001193125-24-192455)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting': 'The Funds' Boards of Directors have delegated to the Advisor and, as applicable, the Subadvisors the responsibility for voting proxies on behalf of each Fund ... A summary of the proxy voting policies and procedures for the Advisor and each Subadvisor is set forth in Appendix A' and Appendix A is headed 'Proxy Voting Policies and Procedures for the Advisor, CNS Asia and CNS UK' (one policy; the Subadvisors, Cohen & Steers Asia Limited and Cohen & Steers UK Limited, are the Advisor's own affiliates, so the voter is always Cohen & Steers). Earliest read: N-1A (Part B, SAI) filed 2024-08-02 (0001193125-24-192455). Active-ETF trust, six series (S000044020, S000088341, S000088342, S000097366, S000097367, S000103238); N-PX vote tables exist from the 2025 filing (2025-08-29, 2026-08-31). The Trust has no earlier SAI on EDGAR, so earlier meetings stay unlabelled."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2024-08-02"}]
+        name: "Cohen & Steers ETF Trust"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1498612"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor / Investment Manager, delegated by the fund)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1498612/000119312521073447/d95553dncsr.htm"  # N-CSR filed 2021-03-08 (0001193125-21-073447)
+        adviser_verified: "2026-11-21"
+        voting_note: "N-CSR Item 7 (Item 12 from the 2026 form): 'The registrant has delegated voting of proxies in respect of portfolio holdings to Cohen & Steers Capital Management, Inc. (\"C&S\"), in accordance with the policies and procedures set forth below', followed by 'COHEN & STEERS CAPITAL MANAGEMENT, INC. STATEMENT OF POLICIES AND PROCEDURES REGARDING THE VOTING OF SECURITIES'. Closed-end funds file no SAI after 2021, so the annual N-CSR is the evidence. Earliest read: N-CSR filed 2021-03-08 (0001193125-21-073447). Closed-end fund (PSF); preferred-stock votes only (about 44 rows a year)."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-03-08"}]
+        name: "Cohen & Steers Select Preferred & Income Fund, Inc."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1548717"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor / Investment Manager, delegated by the fund)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1548717/000119312521073406/d315731dncsr.htm"  # N-CSR filed 2021-03-08 (0001193125-21-073406)
+        adviser_verified: "2026-11-21"
+        voting_note: "N-CSR Item 7 (Item 12 from the 2026 form): 'The registrant has delegated voting of proxies in respect of portfolio holdings to Cohen & Steers Capital Management, Inc. (\"C&S\"), in accordance with the policies and procedures set forth below', followed by 'COHEN & STEERS CAPITAL MANAGEMENT, INC. STATEMENT OF POLICIES AND PROCEDURES REGARDING THE VOTING OF SECURITIES'. Closed-end funds file no SAI after 2021, so the annual N-CSR is the evidence. Earliest read: N-CSR filed 2021-03-08 (0001193125-21-073406). Closed-end fund (LDP); preferred-stock votes only (about 44 rows a year)."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-03-08"}]
+        name: "Cohen & Steers Ltd Duration Preferred & Income Fund, Inc."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1157842"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor / Investment Manager, delegated by the fund)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1157842/000119312521073449/d854119dncsr.htm"  # N-CSR filed 2021-03-08 (0001193125-21-073449)
+        adviser_verified: "2026-11-21"
+        voting_note: "N-CSR Item 7 (Item 12 from the 2026 form): 'The registrant has delegated voting of proxies in respect of portfolio holdings to Cohen & Steers Capital Management, Inc. (\"C&S\"), in accordance with the policies and procedures set forth below', followed by 'COHEN & STEERS CAPITAL MANAGEMENT, INC. STATEMENT OF POLICIES AND PROCEDURES REGARDING THE VOTING OF SECURITIES'. Closed-end funds file no SAI after 2021, so the annual N-CSR is the evidence. Earliest read: N-CSR filed 2021-03-08 (0001193125-21-073449). Closed-end fund (RQI), listed REIT equities (about 363 vote rows in the 2026 filing)."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-03-08"}]
+        name: "COHEN & STEERS QUALITY INCOME REALTY FUND INC"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1224450"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor / Investment Manager, delegated by the fund)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1224450/000119312521073436/d867347dncsr.htm"  # N-CSR filed 2021-03-08 (0001193125-21-073436)
+        adviser_verified: "2026-11-21"
+        voting_note: "N-CSR Item 7 (Item 12 from the 2026 form): 'The registrant has delegated voting of proxies in respect of portfolio holdings to Cohen & Steers Capital Management, Inc. (\"C&S\"), in accordance with the policies and procedures set forth below', followed by 'COHEN & STEERS CAPITAL MANAGEMENT, INC. STATEMENT OF POLICIES AND PROCEDURES REGARDING THE VOTING OF SECURITIES'. Closed-end funds file no SAI after 2021, so the annual N-CSR is the evidence. Earliest read: N-CSR filed 2021-03-08 (0001193125-21-073436). Closed-end fund (RNP), REIT equities and preferreds (about 416 vote rows)."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-03-08"}]
+        name: "COHEN & STEERS REIT & PREFERRED & INCOME FUND INC"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "891290"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor / Investment Manager, delegated by the fund)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/891290/000119312521073444/d918159dncsr.htm"  # N-CSR filed 2021-03-08 (0001193125-21-073444)
+        adviser_verified: "2026-11-21"
+        voting_note: "N-CSR Item 7 (Item 12 from the 2026 form): 'The registrant has delegated voting of proxies in respect of portfolio holdings to Cohen & Steers Capital Management, Inc. (\"C&S\"), in accordance with the policies and procedures set forth below', followed by 'COHEN & STEERS CAPITAL MANAGEMENT, INC. STATEMENT OF POLICIES AND PROCEDURES REGARDING THE VOTING OF SECURITIES'. Closed-end funds file no SAI after 2021, so the annual N-CSR is the evidence. Earliest read: N-CSR filed 2021-03-08 (0001193125-21-073444). Closed-end fund (RFI), listed REIT equities (about 382 vote rows)."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-03-08"}]
+        name: "COHEN & STEERS TOTAL RETURN REALTY FUND INC"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1275617"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor / Investment Manager, delegated by the fund)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1275617/000119312521073430/d315919dncsr.htm"  # N-CSR filed 2021-03-08 (0001193125-21-073430)
+        adviser_verified: "2026-11-21"
+        voting_note: "N-CSR Item 7 (Item 12 from the 2026 form): 'The registrant has delegated voting of proxies in respect of portfolio holdings to Cohen & Steers Capital Management, Inc. (\"C&S\"), in accordance with the policies and procedures set forth below', followed by 'COHEN & STEERS CAPITAL MANAGEMENT, INC. STATEMENT OF POLICIES AND PROCEDURES REGARDING THE VOTING OF SECURITIES'. Closed-end funds file no SAI after 2021, so the annual N-CSR is the evidence. Earliest read: N-CSR filed 2021-03-08 (0001193125-21-073430). Closed-end fund (UTF), listed infrastructure and utility equities (about 981 vote rows)."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-03-08"}]
+        name: "COHEN & STEERS INFRASTRUCTURE FUND INC"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1793882"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor / Investment Manager, delegated by the fund)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1793882/000119312521369346/d391140dncsr.htm"  # N-CSR filed 2021-12-29 (0001193125-21-369346)
+        adviser_verified: "2026-11-21"
+        voting_note: "N-CSR Item 7 (Item 12 from the 2026 form): 'The registrant has delegated voting of proxies in respect of portfolio holdings to Cohen & Steers Capital Management, Inc. (\"C&S\"), in accordance with the policies and procedures set forth below', followed by 'COHEN & STEERS CAPITAL MANAGEMENT, INC. STATEMENT OF POLICIES AND PROCEDURES REGARDING THE VOTING OF SECURITIES'. Closed-end funds file no SAI after 2021, so the annual N-CSR is the evidence. Earliest read: N-CSR filed 2021-12-29 (0001193125-21-369346). Closed-end fund (PTA); preferred-stock votes only (about 62 rows a year). No SAI-type filing from 2021 on exists on EDGAR (N-2/A 2020 only)."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2021-12-29"}]
+        name: "Cohen & Steers Tax-Advantaged Preferred Securities & Income Fund"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1866874"
+        adviser: "Cohen & Steers Capital Management, Inc. (the Advisor / Investment Manager, delegated by the fund)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1866874/000119312522052426/d285174d424b1.htm"  # 424B1 (final prospectus and SAI) filed 2022-02-24 (0001193125-22-052426)
+        adviser_verified: "2026-11-21"
+        voting_note: "Earliest read: 424B1 (final prospectus and SAI) filed 2022-02-24 (0001193125-22-052426). Closed-end fund (RLTY), listed REIT equities (about 338 vote rows). The SAI says 'The Fund's Board has delegated to the Investment Manager the responsibility for voting proxies on behalf of the Fund' (Investment Manager = the Advisor, Appendix A 'Proxy Voting Procedures and Guidelines for the Investment Manager'); the N-CSR of 2023-03-08 (0001193125-23-064519) confirms it."
+        adviser_key_history: [{key: COHEN_STEERS, from: "2022-02-24"}]
+        name: "Cohen & Steers Real Estate Opportunities & Income Fund"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed COHEN_STEERS per registrant from the EDGAR filing date of the earliest SAI (open-end) or N-CSR (closed-end) read, 2021 or later; earlier meetings stay unlabelled. Votes follow Cohen & Steers Capital Management's own proxy voting policy; CNS Asia and CNS UK vote under the same policy as its affiliates; no unaffiliated sub-adviser exists, so no series is EXTERNAL."
+      - "Not ingested (left out): see the registry notes for each CIK and reason (institutional-manager N-PX, fund of closed-end funds, deregistered funds, shells and private partnerships), and the legacy-text N-PX before 2024 (not ingested without --legacy)."
+      - "Preferred-securities funds (1484750, 1652200, 1760077, 1793882, 1498612, 1548717) vote very few lines a year (13 to 62, preferred shares of banks and insurers), so their meetings are few; they are kept because the votes are real."
+      - "Policy text: the website policy PDF (document title 'Cohen & Steers Global Proxy Voting Procedures and Guidelines', last reviewed 2026) and two series printed in SEC filings, archived under separate labels and never mixed: the SAI Appendix A ('for the Advisor, CNS Asia and CNS UK', April editions 2021 to 2026) and the closed-end N-CSR Item 7 ('Statement of Policies and Procedures Regarding the Voting of Securities', March editions 2021 to 2026)."
+    commitments:
+      # Verified 2026-11-21 (200 application/pdf to the honest client, 317,045 bytes; linked as 'Cohen & Steers Global Proxy Voting Procedures and Guidelines' from https://www.cohenandsteers.com/themes-post/proxy-voting/ ; robots.txt allows). The path embeds the upload month, so the URL changes when the firm uploads a new edition; re-read the page for the current link.
+      - label: cohen-steers-global-proxy-voting-procedures-and-guidelines
+        url: "https://assets-prod.cohenandsteers.com/wp-content/uploads/2026/03/11131514/Proxy-Voting-Policy-last-reviewed-2026.pdf"
+        adviser: "Cohen & Steers Capital Management, Inc."
+        adviser_key: "COHEN_STEERS"
+      # Appendix A of the open-end SAI (485BPOS, one file for the whole fund family, read under the Real Estate Securities Fund CIK), dated by EDGAR filing date. Dry-run 2026-11-21: 6 editions (2021-04-30, 2022-04-29, 2023-04-28, 2024-04-29, 2025-04-29, 2026-04-29), each extracted once. Heading case and wording change between years, hence three start variants; page numbers are a run of consecutive standalone numbers.
+      - label: cohen-steers-proxy-voting-policy-as-printed-in-sai
+        adviser: "Cohen & Steers Capital Management, Inc."
+        adviser_key: "COHEN_STEERS"
+        sai_appendix:
+          cik: "0001041917"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "APPENDIX A PROXY VOTING POLICIES AND PROCEDURES FOR THE ADVISOR, CNS ASIA AND CNS UK A. Responsibility"
+            - "Appendix A Proxy Voting Policies and Procedures for the Advisor, CNS Asia and CNS UK A. Responsibility"
+            - "Appendix A Proxy Voting Policies and Procedures for the Advisor, COHEN & STEERS ASIA LIMITED"
+          end:
+            - "APPENDIX B RATING CATEGORIES"
+            - "Appendix B Rating Categories"
+          page_sequence: true
+      # Item 7 (Item 12 from the 2026 form) of the closed-end funds' N-CSR, read under the Select Preferred & Income Fund CIK (the text is the firm-wide policy, the same in every closed-end fund's N-CSR). Dry-run 2026-11-21: 6 editions (2021-03-08 to 2026-03-06). Annual N-CSR only (the semi-annual N-CSRS carries no policy).
+      - label: cohen-steers-proxy-voting-policy-as-printed-in-ncsr-closed-end
+        adviser: "Cohen & Steers Capital Management, Inc."
+        adviser_key: "COHEN_STEERS"
+        sai_appendix:
+          cik: "0001498612"
+          forms: ["N-CSR"]
+          since: "2021-01-01"
+          start:
+            - "COHEN & STEERS CAPITAL MANAGEMENT, INC. STATEMENT OF POLICIES AND PROCEDURES REGARDING THE VOTING OF SECURITIES This statement sets forth"
+          end:
+            - "Item 8. Portfolio Managers of Closed-End"
+            - "Item 13. Portfolio Managers of Closed-End"
+          page_sequence: true
+  aqr:
+    display_name: "AQR Capital Management"
+    short_name: "AQR"
+    cik: "0001167557"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "AQR Capital Management, LLC, Greenwich CT (CIK 1167557, the 13-F filer and the investment adviser of the AQR Funds). One US fund registrant that files N-PX vote tables with operating-company votes is ingested: AQR Funds (CIK 1444822; 26 series on the 2026 cover, 24 with vote rows, for example S000024170 Global, S000025643 Large Cap Momentum Style, S000041116 Long-Short Equity, S000046740 Equity Market Neutral, S000058563 Alternative Risk Premia, S000093171 LSE Fusion; about 176,000 vote rows in the 2026 filing). The SAI says 'The Trust has delegated proxy voting responsibilities with respect to each Fund to the Adviser, subject to the general oversight of the Board' and prints AQR's own policy as Appendix A; the policy has AQR retain full discretion for commingled funds, use a third-party proxy adviser for research and execution, and be implemented by AQR's own Proxy Voting Committee. No sub-adviser exists, so the voter is always AQR under its own policy: key AQR. Left out: AQR Capital Management, LLC's own institutional-manager N-PX (1167557), which overlaps the fund tables; AQR Delphi Long-Short Fund (2123596), registered 2026-03-27 (N-8A, N-2) with no N-PX yet; AQR's private partnerships, master accounts, offshore funds and AQR Flex series (many CIKs, not registered funds with N-PX vote tables) and the manager entities AQR Capital Management II (1061302 and 1061303) and AQR Capital Management Holdings (not registrants). No AQR ETF trust exists on EDGAR as of 2026-11-21. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. AQR Funds is the only registered AQR fund trust with N-PX vote tables. Every series is advised by AQR alone; no series exception and no registrant-wide default.
+      - cik: "1444822"
+        adviser: "AQR Capital Management, LLC (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1444822/000119312521020794/d80422d485bpos.htm"  # 485BPOS (SAI) filed 2021-01-28 (0001193125-21-020794), 'Proxy Voting Policies and Procedures': voting delegated to the Adviser, policy in Appendix A
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Adviser has adopted written proxy voting policies and procedures (\"Proxy Policies\") as required by Rule 206(4)-6 ... The Trust has delegated proxy voting responsibilities with respect to each Fund to the Adviser, subject to the general oversight of the Board.' Appendix A is the Proxy Voting Policies and Procedures of AQR Capital Management, LLC: 'AQR retains full proxy voting discretion for accounts comprised of comingled client assets'; AQR 'has retained an independent third-party Proxy Advisory firm' for ballots, research and execution, and its own Proxy Voting Committee is responsible for the policy. Earliest SAI read 2021-01-28 (0001193125-21-020794); the Appendix A edition is re-printed in every later 485BPOS (editions 2021-04-28, 2022-04-28, 2024-04-29, 2024-08-16, 2026-01-26)."
+        adviser_key_history: [{key: AQR, from: "2021-01-28"}]
+        name: "AQR Funds"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed AQR from the EDGAR filing date of the earliest SAI read (2021-01-28, the first 485BPOS from 2021 on); earlier meetings stay unlabelled. Votes follow AQR Capital Management's own proxy voting policy; a third-party proxy adviser supplies research and executes votes under it, and no sub-adviser exists."
+      - "Not ingested (left out): AQR Capital Management, LLC's institutional-manager N-PX (CIK 1167557) and the legacy-text N-PX before 2024 (not ingested without --legacy)."
+      - "Policy text: the policy PDF on aqr.com and the policy as printed in the SAI (Appendix A); archived under separate labels and never mixed."
+    commitments:
+      # Verified 2026-11-21 (200 application/pdf to the honest client, 739,065 bytes, with or without the ?sc_lang=en&hash= query; found through the ESG page of aqr.com, https://www.aqr.com/Strategies/Environmental-Social-and-Governance-ESG ). The funds site funds.aqr.com links no policy document.
+      - label: aqr-proxy-voting-policy-and-procedures
+        url: "https://www.aqr.com/-/media/AQR/Documents/ESG/AQR-Proxy-Voting-Policy.pdf"
+        adviser: "AQR Capital Management, LLC"
+        adviser_key: "AQR"
+      # Appendix A of the SAI (485BPOS), dated by EDGAR filing date. Dry-run 2026-11-21 over the 20 485BPOS filings from 2021-01: 6 editions (2021-01-28, 2021-04-28, 2022-04-28, 2024-04-29, 2024-08-16, 2026-01-26), every filing extracted once; the page footer 'AQR Funds - Statement of Additional Information NN' is stripped.
+      - label: aqr-proxy-voting-policy-as-printed-in-sai
+        adviser: "AQR Capital Management, LLC"
+        adviser_key: "AQR"
+        sai_appendix:
+          cik: "0001444822"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "Appendix A—Proxy Voting Policies and Procedures Proxy Voting Policies and Procedures I. STATEMENT OF POLICY"
+          end:
+            - "PART C OTHER INFORMATION"
+          strip_patterns:
+            - 'AQR Funds ?[–-] ?Statement of Additional Information \d{1,3}'
