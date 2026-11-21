@@ -154,8 +154,12 @@ def _heading_at(lines: list[str], i: int) -> tuple[str, int] | None:
     j = i
     while j < len(lines) and lines[j].strip():
         ln = lines[j]
-        if "END NPX REPORT" in ln or not (ln.startswith("=") or ln[0].isspace()):
+        if "END NPX REPORT" in ln:
             break
+        if not (ln.startswith("=") or ln[0].isspace()):
+            # a frame opened on the previous line may close on this one ("... ETF) =====")
+            if not (parts and not lines[j - 1].rstrip().endswith("=") and ln.rstrip().endswith("=")):
+                break
         parts.append(ln.strip("= \t"))
         j += 1
     text = _norm(" ".join(p for p in parts if p))

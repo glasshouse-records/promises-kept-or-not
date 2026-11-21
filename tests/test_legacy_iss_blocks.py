@@ -243,3 +243,16 @@ def test_heading_continued_on_an_unframed_line():
     assert "Polen" in d
     assert {r["fund_heading"] for r in parse(d)} == {
         "Northern Active M international Equity Fund - Polen Capital Management, LLC"}
+
+
+def test_heading_whose_frame_closes_on_the_next_line():
+    # State Street 2023 N-PX (0001193125-23-286247): the frame opens on one line, closes on the next.
+    first = doc(prop_line("1", "Elect A", "For", "For", "Management"), heading="FUND Z")
+    d = doc(prop_line("1", "Elect B", "For", "For", "Management"), heading="X")
+    d = d.replace("================= X =================",
+                  "===================== SPDR MSCI USA Gender Diversity ETF (formerly SPDR SSGA\n"
+                  "Gender Diversity Index ETF) =====================", 1)
+    rows = parse(first + "\n" + d)
+    assert [(r["fund_heading"], r["proposal_text"]) for r in rows] == [
+        ("FUND Z", "Elect A"),
+        ("SPDR MSCI USA Gender Diversity ETF (formerly SPDR SSGA Gender Diversity Index ETF)", "Elect B")]

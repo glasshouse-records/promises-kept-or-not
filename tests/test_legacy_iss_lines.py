@@ -264,3 +264,12 @@ def test_frequency_rec_wrapped_onto_the_next_line():
 def test_a_bare_number_rec_that_never_completes_is_dropped():
     body = "5     Advisory Vote on Say on Pay Frequency   Three     One Year     Management"
     assert parse(HEAD + meeting(body)) == []
+
+
+def test_heading_whose_frame_closes_on_the_next_line():
+    # State Street 2023 N-PX (0001193125-23-286247).
+    head = ("===================== SPDR MSCI USA Gender Diversity ETF (formerly SPDR SSGA\n"
+            "Gender Diversity Index ETF) =====================\n\n\n")
+    body = "1     Elect Director X                        For       For          Management"
+    assert {r["fund_heading"] for r in parse(head + meeting(body))} == {
+        "SPDR MSCI USA Gender Diversity ETF (formerly SPDR SSGA Gender Diversity Index ETF)"}

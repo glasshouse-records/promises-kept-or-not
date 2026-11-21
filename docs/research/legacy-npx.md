@@ -32,3 +32,8 @@
   - Invesco frames fund headings as `=Name====`, with no space.
   - Northern Funds continue a heading ending in `-` on an unframed line (the subadviser's name).
   - Frequency recommendations wrap inside their column (`Three` / `Years`). In the real documents, all 7,267 bare number words continue with "Year(s)" on the next line, so an uncompleted stub is dropped.
+- **After the format check was relaxed to the column header alone** (State Street omits the banner) and a fourth quirk was fixed (a heading frame that opens on one line and closes on the next), **the two ISS parsers agree on 10,410,212 rows over every cached document with the ISS column header, with 460 disagreements**. Two filings fail the gate and are rejected whole: 0001081400-23-000482 and 0001193125-23-221493.
+- **The remaining 2023 layouts have no validated parser yet:**
+  - ISS HTML tables, "Proposal No | Proposal | Proposed By | Management Recommendation | Vote Cast": Franklin, American Century, Capital Group, Dimensional and others.
+  - Federated's flat table.
+  - Fidelity's tables: the old `npx_legacy.py` reads these (1.1M rows), but it has no second parser yet.

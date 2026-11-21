@@ -48,6 +48,8 @@ SPONSOR_VOCAB = frozenset({"Management", "Shareholder"})
 REC_LABELS = ("Mgt Rec", "Diss Rec")
 
 _FRAME_RE = re.compile(r"^=+\s*([^=\s].*?)\s*=+\s*$")
+_OPEN_RE = re.compile(r"^=+\s*([^=\s][^=]*?)\s*$")
+_CLOSE_RE = re.compile(r"^([^=\s][^=]*?)\s*=+\s*$")
 _END_RE = re.compile(r"^=+\s*END NPX REPORT\b")
 _STAR_RE = re.compile(r"^\*+ FORM N-Px REPORT \*+\s*$")
 _DASH_RE = re.compile(r"^\s*-{40,}\s*$")
@@ -93,6 +95,12 @@ def _sections(lines: list[str]):
     while i < n:
         ln = lines[i]
         m = _FRAME_RE.match(ln)
+        # A frame that opens on this line and closes on the next ("=== Name (formerly" /
+        # "Old Name) ===") is joined into one framed line first.
+        if not m and i + 1 < n and (mo := _OPEN_RE.match(ln)) and (mc := _CLOSE_RE.match(lines[i + 1])):
+            ln = f"= {mo.group(1)} {mc.group(1)} ="
+            m = _FRAME_RE.match(ln)
+            i += 1
         if m and set(m.group(1)) != {"="}:
             parts = [m.group(1)]
             i += 1
