@@ -622,8 +622,99 @@ institutions:
           S000061714: [{key: GEODE, from: "2025-07-01"}]  # VIP Total Market Index Portfolio; SAI 0000831016-26-000031 filed 2026-04-20
         name: "Variable Insurance Products Fund II (Fidelity VIP)"
         validated: "2026-11-17"   # entity name confirmed via data.sec.gov submissions API
+      # Added 2026-11-21 (registrant sweep, docs/research/sweep.md). Every trust below files N-PX with direct equity votes (ProxyVotingTable present in the
+      # 2026-08-27 filing). Each SAI read prints only the Fidelity Proxy Voting Guidelines (FMR and affiliates FMR UK / FMR H.K. / FMR Japan as sub-advisers;
+      # "Geode" occurs only in the Board-of-Trustees boilerplate), so, like the registrants above, they carry NO adviser key: Fidelity has no key and an
+      # unlabelled line is "not on record", never a guess. SAIs read: the 485BPOS filings of 2025-07 to 2026-10 (all of each trust's 485BPOS in that window).
+      - cik: "24238"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; no Geode or outside sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/24238/000002423826000028/filing10952.htm"  # 485BPOS filed 2026-02-24
+        adviser_verified: "2026-11-21"
+        name: "Fidelity Contrafund"
+        validated: "2026-11-21"
+      - cik: "754510"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; no Geode or outside sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/754510/000075451026000231/filing13090.htm"  # 485BPOS filed 2026-09-24
+        adviser_verified: "2026-11-21"
+        name: "Fidelity Securities Fund"
+        validated: "2026-11-21"
+      - cik: "744822"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; no Geode or outside sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/744822/000074482225000238/filing10385.htm"  # 485BPOS filed 2025-12-29 (also 0000744822-25-000239, -26-000015, -26-000070)
+        adviser_verified: "2026-11-21"
+        voting_note: "0000744822-25-000239 names Geode only in portfolio-manager biographies (former employer), not as a voter."
+        name: "Fidelity Investment Trust"
+        validated: "2026-11-21"
+      - cik: "707823"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; no Geode or outside sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/707823/000070782326000023/filing10668.htm"  # 485BPOS filed 2026-01-26
+        adviser_verified: "2026-11-21"
+        name: "Fidelity Mt. Vernon Street Trust"
+        validated: "2026-11-21"
+      - cik: "320351"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; no Geode or outside sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/320351/000032035126000241/filing11583.htm"  # 485BPOS filed 2026-04-24 (ten 485BPOS 2025-09 to 2026-09 read)
+        adviser_verified: "2026-11-21"
+        name: "Fidelity Select Portfolios"
+        validated: "2026-11-21"
+      - cik: "35348"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; no Geode or outside sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/35348/000003534825000095/filing9114.htm"  # 485BPOS filed 2025-08-26 (also 0000035348-26-000119 filed 2026-08-25)
+        adviser_verified: "2026-11-21"
+        name: "Fidelity Hastings Street Trust"
+        validated: "2026-11-21"
+      - cik: "61397"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; no Geode or outside sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/61397/000006139726000080/filing11825.htm"  # 485BPOS filed 2026-05-26
+        adviser_verified: "2026-11-21"
+        name: "Fidelity Magellan Fund"
+        validated: "2026-11-21"
+      - cik: "35341"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; no Geode or outside sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/35341/000003534126000087/filing11237.htm"  # 485BPOS filed 2026-03-27
+        adviser_verified: "2026-11-21"
+        name: "Fidelity Devonshire Trust"
+        validated: "2026-11-21"
+      - cik: "275309"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; no Geode or outside sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/275309/000027530925000319/filing10387.htm"  # 485BPOS filed 2025-12-29 (also 0000275309-25-000266)
+        adviser_verified: "2026-11-21"
+        name: "Fidelity Capital Trust"
+        validated: "2026-11-21"
+      - cik: "356494"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; series are VIP Equity-Income, Growth, High Income, Overseas, Value, Floating Rate High Income and Stock Selector (no Geode series in this trust's N-PX)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/356494/000035649426000030/filing11795.htm"  # 485BPOS filed 2026-04-20; series list from the N-PX 0000356494-26-000051
+        adviser_verified: "2026-11-21"
+        voting_note: "The SAI is shared with VIP Index 500 Portfolio (Geode) and prints both the Fidelity and Geode policies without separating series, so no series is keyed; none of the seven series voted in this trust's N-PX is the Index 500 portfolio."
+        name: "Variable Insurance Products Fund (Fidelity VIP)"
+        validated: "2026-11-21"
+      - cik: "315700"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; no Geode or outside sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/315700/000031570025000133/filing9895.htm"  # 485BPOS filed 2025-09-24 (also 0000315700-25-000157, 0000315700-26-000068)
+        adviser_verified: "2026-11-21"
+        name: "Fidelity Advisor Series VII"
+        validated: "2026-11-21"
+      - cik: "720318"
+        adviser: "Fidelity Management & Research Company LLC (FMR); affiliate sub-advisers FMR UK, FMR H.K. and FMR Japan; no Geode or outside sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/720318/000072031826000055/filing11786.htm"  # 485BPOS filed 2026-04-20
+        adviser_verified: "2026-11-21"
+        name: "Variable Insurance Products Fund IV (Fidelity VIP)"
+        validated: "2026-11-21"
+      # Fidelity Commonwealth Trust: its only series in the 2026 N-PX, the Fidelity Nasdaq Composite Index ETF (S000006011), is sub-advised by Geode and every
+      # SAI read (0001379491-22-000290 filed 2022-01-25, -23-000015, -24-000028, -25-000014, -26-000014) prints Geode's proxy voting policy ALONE (no Fidelity
+      # Proxy Voting Guidelines). Earlier N-PX years may hold other series: they are not keyed.
+      - cik: "205323"
+        adviser: "Fidelity Management & Research Company LLC (FMR) is the manager; Geode Capital Management, LLC (Geode) is sub-adviser and votes the proxies of the Fidelity Nasdaq Composite Index ETF; other series not attributed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/205323/000137949122000290/filing776.htm"  # 485BPOS filed 2022-01-25 (latest: https://www.sec.gov/Archives/edgar/data/205323/000020532326000014/filing10683.htm filed 2026-01-26)
+        adviser_verified: "2026-11-21"
+        voting_note: "Series keyed GEODE: the series' own SAI proxy-voting section is Geode's voting policy (Geode retains voting responsibility), with no Fidelity Proxy Voting Guidelines. All other series are left unlabelled."
+        series_adviser:
+          S000006011: [{key: GEODE, from: "2022-01-25"}]  # Fidelity Nasdaq Composite Index ETF; SAIs 0001379491-22-000290 through 0000205323-26-000014
+        name: "Fidelity Commonwealth Trust"
+        validated: "2026-11-21"
     voting_scope_notes:
       - "Geode Capital Management votes the proxies of the Fidelity index series keyed GEODE (Concord Street Trust, Salem Street Trust, VIP Fund II), per each series' own SAI; the keyed series start 2025-07-01. Left unlabelled, not attributed: VIP Index 500 Portfolio (its SAI is shared with actively managed portfolios and prints both the Fidelity and Geode policies without separating series), Fidelity Strategic Real Return Fund (SAI prints both), and series whose own SAI could not be located (Fidelity Mid Cap Index, Small Cap Index, Large Cap Growth Index, Series Large Cap Growth Index, Flex Mid Cap Index, Flex Small Cap Index). Unlabelled Fidelity lines are not asserted to be voted by FMR."
+      - "Not ingested (left out), registrant sweep 2026-11-21: Fidelity Covington Trust (CIK 945908): its SAIs are per ETF group and mix Geode-voted index ETFs (Geode Voting Policies) with FMR-voted active ETFs (Fidelity guidelines), so it needs a per-series pass before any line is attributed; Fidelity Central Investment Portfolios LLC (CIK 1303459): privately offered central funds, no 485BPOS/SAI exists to state who votes; Fidelity Oxford Street Trust (CIK 28540): Geode is the adviser (not FMR) and its 2026 N-PX is a notice report with no votes."
     commitments:
       # Canonical current policy, verified 2026-06-26 (200, application/pdf):
       # "Full Proxy Voting Guidelines for Fidelity Funds Advised by FMRCo or FDS".
