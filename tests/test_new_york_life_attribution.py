@@ -87,9 +87,13 @@ def test_sp500_index_voter_changes_with_gaps_unresolved():
     assert _key("887340", "S000009443", "2025-06-30") == "NYLIM"
 
 
-def test_etf_trust_switches_from_indexiq_to_nylim_at_2024_08_27():
+def test_etf_trust_switches_from_indexiq_to_nylim_with_an_unresolved_gap():
+    # The SAI of 2024-08-27 names NYLIM; NYLIM's Form ADV dates the change 2024-09-12.
+    # Meetings between the two dates are not attributed (precision over recall).
     assert _key("1415995", "S000050195", "2024-08-26") == "INDEXIQ"
-    assert _key("1415995", "S000050195", "2024-08-27") == "NYLIM"
+    assert _key("1415995", "S000050195", "2024-08-27") == "UNRESOLVED"
+    assert _key("1415995", "S000050195", "2024-09-11") == "UNRESOLVED"
+    assert _key("1415995", "S000050195", "2024-09-12") == "NYLIM"
     assert _key("1415995", "S000050195", "2025-06-30") == "NYLIM"
     assert _key("1415995", "S000050195", "2021-08-29") is None              # before the first multi-fund SAI
 
