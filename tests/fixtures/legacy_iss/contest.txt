@@ -1,0 +1,81 @@
+======================= VANGUARD GNMA FUND - WELLINGTON ========================
+
+
+ILLUMINA, INC.
+
+Ticker:       ILMN           Security ID:  452327109
+Meeting Date: MAY 25, 2023   Meeting Type: Proxy Contest
+Record Date:  APR 03, 2023
+
+#     Proposal                                Mgt Rec   Vote Cast    Sponsor
+      Management Universal Proxy (White
+      Proxy Card)
+#     Proposal                                Diss Rec  Vote Cast    Sponsor
+      From the Combined List of Management &
+      Dissident Nominees - Elect 9 Directors
+1A    Elect Management Nominee Director       For       For          Management
+      Frances Arnold
+1B    Elect Management Nominee Director       For       For          Management
+      Francis A. deSouza
+1C    Elect Management Nominee Director       For       For          Management
+      Caroline D. Dorsa
+1D    Elect Management Nominee Director       For       For          Management
+      Robert S. Epstein
+1E    Elect Management Nominee Director       For       For          Management
+      Scott Gottlieb
+1F    Elect Management Nominee Director Gary  For       For          Management
+      S. Guthart
+1G    Elect Management Nominee Director       For       For          Management
+      Philip W. Schiller
+1H    Elect Management Nominee Director       For       For          Management
+      Susan E. Siegel
+1I    Elect Management Nominee Director John  For       Withhold     Management
+      W. Thompson
+1J    Elect Dissident Nominee Director        Against   Withhold     Shareholder
+      Vincent J. Intrieri
+1K    Elect Dissident Nominee Director Jesse  Against   Withhold     Shareholder
+      A. Lynn
+1L    Elect Dissident Nominee Director        Against   For          Shareholder
+      Andrew J. Teno
+2     Ratify Ernst & Young LLP as Auditors    For       For          Management
+3     Advisory Vote to Ratify Named           For       Against      Management
+      Executive Officers' Compensation
+4     Advisory Vote on Say on Pay Frequency   One Year  One Year     Management
+5     Amend Omnibus Stock Plan                For       For          Management
+#     Proposal                                Diss Rec  Vote Cast    Sponsor
+      Dissident Universal Proxy (Gold Proxy
+      Card)
+#     Proposal                                Diss Rec  Vote Cast    Sponsor
+      From the Combined List of Management &
+      Dissident Nominees - Elect 9 Directors
+1.1   Elect Dissident Nominee Director        For       Did Not Vote Shareholder
+      Vincent J. Intrieri
+1.2   Elect Dissident Nominee Director Jesse  For       Did Not Vote Shareholder
+      A. Lynn
+1.3   Elect Dissident Nominee Director        For       Did Not Vote Shareholder
+      Andrew J. Teno
+1.4   Elect Management Nominee Director       None      Did Not Vote Management
+      Frances Arnold
+1.5   Elect Management Nominee Director       None      Did Not Vote Management
+      Caroline D. Dorsa
+1.6   Elect Management Nominee Director       None      Did Not Vote Management
+      Scott Gottlieb
+1.7   Elect Management Nominee Director Gary  None      Did Not Vote Management
+      S. Guthart
+1.8   Elect Management Nominee Director       None      Did Not Vote Management
+      Philip W. Schiller
+1.9   Elect Management Nominee Director       None      Did Not Vote Management
+      Susan E. Siegel
+1.10  Elect Management Nominee Director       Against   Did Not Vote Management
+      Francis A. deSouza
+1.11  Elect Management Nominee Director       Against   Did Not Vote Management
+      Robert S. Epstein
+1.12  Elect Management Nominee Director John  Against   Did Not Vote Management
+      W. Thompson
+2     Ratify Ernst & Young LLP as Auditors    For       Did Not Vote Management
+3     Advisory Vote to Ratify Named           Against   Did Not Vote Management
+      Executive Officers' Compensation
+4     Advisory Vote on Say on Pay Frequency   One Year  Did Not Vote Management
+5     Amend Omnibus Stock Plan                None      Did Not Vote Management
+
+
