@@ -25,6 +25,7 @@ from pathlib import Path
 from lxml import etree
 
 from .. import http, ledger
+from . import legacy_pe
 from .edgar import Filing, filing_directory, list_filings
 
 logger = logging.getLogger(__name__)
@@ -191,6 +192,7 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                max_filings: int | None = None,
                max_tables: int | None = None,
                legacy: bool = False,
+               legacy_proxyedge: bool = False,
                reingest: set[str] | None = None,
                reingest_reason: str = "") -> dict:
     """Ingest N-PX filings for a CIK into the evidence ledger.
@@ -203,6 +205,11 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
     skipping. Those votes are tagged vote_source='legacy_html' and the filing
     report_type is 'LEGACY_PARSED', so they stay out of the public release
     until validated. Default (False) preserves the safe skip behavior.
+
+    legacy_proxyedge=True (opt-in): for period-2023-06-30 filings with no cover, parse the
+    Broadridge ProxyEdge text with two independent parsers and keep only agreed rows
+    (see legacy_pe); filings that fail the agreement gate are recorded as
+    LEGACY_PROXYEDGE_REJECTED and insert no votes.
     """
     today = date.today().isoformat()
     stats = {"filings": 0, "skipped": 0, "notices": 0, "votes": 0, "failed": 0}
@@ -216,7 +223,8 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
         ).fetchone()
         replace = False
         if exists and (filing.accession_number in reingest if reingest else exists[1]):
-            if exists[0] in ("LEGACY_NO_COVER", "LEGACY_PARSED"):
+            if exists[0] in ("LEGACY_NO_COVER", "LEGACY_PARSED",
+                             "LEGACY_PROXYEDGE", "LEGACY_PROXYEDGE_REJECTED"):
                 stats["skipped"] += 1          # legacy filings are not replaced here
                 continue
             replace = True
@@ -225,7 +233,7 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
         if exists and not replace:
             # legacy mode may upgrade a filing previously skipped as
             # LEGACY_NO_COVER (no votes attached) — reprocess it. Otherwise skip.
-            if legacy and exists[0] == "LEGACY_NO_COVER":
+            if (legacy or legacy_proxyedge) and exists[0] == "LEGACY_NO_COVER":
                 conn.execute("DELETE FROM filings WHERE accession = ?",
                              (filing.accession_number,))
                 conn.commit()
@@ -254,6 +262,21 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                 logger.warning("cover 404 while replacing %s — kept as is",
                                filing.accession_number)
                 stats["skipped"] += 1
+                continue
+            if legacy_proxyedge:
+                if not legacy_pe.is_candidate(filing):
+                    stats["skipped"] += 1
+                    continue
+                try:
+                    n = legacy_pe.ingest_filing_from_sources(
+                        conn, filing, institution_id, today)
+                except Exception as exc:        # network or parse: retry next run
+                    logger.warning("legacy ProxyEdge %s failed (%s) — not recorded",
+                                   filing.accession_number, exc)
+                    stats["failed"] += 1
+                    continue
+                stats["votes"] += n
+                stats["filings"] += 1
                 continue
             if legacy:
                 n = _ingest_legacy_filing(conn, filing, institution_id, today, stats)

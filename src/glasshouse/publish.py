@@ -18,19 +18,21 @@ import contextlib
 import sqlite3
 from pathlib import Path
 
+from .ledger import NON_LEGACY_VOTE_SQL
+
 # Table → WHERE clause (empty = whole table). Anything NOT listed here is
 # operator-internal and never leaves the working ledger.
 PUBLIC_TABLES: dict[str, str] = {
     "institutions": "",
     "filings": "",
     "fund_series": "",
-    # legacy_html votes are pre-2024 HTML-parsed and not yet validated — they
-    # stay out of the public release until promoted (precision over recall).
+    # legacy votes (legacy_html, ProxyEdge legacy_format) are pre-2024 parsed and not yet
+    # validated — they stay out of the public release until promoted (precision over recall).
     # IFNULL: structured votes may have NULL/'' vote_source and must stay in.
     # how_voted != '' drops administrative N-PX rows (postal-meeting notices,
     # no-vote records) that aren't actual votes — a "proxy votes" table should
     # only contain cast votes.
-    "votes": "WHERE is_duplicate = 0 AND IFNULL(vote_source,'') != 'legacy_html' "
+    "votes": f"WHERE is_duplicate = 0 AND {NON_LEGACY_VOTE_SQL} "
              "AND IFNULL(how_voted,'') != ''",
     "holdings": "",
     "enforcement_actions": "WHERE is_duplicate = 0",
@@ -47,7 +49,13 @@ OPERATOR_ONLY = ("triage", "llm_log", "outreach", "signals", "match_log", "runs"
 # Columns dropped from otherwise-public tables: operator-internal artifacts that
 # are useless to consumers and leak local structure (content_path is the
 # maintainer's local cache path for a commitment doc).
-PUBLIC_DROP_COLS: dict[str, set[str]] = {"commitments": {"content_path"}}
+# votes: legacy_format / for_against_management exist only on quarantined legacy rows (which
+# never ship), so the columns stay out of the release until those rows are promoted and the
+# columns documented.
+PUBLIC_DROP_COLS: dict[str, set[str]] = {
+    "commitments": {"content_path"},
+    "votes": {"legacy_format", "for_against_management"},
+}
 
 
 def public_columns(conn: sqlite3.Connection, table: str) -> list[str]:
