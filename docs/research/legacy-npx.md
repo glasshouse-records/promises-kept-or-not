@@ -37,3 +37,7 @@
   - ISS HTML tables, "Proposal No | Proposal | Proposed By | Management Recommendation | Vote Cast": Franklin, American Century, Capital Group, Dimensional and others.
   - Federated's flat table.
   - Fidelity's tables: the old `npx_legacy.py` reads these (1.1M rows), but it has no second parser yet.
+- **ISS HTML tables** ("Proposal No | Proposal | Proposed By | Management/Dissident Recommendation | Vote Cast"): two independent parsers (`legacy_isshtml_dom` uses html.parser; `legacy_isshtml_lines` uses a regex tokenizer) agree on **all 2,273,214 rows over 61 cached documents, with 0 disagreements**. Four random rows were checked against the raw HTML and matched.
+  - Contract amendment 1 accepts upper-case FOR/AGAINST/ABSTAIN/WITHHOLD.
+  - Lower-case values, bare digits, "Unknown", "Againt", "Took No Action" and "Non-Voting" are dropped.
+  - Fidelity's HTML prefixes fund names with "VOTE SUMMARY REPORT", so those sections stay unmapped (dropped). Fidelity is read by the older `npx_legacy` parser, which has no second parser yet.
