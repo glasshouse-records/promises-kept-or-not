@@ -770,13 +770,88 @@ institutions:
         voting_note: "SAI: the Board delegates proxy voting to the Adviser or Sub-Adviser, as applicable, each voting under its own policies (SAI Appendix A); not confirmed that they are identical to the archived global policy."
         name: "Invesco Actively Managed Exchange-Traded Fund Trust"
         validated: "2026-06-17"
+      - cik: "1209466"
+        adviser: "Invesco Capital Management LLC (investment adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1209466/000110465922094459/tm2222516d2_485bpos.htm"  # 485BPOS filed 2022-08-25
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI (485BPOS filed 2022-08-25, same text in 2026-08-27, 0001104659-26-102475): 'The Board has delegated responsibility for decisions regarding proxy voting for securities each Fund holds to the Adviser' (Invesco Capital Management LLC), voting under Appendix A, Invesco's Policy Statement on Global Corporate Governance and Proxy Voting. No sub-adviser voter named."
+        adviser_key_history: [{key: INVESCO, from: "2022-08-25"}]
+        name: "Invesco Exchange-Traded Fund Trust"
+        validated: "2026-11-21"   # N-PX with equity votes confirmed (2026 filing); name from data.sec.gov submissions
+      - cik: "1112996"
+        adviser: "Invesco Advisers, Inc. (investment adviser; named affiliates sub-advise some series)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1112996/000110465922127376/tm2228719d1_485bpos.htm"  # 485BPOS filed 2022-12-15
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI (485BPOS filed 2022-12-15): 'Invesco has adopted its own specific Proxy Voting Policies. The Board has delegated responsibility ... to the following Adviser/Sub-Adviser(s)'; the table names only Invesco Advisers, Inc. alone or with Invesco affiliates (Invesco Capital Management LLC, Invesco Asset Management Limited, Invesco Senior Secured Management, Inc.), all under Appendix E, the global policy ('The Adviser and each sub-adviser rely on this policy')."
+        adviser_key_history: [{key: INVESCO, from: "2022-12-15"}]
+        name: "AIM Counselor Series Trust (Invesco Counselor Series Trust)"
+        validated: "2026-11-21"   # N-PX with equity votes confirmed (2026 filing); name from data.sec.gov submissions
+      - cik: "725781"
+        adviser: "Invesco Advisers, Inc. (investment adviser; named affiliates sub-advise some series)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/725781/000110465922094275/tm2222512d1_485bpos.htm"  # 485BPOS filed 2022-08-25
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI (485BPOS filed 2022-08-25; same table in 2026-08-27, 0001104659-26-102323): every fund is voted by Invesco Advisers, Inc. under Appendix E, the global policy."
+        adviser_key_history: [{key: INVESCO, from: "2022-08-25"}]
+        name: "AIM Sector Funds (Invesco Sector Funds)"
+        validated: "2026-11-21"   # N-PX with equity votes confirmed (2026 filing); name from data.sec.gov submissions
+      - cik: "105377"
+        adviser: "Invesco Advisers, Inc. (investment adviser; named affiliates sub-advise some series)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/105377/000119312522054359/d297648d485bpos.htm"  # 485BPOS filed 2022-02-25
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI (485BPOS filed 2022-02-25; same table in 2026-02-27, 0001104659-26-020668): every fund is voted by Invesco Advisers, Inc. under Appendix E, the global policy."
+        adviser_key_history: [{key: INVESCO, from: "2022-02-25"}]
+        name: "AIM Equity Funds (Invesco Equity Funds)"
+        validated: "2026-11-21"   # N-PX with equity votes confirmed (2026 filing); name from data.sec.gov submissions
+      - cik: "880859"
+        adviser: "Invesco Advisers, Inc. (investment adviser; named affiliates sub-advise some series)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/880859/000119312522054471/d160409d485bpos.htm"  # 485BPOS filed 2022-02-25
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI (485BPOS filed 2022-02-25; 2026-02-27, 0001104659-26-020722): every fund is voted by Invesco Advisers, Inc., two jointly with Invesco Asset Management Limited (Invesco affiliate), under Appendix E, the global policy. Invesco Asset Management (Japan) Limited has additional local guidelines but is not named as a voter."
+        adviser_key_history: [{key: INVESCO, from: "2022-02-25"}]
+        name: "AIM International Mutual Funds (Invesco International Mutual Funds)"
+        validated: "2026-11-21"   # N-PX with equity votes confirmed (2026 filing); name from data.sec.gov submissions
+      - cik: "896435"
+        adviser: "Invesco Advisers, Inc. (investment adviser; named affiliates sub-advise some series)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/896435/000110465922052370/tm2210812d1_485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI (485BPOS filed 2022-04-28; 2026-04-29, 0001104659-26-051290): every fund is voted by Invesco Advisers, Inc., some jointly with Invesco affiliates (Invesco Asset Management Limited, Invesco Canada Ltd., Invesco Capital Management LLC), under Appendix E, the global policy."
+        adviser_key_history: [{key: INVESCO, from: "2022-04-28"}]
+        name: "AIM Variable Insurance Funds (Invesco Variable Insurance Funds)"
+        validated: "2026-11-21"   # N-PX with equity votes confirmed (2026 filing); name from data.sec.gov submissions
+      - cik: "1378872"
+        adviser: "Invesco Capital Management LLC (investment adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1378872/000119312522053609/d249249d485bpos.htm"  # 485BPOS filed 2022-02-25
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI (485BPOS filed 2022-02-25; 2025-02-27, 0001104659-25-018336): 'The Board has delegated responsibility for decisions regarding proxy voting for securities each Fund holds to the Adviser' (Invesco Capital Management LLC), voting under Appendix A, the global policy."
+        adviser_key_history: [{key: INVESCO, from: "2022-02-25"}]
+        name: "Invesco Exchange-Traded Fund Trust II"
+        validated: "2026-11-21"   # N-PX with equity votes confirmed (2026 filing); name from data.sec.gov submissions
+      - cik: "202032"
+        adviser: "Invesco Advisers, Inc. (investment adviser; named affiliates sub-advise some series)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/202032/000110465922052267/tm2210810d1_485bpos.htm"  # 485BPOS filed 2022-04-28
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI (485BPOS filed 2022-04-28; 2026-04-29, 0001104659-26-051285): every fund is voted by Invesco Advisers, Inc. under Appendix E, the global policy. Fund-of-funds series vote only underlying Invesco funds; the other series hold equities."
+        adviser_key_history: [{key: INVESCO, from: "2022-04-28"}]
+        name: "AIM Growth Series (Invesco Growth Series)"
+        validated: "2026-11-21"   # N-PX with equity votes confirmed (2026 filing); name from data.sec.gov submissions
+      - cik: "1657201"
+        adviser: "Invesco Capital Management LLC (investment adviser)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1657201/000110465922097090/tm2224674d3_485bpos.htm"  # 485BPOS filed 2022-09-01
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI (485BPOS filed 2022-09-01; 2026-09-08, 0001104659-26-105904): 'The Board has delegated responsibility for decisions regarding proxy voting for securities the Fund holds to the Adviser' (Invesco Capital Management LLC), voting under Appendix A, the global policy."
+        adviser_key_history: [{key: INVESCO, from: "2022-09-01"}]
+        name: "Invesco Exchange-Traded Self-Indexed Fund Trust"
+        validated: "2026-11-21"   # N-PX with equity votes confirmed (2026 filing); name from data.sec.gov submissions
     voting_scope_notes:
       - "The SAI says the Board delegated proxy voting to the Adviser or Sub-Adviser, as applicable, each voting under its own policies in SAI Appendix A (https://www.sec.gov/Archives/edgar/data/1418144/000110465926119957/tm2628303d1_485bpos.htm); it was not verified that those policies match the archived Invesco global policy."
-      - "Invesco Actively Managed Exchange-Traded Fund Trust is the only Invesco registrant on file; Invesco's other fund trusts are not covered."
+      - "Added 2026-11-21 (sweep): nine more registrants, keyed INVESCO from the filing date of the earliest SAI read (2022 or later); earlier meetings stay unlabelled. Every SAI says the Board delegated voting to the Adviser (Invesco Advisers, Inc. for the mutual fund trusts, Invesco Capital Management LLC for the ETF trusts) under Invesco's Global Corporate Governance and Proxy Voting policy; sub-advisers named in the fund tables are Invesco affiliates relying on the same policy."
+      - "Not ingested (left out): Invesco QQQ Trust, Series 1 (CIK 1067839) is a unit investment trust that does file N-PX (2026-08-20, 0001193125-26-358231) but the party that votes its portfolio was not established, so it is not added. Invesco's other registrants (closed-end funds, other trusts) are not covered. Invesco Actively Managed Exchange-Traded Fund Trust (1418144) predates the sweep and stays unlabelled."
     commitments:
       # Canonical, archivable policy doc (verified 2026-06-17: 200, application/pdf).
       - label: global-corporate-governance-proxy-voting-policy
         url: "https://www.invesco.com/content/dam/invesco/corporate/en/pdfs/regulatory/global-proxy-voting-policy.pdf"
+        adviser: "Invesco Ltd. and its investment adviser subsidiaries (global policy)"
+        adviser_key: "INVESCO"
 
   schwab:
     display_name: "Charles Schwab Trust Company"
