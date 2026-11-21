@@ -5978,3 +5978,108 @@ institutions:
             - "NYLIM Balanced (fixed-income portion)"
           strip_patterns:
             - '(?<=[A-Za-z.,"”’)]) \d{3}(?= [A-Za-z“"''])'
+  gqg:
+    display_name: "GQG Partners"
+    short_name: "GQG Partners"
+    cik: "0001697233"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "GQG Partners LLC, Fort Lauderdale FL (CIK 1697233, the 13-F filer and the investment adviser of the GQG Partners funds; parent GQG Partners Inc. is listed on the ASX). Its US mutual funds and its ETF are series of The Advisors' Inner Circle Fund III (CIK 1593547), a SHARED multi-adviser series trust (Brown Advisory, ARGA, KBI Global Investors, MetLife/PineBridge, Strategas and others file under the same CIK), so this entry carries NO registrant-wide key: only GQG's seven series are keyed, one by one by series id, and every other series of the trust stays unlabelled. Ingested: The Advisors' Inner Circle Fund III (1593547); N-PX of 2024-2026 are FUND VOTING REPORTs and the GQG series carry operating-company votes (EM equity, US and global quality equity, quality value funds, US equity ETF). Every SAI says the Board 'has delegated the responsibility for decisions regarding proxy voting for securities held by the Fund(s) to the Adviser' and the Adviser votes under its own policy, printed in Appendix B. Left out: GQG Partners LLC's own institutional-manager N-PX (CIK 1697233, its separate-account votes overlap the fund tables) and GQG Global ETF (ticker GQGG, S000111353, listed 2026-11-17: no N-PX exists yet; add a rule when it files)."
+    npx_ciks:
+      # Added 2026-11-21. One registrant, series-keyed. Series with no rule belong to other advisers of the shared trust.
+      # GQG series (N-PX 2025, accession 0001135428-25-000160, lists the first six; the 2026 N-PX, 0001135428-26-000212, adds the ETF): S000056013 GQG Partners Emerging Markets Equity Fund, S000063192 US Select Quality Equity Fund, S000065108 Global Quality Equity Fund, S000072427 Global Quality Value Fund, S000072428 International Quality Value Fund, S000072429 US Quality Value Fund (these three were named '... Quality Dividend Income Fund' in the 2021 SAI), S000093212 GQG US Equity ETF. Series names read from the series headings of the 485BPOS filed 2026-07-29 (0001398344-26-013063).
+      - cik: "1593547"
+        adviser: "GQG Partners LLC (the Adviser) votes under its own proxy voting policy; shared multi-adviser trust, so only GQG's series are keyed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1593547/000139834421022453/fp0070376_485bpos-ixbrl.htm"  # 485BPOS (SAI) filed 2021-11-24 (0001398344-21-022453), 'PROXY VOTING': Board delegated to the Adviser
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting': 'The Board has delegated the responsibility for decisions regarding proxy voting for securities held by the Fund(s) to the Adviser. The Adviser will vote such proxies in accordance with its proxy voting policies and procedures, which are included in Appendix B to this SAI.' Appendix B is 'GQG Partners [LLC] Proxy Voting Policies and Procedures' (GQG's own compliance-manual policy; ISS is voting agent only). Earliest SAI read per series (filing dates): Emerging Markets Equity, US Select Quality Equity and Global Quality Equity funds 2021-11-24 (0001398344-21-022453); the three quality value funds (then Quality Dividend Income funds) 2021-06-30 (0001398344-21-013690); GQG US Equity ETF 2025-07-09 (497, 0001398344-25-012944). Same wording re-read in 2022-07-29, 2023-07-28, 2024-07-29, 2025-07-29 and 2026-07-29. No sub-adviser is named for any GQG series. Earlier meetings stay unlabelled."
+        series_adviser:
+          S000056013: [{key: GQG, from: "2021-11-24"}]   # GQG Partners Emerging Markets Equity Fund
+          S000063192: [{key: GQG, from: "2021-11-24"}]   # GQG Partners US Select Quality Equity Fund
+          S000065108: [{key: GQG, from: "2021-11-24"}]   # GQG Partners Global Quality Equity Fund
+          S000072427: [{key: GQG, from: "2021-06-30"}]   # GQG Partners Global Quality Value Fund (formerly Global Quality Dividend Income Fund)
+          S000072428: [{key: GQG, from: "2021-06-30"}]   # GQG Partners International Quality Value Fund (formerly International Quality Dividend Income Fund)
+          S000072429: [{key: GQG, from: "2021-06-30"}]   # GQG Partners US Quality Value Fund (formerly US Quality Dividend Income Fund)
+          S000093212: [{key: GQG, from: "2025-07-09"}]   # GQG US Equity ETF (first N-PX 2026)
+        name: "Advisors' Inner Circle Fund III"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed GQG per SERIES from the EDGAR filing date of the earliest SAI read (2021 or later) that covers the series; earlier meetings stay unlabelled. The Advisors' Inner Circle Fund III is a shared trust: no registrant-wide key exists, and series of other advisers (Brown Advisory, ARGA, KBI, MetLife/PineBridge, Strategas and others) must never be labelled GQG."
+      - "Not ingested (left out): GQG Partners LLC's institutional-manager N-PX (1697233) and the GQG Global ETF (S000111353) until it files an N-PX; the legacy-text N-PX of 2021-2023 are not ingested without --legacy. The 2024-12-10 SAI (0001398344-24-023095) ends without a following heading, so it records nothing."
+      - "Policy text: only the SAI-printed Appendix B is archived. gqg.com and investors.gqg.com publish no standalone proxy voting policy (the ESG page links only a Form CRS and a privacy notice; the 2023 ESG Stewardship Report is a stewardship report, not the policy, and an 'ESG & Stewardship Policy' mentioned in GQG's UN PRI report was not found online), so there is no website commitment."
+    commitments:
+      # Appendix B as printed in the SAI (485BPOS), dated by EDGAR filing date. Editions expected: 2021-06-30 (Dividend Income funds SAI), 2021-11-24, 2022-07-29 ('May 18, 2022'), 2023-07-28, 2024-07-29, 2024-12-09 (Proxy Policy rewrite, Voting Agent), 2026-07-29, 2026-11-13 ('GQG Partners LLC Proxy Voting Policy', 'Revised: September 1, 2026'); about eight versions. The policy sits in several SAIs of the trust; the start heading is GQG-specific. Bullet glyphs differ between the Fund and ETF copies of one filing and are stripped; page furniture 'B- 3' is printed mid-text.
+      - label: gqg-proxy-voting-policy-as-printed-in-sai
+        adviser: "GQG Partners LLC"
+        adviser_key: "GQG"
+        sai_appendix:
+          cik: "0001593547"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "GQG Partners LLC Investment Advisory Compliance Manual Proxy Voting A. Background"
+            - "GQG Partners LLC Investment Advisory Compliance Manual May 18, 2022 Proxy Voting A. Background"
+            - "GQG Partners Proxy Voting Policies and Procedures PROXY VOTING A. Background"
+            - "GQG Partners LLC Proxy Voting Policy A. Background"
+          end:
+            - "PROSPECTUS"
+            - "STATEMENT OF ADDITIONAL INFORMATION"
+            - "PART C"
+            - "APPENDIX C"
+            - "Inner Circle Fund III"
+          allow_identical_copies: true
+          strip_page_numbers: true
+          strip_patterns:
+            - '(?<![A-Za-z])B-\s?\d{1,2}(?![\d-])'
+            - '[•·◦]'
+  gmo:
+    display_name: "GMO (Grantham, Mayo, Van Otterloo & Co.)"
+    short_name: "GMO"
+    cik: "0001070039"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Grantham, Mayo, Van Otterloo & Co. LLC ('GMO LLC'), Boston MA (CIK 1070039, its EDGAR entity: it has only Investment Company Act filings under this CIK, so no 13-F rows are expected from it), the investment adviser of GMO Trust. GMO Trust (CIK 772129) is a single-adviser series trust: the equity, fixed-income, multi-asset (asset-allocation, fund-of-funds), alternative and implementation funds are all series of it, and its 2026 N-PX is an all-series FUND VOTING REPORT (rptIncludeAllSeriesFlag) whose vote table names 26 series by series id, mostly operating-company votes (the asset-allocation series report only 12-72 rows, votes on other GMO funds). Every GMO Trust SAI says 'The Trust has adopted a proxy voting policy under which responsibility to vote proxies related to its portfolio securities has been delegated to GMO' and prints the Trust's policy and GMO's own proxy voting policies and procedures in Appendix C; there is no sub-adviser voting any series. Ingested: GMO Trust (772129). Left out: no other GMO N-PX registrant was found (GMO's non-US and private funds are not N-PX filers); GMO LLC's own institutional-manager N-PX, if any, would overlap the fund tables and is not on file under 1070039."
+    npx_ciks:
+      # Added 2026-11-21. One registrant, GMO as voter for every series from the earliest SAI read (2021-06-30).
+      - cik: "772129"
+        adviser: "Grantham, Mayo, Van Otterloo & Co. LLC (GMO, the adviser) votes under its own proxy voting policies and procedures; the Board delegated voting to GMO"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/772129/000110465921087419/tm2114268-4_485bpos.htm"  # 485BPOS (SAI) filed 2021-06-30 (0001104659-21-087419), 'PROXY VOTING POLICIES AND PROCEDURES' and Appendix C
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Trust has adopted a proxy voting policy under which responsibility to vote proxies related to its portfolio securities has been delegated to GMO ... The Board of Trustees of the Trust has reviewed and approved the proxy voting policies and procedures GMO follows when voting proxies on behalf of the Funds. The Trust's proxy voting policy and GMO's proxy voting policies and procedures are attached to this SAI as Appendix C.' Earliest SAI read 2021-06-30 (0001104659-21-087419; no GMO Trust 485BPOS between 2021-01-01 and 2021-06-29); same paragraph re-read 2022-06-30 (0001104659-22-076205), 2023-06-30 (0001193125-23-180141), 2024-06-28 (0001193125-24-171659), 2025-06-30 (0001193125-25-152295) and 2026-06-30 (0001193125-26-290521). Exception stated in every SAI: Emerging Country Debt Shares Fund (S000068930, a 'Feeder Fund' of Emerging Country Debt Fund): GMO either seeks instructions from the feeder's holders or votes the underlying fund's shares in proportion with its other holders, which is not GMO's own policy, so that series is UNRESOLVED (it has no operating-company votes in the 2026 N-PX). N-PX evidence: 0001072613-26-000703 (period 2026-06-30, all series), 0001072613-25-000664 (2025), 0001104659-24-093119 (2024)."
+        adviser_key_history: [{key: GMO, from: "2021-06-30"}]
+        series_adviser:
+          S000068930: [{key: UNRESOLVED, from: "2021-06-30"}]   # Emerging Country Debt Shares Fund (feeder fund; pass-through voting)
+        name: "GMO TRUST"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed GMO for the whole trust from the EDGAR filing date of the earliest SAI read (2021-06-30); earlier meetings stay unlabelled. GMO votes under its own policy (ISS or another proxy advisory firm is a service provider only). The asset-allocation / fund-of-funds series are keyed GMO as well: GMO votes them under the same policy, and their few rows are votes on other GMO funds."
+      - "Not ingested (left out): the legacy-text N-PX of 2022-2023 (not ingested without --legacy). The SAI filed 2022-09-20 (0001104659-22-101512) answered 502 to the honest client and was not read; it is not needed for the dating."
+      - "Policy text: GMO's own policy PDF on gmo.com (live, 'Last Revision: June 18, 2026') plus the same policy as printed in Appendix C of the SAI, whose editions are April 8 2020, January 10 2022 and February 24 2025 (and later minor re-issues). The Trust's own short 'Statement of Policy' (Appendix C, first part) is not captured: it only delegates to GMO."
+    commitments:
+      # GMO LLC's policy on gmo.com. 200 application/pdf, last-modified 2026-06-22; linked from https://www.gmo.com/americas/esg-investing/stewardship. The older path .../esg-investing/proxy-voting_gmollc.pdf still answers 200 (last-modified 2025-03-28) with the 'Last Revision: February 24, 2025' edition, so it is kept as a former URL of the same label.
+      - label: gmo-proxy-voting-policy
+        url: "https://www.gmo.com/globalassets/documents---manually-loaded/documents/legal/proxy-voting---gmo.pdf"
+        adviser: "Grantham, Mayo, Van Otterloo & Co. LLC"
+        adviser_key: "GMO"
+        former_urls:
+          - "https://www.gmo.com/globalassets/documents---manually-loaded/documents/esg-investing/proxy-voting_gmollc.pdf"
+      # GMO's policy as printed in Appendix C of the SAI (485BPOS), dated by EDGAR filing date: from 'Proxy Voting Policies and Procedures Adoption: June 15, 2007' (2021 SAI) or 'Proxy Voting Policy Adoption: August 6, 2003' (2022 on) to 'Appendix D Portfolio Holdings Disclosure Policy'. The Trust's own Statement of Policy (September 16, 2003) precedes it and is excluded. Editions expected: 2021-06-30 (April 8 2020), 2022-06-30 (January 10 2022), 2023-06-30 and 2024-06-28 (small re-issues), 2025-06-30 (February 24 2025), 2026-06-30; about six versions. The 485BPOS of 2026-09-29 (0001104659-26-111993) ends the section differently and records nothing.
+      - label: gmo-proxy-voting-policy-as-printed-in-sai
+        adviser: "Grantham, Mayo, Van Otterloo & Co. LLC"
+        adviser_key: "GMO"
+        sai_appendix:
+          cik: "0000772129"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "Proxy Voting Policies and Procedures Adoption: June 15, 2007"
+            - "Proxy Voting Policy Adoption: August 6, 2003"
+          end:
+            - "Appendix D Portfolio Holdings Disclosure Policy"
+            - "Appendix D"
+          allow_identical_copies: true
+          strip_page_numbers: true
+          strip_patterns:
+            - '(?<![A-Za-z])C-\s?\d{1,2}(?![\d-])'
