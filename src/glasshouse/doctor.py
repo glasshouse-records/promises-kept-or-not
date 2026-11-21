@@ -63,6 +63,10 @@ def apply_access(doc: dict, ok: bool, detail: str, severity: str) -> tuple[bool,
     if not ok and acc.get("status") == "blocked":
         return True, (f"blocked, documented ({acc.get('reason', '')}; checked "
                       f"{acc.get('checked', '')}): {detail}")
+    # `gone` is for a definitive signal only (404 on the canonical URL): a 403/429/timeout is never excused by it.
+    if not ok and acc.get("status") == "gone" and " 404 " in f" {detail} ":
+        return True, (f"gone, documented ({acc.get('reason', '')}; checked "
+                      f"{acc.get('checked', '')}); archived versions kept: {detail}")
     return ok, detail
 
 

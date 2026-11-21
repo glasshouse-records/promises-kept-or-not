@@ -809,6 +809,26 @@ SAIs (1 version, unchanged 2021-2026) and the short form on proshares.com and pr
 from the Wayback Machine back to 2022); ISS's own guidelines are not archived. Ingested N-PX 2024-26: 1,000,718 non-duplicate
 votes (13,687 marked, exact repeats inside an exhibit). Not ingested: Access One Trust and the legacy-HTML N-PX before 2024.
 
+New York Life Investments (added 2026-11-21): six open-end and closed-end registrants file N-PX vote tables with
+operating-company votes (NYLIM Funds, NYLIM Funds Trust, NYLIM VP Funds Trust, NYLIM ETF Trust, NYLIM Active ETF Trust,
+NYLIM CBRE Global Infrastructure Megatrends Term Fund; formerly MainStay and IndexIQ). Multi-policy keying: the SAIs say the
+Board delegated all voting to the Manager, which "has adopted its own Proxy Voting Policies and Procedures" and "may
+delegate proxy voting authority to the Subadvisor", and then name, fund by fund, who it delegated to and which funds it
+retained. There is therefore no registrant-wide voter and each series is keyed by the voter the SAI names, from the EDGAR
+filing date of the first SAI that names it: `NYLIM` (the Manager and the funds it retained, including the fund-of-funds
+allocation series whose votes are on registered funds), the affiliates that vote under their own policy (`MACKAY_SHIELDS`,
+`NYL_INVESTORS`, `CANDRIAM`, `INDEXIQ`, `AUSBIL`), and `EXTERNAL` for unaffiliated sub-advisers (Epoch, Winslow, Wellington,
+CBRE, Cushing, Fiera, PineStone and others). Affiliation comes from Form N-CEN (`isSubAdviserAffiliated`), never a date.
+Anything the SAI does not settle is `UNRESOLVED`: series with several voters in one vote table (Income Builder, Balanced),
+series never named (WMC Value, WMC Small Companies) and the days between two SAIs when the voter changes (S&P 500 Index,
+Hedge Multi-Strategy, ESG Multi-Asset). The ETF Trust has one voter, the Advisor: `INDEXIQ` until 2024-08-26, `NYLIM` from
+the SAI of 2024-08-27 (NYLIM's own ADV dates the merger 2024-09-12, so about two weeks of meetings may carry `NYLIM`).
+Policy text: NYLIM's, NYL Investors' and IndexIQ's own PDFs (IndexIQ's now answers 404 and is Wayback only; honest clients
+get 200 for the others), the Manager's guidelines as printed in the Funds, Trust and VP SAIs (3, 4 and 3 versions; wording
+differences that are only typography are declared reprints) and the MacKay Shields summary printed in the SAIs (1 version).
+ISS's own guidelines are never archived as the manager's. Not ingested: the MacKay muni closed-end funds, NYLIM's and
+IndexIQ Advisors' institutional-manager N-PX and the legacy-HTML N-PX before 2024.
+
 ## Say-vs-do analysis (legacy line-level engine)
 
 The engine connects each institution's **commitment (SAY)** to its **voting

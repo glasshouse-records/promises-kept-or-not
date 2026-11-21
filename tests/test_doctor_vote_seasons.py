@@ -68,3 +68,15 @@ def test_blocked_access_label_is_info_not_error():
     assert ok and "blocked" in detail and "429 challenge" in detail
     assert doctor.apply_access({"label": "y"}, False, "capture FAILED", "error") == (
         False, "capture FAILED")
+
+
+def test_gone_label_is_info_only_when_documented_and_never_called_blocked():
+    # A 404 on the canonical URL is a definitive signal (the publisher removed it); the Wayback versions stay.
+    doc = {"label": "x", "access": {"status": "gone", "reason": "canonical URL answers 404",
+                                    "checked": "2026-11-21"}}
+    ok, detail = doctor.apply_access(doc, False, "capture FAILED (fetch failed: 404 Client Error)", "error")
+    assert ok and "gone" in detail and "404" in detail and "blocked" not in detail
+    # an undocumented failure stays an error
+    assert doctor.apply_access({"label": "y"}, False, "capture FAILED (404)", "error")[0] is False
+    # a transient error is never excused by `gone`
+    assert doctor.apply_access(doc, False, "capture FAILED (fetch failed: 403 Client Error)", "error")[0] is False

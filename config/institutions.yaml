@@ -5869,6 +5869,7 @@ institutions:
         url: "https://www.newyorklifeinvestments.com/assets/documents/proxies/indexiq-proxy-voting-procedures.pdf"
         adviser: "IndexIQ Advisors LLC"
         adviser_key: "INDEXIQ"
+        access: {status: gone, reason: "canonical URL answers 404 (IndexIQ Advisors was merged into NYLIM 2024-09-12); Wayback versions kept", checked: "2026-11-21"}
       # The Manager's own text as printed in the SAI: from 'PROXY VOTING POLICIES AND PROCEDURES It is the policy of the ...' to the start of the subadviser summaries. One label per trust (Funds / Portfolios wording). The list of funds the Manager retained is removed (it changes every year), and standalone 3-digit page numbers printed inside the text. Verified on 7 SAIs of 787441, 34 of 1469192 and 7 of 887340 (start unique, end found in every full SAI; the three 2021-03-22 / 2021-03-29 prospectus filings without the section return nothing).
       - label: nylim-proxy-voting-policy-as-printed-in-sai-funds
         adviser: "New York Life Investment Management LLC"
@@ -5881,9 +5882,19 @@ institutions:
             - "PROXY VOTING POLICIES AND PROCEDURES It is the policy of the"
           end:
             - "Subadvisor Proxy Voting Guidelines."
+          strip_page_numbers: true
           strip_patterns:
             - 'The Manager has retained voting authority for [^.]*\.'
-            - '(?<=[A-Za-z.,"”’)]) \d{3}(?= [A-Za-z“"''])'
+            - '(?<=[A-Za-z.,"”’)]) \d{2,3}(?= [A-Za-z“"''·])'
+          reprints:
+            - accession: "0001741773-23-000227"
+              same_as_previous: true
+              reason: "commas dropped after four list items (recordkeeping, non-discrimination, Principles, compensation); no wording change vs the 2022-02-25 edition (diffed 2026-11-21)"
+              checked: "2026-11-21"
+            - accession: "0001741773-25-000663"
+              same_as_previous: true
+              reason: "apostrophe style (ISS' vs ISS's) and 'corporate ESG actions' vs 'ESG corporate actions'; no wording change vs the 2023-02-23 edition (diffed 2026-11-21)"
+              checked: "2026-11-21"
       - label: nylim-proxy-voting-policy-as-printed-in-sai-trust
         adviser: "New York Life Investment Management LLC"
         adviser_key: "NYLIM"
@@ -5895,9 +5906,27 @@ institutions:
             - "PROXY VOTING POLICIES AND PROCEDURES It is the policy of the"
           end:
             - "Subadvisor Proxy Voting Guidelines."
+          strip_page_numbers: true
           strip_patterns:
             - 'The Manager has retained voting authority for [^.]*\.'
-            - '(?<=[A-Za-z.,"”’)]) \d{3}(?= [A-Za-z“"''])'
+            - '(?<=[A-Za-z.,"”’)]) \d{2,3}(?= [A-Za-z“"''·])'
+          reprints:
+            - accession: "0001741773-22-001048"
+              same_as_previous: true
+              reason: "commas dropped after four list items (recordkeeping, non-discrimination, Principles, compensation); no wording change vs the 2021 to 2022-03 edition (diffed 2026-11-21)"
+              checked: "2026-11-21"
+            - accession: "0001104659-23-046991"
+              same_as_previous: true
+              reason: "commas dropped after four list items (recordkeeping, non-discrimination, Principles, compensation), same text as the 2022-08 edition; no wording change vs the 2022-03 edition (diffed 2026-11-21)"
+              checked: "2026-11-21"
+            - accession: "0001741773-24-001397"
+              same_as_previous: true
+              reason: "apostrophe style (ISS' vs ISS's); the word ESG is missing from 'corporate actions' (a one-word omission, restored in the next SAI); no wording change (diffed 2026-11-21)"
+              checked: "2026-11-21"
+            - accession: "0001741773-24-002450"
+              same_as_previous: true
+              reason: "apostrophe style (ISS' vs ISS's) and 'corporate ESG actions' vs 'ESG corporate actions'; no wording change (diffed 2026-11-21)"
+              checked: "2026-11-21"
       - label: nylim-proxy-voting-policy-as-printed-in-sai-vp
         adviser: "New York Life Investment Management LLC"
         adviser_key: "NYLIM"
@@ -5909,9 +5938,15 @@ institutions:
             - "PROXY VOTING POLICIES AND PROCEDURES It is the policy of the"
           end:
             - "Subadvisor Proxy Voting Guidelines."
+          strip_page_numbers: true
           strip_patterns:
             - 'The Manager has retained voting authority for [^.]*\.'
-            - '(?<=[A-Za-z.,"”’)]) \d{3}(?= [A-Za-z“"''])'
+            - '(?<=[A-Za-z.,"”’)]) \d{2,3}(?= [A-Za-z“"''·])'
+          reprints:
+            - accession: "0001741773-24-001451"
+              same_as_previous: true
+              reason: "apostrophe style (ISS' vs ISS's) and 'corporate ESG actions' vs 'ESG corporate actions'; no wording change vs the 2023-04-14 edition (diffed 2026-11-21)"
+              checked: "2026-11-21"
       # MacKay Shields summary (2,094 characters, identical text in 33 SAIs of 1469192 from 2022-08-29 and in 787441 from 2023-02-23). The long 2021-22 text ('1. Introduction MacKay Shields LLC ...') is a different edition and is not captured by this label.
       - label: mackay-shields-proxy-voting-summary-as-printed-in-sai-trust
         adviser: "MacKay Shields LLC"
