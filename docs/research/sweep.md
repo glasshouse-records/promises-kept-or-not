@@ -2,7 +2,7 @@
 
 Source: SEC Form N-CEN data sets 2025q4–2026q3 (latest N-CEN per registrant), `scripts/ncen_coverage.py`.
 Assets = monthly average net assets of funds that are not money-market, fund-of-funds, target-date, or named as bond/income funds (a rough equity filter).
-Covered = registrant CIK appears in config/institutions.yaml npx_ciks. At the time of writing: $10.6T of $17.8T equity-like assets (60%).
+Covered = registrant CIK appears in config/institutions.yaml npx_ciks. Before the 2026-11-21 sweep: $10.6T of $17.8T equity-like assets (60%); after it: $14.7T (83%). Most of what remains is insurance and manager-of-managers families whose votes outside sub-advisers cast.
 
 Some registrants below were deliberately left out (sub-advised, bond-only, no N-PX votes): check the institution's notes and ROADMAP before adding.
 
