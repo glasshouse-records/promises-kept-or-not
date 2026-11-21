@@ -7068,6 +7068,7 @@ institutions:
           strip_patterns:
             - '(?<![A-Za-z])B-\s?\d{1,2}(?![\d-])'
             - '[•·◦]'
+            - "\\s*The Advisors[’']\\s*$"   # page header left before the 'Inner Circle Fund III' end marker (2024 edition, diffed 2026-11-21)
   gmo:
     display_name: "GMO (Grantham, Mayo, Van Otterloo & Co.)"
     short_name: "GMO"
@@ -7432,6 +7433,8 @@ institutions:
           strip_page_numbers: true
           strip_patterns:
             - '(?<![A-Za-z])B-\s?\d{1,2}(?![\d-])'
+            - '[•·◦▪■]'                # bullet glyphs alternate between editions (diffed 2026-11-21)
+            - '_{3,}'                   # underscore rules of varying length
   pacer:
     display_name: "Pacer Advisors"
     short_name: "Pacer"
