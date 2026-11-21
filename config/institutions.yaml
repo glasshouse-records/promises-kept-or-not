@@ -6056,3 +6056,73 @@ institutions:
             - "NYLIM Balanced (fixed-income portion)"
           strip_patterns:
             - '(?<=[A-Za-z.,"”’)]) \d{3}(?= [A-Za-z“"''])'
+
+  guggenheim:
+    display_name: "Guggenheim Investments"
+    short_name: "Guggenheim"
+    cik: "0000791185"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.3
+    notes: "Guggenheim Investments is the name under which Security Investors, LLC (CIK 791185, Rockville MD; the Advisor of the Rydex funds) operates, with Guggenheim Partners Investment Management, LLC (GPIM, CIK 1425852) as sub-adviser of the closed-end funds. Five US fund registrants with real equity votes are ingested: Rydex Series Funds, Rydex Variable Trust and Rydex Dynamic Funds (keyed GUGGENHEIM) and the closed-end Guggenheim Strategic Opportunities Fund and Active Allocation Fund (keyed GUGGENHEIM_GPIM)."
+    npx_ciks:
+      # Added 2026-11-21. Every Rydex SAI read says 'The Board has delegated responsibility for decisions regarding proxy voting for securities held by each Fund to the Advisor' (Security Investors, LLC, which operates under the name Guggenheim Investments); no sub-adviser is named for any series (the SAI only says the Advisor MAY hire sub-advisers). `from` is the EDGAR filing date of the earliest 485BPOS from 2021 on; earlier meetings stay unlabelled.
+      - cik: "899148"
+        adviser: "Security Investors, LLC (Guggenheim Investments), the Advisor; no sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/899148/000119312521144374/d156314d485bpos.htm"  # 485BPOS filed 2021-04-30; same delegation in -21-229064, -22-132634, -23-126255, -24-121794, -25-104076, -26-187701, -26-324258 (2026-07-29)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting': the Board delegated responsibility for decisions regarding proxy voting for securities held by each Fund to the Advisor, which follows its own proxy voting procedures (from 2024 the SAI says the Advisor adopted the ISS guidelines and ISS votes in the absence of contrary instruction). Keyed from the filing date of the earliest SAI read."
+        adviser_key_history: [{key: GUGGENHEIM, from: "2021-04-30"}]
+        name: "RYDEX SERIES FUNDS"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1064046"
+        adviser: "Security Investors, LLC (Guggenheim Investments), the Advisor; no sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1064046/000119312521144383/d17081d485bpos.htm"  # 485BPOS filed 2021-04-30; same delegation in -22-133059, -23-126261, -24-122891, -25-104073, -26-187670 (2026-04-28)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting': the Board delegated responsibility for decisions regarding proxy voting for securities held by each Fund to the Advisor, which follows its own proxy voting procedures. Keyed from the filing date of the earliest SAI read."
+        adviser_key_history: [{key: GUGGENHEIM, from: "2021-04-30"}]
+        name: "RYDEX VARIABLE TRUST"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1092720"
+        adviser: "Security Investors, LLC (Guggenheim Investments), the Advisor; no sub-adviser named"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1092720/000119312521228978/d167066d485bpos.htm"  # 485BPOS filed 2021-07-29; same delegation in -22-206840, -23-199406, -24-187383, -25-168051, -26-324260 (2026-07-29)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting': the Board delegated responsibility for decisions regarding proxy voting for securities held by each Fund to the Advisor, which follows its own proxy voting procedures. Keyed from the filing date of the earliest SAI read."
+        adviser_key_history: [{key: GUGGENHEIM, from: "2021-07-29"}]
+        name: "RYDEX DYNAMIC FUNDS"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      # Closed-end funds: N-CSR Item 7 (2021-2025) / Item 12 (2026): 'The registrant has delegated the voting of proxies relating to its voting securities to the registrant's investment sub-adviser, Guggenheim Partners Investment Management, LLC (GPIM)'; GPIM's policy is Exhibit (c). Keyed GUGGENHEIM_GPIM (GPIM, not the Rydex Advisor) from the filing date of the earliest N-CSR read.
+      - cik: "1380936"
+        adviser: "Guggenheim Partners Investment Management, LLC (GPIM), sub-adviser to which the registrant delegated proxy voting"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1380936/000182126821000352/gugg82423.htm"  # N-CSR filed 2021-08-06; same delegation in 0001821268-22-000195 ... -26-000124 (2026-08-07)
+        adviser_verified: "2026-11-21"
+        voting_note: "N-CSR Item 7 / 12: the registrant delegated the voting of proxies to its investment sub-adviser GPIM, whose proxy voting policies and procedures are Exhibit (c). Keyed from the filing date of the earliest N-CSR read."
+        adviser_key_history: [{key: GUGGENHEIM_GPIM, from: "2021-08-06"}]
+        name: "GUGGENHEIM STRATEGIC OPPORTUNITIES FUND"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1864208"
+        adviser: "Guggenheim Partners Investment Management, LLC (GPIM), sub-adviser to which the registrant delegated proxy voting"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1864208/000182126822000197/gug84910.htm"  # N-CSR filed 2022-08-10; same delegation in -23-000151, -24-000181, -25-000174, -26-000126 (2026-08-07)
+        adviser_verified: "2026-11-21"
+        voting_note: "N-CSR Item 7 / 12: the registrant delegated the voting of proxies to its investment sub-adviser GPIM, whose proxy voting policies and procedures are Exhibit (c). Keyed from the filing date of the earliest N-CSR read."
+        adviser_key_history: [{key: GUGGENHEIM_GPIM, from: "2022-08-10"}]
+        name: "Guggenheim Active Allocation Fund"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Left out (2026-11-21): Guggenheim Funds Trust (88525; N-PX 0001821268-26-000183 carries 59 rows of two issuers, one incidental holding in bond funds) and Guggenheim Variable Funds Trust (217087; 34 rows); Guggenheim Strategy Funds Trust (1601445) and the Taxable Municipal Bond & Investment Grade Debt Trust (1495825; 14 rows) are bond or notice-only; Guggenheim Credit Allocation Fund (1551949), Energy & Income Fund (1642563), Enhanced Equity Income funds (1310709, 1267890, 1526104) and Limited Duration Total Return Trust (1475069) have no N-PX from 2024; Rydex ETF Trust (1208211) has no N-PX after 2018 (the ETFs were sold to Invesco); the Claymore ETF trusts (1364089, 1365662, 1435732) are legacy ETF trusts that were not read; the institutional-manager N-PX of Guggenheim Funds Investment Advisors LLC (1280782) and GPIM (1425852) would count the same ballots twice."
+      - "Two keys, not one: the Rydex Advisor (Security Investors, LLC) and GPIM are separate advisers with separate documents (the Advisor's procedures printed in its SAI; GPIM's policy attached to the closed-end funds' N-CSR as Exhibit (c)), although both refer to Guggenheim Investments' Proxy Voting Advisory Group. The GPIM policy is not archived (an N-CSR exhibit is not read by the sai_appendix ingester), so GUGGENHEIM_GPIM has no commitment yet."
+      - "Policy text: guggenheiminvestments.com answers honestly identified requests with 200 for its home page, but no proxy voting policy page was found there (probed 2026-11-21); the only dated text is the 'Proxy Voting' section of the Rydex Series Funds SAI, archived as guggenheim-advisor-proxy-voting-procedures-as-printed-in-sai. The section is a summary in the SAI, not a full policy appendix; the 2021-2023 editions describe the Advisor's own guidelines and the 2024 onward editions say it adopted the ISS guidelines."
+    commitments:
+      - label: guggenheim-advisor-proxy-voting-procedures-as-printed-in-sai
+        adviser: "Security Investors, LLC (Guggenheim Investments), the Rydex Advisor"
+        adviser_key: "GUGGENHEIM"
+        sai_appendix:
+          cik: "0000899148"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          # The SAI 'Proxy Voting' section, from its first sentence to the Advisor/advisory-agreement section that follows (2021-2023 heading
+          # 'The Advisor and the Advisory Agreement', 2024 onward 'Investment Advisory Services'). Dry run against EDGAR 2026-11-21: all 12 485BPOS of 2021-2026 extract.
+          start: ["Proxy Voting The Board has delegated"]
+          end: ["The Advisor and the Advisory Agreement Security Investors", "Investment Advisory Services Pursuant to an Advisory Agreement"]
+          strip_patterns:
+            - '(?<=[.;:!?”’)]) \d{2,3}(?= [A-Z(•])'
