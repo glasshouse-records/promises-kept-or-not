@@ -203,7 +203,149 @@ institutions:
         adviser_key_history: [{key: VANGUARD, until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]
         name: "Vanguard Admiral Funds"
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
+      # Added 2026-11-21 (sweep): actively managed and mixed trusts, keyed PER SERIES
+      # from each SAI's own list of who advises which fund. Series advised wholly by
+      # outside firms are EXTERNAL (the SAI says the board delegated their proxy
+      # voting to the advisor); series split between Vanguard and an outside firm
+      # are UNRESOLVED or carry no rule. Trusts voted only through outside advisers
+      # or filing no votes are left out (see voting_scope_notes).
+      - cik: "736054"
+        adviser: "The Vanguard Group, Inc. through Vanguard Capital Management, LLC (VCM) for Total International Stock Index Fund; no outside adviser. The LifeStrategy and STAR funds of funds file no N-PX votes of their own."
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/736054/000119312526077488/f44218d1.htm"  # 485BPOS filed 2026-02-27 (SAI: Investment Advisory and Other Services, Proxy Voting); earliest SAI read 2022-02-25 https://www.sec.gov/Archives/edgar/data/736054/000168386322001066/f11170d0.htm
+        adviser_verified: "2026-11-21"
+        voting_note: "Only Total International Stock Index Fund (S000002932) files a voting report; LifeStrategy 20/80-80/20, STAR Fund and STAR Core-Plus Bond file notice reports (votes cast on underlying funds). Voted under the unified Vanguard policy until 2026-01-11, then the VCM US policy."
+        series_adviser:
+          S000002932: [{key: VANGUARD, from: "2022-02-25", until: "2026-01-11"}, {key: VCM, from: "2026-01-12"}]  # Vanguard Total International Stock Index Fund
+        name: "Vanguard STAR Funds"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "923202"
+        adviser: "The Vanguard Group, Inc. through VCM (Developed Markets Index, Tax-Managed Balanced) and VPM (Tax-Managed Capital Appreciation, Tax-Managed Small-Cap); no outside adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/923202/000092320226000059/f45001d1.htm"  # 485BPOS filed 2026-04-28; earliest SAI read 2022-04-29 https://www.sec.gov/Archives/edgar/data/923202/000168386322003918/f12168d0.htm
+        adviser_verified: "2026-11-21"
+        voting_note: "All four series are advised by Vanguard itself; the team split follows Vanguard's funds lists of 2026-01-12. Voted under the unified Vanguard policy until 2026-01-11."
+        series_adviser:
+          S000004386: [{key: VANGUARD, from: "2022-04-29", until: "2026-01-11"}, {key: VCM, from: "2026-01-12"}]  # Vanguard Developed Markets Index Fund
+          S000004383: [{key: VANGUARD, from: "2022-04-29", until: "2026-01-11"}, {key: VCM, from: "2026-01-12"}]  # Vanguard Tax-Managed Balanced Fund
+          S000004384: [{key: VANGUARD, from: "2022-04-29", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Tax-Managed Capital Appreciation Fund
+          S000004387: [{key: VANGUARD, from: "2022-04-29", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Tax-Managed Small-Cap Fund
+        name: "Vanguard Tax-Managed Funds"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "734383"
+        adviser: "Vanguard through VPM (Dividend Appreciation Index, Real Estate Index); Wellington Management Company LLP advises Global Capital Cycles, Global ESG Select Stock, Dividend Growth, Health Care and Energy Opportunities"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/734383/000073438326000129/f45325d1.htm"  # 485BPOS filed 2026-05-28; earliest SAI read 2022-05-27 https://www.sec.gov/Archives/edgar/data/734383/000168386322004836/f12547d0.htm
+        adviser_verified: "2026-11-21"
+        voting_note: "The SAI says the board of each fund advised by an unaffiliated manager delegated proxy voting to that advisor, which votes under its own policy; those five series are EXTERNAL. Vanguard-advised series vote under the unified Vanguard policy until 2026-01-11, then VPM."
+        series_adviser:
+          S000011322: [{key: VANGUARD, from: "2022-05-27", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Dividend Appreciation Index Fund
+          S000002924: [{key: VANGUARD, from: "2022-05-27", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Real Estate Index Fund
+          S000002920: [{key: EXTERNAL, from: "2022-05-27"}]  # Vanguard Dividend Growth Fund
+          S000002921: [{key: EXTERNAL, from: "2022-05-27"}]  # Vanguard Energy Opportunities Fund
+          S000002922: [{key: EXTERNAL, from: "2022-05-27"}]  # Vanguard Health Care Fund
+          S000002923: [{key: EXTERNAL, from: "2022-05-27"}]  # Vanguard Global Capital Cycles Fund
+          S000065529: [{key: EXTERNAL, from: "2022-05-27"}]  # Vanguard Global ESG Select Stock Fund
+        name: "Vanguard Specialized Funds"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "105563"
+        adviser: "Wellington Management Company LLP advises Vanguard Wellington Fund; Vanguard through VPM advises the Factor funds (Quality, Value, Momentum, Minimum Volatility, Multifactor fund and ETF)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/105563/000010556326000101/f44516d1.htm"  # 485BPOS filed 2026-03-27; earliest SAI read 2022-03-30 https://www.sec.gov/Archives/edgar/data/105563/000168386322002759/f11705d0.htm
+        adviser_verified: "2026-11-21"
+        voting_note: "Wellington Fund is voted by Wellington under its own policy (EXTERNAL). Factor funds are voted under the unified Vanguard policy until 2026-01-11, then VPM. Short-Term Tax-Exempt Bond ETF files only a notice report."
+        series_adviser:
+          S000004406: [{key: EXTERNAL, from: "2022-03-30"}]  # Vanguard Wellington Fund
+          S000061301: [{key: VANGUARD, from: "2022-03-30", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard U.S. Minimum Volatility ETF
+          S000061302: [{key: VANGUARD, from: "2022-03-30", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard U.S. Momentum Factor ETF
+          S000061303: [{key: VANGUARD, from: "2022-03-30", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard U.S. Multifactor Fund
+          S000061304: [{key: VANGUARD, from: "2022-03-30", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard U.S. Quality Factor ETF
+          S000061305: [{key: VANGUARD, from: "2022-03-30", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard U.S. Value Factor ETF
+          S000061310: [{key: VANGUARD, from: "2022-03-30", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard U.S. Multifactor ETF
+        name: "Vanguard Wellington Fund"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1004655"
+        adviser: "Vanguard through VCM (International Dividend Appreciation Index, International High Dividend Yield Index) and VPM (High Dividend Yield Index, Global Minimum Volatility); International Explorer, Mid-Cap Growth and Selected Value are advised wholly by outside firms"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1004655/000119312526077482/f44052d1.htm"  # 485BPOS filed 2026-02-27; earliest SAI read 2022-02-25 https://www.sec.gov/Archives/edgar/data/1004655/000168386322001061/f11177d0.htm
+        adviser_verified: "2026-11-21"
+        voting_note: "Outside advisers (Schroders, Wellington, Baillie Gifford, TimesSquare, Frontier, Victory, Tremblant, Cooke & Bieler, Donald Smith, Pzena) vote under their own policies: EXTERNAL. The Advice Select funds and International Dividend Growth Fund (Wellington/Baillie Gifford) are absent from the 2022 SAI and left without a rule. Emerging Markets Government Bond Index files a notice report."
+        series_adviser:
+          S000014011: [{key: VANGUARD, from: "2022-02-25", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard High Dividend Yield Index Fund
+          S000043242: [{key: VANGUARD, from: "2022-02-25", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Global Minimum Volatility Fund
+          S000051871: [{key: VANGUARD, from: "2022-02-25", until: "2026-01-11"}, {key: VCM, from: "2026-01-12"}]  # Vanguard International Dividend Appreciation Index Fund
+          S000051872: [{key: VANGUARD, from: "2022-02-25", until: "2026-01-11"}, {key: VCM, from: "2026-01-12"}]  # Vanguard International High Dividend Yield Index Fund
+          S000004407: [{key: EXTERNAL, from: "2022-02-25"}]  # Vanguard International Explorer Fund
+          S000004408: [{key: EXTERNAL, from: "2022-02-25"}]  # Vanguard Mid-Cap Growth Fund
+          S000004409: [{key: EXTERNAL, from: "2022-02-25"}]  # Vanguard Selected Value Fund
+        name: "Vanguard Whitehall Funds"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "106444"
+        adviser: "Vanguard through VPM for Real Estate II Index Fund (the only equity-voting series)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/106444/000010644426000213/f45326d1.htm"  # 485BPOS filed 2026-05-28; earliest SAI read 2022-05-31 https://www.sec.gov/Archives/edgar/data/106444/000168386322004856/f12542d0.htm
+        adviser_verified: "2026-11-21"
+        voting_note: "Only Real Estate II Index Fund keyed. High-Yield Corporate Fund (Wellington plus a VCM portion, N-PX voting report) is split between voters and left without a rule; the other bond series file notice reports."
+        series_adviser:
+          S000059086: [{key: VANGUARD, from: "2022-05-31", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Real Estate Ii Index Fund
+        name: "Vanguard Fixed Income Securities Funds"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "932471"
+        adviser: "Vanguard through VPM (Strategic Equity, Strategic Small-Cap Equity); International Core Stock (Wellington), Global Equity (Baillie Gifford, Pzena, Wellington) and Capital Opportunity (PRIMECAP) are advised wholly by outside firms"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/932471/000119312526024961/f43859d1.htm"  # 485BPOS filed 2026-01-28; earliest SAI read 2022-01-31 https://www.sec.gov/Archives/edgar/data/932471/000168386322000307/f10751d0.htm
+        adviser_verified: "2026-11-21"
+        voting_note: "Outside advisers vote under their own policies (EXTERNAL); Vanguard-advised series vote under the unified Vanguard policy until 2026-01-11, then VPM."
+        series_adviser:
+          S000002593: [{key: VANGUARD, from: "2022-01-31", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Strategic Equity Fund
+          S000012432: [{key: VANGUARD, from: "2022-01-31", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Strategic Small-Cap Equity Fund
+          S000066700: [{key: EXTERNAL, from: "2022-01-31"}]  # Vanguard International Core Stock Fund
+          S000002595: [{key: EXTERNAL, from: "2022-01-31"}]  # Vanguard Global Equity Fund
+          S000002594: [{key: EXTERNAL, from: "2022-01-31"}]  # Vanguard Capital Opportunity Fund
+        name: "Vanguard Horizon Funds"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "857490"
+        adviser: "Vanguard through VCM (Equity Index) and VPM (Mid-Cap Index, Real Estate Index); Growth, Balanced, International, Diversified Value and Capital Growth (PRIMECAP) Portfolios advised wholly by outside firms; Equity Income, Small Company Growth and High Yield Bond split between Vanguard and outside firms"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/857490/000085749026000222/f44794d1.htm"  # 485BPOS filed 2026-04-28; earliest SAI read 2022-05-02 https://www.sec.gov/Archives/edgar/data/857490/000168386322004403/f12278d0.htm
+        adviser_verified: "2026-11-21"
+        voting_note: "Outside advisers vote under their own policies (EXTERNAL). Equity Income (Wellington plus a VPM portion), Small Company Growth (ArrowMark plus a VPM portion) and High Yield Bond (Wellington, with a VCM portion in the 2026 SAI) have more than one voter and are UNRESOLVED. Index, bond and allocation portfolios that file notice reports carry no key."
+        series_adviser:
+          S000004400: [{key: VANGUARD, from: "2022-05-02", until: "2026-01-11"}, {key: VCM, from: "2026-01-12"}]  # Equity Index Portfolio
+          S000004404: [{key: VANGUARD, from: "2022-05-02", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Morningstar Mid-Cap Index Portfolio
+          S000004392: [{key: VANGUARD, from: "2022-05-02", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Real Estate Index Portfolio
+          S000004401: [{key: EXTERNAL, from: "2022-05-02"}]  # Growth Portfolio
+          S000004390: [{key: EXTERNAL, from: "2022-05-02"}]  # Balanced Portfolio
+          S000004403: [{key: EXTERNAL, from: "2022-05-02"}]  # International Portfolio
+          S000004398: [{key: EXTERNAL, from: "2022-05-02"}]  # Diversified Value Portfolio
+          S000004397: [{key: EXTERNAL, from: "2022-05-02"}]  # Primecap Portfolio
+          S000004399: [{key: UNRESOLVED, from: "2022-05-02"}]  # Equity Income Portfolio
+          S000004394: [{key: UNRESOLVED, from: "2022-05-02"}]  # Small Company Growth Portfolio
+          S000004402: [{key: UNRESOLVED, from: "2022-05-02"}]  # High-Yield Bond Portfolio
+        name: "Vanguard Variable Insurance Funds"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "52848"
+        adviser: "Vanguard through VPM (U.S. sector, FTSE Social, Mega Cap Index and ESG U.S. Stock funds) and VCM (ESG International Stock ETF, Emerging Markets Ex-China ETF); International Growth (Baillie Gifford, Schroders), Global Wellington and Global Wellesley Income (Wellington) advised by outside firms"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/52848/000119312525325146/f43650d1.htm"  # 485BPOS filed 2025-12-19; earliest SAI read 2022-12-21 https://www.sec.gov/Archives/edgar/data/52848/000168386322007778/f23792d0.htm; the team split follows Vanguard's funds lists of 2026-01-12
+        adviser_verified: "2026-11-21"
+        voting_note: "Outside advisers vote under their own policies (EXTERNAL). U.S. Growth Fund (Baillie Gifford, Jennison, Wellington and, until May 2023, a Vanguard portion) is left without a rule, as is Mega Cap Growth Index Fund (named in the 2022 SAI but not in the 2025 SAI). Emerging Markets Ex-China ETF is keyed only from its first SAI (2025-12-19). Bond series file notice reports."
+        series_adviser:
+          S000004440: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Ftse Social Index Fund
+          S000004443: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Communication Services Index Fund
+          S000004446: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Consumer Discretionary Index Fund
+          S000004447: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Consumer Staples Index Fund
+          S000004448: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Energy Index Fund
+          S000004449: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Financials Index Fund
+          S000004450: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Health Care Index Fund
+          S000004451: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Industrials Index Fund
+          S000004452: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Information Technology Index Fund
+          S000004441: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Materials Index Fund
+          S000004445: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Utilities Index Fund
+          S000063075: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard ESG U.S. Stock ETF
+          S000019698: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Morningstar Mega Cap Index Fund
+          S000019699: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VPM, from: "2026-01-12"}]  # Vanguard Morningstar Mega Cap Value Index Fund
+          S000063074: [{key: VANGUARD, from: "2022-12-21", until: "2026-01-11"}, {key: VCM, from: "2026-01-12"}]  # Vanguard ESG International Stock ETF
+          S000004453: [{key: EXTERNAL, from: "2022-12-21"}]  # Vanguard International Growth Fund
+          S000059219: [{key: EXTERNAL, from: "2022-12-21"}]  # Vanguard Global Wellington Fund
+          S000059218: [{key: EXTERNAL, from: "2022-12-21"}]  # Vanguard Global Wellesley Income Fund
+          S000094513: [{key: VANGUARD, from: "2025-12-19", until: "2026-01-11"}, {key: VCM, from: "2026-01-12"}]  # Vanguard Emerging Markets Ex-China ETF
+        name: "Vanguard World Fund"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
     voting_scope_notes:
+      - "Not ingested (left out), 2026-11-21 sweep: Vanguard Valley Forge Funds (CIK 889519: Balanced Index files a notice report; Baillie Gifford Global Positive Impact Stock is advised wholly by an outside firm), Vanguard Windsor Funds (107606: Windsor and Windsor II are advised wholly by outside firms), Vanguard Chester Funds (752177: Target Retirement funds of funds file notice reports; PRIMECAP Fund is outside-advised), Vanguard Bond Index Funds (794105: bond-only, notice reports), Vanguard Explorer Fund (34066: several outside advisers plus a VPM portion, so more than one voter), Vanguard Trustees' Equity Fund (313850: International Value, Global Environmental Opportunities and Emerging Markets Select are outside-advised; Diversified Equity and Commodity Strategy file notice reports) and Vanguard Fenway Funds (826473: PRIMECAP Core is outside-advised; Equity Income is split between Wellington and VPM). Source: SAIs and N-PX filings listed in each registrant's adviser_source, and EDGAR submissions."
+      - "Series left without a rule in kept trusts: Vanguard U.S. Growth Fund and Mega Cap Growth Index Fund (World Fund), the Advice Select and International Dividend Growth funds (Whitehall; absent from the 2022 SAI) and High-Yield Corporate Fund (Fixed Income Securities; Wellington plus a VCM portion). The N-PX lists VGI/VPM/VCM as included managers on outside-advised series as well; it was not verified how that listing relates to who cast each vote, so the SAI's delegation statement is the evidence used."
       - "Before 2026-01-12 one Vanguard Group policy governed all internally managed funds; Vanguard Portfolio Management Investment Stewardship (VPMIS) and Vanguard Capital Management Investment Stewardship (VCMIS) both launched on 2026-01-12 (VPMIS 2026 annual report, https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vpm/vpmis_2026_annual_report.pdf)."
       - "Series-to-team mapping comes from Vanguard's two funds lists dated 2026-01-12 (https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vpm/vpm-funds.pdf and https://corporate.vanguard.com/content/dam/corp/about-our-funds/pdf/vcm/vcm-funds.pdf); lists published later could differ, and the date key compares the meeting date, not the date the vote was cast."
       - "The archive holds four pre-split Vanguard policy captures (Wayback 2022-01-17, 2023-01-28, 2024-03-03, 2025-02-09, the Feb 2023/2024/2025 editions); any amendment between those captures is not archived, so votes in that window are compared against the nearest earlier edition on file."
