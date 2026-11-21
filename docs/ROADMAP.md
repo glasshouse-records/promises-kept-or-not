@@ -14,6 +14,13 @@ Tick with the date and one line of result.
 - [x] 2026-11-17 Source freshness now means last successful fetch (`ingest_runs`); the false DOJ error is gone.
 
 ## 2. Close the known instrument gaps
+- [ ] **2022-23 voting year (legacy N-PX)**, see `docs/research/legacy-npx.md`. The rows are quarantined (`legacy_format`), so nothing ships until the steps below are done.
+  - (a) Finish the live ingest of ISS text and ProxyEdge across all families, then ISS HTML (`--legacy-iss`), serialised and followed by a dedupe.
+  - (b) Recall: build a hand-checked heading→series alias list, never fuzzy. It is needed for Avantis (5 funds), Principal SAM portfolios, Northern's Active M and Multi-Manager funds without the 'Northern' prefix, Invesco's '(R)', DFA US Sustainability Targeted Value, and Fidelity's 'VOTE SUMMARY REPORT ... - SUB-ADVISER' headings.
+  - (c) Write a second parser for Fidelity's tables (`npx_legacy` is single-parser), and parsers for Federated's flat table, the Neuberger/Franklin 'Issue No.' layout, Diamond Hill and Dodge & Cox.
+  - (d) Document `legacy_format` and `for_against_management` in the DATASHEET; per-filing agreement rates go in COVERAGE.json.
+  - (e) Review pass (glasshouse-reviewer) and a random sample checked by hand against the source.
+  - (f) Decide promotion into the release: a new Zenodo version at that milestone.
 - [x] 2026-11-17 `country=` on the director tools (country that issued the ISIN); Vanguard Jan–Jun 2026 splits sum to the overall 79,430.
 - [x] 2026-11-17 `country=` with a code no item carries now explains itself (GB, not UK).
 - [x] 2026-11-17 T. Rowe Price advisers verified from each fund's 485BPOS (filed 2026-02-25): three funds are TRPA-voted; Capital Appreciation (CIK 793347) is TRPIM-voted. TRPIM's own guidelines now captured.
