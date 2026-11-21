@@ -202,10 +202,11 @@ def test_values_without_an_exact_counterpart_are_dropped_and_counted(vote):
 
 
 def test_the_vocabulary_tables_cover_the_parsers_closed_vocabulary_exactly():
-    for k in legacy_iss_blocks.VOTE_VOCAB:
+    from glasshouse.ingest import legacy_isshtml_dom
+    vocab = set(legacy_iss_blocks.VOTE_VOCAB) | set(legacy_isshtml_dom.VOTES)
+    for k in vocab:
         assert (k in legacy_iss.HOW_VOTED) != (k in legacy_iss.VOTE_DROPPED), k
-    assert set(legacy_iss.HOW_VOTED) | set(legacy_iss.VOTE_DROPPED) == \
-        set(legacy_iss_blocks.VOTE_VOCAB)
+    assert set(legacy_iss.HOW_VOTED) | set(legacy_iss.VOTE_DROPPED) == vocab
 
 
 def test_to_vote_rows_maps_every_field():
@@ -425,3 +426,113 @@ def test_a_no_cover_proxyedge_filing_is_kept_when_only_the_iss_flag_is_on(conn, 
     _record_no_cover(conn, _filing())
     _npx_run(conn, monkeypatch, {"a": "Agenda Number: 1"}, legacy_iss_text=True)
     assert [tuple(r) for r in conn.execute("SELECT report_type FROM filings")] == [("LEGACY_NO_COVER",)]
+
+
+# -- ISS HTML-table format ---------------------------------------------------
+
+def make_html(heading=FUND, votes=(("For", "FOR", "Management"),), rec_hdr="Management Recommendation"):
+    rows = "".join(f"<tr><td>{i}</td><td>Proposal number {i}</td><td>{sp}</td><td>{rec}</td>"
+                   f"<td>{vote}</td></tr>" for i, (rec, vote, sp) in enumerate(votes, 1))
+    return (
+        "<DOCUMENT>\n<TYPE>N-PX\n<TEXT>\n<html><body>\n"
+        "<p align='center' style='font-weight:bold'>FORM N-PX</p>\n"
+        "<p >ICA File Number:&nbsp;&nbsp;811-1</p><p >Registrant Name:&nbsp;&nbsp;Trust</p>"
+        "<p >Reporting Period:&nbsp;&nbsp;07/01/2022 - 06/30/2023</p>\n"
+        f"<br style='page-break-after:always;'><p align='center'>{heading}</p>\n"
+        "<table border='1'>\n<tr><th colspan='5'>&nbsp;</th></tr>\n"
+        "<tr>\n<td colSpan='5'>ACME CORP\n<br>Meeting Date:&nbsp;&nbsp;JAN 25, 2023\n"
+        "<br>Record Date:&nbsp;&nbsp;DEC 01, 2022\n<br>Meeting Type:&nbsp;&nbsp;ANNUAL\n</td>\n</tr>\n"
+        "<tr>\n<td colSpan='5'>\nTicker:&nbsp;&nbsp;ACME\n<br>Security ID:&nbsp;&nbsp;123456789\n"
+        "<br>\n</td>\n</tr>\n<tr>\n<th>Proposal No</th>\n<th>Proposal</th>\n<th>Proposed By</th>\n"
+        f"<th>{rec_hdr}</th>\n<th>Vote Cast</th>\n</tr>\n{rows}\n"
+        "</table>\n</body></html>\n</TEXT>\n</DOCUMENT>\n")
+
+
+HTML = make_html(votes=(("For", "FOR", "Management"), ("Against", "ABSTAIN", "Shareholder"),
+                        ("Withhold", "WITHHOLD", "Management")))
+
+
+def test_detection_order_text_then_html_then_proxyedge():
+    assert legacy_iss.is_iss_html(HTML) and not legacy_iss.is_iss_html(BASIC)
+    assert legacy_iss.is_iss_html("<TH width='5%'>Proposal No</TH>")
+    assert not legacy_iss.is_iss_html("<td>Proposal No</td>")
+    assert legacy_iss.detect_format({"a": HTML}) == "iss_html"
+    assert legacy_iss.detect_format({"a": HTML, "b": HTML}) == "iss_html"
+    # a document matching several formats is classified by the order text, html, proxyedge
+    assert legacy_iss.doc_format(BASIC + HTML + "Agenda Number: 1") == "iss"
+    assert legacy_iss.doc_format(HTML + "Agenda Number: 1") == "iss_html"
+    assert legacy_iss.doc_format("Agenda Number: 1") == "proxyedge"
+    assert legacy_iss.doc_format("nothing") is None
+    # mixed formats across documents are not guessed about
+    assert legacy_iss.detect_format({"a": HTML, "b": BASIC}) is None
+    assert legacy_iss.detect_format({"a": HTML, "b": "Agenda Number: 1"}) is None
+
+
+def test_html_vote_mapping_is_upper_case_and_text_rows_keep_theirs():
+    assert legacy_iss.HOW_VOTED["ABSTAIN"] == "ABSTAIN"
+    assert legacy_iss.HOW_VOTED["WITHHOLD"] == "WITHHOLD"
+    rows, st = legacy_iss.agreed(HTML, legacy_iss.PARSERS["iss_html"])
+    assert st["disagreement_rate"] == 0 and len(rows) == 3
+    out, info = legacy_iss.to_vote_rows(rows, {legacy_pe._norm(FUND): SID}, "iss_html")
+    assert [r["how_voted"] for r in out] == ["FOR", "ABSTAIN", "WITHHOLD"]
+    assert [r["management_recommendation"] for r in out] == ["FOR", "AGAINST", "WITHHOLD"]
+    assert {r["legacy_format"] for r in out} == {"iss_html"} and info["dropped_vote"] == 0
+
+
+def test_default_agreement_is_the_text_pair():
+    rows, st = legacy_iss.agreed(HTML)            # HTML through the text pair: nothing
+    assert rows == [] and st["agreed"] == 0
+
+
+def _html_ingest(conn, text=HTML):
+    return legacy_iss.ingest_filing(conn, _filing(), "vg", "2026-11-21", {"doc.htm": text},
+                                    HDR, fmt="iss_html")
+
+
+def test_html_filing_is_recorded_with_its_own_tags(conn):
+    assert _html_ingest(conn) == 3
+    assert conn.execute("SELECT report_type FROM filings").fetchone()[0] == "LEGACY_ISSHTML"
+    assert [tuple(r) for r in conn.execute(
+        "SELECT DISTINCT legacy_format, vote_series, shares_voted FROM votes")] == \
+        [("iss_html", SID, None)]
+    s = conn.execute("SELECT * FROM legacy_parse").fetchone()
+    assert (s["agreed"], s["rows_inserted"], s["meetings"]) == (3, 3, 1)
+
+
+def test_html_gate_rejects_on_disagreement(conn, monkeypatch):
+    from glasshouse.ingest import legacy_isshtml_lines
+    real = legacy_isshtml_lines.parse
+    monkeypatch.setattr(legacy_isshtml_lines, "parse", lambda t: real(t)[1:])
+    assert _html_ingest(conn) == 0
+    assert conn.execute("SELECT report_type FROM filings").fetchone()[0] == "LEGACY_ISSHTML_REJECTED"
+    assert conn.execute("SELECT COUNT(*) FROM votes").fetchone()[0] == 0
+
+
+def test_html_contest_rows_are_dropped(conn):
+    assert _html_ingest(conn, make_html(rec_hdr="Dissident Recommendation")) == 0
+    assert conn.execute("SELECT report_type FROM filings").fetchone()[0] == "LEGACY_ISSHTML"
+
+
+def test_html_rows_are_quarantined(conn):
+    _html_ingest(conn)
+    assert conn.execute(f"SELECT COUNT(*) FROM votes WHERE {ledger.NON_LEGACY_VOTE_SQL}"
+                        ).fetchone()[0] == 0
+    assert conn.execute("SELECT COUNT(*) FROM votes WHERE legacy_format='iss_html'"
+                        ).fetchone()[0] == 3
+
+
+def test_npx_flag_routes_iss_html_filings(conn, monkeypatch):
+    st = _npx_run(conn, monkeypatch, {"a": HTML}, legacy_iss_text=True)
+    assert st["votes"] == 3 and st["filings"] == 1
+    assert conn.execute("SELECT report_type FROM filings").fetchone()[0] == "LEGACY_ISSHTML"
+    # a second run skips it, including the --reingest path
+    st = _npx_run(conn, monkeypatch, {"a": HTML}, legacy_iss_text=True,
+                  reingest={ACC})
+    assert st["skipped"] == 1 and st["votes"] == 0
+
+
+def test_a_no_cover_filing_in_iss_html_format_is_upgraded(conn, monkeypatch):
+    _record_no_cover(conn, _filing())
+    st = _npx_run(conn, monkeypatch, {"a": HTML}, legacy_iss_text=True)
+    assert st["votes"] == 3
+    assert [tuple(r) for r in conn.execute("SELECT report_type FROM filings")] == [("LEGACY_ISSHTML",)]

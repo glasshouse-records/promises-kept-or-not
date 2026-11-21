@@ -212,8 +212,9 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
     (see legacy_pe); filings that fail the agreement gate are recorded as
     LEGACY_PROXYEDGE_REJECTED and insert no votes.
 
-    legacy_iss_text=True (opt-in): the same for ISS-style "FORM N-Px REPORT" text filings
-    (see legacy_iss): LEGACY_ISS / LEGACY_ISS_REJECTED. With both flags each filing goes
+    legacy_iss_text=True (opt-in): the same for ISS-style filings, text ("FORM N-Px REPORT":
+    LEGACY_ISS / LEGACY_ISS_REJECTED) and HTML tables (LEGACY_ISSHTML /
+    LEGACY_ISSHTML_REJECTED); see legacy_iss. With both flags each filing goes
     to the parser for its own format; a filing in neither format is skipped (counted in
     stats["no_format"]).
     """
@@ -231,7 +232,8 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
         if exists and (filing.accession_number in reingest if reingest else exists[1]):
             if exists[0] in ("LEGACY_NO_COVER", "LEGACY_PARSED",
                              "LEGACY_PROXYEDGE", "LEGACY_PROXYEDGE_REJECTED",
-                             "LEGACY_ISS", "LEGACY_ISS_REJECTED"):
+                             "LEGACY_ISS", "LEGACY_ISS_REJECTED",
+                             "LEGACY_ISSHTML", "LEGACY_ISSHTML_REJECTED"):
                 stats["skipped"] += 1          # legacy filings are not replaced here
                 continue
             replace = True
@@ -286,9 +288,9 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                     if legacy_iss_text:     # decide per filing (cached after first fetch)
                         fmt = legacy_iss.detect_format(
                             legacy_pe.load_filing_texts(filing)[0])
-                    if fmt == "iss" or (fmt == "proxyedge" and legacy_proxyedge):
+                    if fmt in legacy_iss.PARSERS or (fmt == "proxyedge" and legacy_proxyedge):
                         drop_no_cover_record()
-                    if fmt == "iss":
+                    if fmt in legacy_iss.PARSERS:
                         n = legacy_iss.ingest_filing_from_sources(
                             conn, filing, institution_id, today)
                     elif fmt == "proxyedge" and legacy_proxyedge:
