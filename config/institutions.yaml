@@ -154,6 +154,134 @@ institutions:
         adviser_key: "BIS"
         name: "BlackRock Index Funds, Inc."
         validated: "2026-11-16"   # entity name confirmed via data.sec.gov submissions API
+      # Sweep 2026-11-21: actively managed and non-index trusts added where the SAI names the voter (the Manager under its
+      # own policy). No registrant-wide default: every series is keyed from the filing date of its earliest SAI read.
+      # Left out (see voting_scope_notes): Master Investment Portfolio 915092, BlackRock Funds III 893818, BlackRock Funds V 1738078.
+      - cik: "844779"
+        adviser: "BlackRock Advisors, LLC (Manager); affiliate sub-advisers (BlackRock Fund Advisors, BlackRock International Limited and others) per fund"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/844779/000119312526400820/d38089d485bpos.htm"  # 485BPOS filed 2026-09-24 (Technology Opportunities Fund SAI, proxy voting grid); the grid of each series' own 485BPOS of 2025-06-12 to 2026-11-20 was read, earliest SAIs of 2022-01-26 to 2022-11-22 (e.g. 0001193125-22-248373)
+        adviser_verified: "2026-11-21"
+        voting_note: "Every SAI says the Board delegated proxy voting to the Manager. Until 2024-12-31 one Open-End Fund Proxy Voting Policy covered all funds (key BIS); the per-fund grid of the 2025-26 SAIs marks the Open-End Active and Fixed Income Index Fund policy (BAIS) for the active series and the Index Equity Fund policy (BIS) for the four iShares equity index series (S000049319, S000050371, S000050372, S000050373) and S000087852. `from` is the filing date of the earliest SAI read that names the series, so meetings before it are unlabelled; S000079513, S000080437 and S000087852 are first read in their 2025-26 SAIs (series launched later, earlier SAIs not searched). The series list is the equity-voting series of the 2026 N-PX (accession 0001438934-26-002324); the bond, money-market and no-vote series (N-PX 0001438934-26-002330) are not keyed."
+        series_adviser:
+          S000001505: [{key: BIS, from: "2022-09-22", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000001507: [{key: BIS, from: "2022-01-26", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000001509: [{key: BIS, from: "2022-09-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000001510: [{key: BIS, from: "2022-09-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000001869: [{key: BIS, from: "2022-09-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000001870: [{key: BIS, from: "2022-08-22", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000001871: [{key: BIS, from: "2022-09-20", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000001877: [{key: BIS, from: "2022-09-22", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000001878: [{key: BIS, from: "2022-04-26", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000008399: [{key: BIS, from: "2022-09-20", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000033601: [{key: BIS, from: "2022-09-22", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000033603: [{key: BIS, from: "2022-08-23", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000038448: [{key: BIS, from: "2022-05-26", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000039460: [{key: BIS, from: "2022-08-23", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000039982: [{key: BIS, from: "2022-09-20", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000049319: [{key: BIS, from: "2022-11-21"}]
+          S000050371: [{key: BIS, from: "2022-05-26"}]
+          S000050372: [{key: BIS, from: "2022-11-22"}]
+          S000050373: [{key: BIS, from: "2022-11-21"}]
+          S000051092: [{key: BIS, from: "2022-09-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000063942: [{key: BIS, from: "2022-02-24", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000069107: [{key: BIS, from: "2022-08-23", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000069108: [{key: BIS, from: "2022-08-23", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000070274: [{key: BIS, from: "2022-08-25", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000079513: [{key: BAIS, from: "2025-08-25"}]
+          S000080437: [{key: BAIS, from: "2025-06-12"}]
+          S000087852: [{key: BIS, from: "2026-05-21"}]
+        name: "BlackRock Funds"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1761055"
+        adviser: "BlackRock Fund Advisors (BFA), the adviser to which the Board delegates proxy voting"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1761055/000119312525296212/d922338d485bpos.htm"  # 485BPOS filed 2025-11-25 (iShares U.S. Equity Factor Rotation Active ETF SAI, grid + Proxy Voting Policy); each series' own SAI was read, earliest 2022-08-09 to 2026-02-20 (e.g. 0001193125-22-291012)
+        adviser_verified: "2026-11-21"
+        voting_note: "Each SAI says the Board delegated the voting of proxies to BFA: before 2025 under the BlackRock Proxy Voting Policies (key BIS), from 2025-01-01 under the Open-End Active and Fixed Income Index Fund policy (BAIS), marked for every series in its SAI grid. `from` is the filing date of the earliest SAI read that names the series, so meetings before it are unlabelled. Series with no votes in the 2026 N-PX (money-market, short-term bond, managed-futures and alternatives ETFs, N-PX 0001438934-26-002301) are not keyed; S000101154 has no votes."
+        series_adviser:
+          S000064945: [{key: BIS, from: "2022-11-22", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000069260: [{key: BIS, from: "2022-11-22", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000071281: [{key: BIS, from: "2022-11-22", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000071282: [{key: BIS, from: "2022-11-22", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000074569: [{key: BIS, from: "2022-11-22", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000076808: [{key: BIS, from: "2022-08-09", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000081702: [{key: BIS, from: "2023-09-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000082317: [{key: BIS, from: "2023-10-19", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000083238: [{key: BIS, from: "2024-05-22", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000084031: [{key: BIS, from: "2024-03-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000085065: [{key: BIS, from: "2024-06-06", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000085067: [{key: BIS, from: "2024-05-28", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000086268: [{key: BIS, from: "2024-10-16", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000086269: [{key: BIS, from: "2024-10-16", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000088408: [{key: BIS, from: "2024-11-27", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000090467: [{key: BAIS, from: "2025-02-20"}]
+          S000090468: [{key: BAIS, from: "2025-02-20"}]
+          S000092375: [{key: BAIS, from: "2025-05-13"}]
+          S000093567: [{key: BAIS, from: "2025-07-09"}]
+          S000093569: [{key: BAIS, from: "2025-07-09"}]
+          S000096437: [{key: BAIS, from: "2025-10-29"}]
+          S000096907: [{key: BAIS, from: "2025-11-10"}]
+          S000101156: [{key: BAIS, from: "2026-02-20"}]
+          S000101316: [{key: BAIS, from: "2026-02-06"}]
+        name: "BlackRock ETF Trust"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "355916"
+        adviser: "BlackRock Advisors, LLC (Manager); affiliate sub-advisers where appointed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/355916/000119312526167252/d22698d485bpos.htm"  # 485BPOS filed 2026-04-21 (SAI grid by fund); earliest SAI read 2022-04-21 (0001193125-22-113073)
+        adviser_verified: "2026-11-21"
+        voting_note: "Every SAI (2022-04-21 to 2026-04-21) says the Board delegated proxy voting to the Manager. Single Open-End Fund policy (key BIS) until 2024-12-31; the 2026 SAI grid marks the Active and Fixed Income Index policy (BAIS) for 10 series and the Index Equity policy (BIS) for S&P 500 Index, International Index and Small Cap Index V.I. Fund (S000002875, S000059909, S000059910). The two series of the 2026 N-PX without votes (Government Money Market, 60/40 Target Allocation ETF) are not keyed."
+        series_adviser:
+          S000002874: [{key: BIS, from: "2022-04-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000002875: [{key: BIS, from: "2022-04-21"}]
+          S000002876: [{key: BIS, from: "2022-04-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000002877: [{key: BIS, from: "2022-04-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000002878: [{key: BIS, from: "2022-04-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000002879: [{key: BIS, from: "2022-04-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000002880: [{key: BIS, from: "2022-04-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000002881: [{key: BIS, from: "2022-04-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000002882: [{key: BIS, from: "2022-04-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000002885: [{key: BIS, from: "2022-04-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000002887: [{key: BIS, from: "2022-04-21", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000059909: [{key: BIS, from: "2022-04-21"}]
+          S000059910: [{key: BIS, from: "2022-04-21"}]
+        name: "BlackRock Variable Series Funds, Inc."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1097077"
+        adviser: "BlackRock Advisors, LLC (Manager)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1097077/000119312526400830/d173959d485bpos.htm"  # 485BPOS filed 2026-09-24 (Large Cap Value Fund SAI; the Core Fund SAI is 0001193125-26-399281 and the Event Driven Equity Fund SAI 0001193125-26-400692); earliest SAIs 2022-01-27 (0001193125-22-019560, Core) and 2022-09-23 (0001193125-22-250204 Value, 0001193125-22-250062 Event Driven)
+        adviser_verified: "2026-11-21"
+        voting_note: "Every SAI says the Board delegated proxy voting to the Manager. Single Open-End Fund policy (key BIS) until 2024-12-31; from 2025-01-01 the grid of each fund's SAI marks the Active and Fixed Income Index policy (BAIS). `from` is the filing date of the earliest SAI read for each fund."
+        series_adviser:
+          S000001973: [{key: BIS, from: "2022-01-27", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000001975: [{key: BIS, from: "2022-09-23", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000018499: [{key: BIS, from: "2022-09-23", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+        name: "BlackRock Large Cap Series Funds, Inc."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1738074"
+        adviser: "BlackRock Advisors, LLC (Manager)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1738074/000119312526187329/d85332d485bpos.htm"  # 485BPOS filed 2026-04-28 (Systematic Multi-Strategy Fund SAI) and 0001193125-25-291018 filed 2025-11-21 (Credit Relative Value Fund SAI); earliest SAIs 2022-04-25 (0001193125-22-117772) and 2022-11-22 (0001193125-22-291148)
+        adviser_verified: "2026-11-21"
+        voting_note: "Every SAI says the Board delegated proxy voting to the Manager. Single Open-End Fund policy (key BIS) until 2024-12-31; from 2025-01-01 the grid of each fund's SAI marks the Active and Fixed Income Index policy (BAIS). Credit Relative Value Fund (formerly Global Long/Short Credit Fund) is a credit fund whose N-PX still carries 216 share-meeting votes."
+        series_adviser:
+          S000062369: [{key: BIS, from: "2022-04-25", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+          S000062370: [{key: BIS, from: "2022-11-22", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+        name: "BlackRock Funds IV"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "814507"
+        adviser: "BlackRock Advisors, LLC (Manager); affiliate sub-advisers where appointed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/814507/000119312526363563/d99087d485bpos.htm"  # 485BPOS filed 2026-08-24 (SAI grid); earliest SAI read 2022-08-22 (0001193125-22-226426)
+        adviser_verified: "2026-11-21"
+        voting_note: "Every SAI from 2022-08-22 says the Board delegated proxy voting to the Manager. Single Open-End Fund policy (key BIS) until 2024-12-31; the 2025-26 SAIs mark the Open-End Active and Fixed Income Index Fund policy (BAIS) from 2025-01-01. Meetings before 2022-08-22 are unlabelled."
+        adviser_key_history: [{key: BIS, from: "2022-08-22", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+        name: "BlackRock Equity Dividend Fund"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "834237"
+        adviser: "BlackRock Advisors, LLC (Manager); affiliate sub-advisers where appointed"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/834237/000119312526364550/d163411d485bpos.htm"  # 485BPOS filed 2026-08-25 (SAI grid); earliest SAI read 2022-08-25 (0001193125-22-229714)
+        adviser_verified: "2026-11-21"
+        voting_note: "Every SAI from 2022-08-25 says the Board delegated proxy voting to the Manager. Single Open-End Fund policy (key BIS) until 2024-12-31; the 2025-26 SAIs mark the Open-End Active and Fixed Income Index Fund policy (BAIS) from 2025-01-01. Meetings before 2022-08-25 are unlabelled."
+        adviser_key_history: [{key: BIS, from: "2022-08-25", until: "2024-12-31"}, {key: BAIS, from: "2025-01-01"}]
+        name: "BlackRock Global Allocation Fund, Inc."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
     voting_scope_notes:
       - "BAIS and BIS policies for open-end funds are both effective 2025-01-01; before that a single Open-End Fund Proxy Voting Policy (effective 2021-08-01) covered every fund (SAI filed 2024-12-30, https://www.sec.gov/Archives/edgar/data/1100663/000119312524286021/d853591d485bpos.htm; SAI Appendix A, https://www.sec.gov/Archives/edgar/data/1100663/000119312526389481/d122292d485bpos.htm)."
       - "Series assignment (BIS 253 and BAIS 9 of the 272 series with vote rows) was read from the per-fund policy table of each 485BPOS SAI filed 2025-02-25 to 2026-09-14 and never changed between filings; it is a statement of the 2025-26 position applied back to 2025-01-01."
@@ -161,6 +289,7 @@ institutions:
       - "The BIS archive entry is the Global Principles; the SAI says the BIS Global Benchmark Policy also comprises regional voting guidelines and engagement priorities that are available only on request, so those are not archived (https://www.sec.gov/Archives/edgar/data/1100663/000119312526389481/d122292d485bpos.htm)."
       - "BAIS guidelines state that fundamental equity portfolio managers receive voting recommendations and may vote differently (https://www.blackrock.com/gls-download/literature/publication/blackrock-active-investment-stewardship-engagement-and-voting-guidelines.pdf, p. 4), so a BAIS-series vote is not necessarily a vote in line with the guidelines."
       - "Some funds also follow supplemental climate and decarbonization guidelines marked in the same SAI table; those supplements are not archived and not separated here."
+      - "Registrants left out of the 2026-11-21 sweep: Master Investment Portfolio (CIK 915092) is a master-feeder vehicle whose proxy-voting statements are incorporated by reference from several feeder SAIs under differing policies (only International Tilts Master Portfolio names its voter directly, BlackRock Advisors under the Active policy), so the five equity masters were not resolved; BlackRock Funds III (CIK 893818): its index and LifePath series file N-PX without votes (feeders and fund-of-funds vote only on underlying master or fund interests) and the one series with votes, BlackRock Diversified Fixed Income Fund, is bond-only; BlackRock Funds V (CIK 1738078): bond funds (only S000062358 Strategic Income Opportunities carries material share-meeting votes, 3,663 lines in N-PX 0001438934-26-002352) so the trust was left out as bond-only. Voting-choice funds with their own policy (iShares Core S&P 500 ETF) are unchanged and stay UNRESOLVED from 2025-01-01."
     commitments:
       # URLs verified live before being added; rotted URLs are findings too
       # (the non-response ledger will track disappearing policies).
