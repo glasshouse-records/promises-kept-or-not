@@ -16,6 +16,8 @@ import json
 import sqlite3
 from datetime import UTC, date, datetime
 
+from .ledger import NON_LEGACY_VOTE_SQL
+
 # Documented weights and targets. Change them here, in the open.
 WEIGHTS = {"coverage": 0.30, "completeness": 0.25, "provenance": 0.25, "freshness": 0.20}
 FRESHNESS_FULL_DAYS = 90        # data refreshed within this many days = 1.0
@@ -38,13 +40,13 @@ def compute(conn: sqlite3.Connection, today: date | None = None) -> dict:
     n_registered = conn.execute("SELECT COUNT(*) FROM institutions").fetchone()[0] or 1
     n_with_votes = conn.execute(
         "SELECT COUNT(DISTINCT f.institution_id) FROM filings f JOIN votes v "
-        "ON v.accession=f.accession WHERE v.is_duplicate=0").fetchone()[0]
+        f"ON v.accession=f.accession WHERE v.is_duplicate=0 AND {NON_LEGACY_VOTE_SQL}").fetchone()[0]
     n_with_commit = conn.execute(
         "SELECT COUNT(DISTINCT institution_id) FROM commitments WHERE superseded=0").fetchone()[0]
     full_ids = [r[0] for r in conn.execute(
         "SELECT i.id FROM institutions i WHERE "
         "EXISTS(SELECT 1 FROM filings f JOIN votes v ON v.accession=f.accession "
-        "  WHERE f.institution_id=i.id AND v.is_duplicate=0) AND "
+        f"  WHERE f.institution_id=i.id AND v.is_duplicate=0 AND {NON_LEGACY_VOTE_SQL}) AND "
         "EXISTS(SELECT 1 FROM commitments c WHERE c.institution_id=i.id AND c.superseded=0)").fetchall()]
     n_full = len(full_ids)
     n_any = conn.execute(

@@ -22,6 +22,7 @@ import json
 import sqlite3
 
 from .http import DATA_DIR
+from .ledger import NON_LEGACY_VOTE_SQL
 from .publish import OPERATOR_ONLY, newest_snapshot
 
 DISCLAIMER = ("Resolution types are legally distinct (DPA/NPA are not convictions; "
@@ -78,9 +79,10 @@ def main() -> None:
         """List tracked institutions with vote and policy-version counts."""
         with _conn() as conn:
             return _rows(conn.execute(
-                """SELECT i.id, i.display_name, i.cik,
+                f"""SELECT i.id, i.display_name, i.cik,
                           (SELECT COUNT(*) FROM votes v JOIN filings f
-                           ON f.accession=v.accession WHERE f.institution_id=i.id) AS votes,
+                           ON f.accession=v.accession WHERE f.institution_id=i.id
+                             AND v.is_duplicate = 0 AND {NON_LEGACY_VOTE_SQL}) AS votes,
                           (SELECT COUNT(*) FROM commitments c
                            WHERE c.institution_id=i.id AND c.superseded=0) AS policy_versions
                    FROM institutions i"""))

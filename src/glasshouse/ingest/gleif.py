@@ -19,7 +19,7 @@ import time
 
 from .. import http
 from ..entities import upsert_entity
-from ..ledger import iso_meeting_date
+from ..ledger import NON_LEGACY_VOTE_SQL, iso_meeting_date
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +53,7 @@ def enrich_from_votes(conn: sqlite3.Connection, limit: int | None = None) -> dic
            FROM votes v
            LEFT JOIN entity_cusips ec ON ec.cusip = v.cusip
            WHERE v.isin != '' AND v.cusip != '' AND ec.cusip IS NULL
+             AND {NON_LEGACY_VOTE_SQL}
            GROUP BY v.isin, v.cusip
            ORDER BY last_meeting DESC"""
     ).fetchall()

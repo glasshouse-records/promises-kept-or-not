@@ -21,6 +21,7 @@ import sqlite3
 from datetime import UTC, datetime
 
 from . import llm
+from .ledger import NON_LEGACY_VOTE_SQL
 
 _MATCH_SYSTEM = """You adjudicate whether two organization records refer to the SAME legal entity.
 You are extremely precise: a false "match" can lead to a false public accusation.
@@ -106,8 +107,8 @@ def classify_proposals(conn: sqlite3.Connection, limit: int = 50,
     """Theme-classify distinct AGAINST-voted proposal texts, cached forever
     by content hash. Complements (does not replace) the lexical engine."""
     rows = conn.execute(
-        """SELECT DISTINCT v.vote_description FROM votes v
-           WHERE v.how_voted='AGAINST' AND v.is_duplicate=0
+        f"""SELECT DISTINCT v.vote_description FROM votes v
+           WHERE v.how_voted='AGAINST' AND v.is_duplicate=0 AND {NON_LEGACY_VOTE_SQL}
              AND length(v.vote_description) > 30 LIMIT ?""", (limit * 5,)).fetchall()
     stats: dict[str, int] = {}
     done = 0
