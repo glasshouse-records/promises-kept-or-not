@@ -19,7 +19,7 @@ from collections import Counter
 RECS = frozenset({
     "For", "Against", "Abstain", "Withhold", "None", "One Year", "Two Years", "Three Years",
     "1 Year", "2 Years", "3 Years", "Do Not Vote", "Did Not Vote", "Take No Action", "N/A",
-    "No Vote",
+    "No Vote", "FOR", "AGAINST", "ABSTAIN", "WITHHOLD",   # amendment 1: literal upper case
 })
 VOTES = RECS | {"TNA", "Withheld"}
 SPONSORS = frozenset({"Management", "Shareholder"})

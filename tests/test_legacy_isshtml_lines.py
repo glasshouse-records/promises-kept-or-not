@@ -95,3 +95,17 @@ def test_whitespace_and_entity_variants_do_not_change_output(ws1, ws2, amp):
     base = p.parse(doc([" "], [" "], "&amp;"))
     assert base and base[0]["proposal_text"] == "A b&c d"
     assert p.parse(doc(ws1, ws2, amp)) == base
+
+
+def test_amendment1_uppercase_literals_emitted_lowercase_dropped():
+    base = load("lines_unknown_vote.htm")
+    up = base.replace(">Maybe<", ">WITHHOLD<").replace(
+        "<td>Elect Z</td>\n<td>Management</td>\n<td>For</td>\n<td>For</td>",
+        "<td>Elect Z</td>\n<td>Management</td>\n<td>FOR</td>\n<td>FOR</td>")
+    rows = p.parse(up)
+    assert [(r["proposal_id"], r["rec"], r["vote"]) for r in rows] == [
+        ("1", "For", "WITHHOLD"), ("2", "FOR", "FOR")]
+    for bad in ("for", "against", "1", "Unknown", "Againt", "Took No Action", "Non-Voting"):
+        assert [r["proposal_id"] for r in p.parse(base.replace(">Maybe<", f">{bad}<"))] == ["2"]
+    assert p.parse(base.replace(">Maybe<", ">AGAINST<"))[0]["vote"] == "AGAINST"
+    assert p.parse(base.replace(">Maybe<", ">ABSTAIN<"))[0]["vote"] == "ABSTAIN"
