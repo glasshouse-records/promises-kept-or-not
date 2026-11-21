@@ -6687,3 +6687,122 @@ institutions:
         adviser: "BAMCO, Inc. and Baron Capital Management, Inc."
         adviser_key: "BAMCO"
         url: "https://www.baroncapitalgroup.com/sites/default/files/2025-11/baron-capital-proxy-policies-and-procedures-10.20.25.pdf"
+
+  first_eagle:
+    display_name: "First Eagle Investment Management"
+    short_name: "First Eagle"
+    cik: "0001325447"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "First Eagle Investment Management, LLC (FEIM), New York NY (CIK 1325447, the 13-F filer and the investment adviser of the First Eagle funds; Genstar Capital and Corsair/Blackstone hold the ownership stakes the SAIs disclose). Three registrants that file N-PX vote tables with operating-company votes are ingested: First Eagle Funds (CIK 906352), First Eagle Variable Funds (CIK 1000249, one series: Overseas Variable Fund) and First Eagle ETF Trust (CIK 2083193, US Equity ETF and Mid Cap Equity ETF, first votes 2026-03). Every SAI says 'The Board of Trustees has delegated to the Adviser the authority to vote proxies' and that the Adviser's own policies apply; ISS is voting agent and research only. Iridian, sub-adviser to Fund of America, ended 2020-08-14 (before the earliest SAI read); the ETF Trust's sub-adviser, Exchange Traded Concepts, only trades. Left out: FEIM's own institutional-manager N-PX (CIK 1325447) and First Eagle Separate Account Management (CIK 1791280), whose votes overlap the fund tables; First Eagle Credit Opportunities Fund (CIK 1818416), First Eagle Completion Fund Trust (CIK 2060415), First Eagle Real Estate Debt Fund (CIK 2006189) and First Eagle Tactical Municipal Opportunities Fund (CIK 2050541), whose N-PX are FUND NOTICE REPORTs with no vote table; First Eagle Senior Loan Fund (CIK 1583001), a loan fund whose last N-PX is 2021 legacy text. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. Three registrants (see notes). All keyed FIRST_EAGLE per registrant from the filing date of the earliest SAI read (2021 or later); earlier meetings stay unlabelled.
+      # No series exception: no SAI or N-CEN read names an unaffiliated voter (the ETF Trust's sub-adviser trades only).
+      - cik: "906352"
+        adviser: "First Eagle Investment Management, LLC (the Adviser); no sub-adviser votes"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/906352/000093041321000467/c100890_485bpos-ixbrl.htm"  # 485BPOS (SAI) filed 2021-02-26 (0000930413-21-000467), 'VOTING OF PROXIES'
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'VOTING OF PROXIES': 'The Board of Trustees has delegated to the Adviser the authority to vote proxies received by the Funds from the companies in which they invest ... The Adviser has adopted policies and procedures (collectively, the Policies) regarding the voting of such proxies'; the Adviser relies on ISS for recommendations and technical assistance only. Earliest SAI read 2021-02-26 (0000930413-21-000467); same wording in the SAI of 2026-02-27 (0000930413-26-000616). The only sub-adviser named, Iridian Asset Management (Fund of America), ended 2020-08-14."
+        adviser_key_history: [{key: FIRST_EAGLE, from: "2021-02-26"}]
+        name: "FIRST EAGLE FUNDS"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1000249"
+        adviser: "First Eagle Investment Management, LLC (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1000249/000093041321000784/c101286_485bpos-ixbrl.htm"  # 485BPOS (SAI) filed 2021-04-16 (0000930413-21-000784), 'VOTING OF PROXIES'
+        adviser_verified: "2026-11-21"
+        voting_note: "Same SAI wording as First Eagle Funds ('The Board of Trustees has delegated to the Adviser the authority to vote proxies received by the Fund'). Earliest SAI read 2021-04-16 (0000930413-21-000784); re-read 2026-04-17 (0000930413-26-001083). Single series, Overseas Variable Fund (S000011490); no sub-adviser in either SAI."
+        adviser_key_history: [{key: FIRST_EAGLE, from: "2021-04-16"}]
+        name: "FIRST EAGLE VARIABLE FUNDS"
+        validated: "2026-11-21"
+      - cik: "2083193"
+        adviser: "First Eagle Investment Management, LLC (the Adviser); sub-adviser Exchange Traded Concepts trades only"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/2083193/000093041326000146/c114719_497-ixbrl.htm"  # 497 (prospectus with SAI) filed 2026-01-23 (0000930413-26-000146), 'VOTING OF PROXIES'
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'VOTING OF PROXIES': 'The Board of Trustees has delegated to the Adviser the authority to vote proxies received by the Funds'; the proxy voting policy statement and standards of the Adviser are Appendix B to the SAI. The Sub-Adviser, Exchange Traded Concepts, LLC, 'is responsible for trading portfolio securities' (Investment Sub-Adviser section), not for voting. Earliest SAI read 2026-01-23 (0000930413-26-000146, the Trust's first 497; the earlier N-1A/A drafts are not SAIs in force); re-read 2026-06-30 (0000930413-26-001988). The Trust's first N-PX (period to 2026-06-30) holds meetings from 2026-03."
+        adviser_key_history: [{key: FIRST_EAGLE, from: "2026-01-23"}]
+        name: "First Eagle ETF Trust"
+        validated: "2026-11-21"
+    voting_scope_notes:
+      - "Keyed FIRST_EAGLE per registrant from the EDGAR filing date of the earliest SAI read (2021-02-26 Funds, 2021-04-16 Variable Funds, 2026-01-23 ETF Trust); earlier meetings stay unlabelled. Votes follow FEIM's own proxy voting policy (ISS is voting agent and research only)."
+      - "Not ingested (left out): FEIM's institutional-manager N-PX (CIK 1325447), First Eagle Separate Account Management (1791280), the four notice-report registrants (1818416, 2060415, 2006189, 2050541), First Eagle Senior Loan Fund (1583001) and the legacy-text N-PX of 2021-2023 (not ingested without --legacy)."
+      - "Policy text: the First Eagle Funds and Variable Funds SAIs only summarise the policy (no Appendix), and firsteagle.com/proxy-voting (200) carries no policy document. The only full print is Appendix B of the First Eagle ETF Trust SAI ('Proxy Voting Policy Statement and Standards', last amended 2021-09-17); one edition expected from 2026-01-23. firsteagle.com's Global Value Team Responsible Investment Guidelines page is a team statement, not the policy, and is not captured."
+    commitments:
+      # Appendix B as printed in the ETF Trust SAI (497 / 485BPOS), dated by EDGAR filing date. Verified offline 2026-11-21: the 497 of 2026-01-23 and the 485BPOS of 2026-06-30 extract to identical text. The heading is upper case in one filing and lower case in the other, so the start is the first sentence. Bullets differ (U+25CF vs U+2022) and one footnote moves across a page break (both removed); 'B-n' is page furniture.
+      - label: first-eagle-proxy-voting-policy-as-printed-in-sai-etf-trust
+        adviser: "First Eagle Investment Management, LLC"
+        adviser_key: "FIRST_EAGLE"
+        sai_appendix:
+          cik: "0002083193"
+          forms: ["485BPOS", "497"]
+          since: "2026-01-01"
+          start:
+            - "POLICY STATEMENT FEIM’s proxy voting policy and procedures are designed and implemented"
+          end:
+            - "APPENDIX C"
+          strip_page_numbers: true
+          strip_patterns:
+            - '(?<![A-Za-z])B-\s?\d{1,2}(?![\d-])'
+            - '[●•]'
+            - '(?<!\d)1 Clients may obtain a copy of proxy voting policies.{0,400}?http://www\.sec\.gov\.'
+
+  thornburg:
+    display_name: "Thornburg Investment Management"
+    short_name: "Thornburg"
+    cik: "0001145020"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Thornburg Investment Management, Inc. (TIM), Santa Fe NM (CIK 1145020, the 13-F filer and the investment advisor of the Thornburg funds). Three registrants that file N-PX vote tables with operating-company votes are ingested: Thornburg Investment Trust (CIK 816153, 26 series, equity and bond), Thornburg ETF Trust (CIK 2038383, first 497 2025-01-17) and Thornburg Income Builder Opportunities Trust (CIK 1820378, closed-end, no series). Every SAI says 'Thornburg is authorized by the Trust to vote proxies respecting voting securities held by the Funds ... in accordance with written Proxy Voting Policies and Procedures adopted by Thornburg'; ISS is research only. No SAI read names a sub-adviser. Left out: Thornburg Investment Management's own institutional-manager N-PX (CIK 1145020) and Thornburg Limited Term Municipal Fund (CIK 740843, a bond fund whose only N-PX is from 2004). aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. Three registrants (see notes). All keyed THORNBURG per registrant from the filing date of the earliest SAI read (2021 or later); earlier meetings stay unlabelled.
+      # Bond-only series of the Trust file zero or few operating-company votes; the registrant is kept whole (no series exception: every series is advised and voted by TIM).
+      - cik: "816153"
+        adviser: "Thornburg Investment Management, Inc. (the Advisor); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/816153/000138713121001381/tbit-485bpos_012921.htm"  # 485BPOS (SAI) filed 2021-01-28 (0001387131-21-001381), 'Proxy Voting Policies'
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies': 'Thornburg is authorized by the Trust to vote proxies respecting voting securities held by the Funds. In those cases, Thornburg votes proxies in accordance with written Proxy Voting Policies and Procedures (the Policy) adopted by Thornburg'; ISS is engaged for analysis and recommendations (Sustainability guidelines for Better World International Fund) and Thornburg 'may or may not accept recommendations from ISS'. Earliest SAI read 2021-01-28 (0001387131-21-001381); same wording 2022-01-28 (0001387131-22-000959), 2023-01-30, 2024-01-29, 2025-01-28 and 2026-01-27 (0001999371-26-001802). The SAIs only summarise the Policy; no sub-adviser in any."
+        adviser_key_history: [{key: THORNBURG, from: "2021-01-28"}]
+        name: "THORNBURG INVESTMENT TRUST"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "2038383"
+        adviser: "Thornburg Investment Management, Inc. (the Advisor); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/2038383/000199937125000435/thornburg-497.htm"  # 497 (prospectus with SAI) filed 2025-01-17 (0001999371-25-000435), 'Proxy Voting Policies'
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies': 'Thornburg is authorized by the Trust to vote proxies respecting voting securities held by the Funds ... in accordance with written Proxy Voting Policies and Procedures adopted by Thornburg, which are included in Appendix A' (Appendix A 'PROXY VOTING POLICY December 2024', adopted by TIM and both trusts). Earliest SAI read 2025-01-17 (0001999371-25-000435, the Trust's first 497); same wording 2025-12-29 (0001999371-25-021188) and 2026-05-22 (0001999371-26-011364). No sub-adviser named."
+        adviser_key_history: [{key: THORNBURG, from: "2025-01-17"}]
+        name: "Thornburg ETF Trust"
+        validated: "2026-11-21"
+      - cik: "1820378"
+        adviser: "Thornburg Investment Management, Inc. (the Advisor); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1820378/000119312521224627/d16526dn2a.htm"  # N-2/A (registration statement with SAI) filed 2021-07-27 (0001193125-21-224627), 'PROXY VOTING GUIDELINES'
+        adviser_verified: "2026-11-21"
+        voting_note: "Closed-end fund (N-2; no series ids in the N-PX). SAI 'PROXY VOTING GUIDELINES': 'Thornburg is authorized by the Trust to vote proxies respecting voting securities held by the Trust ... in accordance with written Proxy Voting Policies and Procedures (the Policy) adopted by Thornburg'; ISS engaged for analysis. Earliest SAI read 2021-07-27 (N-2/A 0001193125-21-224627, effective that day; 424B1 of 2021-07-29 is the final prospectus). No sub-adviser."
+        adviser_key_history: [{key: THORNBURG, from: "2021-07-27"}]
+        name: "Thornburg Income Builder Opportunities Trust"
+        validated: "2026-11-21"
+    voting_scope_notes:
+      - "Keyed THORNBURG per registrant from the EDGAR filing date of the earliest SAI read (2021-01-28 Investment Trust, 2021-07-27 Income Builder Opportunities Trust, 2025-01-17 ETF Trust); earlier meetings stay unlabelled. Votes follow Thornburg Investment Management's own Proxy Voting Policy (ISS is research only; no sub-adviser in any SAI read)."
+      - "Not ingested (left out): Thornburg Investment Management's institutional-manager N-PX (CIK 1145020), Thornburg Limited Term Municipal Fund (740843, last N-PX 2004) and the legacy-text N-PX of 2021-2023 (not ingested without --legacy)."
+      - "Policy text: thornburg.com serves the policy as a PDF (the page https://www.thornburg.com/pdfs/proxy-voting-policy-and-procedure/ links it; the file sits under a 2022/04 upload path but its text is the December 2024 edition, PDF metadata modified 2026-04-28). The Thornburg ETF Trust SAI prints the same policy as Appendix A (December 2024 edition 2025-01-17 and 2025-12-29, a revised print 2026-05-22 with renumbered list items); the Investment Trust SAIs only summarise it."
+    commitments:
+      # Live policy PDF: verified 2026-11-21 through glasshouse.http: 200, a valid 8-page PDF titled 'Proxy Voting Policy & Procedures, December 2024'.
+      - label: proxy-voting-policy-and-procedures
+        url: "https://s40910.pcdn.co/wp-content/uploads/2022/04/TH6066_C-Proxy-Voting-Policy-Handout.pdf"
+        adviser: "Thornburg Investment Management, Inc."
+        adviser_key: "THORNBURG"
+      # Appendix A as printed in the ETF Trust SAI (497 / 485BPOS), dated by EDGAR filing date. Verified offline 2026-11-21: the 497 of 2025-01-17 and the 485BPOS of 2025-12-29 extract to identical text; the 485BPOS of 2026-05-22 extracts to a different text (list items renumbered, ERISA year corrected), a genuine second edition. The policy ends the filing in the 497, so the end marker is the last glossary line (excluded). Page numbers sit mid-text ('; 89 (e)', '. 94 "').
+      - label: thornburg-proxy-voting-policy-as-printed-in-sai-etf-trust
+        adviser: "Thornburg Investment Management, Inc."
+        adviser_key: "THORNBURG"
+        sai_appendix:
+          cik: "0002038383"
+          forms: ["485BPOS", "497"]
+          since: "2025-01-01"
+          start:
+            - "Policy Objectives This Policy has been adopted by Thornburg Investment Management, Inc."
+          end:
+            - "“ Voting Results ” means the specific information"
+          strip_page_numbers: true
+          strip_patterns:
+            - '(?<=[;.]) \d{2,3}(?= (?:\([a-z]\) |“ ))'
