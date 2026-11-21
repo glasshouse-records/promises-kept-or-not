@@ -15,7 +15,6 @@ from glasshouse import engine
 CFG_PATH = Path(__file__).resolve().parents[1] / "config" / "institutions.yaml"
 CFG = yaml.safe_load(CFG_PATH.read_text())
 J = CFG["institutions"]["jpmorgan"]
-FROM = "2022-10-25"
 ADDED = {"763852", "1485894", "803747", "1037897", "1659326"}
 LEFT_OUT = {"1047712"}
 
@@ -37,12 +36,15 @@ def test_added_registrants_present_with_evidence_and_valid_rules():
         engine.validate_rules(engine.normalize_rules(e), cik)
 
 
-def test_key_after_from_and_unlabelled_before():
+def test_added_trusts_follow_the_institution_level_design():
+    # JPMorgan has one voter (JPMIM and affiliates, one Guidelines document) and its original trusts and its
+    # commitment carry no adviser_key: votes are institution-level. A key on the new trusts only would split
+    # JPMorgan into two entities and stop their votes pairing with the (unkeyed) policy.
+    for e in J["npx_ciks"]:
+        assert not e.get("adviser_key") and not e.get("adviser_key_history") and not e.get("series_adviser"), e["cik"]
+    assert not any(c.get("adviser_key") for c in J["commitments"])
     for cik in ADDED:
-        assert _key(cik, "2023-03-01") == "JPMAM", cik
-        assert _key(cik, FROM) == "JPMAM", cik
-        assert _key(cik, "2022-10-24") is None, cik
-        assert _key(cik, "2022-07-15") is None, cik
+        assert _key(cik, "2025-06-30") is None, cik
 
 
 def test_left_out_registrants_absent_and_documented():
