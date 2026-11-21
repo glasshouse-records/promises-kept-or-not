@@ -4889,6 +4889,14 @@ institutions:
           end:
             - "THE LAZARD FUNDS, INC. PART C. OTHER INFORMATION"
           strip_page_numbers: true
+          # Page marks 'B-6' / 'B- 6' (any position, also mid-sentence) carry the SAI's own pagination, not policy text.
+          strip_patterns:
+            - '(?<![A-Za-z])B-\s?\d{1,2}(?![\d-])'
+          reprints:
+            - accession: "0000930413-21-001812"
+              same_as_previous: true
+              reason: "re-print of the 2021-04-23 edition (revised 2020-03-31): bullet glyph, 'if' vs 'if:', 'A' vs 'a', 'As Of' vs 'as of'; no wording change (diffed 2026-11-21)"
+              checked: "2026-11-21"
       - label: lazard-global-proxy-voting-policy-as-printed-in-sai-retirement
         adviser: "Lazard Asset Management LLC"
         adviser_key: "LAZARD"
@@ -4901,6 +4909,9 @@ institutions:
           end:
             - "LAZARD RETIREMENT SERIES, INC. PART C. OTHER INFORMATION"
           strip_page_numbers: true
+          # Page marks 'B-6' / 'B- 6' (any position, also mid-sentence) carry the SAI's own pagination, not policy text.
+          strip_patterns:
+            - '(?<![A-Za-z])B-\s?\d{1,2}(?![\d-])'
       - label: lazard-global-proxy-voting-policy-as-printed-in-sai-etf
         adviser: "Lazard Asset Management LLC"
         adviser_key: "LAZARD"
@@ -4914,6 +4925,18 @@ institutions:
             - "LAZARD ACTIVE ETF TRUST PART C. OTHER INFORMATION"
             - "PART C OTHER INFORMATION"
           strip_page_numbers: true
+          # Page marks 'B-6' / 'B- 6' (any position, also mid-sentence) carry the SAI's own pagination, not policy text.
+          strip_patterns:
+            - '(?<![A-Za-z])B-\s?\d{1,2}(?![\d-])'
+          reprints:
+            - accession: "0000930413-25-002103"
+              same_as_previous: true
+              reason: "re-print of the 2025-02-21 edition (revised 2023-11-15): 'US' vs 'U.S.' only (diffed 2026-11-21)"
+              checked: "2026-11-21"
+            - accession: "0000930413-25-003245"
+              same_as_previous: true
+              reason: "re-print of the 2025-08-04 edition (revised April 2024): footnote blocks moved across page breaks, one bullet glyph; no wording change (diffed 2026-11-21)"
+              checked: "2026-11-21"
   artisan_partners:
     display_name: "Artisan Partners (Artisan Partners Limited Partnership)"
     short_name: "Artisan Partners"
@@ -4958,6 +4981,22 @@ institutions:
           end:
             - "Disclosure of Portfolio Holdings The board of directors has"
           strip_page_numbers: true
+          # SAI running footer ('Statement of Additional Information (em dash) Artisan Partners Funds | 55', either order, or a bare '| 60') and the
+          # bullet glyph (square vs. diamond by edition) are layout, not wording.
+          strip_patterns:
+            - '(?:\| )?Statement of Additional Information [-\u2013\u2014] ?Artisan Partners Funds(?: \| \d{1,3}| \d{1,3})?'
+            - '\| \d{1,3}(?![\d%])'
+            - '[\u25a0\u25fe]'
+          # Single-fund SAIs filed 2022-02 print 'the Fund' for 'the Funds' (and a/the, is/are); no other wording differs (diffed 2026-11-20).
+          reprints:
+            - accession: "0001193125-22-046757"
+              same_as_previous: true
+              reason: "single-fund SAI wording (Fund/Funds, a/the, is/are, its/their); no policy change vs the 2022-01-28 edition (diffed 2026-11-20)"
+              checked: "2026-11-20"
+            - accession: "0001193125-22-054715"
+              same_as_previous: true
+              reason: "single-fund SAI wording (Fund/Funds); no policy change vs the 2022-02-18 edition (diffed 2026-11-20)"
+              checked: "2026-11-20"
   russell:
     display_name: "Russell Investments (Russell Investment Management, LLC)"
     short_name: "Russell"
@@ -5132,6 +5171,8 @@ institutions:
           end:
             - "DISCLOSURE OF PORTFOLIO HOLDINGS."
           strip_page_numbers: true
+          strip_patterns:
+            - '(?<=portfolio) \d{1,3}(?= securities for which)'
       - label: calamos-sustainable-proxy-voting-policy-as-printed-in-sai
         adviser: "Calamos Advisors LLC"
         adviser_key: "CALAMOS_SUSTAINABLE"
@@ -5144,6 +5185,8 @@ institutions:
           end:
             - "DISCLOSURE OF PORTFOLIO HOLDINGS"
           strip_page_numbers: true
+          strip_patterns:
+            - '(?<=to mitigate) \d{1,3}(?= negative environmental)'
   john_hancock:
     display_name: "John Hancock (John Hancock Investment Management LLC, Manulife) and its subadvisers"
     short_name: "John Hancock"
