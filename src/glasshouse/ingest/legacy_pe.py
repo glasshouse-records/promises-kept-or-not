@@ -171,6 +171,15 @@ def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
         rows, st = agreed(text)
         votes, info = to_vote_rows(rows, smap)
         parsed.append((name, text.count("Agenda Number:"), st, votes, info))
+    return record_filing(conn, filing, institution_id, today, parsed, REPORT_OK,
+                         REPORT_REJECTED)
+
+
+def record_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str | None,
+                  today: str, parsed: list, report_ok: str, report_rejected: str) -> int:
+    """Gate the parsed documents and write the filing, its votes and its parse stats in
+    one transaction. `parsed` = [(document, meetings, agreement stats, vote dicts, info)].
+    Shared by every legacy text format (ProxyEdge, ISS). Returns votes inserted."""
     worst = max((p[2]["disagreement_rate"] for p in parsed), default=0.0)
     total_agreed = sum(p[2]["agreed"] for p in parsed)
     accepted = bool(parsed) and worst <= MAX_DISAGREEMENT and total_agreed > 0
@@ -190,7 +199,7 @@ def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
                                     period_of_report, report_type, source_url, retrieval_date)
                VALUES (?,?,?,?,?,?,?,?,?)""",
             (acc, filing.cik, institution_id, filing.form_type, filing.filing_date,
-             filing.period_of_report, REPORT_OK if accepted else REPORT_REJECTED,
+             filing.period_of_report, report_ok if accepted else report_rejected,
              filing.directory_url, today))
         inserted = 0
         for name, meetings, st, votes, info in parsed:

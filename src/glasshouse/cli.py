@@ -103,7 +103,8 @@ def cmd_ingest_npx(args) -> int:
         stats = npx.ingest_npx(conn, cik, institution_id=inst_id,
                                max_filings=args.max_filings, max_tables=args.max_tables,
                                legacy=getattr(args, "legacy", False),
-                               legacy_proxyedge=getattr(args, "legacy_proxyedge", False))
+                               legacy_proxyedge=getattr(args, "legacy_proxyedge", False),
+                               legacy_iss_text=getattr(args, "legacy_iss", False))
         print(f"  CIK {cik}: {stats}")
     return 0
 
@@ -1080,6 +1081,10 @@ def main(argv: list[str] | None = None) -> int:
                        help="ingest July 2022-June 2023 Broadridge ProxyEdge text N-PX "
                             "(rows both independent parsers agree on, gated per filing); "
                             "tagged legacy_format and quarantined from releases and analysis")
+    npx_p.add_argument("--legacy-iss", action="store_true",
+                       help="ingest July 2022-June 2023 ISS-style 'FORM N-Px REPORT' text "
+                            "N-PX (rows both independent parsers agree on, gated per "
+                            "filing); tagged iss_text and quarantined like --legacy-proxyedge")
     npx_p.set_defaults(func=cmd_ingest_npx)
     com = ing.add_parser("commitments")
     com.add_argument("--wayback", action="store_true",
