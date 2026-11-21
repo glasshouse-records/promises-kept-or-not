@@ -44,8 +44,9 @@ def scan(conn: sqlite3.Connection, sources: list[str] | None = None) -> dict:
                       v.meeting_date, v.how_voted, v.vote_description
                FROM votes v JOIN filings f ON f.accession = v.accession
                LEFT JOIN institutions i ON i.id = f.institution_id
-               WHERE gh_norm(v.issuer_name) = gh_norm(?) AND v.how_voted != '' AND v.is_duplicate = 0
-               ORDER BY {iso} DESC LIMIT 5""".format(iso=iso_meeting_date("v.meeting_date")),
+               WHERE gh_norm(v.issuer_name) = gh_norm(?) AND v.how_voted != '' AND v.is_duplicate = 0 AND {NON_LEGACY_VOTE_SQL}
+               ORDER BY {iso} DESC LIMIT 5""".format(iso=iso_meeting_date("v.meeting_date"),
+                                                   NON_LEGACY_VOTE_SQL=ledger.NON_LEGACY_VOTE_SQL),
             (action["company_name"],)).fetchall()
         holds = conn.execute(
             """SELECT COALESCE(i.display_name, f.cik) AS institution, h.issuer_name,

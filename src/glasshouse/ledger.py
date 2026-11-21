@@ -33,6 +33,12 @@ DB_PATH = DATA_DIR / "glasshouse.db"
 NON_LEGACY_VOTE_SQL = "IFNULL(vote_source,'') != 'legacy_html' AND legacy_format IS NULL"
 
 
+def non_legacy_vote_sql(alias: str = "") -> str:
+    """NON_LEGACY_VOTE_SQL qualified with a table alias (e.g. "v")."""
+    p = f"{alias}." if alias else ""
+    return f"IFNULL({p}vote_source,'') != 'legacy_html' AND {p}legacy_format IS NULL"
+
+
 def iso_meeting_date(col: str = "meeting_date") -> str:
     # Filers write 06/30/2025 or, since 2026, 9/30/2025 — both are M/D/YYYY;
     # one filing writes M/D/YY.

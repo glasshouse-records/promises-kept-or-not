@@ -25,7 +25,7 @@ import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .ledger import VERSION_DATE_SQL
+from .ledger import NON_LEGACY_VOTE_SQL, VERSION_DATE_SQL
 
 logger = logging.getLogger(__name__)
 
@@ -543,12 +543,13 @@ def find_commitment_vote_contradictions(
     candidates: list[ContradictionCandidate] = []
     for (inst_id, label), vs in versions.items():
         votes = conn.execute(
-            """SELECT v.accession, v.issuer_name, v.cusip, v.meeting_date,
+            f"""SELECT v.accession, v.issuer_name, v.cusip, v.meeting_date,
                       v.vote_description, v.how_voted,
                       v.management_recommendation, v.shares_voted
                FROM votes v JOIN filings f ON f.accession = v.accession
                WHERE f.institution_id = ?
                  AND v.how_voted = 'AGAINST' AND v.is_duplicate = 0
+                 AND {NON_LEGACY_VOTE_SQL}
                ORDER BY v.shares_voted DESC""", (inst_id,)).fetchall()
         for theme, pats in THEMES.items():
             proposal_re = "|".join(pats["proposal"])

@@ -24,6 +24,7 @@ from pathlib import Path
 from . import timeline
 from .contradictions import distinct_versions
 from .http import DATA_DIR
+from .ledger import NON_LEGACY_VOTE_SQL
 
 SITE_DIR = DATA_DIR / "_site"
 
@@ -405,7 +406,7 @@ def _vote_split(conn, inst_id: str | None = None) -> list[tuple[str, int]]:
     rows = conn.execute(
         f"""SELECT v.how_voted, COUNT(*) FROM votes v
             JOIN filings f ON f.accession = v.accession
-            WHERE v.how_voted != '' AND v.is_duplicate = 0 {where}
+            WHERE v.how_voted != '' AND v.is_duplicate = 0 AND {NON_LEGACY_VOTE_SQL} {where}
             GROUP BY v.how_voted ORDER BY 2 DESC""", args).fetchall()
     main = [(k, n) for k, n in rows if k in _VOTE_COLORS]
     other = sum(n for k, n in rows if k not in _VOTE_COLORS)
@@ -425,7 +426,7 @@ def _theme_stances(conn, inst_id: str) -> list[dict]:
         for t in THEMES if t in kw)
     row = conn.execute(
         f"SELECT {cases} FROM votes v JOIN filings f ON f.accession=v.accession "
-        f"WHERE f.institution_id = ? AND v.is_duplicate = 0", (inst_id,)).fetchone()
+        f"WHERE f.institution_id = ? AND v.is_duplicate = 0 AND {NON_LEGACY_VOTE_SQL}", (inst_id,)).fetchone()
     out = []
     for t in kw:
         f_, a_ = row[f"{t}_for"], row[f"{t}_against"]
@@ -436,11 +437,12 @@ def _theme_stances(conn, inst_id: str) -> list[dict]:
 
 def _splits(conn, inst_id: str, limit: int = 12) -> list[dict]:
     groups = conn.execute(
-        """SELECT v.issuer_name, v.meeting_date, v.vote_description, v.cusip,
+        f"""SELECT v.issuer_name, v.meeting_date, v.vote_description, v.cusip,
                   SUM(CASE WHEN v.how_voted='AGAINST' THEN v.shares_voted ELSE 0 END) AS sh_against,
                   SUM(CASE WHEN v.how_voted='FOR' THEN v.shares_voted ELSE 0 END) AS sh_for
            FROM votes v JOIN filings f ON f.accession=v.accession
            WHERE f.institution_id=? AND v.how_voted IN ('FOR','AGAINST') AND v.is_duplicate = 0
+             AND {NON_LEGACY_VOTE_SQL}
            GROUP BY v.cusip, v.meeting_date, v.vote_description
            HAVING sh_against > 0 AND sh_for > 0 AND sh_against != sh_for
            ORDER BY MIN(sh_against, sh_for) DESC LIMIT ?""",
@@ -505,16 +507,17 @@ def build(conn: sqlite3.Connection, out_dir: Path = SITE_DIR) -> dict:
     findings = _approved_findings(conn)
 
     stats = {r[0]: r[1] for r in conn.execute(
-        "SELECT 'votes', COUNT(*) FROM votes WHERE is_duplicate = 0 UNION ALL "
+        f"SELECT 'votes', COUNT(*) FROM votes WHERE is_duplicate = 0 AND {NON_LEGACY_VOTE_SQL} UNION ALL "
         "SELECT 'enforcement', COUNT(*) FROM enforcement_actions WHERE is_duplicate = 0 "
         "UNION ALL SELECT 'holdings', COUNT(*) FROM holdings UNION ALL "
         "SELECT 'commitments', COUNT(*) FROM commitments WHERE superseded = 0 UNION ALL "
-        "SELECT 'issuers', COUNT(DISTINCT issuer_name) FROM votes")}
+        f"SELECT 'issuers', COUNT(DISTINCT issuer_name) FROM votes WHERE {NON_LEGACY_VOTE_SQL}")}
 
     insts = conn.execute(
-        """SELECT i.id, i.display_name, i.type, i.country,
+        f"""SELECT i.id, i.display_name, i.type, i.country,
                   (SELECT COUNT(*) FROM votes v JOIN filings f ON f.accession=v.accession
-                   WHERE f.institution_id=i.id) AS n_votes,
+                   WHERE f.institution_id=i.id AND v.is_duplicate = 0
+                     AND {NON_LEGACY_VOTE_SQL}) AS n_votes,
                   (SELECT COUNT(*) FROM commitments c WHERE c.institution_id=i.id AND c.superseded=0) AS n_docs,
                   (SELECT COUNT(*) FROM holdings h JOIN filings f ON f.accession=h.accession
                    WHERE f.institution_id=i.id) AS n_holdings

@@ -12,7 +12,7 @@ import sqlite3
 from dataclasses import dataclass
 
 from .entities import normalize_name
-from .ledger import iso_meeting_date
+from .ledger import NON_LEGACY_VOTE_SQL, iso_meeting_date
 
 # Heuristic for shareholder-proposal votes: management recommended AGAINST
 # and the proposal text reads like a shareholder resolution.
@@ -105,7 +105,7 @@ def vote_divergence(conn: sqlite3.Connection, *, shareholder_proposals_only: boo
     finding-grade rows in Phase 1. Split votes inside a single proxyTable
     (multiple voteRecords) and splits across a manager's filings both count.
     """
-    sql = """
+    sql = f"""
         SELECT COALESCE(i.display_name, f.cik) AS institution,
                v.issuer_name, v.cusip, v.meeting_date, v.vote_description,
                COUNT(*) AS n_records,
@@ -113,7 +113,7 @@ def vote_divergence(conn: sqlite3.Connection, *, shareholder_proposals_only: boo
         FROM votes v
         JOIN filings f ON f.accession = v.accession
         LEFT JOIN institutions i ON i.id = f.institution_id
-        WHERE v.how_voted != '' AND v.is_duplicate = 0
+        WHERE v.how_voted != '' AND v.is_duplicate = 0 AND {NON_LEGACY_VOTE_SQL}
         GROUP BY institution, v.cusip, v.meeting_date, v.vote_description
         HAVING n_ways > 1
         ORDER BY n_records DESC
@@ -126,11 +126,11 @@ def vote_divergence(conn: sqlite3.Connection, *, shareholder_proposals_only: boo
             if not any(h in desc for h in _SHAREHOLDER_HINTS):
                 continue
         shares = conn.execute(
-            """SELECT v.how_voted, SUM(v.shares_voted) AS total
+            f"""SELECT v.how_voted, SUM(v.shares_voted) AS total
                FROM votes v JOIN filings f ON f.accession = v.accession
                LEFT JOIN institutions i ON i.id = f.institution_id
                WHERE COALESCE(i.display_name, f.cik) = ? AND v.cusip = ?
-                 AND v.meeting_date = ? AND v.vote_description = ? AND v.how_voted != '' AND v.is_duplicate = 0
+                 AND v.meeting_date = ? AND v.vote_description = ? AND v.how_voted != '' AND v.is_duplicate = 0 AND {NON_LEGACY_VOTE_SQL}
                GROUP BY v.how_voted""",
             (r["institution"], r["cusip"], r["meeting_date"], r["vote_description"]),
         ).fetchall()
@@ -175,7 +175,7 @@ def flagged_votes(conn: sqlite3.Connection, *, shareholder_proposals_only: bool 
         JOIN enforcement_actions e
           ON gh_norm(e.company_name) = gh_norm(v.issuer_name)
          AND gh_norm(v.issuer_name) != ''
-        WHERE v.how_voted != '' AND v.is_duplicate = 0
+        WHERE v.how_voted != '' AND v.is_duplicate = 0 AND {NON_LEGACY_VOTE_SQL}
           -- OFAC SDN designations name WHO is sanctioned; matching a voted
           -- portfolio issuer to one by name alone is the documented Aldar
           -- false-positive class ("ALDAR PROPERTIES" SDN ≠ Aldar PJSC). Drop
@@ -183,7 +183,7 @@ def flagged_votes(conn: sqlite3.Connection, *, shareholder_proposals_only: bool 
           AND e.resolution_type != 'sanction_designation'
         ORDER BY e.resolution_type != 'unverified' DESC, {ISO_V} DESC
         LIMIT ?
-    """.format(ISO_V=iso_meeting_date("v.meeting_date"))
+    """.format(ISO_V=iso_meeting_date("v.meeting_date"), NON_LEGACY_VOTE_SQL=NON_LEGACY_VOTE_SQL)
     rows = conn.execute(sql, (limit,)).fetchall()
     out = []
     for r in rows:

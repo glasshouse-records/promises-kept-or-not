@@ -22,6 +22,7 @@ from dataclasses import fields
 
 from .contradictions import distinct_versions
 from .http import DATA_DIR
+from .ledger import NON_LEGACY_VOTE_SQL
 
 # Escalation ladder (also in outreach.LADDER) — the newsroom suggests the
 # next un-drafted step for each story.
@@ -134,7 +135,7 @@ def pipeline_status(conn: sqlite3.Connection) -> list[dict]:
     def one(q, *a):
         return conn.execute(q, a).fetchone()[0]
 
-    votes = one("SELECT COUNT(*) FROM votes WHERE is_duplicate=0")
+    votes = one(f"SELECT COUNT(*) FROM votes WHERE is_duplicate=0 AND {NON_LEGACY_VOTE_SQL}")
     holdings = one("SELECT COUNT(*) FROM holdings")
     enf = one("SELECT COUNT(*) FROM enforcement_actions WHERE is_duplicate=0")
     commits = len(distinct_versions(conn))

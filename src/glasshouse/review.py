@@ -21,7 +21,7 @@ import sqlite3
 from dataclasses import asdict
 from datetime import date
 
-from .ledger import VERSION_DATE_SQL
+from .ledger import NON_LEGACY_VOTE_SQL, VERSION_DATE_SQL
 
 
 def fingerprint(c) -> str:
@@ -130,7 +130,8 @@ def dossier(conn: sqlite3.Connection, finding_id: int) -> str:
         "   the N-PX managementRecommendation field is known-unreliable:",
         f"   EDGAR DEF 14A search: {fts}",
         "3. Confirm the vote rows: sqlite3 data/glasshouse.db \"SELECT how_voted,",
-        f"   shares_voted, vote_series FROM votes WHERE accession='{p['accession']}'",
+        f"   shares_voted, vote_series FROM votes WHERE accession='{p['accession']}'"
+        f" AND {NON_LEGACY_VOTE_SQL}",
         f"   AND cusip='{p['cusip']}' AND is_duplicate=0\"",
         "4. Does the policy language actually speak to this proposal? (theme match",
         "   is lexical — this is the judgment call only you can make)",
