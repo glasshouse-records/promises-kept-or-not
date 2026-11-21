@@ -324,7 +324,7 @@ institutions:
         adviser: "Morgan Stanley Investment Management Inc. (MSIM) is the Adviser; Parametric Portfolio Associates LLC (three equity ETFs) and Morgan Stanley Investment Management Limited are sub-advisers under the Adviser's supervision. The six Calvert ETFs follow Calvert's own policy and are not attributed"
         adviser_source: "https://www.sec.gov/Archives/edgar/data/1676326/000113322823005649/msetf-html6927_485bpos.htm"  # 485BPOS filed 2023-10-06 (Parametric Equity Premium Income ETF); the other series' own SAIs are cited per series below
         adviser_verified: "2026-11-18"
-        voting_note: "Every series' own SAI: the Trustees delegated the responsibility to vote proxies to the Adviser (Morgan Stanley Investment Management Inc.) and MSIM's Proxy Voting Policy is printed as Appendix A. From the SAIs of 2024-09-30 onward that policy says 'Certain ETFs will follow Calvert's Global Proxy Voting Guidelines ... and the proxy voting guidelines discussed below do not apply to such ETFs': the six Calvert ETFs (S000077958-S000077963, in the multi-fund SAIs 0001133228-24-000567, -25-000635, -26-000962) therefore stay unlabelled (Calvert's policy is not archived, so no CALVERT key). Keyed per series from the effective date of each series' own earliest SAI read; earlier meetings unlabelled."
+        voting_note: "Every series' own SAI: the Trustees delegated the responsibility to vote proxies to the Adviser (Morgan Stanley Investment Management Inc.) and MSIM's Proxy Voting Policy is printed as Appendix A. From the SAIs of 2024-09-30 onward that policy says 'Certain ETFs will follow Calvert's Global Proxy Voting Guidelines ... and the proxy voting guidelines discussed below do not apply to such ETFs': the six Calvert ETFs (S000077958-S000077963, in the multi-fund SAIs 0001133228-24-000567, -25-000635, -26-000962) therefore stay unlabelled (the Calvert fund registrants are keyed CALVERT from 2026-11-21, but these ETFs' own SAIs were not read for it). Keyed per series from the effective date of each series' own earliest SAI read; earlier meetings unlabelled."
         series_adviser:
           S000082246: [{key: MSIM, from: "2023-10-07"}]  # Eaton Vance High Yield ETF; SAI effective 2023-10-07 in 0001133228-23-005645
           S000082247: [{key: MSIM, from: "2023-10-07"}]  # Eaton Vance Intermediate Municipal Income ETF; SAI effective 2023-10-07 in 0001133228-23-005645
@@ -341,11 +341,70 @@ institutions:
           S000101437: [{key: MSIM, from: "2026-02-18"}]  # Eaton Vance Preferred Securities and Income ETF; SAI effective 2026-02-18 in 0001133228-26-001659
         name: "Morgan Stanley ETF Trust"
         validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "356682"
+        adviser: "Calvert Research and Management (CRM), a Morgan Stanley subsidiary, under CRM's own Proxy Voting Policies and Procedures; Atlanta Capital Management (an affiliated sub-adviser) is named for some series but the SAI says CRM votes"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/356682/000094039422000083/csif-20210930.htm"  # 485BPOS filed 2022-01-28; same delegation in -23-000104, -24-000047, -25-000058, 0001133228-26-000717 (2026-01-27)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI Proxy Voting Policy: the Board delegated proxy voting responsibility to the investment adviser (CRM) and adopted CRM's own Proxy Voting Policies and Procedures (Global Proxy Voting Guidelines, printed in the SAI as an appendix, not MSIM's Equity Proxy Voting Policy); 'CRM votes proxies consistent with CRM's Proxy Voting Policies and Procedures'. Keyed from the filing date of the earliest SAI read; earlier meetings unlabelled."
+        adviser_key_history: [{key: CALVERT, from: "2022-01-28"}]
+        name: "Calvert Social Investment Fund"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "708950"
+        adviser: "Calvert Research and Management (CRM), a Morgan Stanley subsidiary, under CRM's own Proxy Voting Policies and Procedures; Atlanta Capital Management (an affiliated sub-adviser) is named for some series but the SAI says CRM votes"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/708950/000094039422000787/cvs-20211231.htm"  # 485BPOS filed 2022-04-28; same delegation in -23-000643, -24-000385, 0001076598-25-000033, 0001133228-26-006985 (2026-04-28)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI Proxy Voting Policy: the Board delegated proxy voting responsibility to the investment adviser (CRM) and adopted CRM's own Proxy Voting Policies and Procedures (Global Proxy Voting Guidelines, printed in the SAI as an appendix, not MSIM's Equity Proxy Voting Policy); 'CRM votes proxies consistent with CRM's Proxy Voting Policies and Procedures'. Keyed from the filing date of the earliest SAI read; earlier meetings unlabelled."
+        adviser_key_history: [{key: CALVERT, from: "2022-04-28"}]
+        name: "Calvert Variable Series, Inc."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1121624"
+        adviser: "Calvert Research and Management (CRM), a Morgan Stanley subsidiary, under CRM's own Proxy Voting Policies and Procedures; Atlanta Capital Management (an affiliated sub-adviser) is named for some series but the SAI says CRM votes"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1121624/000094039422000089/cif-20210930.htm"  # 485BPOS filed 2022-01-28; same delegation in -23-000094, -24-000051, -25-000050, 0001133228-26-000706 (2026-01-27)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI Proxy Voting Policy: the Board delegated proxy voting responsibility to the investment adviser (CRM) and adopted CRM's own Proxy Voting Policies and Procedures (Global Proxy Voting Guidelines, printed in the SAI as an appendix, not MSIM's Equity Proxy Voting Policy); 'CRM votes proxies consistent with CRM's Proxy Voting Policies and Procedures'. Keyed from the filing date of the earliest SAI read; earlier meetings unlabelled."
+        adviser_key_history: [{key: CALVERT, from: "2022-01-28"}]
+        name: "Calvert Impact Fund, Inc."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "319676"
+        adviser: "Calvert Research and Management (CRM), a Morgan Stanley subsidiary, under CRM's own Proxy Voting Policies and Procedures; Atlanta Capital Management (an affiliated sub-adviser) is named for some series but the SAI says CRM votes"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/319676/000094039422000088/cms-20210930.htm"  # 485BPOS filed 2022-01-28; same delegation in -23-000086, 0001133228-26-000723 (2026-01-27) and 0001133228-26-006941 (2026-04-28)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI Proxy Voting Policy: the Board delegated proxy voting responsibility to the investment adviser (CRM) and adopted CRM's own Proxy Voting Policies and Procedures (Global Proxy Voting Guidelines, printed in the SAI as an appendix, not MSIM's Equity Proxy Voting Policy); 'CRM votes proxies consistent with CRM's Proxy Voting Policies and Procedures'. Keyed from the filing date of the earliest SAI read; earlier meetings unlabelled."
+        adviser_key_history: [{key: CALVERT, from: "2022-01-28"}]
+        name: "Calvert Management Series"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "884110"
+        adviser: "Calvert Research and Management (CRM), a Morgan Stanley subsidiary, under CRM's own Proxy Voting Policies and Procedures; Atlanta Capital Management (an affiliated sub-adviser) is named for some series but the SAI says CRM votes"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/884110/000094039422000085/cwvf-20210930.htm"  # 485BPOS filed 2022-01-28; same delegation in -23-000098, -24-000045, -25-000055, 0001133228-26-000709 (2026-01-27)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI Proxy Voting Policy: the Board delegated proxy voting responsibility to the investment adviser (CRM) and adopted CRM's own Proxy Voting Policies and Procedures (Global Proxy Voting Guidelines, printed in the SAI as an appendix, not MSIM's Equity Proxy Voting Policy); 'CRM votes proxies consistent with CRM's Proxy Voting Policies and Procedures'. Keyed from the filing date of the earliest SAI read; earlier meetings unlabelled."
+        adviser_key_history: [{key: CALVERT, from: "2022-01-28"}]
+        name: "Calvert World Values Fund, Inc."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1105446"
+        adviser: "Calvert Research and Management (CRM), a Morgan Stanley subsidiary, under CRM's own Proxy Voting Policies and Procedures; Atlanta Capital Management (an affiliated sub-adviser) is named for some series but the SAI says CRM votes"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1105446/000094039422000084/cris-20210930.htm"  # 485BPOS filed 2022-01-28; same delegation in -23-000090, -24-000043, -25-000047, 0001133228-26-000677 (2026-01-27)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI Proxy Voting Policy: the Board delegated proxy voting responsibility to the investment adviser (CRM) and adopted CRM's own Proxy Voting Policies and Procedures (Global Proxy Voting Guidelines, printed in the SAI as an appendix, not MSIM's Equity Proxy Voting Policy); 'CRM votes proxies consistent with CRM's Proxy Voting Policies and Procedures'. Keyed from the filing date of the earliest SAI read; earlier meetings unlabelled."
+        adviser_key_history: [{key: CALVERT, from: "2022-01-28"}]
+        name: "Calvert Responsible Index Series, Inc."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "743773"
+        adviser: "Calvert Research and Management (CRM), a Morgan Stanley subsidiary, under CRM's own Proxy Voting Policies and Procedures; Atlanta Capital Management (an affiliated sub-adviser) is named for some series but the SAI says CRM votes"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/743773/000094039423000636/cvp-20221231.htm"  # 485BPOS filed 2023-04-27; same delegation in -24-000378, 0000102816-25-000017, 0001133228-26-006980 (2026-04-28)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI Proxy Voting Policy: the Board delegated proxy voting responsibility to the investment adviser (CRM) and adopted CRM's own Proxy Voting Policies and Procedures (Global Proxy Voting Guidelines, printed in the SAI as an appendix, not MSIM's Equity Proxy Voting Policy). Keyed from the SAI filed 2023-04-27: the SAI filed 2022-04-28 delegates to 'the investment adviser and sub-adviser' (Ameritas Investment Partners, outside the Morgan Stanley group, and Parametric were sub-advisers of some portfolios), so 2022 meetings stay unlabelled. Parametric co-sub-advises the Volatility Managed portfolios; the SAI says CRM votes."
+        adviser_key_history: [{key: CALVERT, from: "2023-04-27"}]
+        name: "Calvert Variable Trust, Inc."
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
     voting_scope_notes:
       - "Added 2026-11-18: seven MSIM fund registrants keyed MSIM from the earliest filing read: Morgan Stanley Institutional Fund Trust (741375, SAI dated 2023-01-27, 0001133228-23-000277), Institutional Fund, Inc. (836487, 2023-04-28, -23-003267), Variable Insurance Fund, Inc. (1011378, 2023-04-28, -23-002516), Europe Opportunity Fund Inc. (860720, 2023-02-28, -23-000860), Insight Fund (1002427, 2023-04-28, -23-003202) and the closed-end China A Share Fund (1368493) and India Investment Fund (916618), from the N-CSR filed 2023-03-10 (0001104659-23-030925, -23-030941). Each says the Board delegated proxy voting to MSIM / the Adviser (Morgan Stanley Investment Management Inc.) and prints MSIM's Equity Proxy Voting Policy; the sub-advisers named (MSIM Company, MSIM Limited) are MSIM affiliates covered by that policy, so no series is EXTERNAL."
       - "Morgan Stanley ETF Trust (1676326) is keyed per series, never as a registrant: 13 Eaton Vance fixed-income and Parametric ETF series (Trustees delegated voting to the Adviser, MSIM Inc.; Parametric is only a sub-adviser under the Adviser's supervision) from the effective date of each series' own earliest SAI (2023-10-07 to 2026-02-18); the six Calvert ETFs (S000077958-S000077963) follow Calvert's own proxy voting policy per the MSIM policy printed in the SAIs and stay unlabelled."
-      - "Not ingested here: the institutional-manager N-PX of MSIM Inc., MSIM Company, MSIM Limited, Morgan Stanley AIP GP LP (CIK 1230193, 1270238, 1358504, 1230207), which would count the same ballots twice; Eaton Vance and Calvert trusts (separate registrants, some under the parametric institution; a CIK is never ingested under two institutions); Morgan Stanley Institutional Liquidity Funds (1227155), Income Opportunities Fund (882381) and Emerging Markets Domestic Debt Fund (1388141), whose N-PX carry under 10 KB of vote records and were not read; Long Duration Government Opportunities, Mortgage Securities Trust, California Tax-Free Daily Income Trust and Emerging Markets Debt Fund (730044, 806564, 832705, 904112), whose N-PX carry no vote table."
+      - "Not ingested here: the institutional-manager N-PX of MSIM Inc., MSIM Company, MSIM Limited, Morgan Stanley AIP GP LP (CIK 1230193, 1270238, 1358504, 1230207), which would count the same ballots twice; Eaton Vance trusts (separate registrants, some under the parametric institution; a CIK is never ingested under two institutions; the 2026-11-21 sweep notes below list those left out); Morgan Stanley Institutional Liquidity Funds (1227155), Income Opportunities Fund (882381) and Emerging Markets Domestic Debt Fund (1388141), whose N-PX carry under 10 KB of vote records and were not read; Long Duration Government Opportunities, Mortgage Securities Trust, California Tax-Free Daily Income Trust and Emerging Markets Debt Fund (730044, 806564, 832705, 904112), whose N-PX carry no vote table."
       - "Policy text: morganstanley.com/im and eatonvance.com answer requests that identify themselves honestly with 403 (proxyvotingpolicy_msim_en.pdf, probed 2026-11-18), so no website copy is archived (see METHODOLOGY source-access notes). The only dated text is the SAI route: MSIM's proxy voting policy as printed in Appendix A of the Morgan Stanley Institutional Fund, Inc. SAI (archived as msim-equity-proxy-voting-policy-as-printed-in-sai, dated by EDGAR filing date; page footers removed). The Parametric series' own 2026 SAIs print a differently formatted copy of the January 2026 policy, archived under the parametric institution as PARAMETRIC_MSIM."
+      - "Added 2026-11-21: seven Calvert fund registrants keyed CALVERT (a key of its own, never MSIM): Social Investment Fund (356682), Variable Series (708950), Impact Fund (1121624), Management Series (319676), World Values Fund (884110), Responsible Index Series (1105446) from their SAIs filed 2022-01-28 / 2022-04-28 (0000940394-22-000083, -000787, -000089, -000088, -000085, -000084), and Variable Trust (743773) from the SAI filed 2023-04-27 (0000940394-23-000636; the 2022 SAI delegates to the adviser and a sub-adviser, so 2022 stays unlabelled). Every SAI says the Board delegated proxy voting to Calvert Research and Management (CRM) and prints CRM's own Proxy Voting Policies and Procedures (Global Proxy Voting Guidelines), a different document from the MSIM Equity Proxy Voting Policy; Atlanta Capital (Eaton Vance affiliate) and Parametric are named as sub-advisers of some portfolios but the SAIs say CRM votes. Policy text: archived from the SAI route only (label calvert-proxy-voting-policies-as-printed-in-sai); calvert.com answers honestly identified requests with 403 (probed 2026-11-21), so no website copy (see METHODOLOGY source-access notes)."
+      - "Not ingested, left out 2026-11-21 (Calvert): Calvert Fund (CIK 701039; its N-PX 0001140361-26-032176 carries 12 vote rows for a single issuer, GFL Environmental, in one bond fund; the five other series state no voting activity)."
+      - "Not ingested, left out 2026-11-21 (Eaton Vance). Tax-Managed Growth Portfolio (1002667) and its feeder Eaton Vance Series Trust (102818) file the same 1,640 ballots (N-PX 0001140361-26-030856 and -030852), so at most one could be ingested, and neither registrant's filings state the voter: the Portfolio's Part B (POS AMI 0000102816-25-000021) and the Trust's (0000102816-25-000023) only incorporate the proxy policy by reference from a Feeder Fund SAI that was not located, and the Portfolio N-CSR says Item 12 not applicable. Global Opportunities Portfolio (1475712) and Short Duration Inflation-Protected Income Portfolio (1928846) file notice reports; Senior Debt Portfolio (933188) and Floating Rate Portfolio/MA (1116914) are loan portfolios with 14 rows of one issuer (Skillsoft); Eaton Vance Investment Trust (779991) files a notice report; Eaton Vance Variable Trust (1121746; 14 Skillsoft rows) and Series Fund (1552324; 19 rows of an Asian bond issuer) carry no equity votes of substance. The equity closed-end funds with votes (Enhanced Equity Income 1300391 and II 1308335, Tax-Advantaged Dividend Income 1253327, Tax-Advantaged Global Dividend Income 1270523 and Opportunities 1281926, Tax-Managed Buy-Write Opportunities 1322436, Tax-Managed Global Buy-Write Opportunities 1322435, Tax-Managed Global Diversified Equity Income 1379438) are left out: their N-CSR Item 7 / 12 (e.g. 0001193125-22-053928, 0001193125-26-081364) says the trustees delegated voting to the investment adviser, whose Global Proxy Group and customized guidelines apply, but it names no policy document and the adviser entity is not stated; the Eaton Vance open-end SAIs print the MSIM Equity Proxy Voting Policy (January 2026) as the adviser policy only from 2026, while the closed-end text did not change through the N-CSR of 2026-02-27, so the policy in force on a given meeting date cannot be tied to an archived document. Eaton Vance Risk-Managed Diversified Equity Income (1395325), Tax-Managed Buy-Write Income (1308927) and Tax-Managed Diversified Equity Income (1340736) file notice reports; Global Enhanced Equity Income (1316051) and Tax-Managed Buy-Write Strategy (1480999) have no recent N-PX."
     commitments:
       - label: msim-equity-proxy-voting-policy-as-printed-in-sai
         adviser: "Morgan Stanley Investment Management Inc. and its MSIM affiliates"
@@ -360,6 +419,25 @@ institutions:
           end: ["APPENDIX B — DESCRIPTION OF RATINGS"]
           strip_patterns:
             - '\bA- ?\d{1,2}\b'
+            - 'Back [Tt]o Table of Contents'
+      - label: calvert-proxy-voting-policies-as-printed-in-sai
+        adviser: "Calvert Research and Management (CRM), a Morgan Stanley subsidiary"
+        adviser_key: "CALVERT"
+        sai_appendix:
+          cik: "0001105446"
+          forms: ["485BPOS"]
+          since: "2022-01-01"
+          # CRM's own Proxy Voting Policies and Procedures, the last appendix of the Calvert Responsible Index Series SAI, followed by Part C. The 2022-2025
+          # SAIs head it "APPENDIX G CALVERT RESEARCH AND MANAGEMENT PROXY VOTING POLICIES AND PROCEDURES"; the 2026 SAI "APPENDIX G — ADVISER PROXY VOTING
+          # POLICIES AND PROCEDURES CALVERT RESEARCH AND MANAGEMENT Proxy Voting Policies and Procedures" (the table of contents does not match either, so each
+          # filing yields one start). Page furniture (copyright line, "G-n Back to Table of Contents", the 2022-2025 "Calvert Responsible Index Funds n SAI dated"
+          # footer) is removed so only the policy text distinguishes editions. Dry run against EDGAR 2026-11-21: five filings, five editions.
+          start: ["APPENDIX G CALVERT RESEARCH AND MANAGEMENT PROXY VOTING POLICIES AND PROCEDURES", "APPENDIX F — ADVISER PROXY VOTING POLICIES AND PROCEDURES CALVERT RESEARCH AND MANAGEMENT Proxy Voting Policies and Procedures", "APPENDIX G — ADVISER PROXY VOTING POLICIES AND PROCEDURES CALVERT RESEARCH AND MANAGEMENT Proxy Voting Policies and Procedures"]
+          end: ["PART C - OTHER INFORMATION", "PART C OTHER INFORMATION"]
+          strip_patterns:
+            - '©\s*20\d\d Calvert Research and Management'
+            - 'Calvert Responsible Index Funds \d{1,3} SAI dated [A-Z][a-z]+ \d{1,2}, 20\d\d'
+            - '\b[FG]-\s?\d{1,2}\b'
             - 'Back [Tt]o Table of Contents'
 
   state_street:
