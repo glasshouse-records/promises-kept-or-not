@@ -5708,3 +5708,238 @@ institutions:
           page_sequence: true
           strip_patterns:
             - '(?<![A-Za-z])B-\s?\d{1,2}(?![\d-])'
+  new_york_life:
+    display_name: "New York Life Investments (New York Life Investment Management LLC) and its subadvisers"
+    short_name: "New York Life Investments"
+    cik: "0001133639"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "New York Life Investment Management LLC (NYLIM, 'New York Life Investments'), New York NY (CIK 1133639, a New York Life Insurance Company subsidiary; also the 13-F filer and an institutional-manager N-PX filer for separate accounts, not ingested). It manages the MainStay (now NYLI / NYLIM) mutual funds, the MainStay VP insurance trust, the IndexIQ ETFs (IndexIQ Advisors LLC, merged into NYLIM 2024-09-12) and the closed-end CBRE fund. Six registrants that file N-PX vote tables with operating-company votes are ingested: NYLIM Funds (CIK 787441, formerly The MainStay Funds), NYLIM Funds Trust (1469192), NYLIM VP Funds Trust (887340), NYLIM ETF Trust (1415995, formerly IndexIQ ETF Trust), NYLIM Active ETF Trust (1426439, formerly IndexIQ Active ETF Trust) and NYLIM CBRE Global Infrastructure Megatrends Term Fund (1855066). Every open-end SAI says the Board delegated all proxy voting to the Manager, which 'has adopted its own Proxy Voting Policies and Procedures' and 'may delegate proxy voting authority to the Subadvisor'; the SAI then names, fund by fund, the subadvisers it delegated to (affiliates MacKay Shields, NYL Investors, Candriam, IndexIQ Advisors and Ausbil vote under their OWN policies: MACKAY_SHIELDS, NYL_INVESTORS, CANDRIAM, INDEXIQ, AUSBIL; unaffiliated Epoch, Winslow, Wellington, CBRE, Cushing, Fiera, PineStone, Janus Henderson, FIAM, American Century, Newton, Brown Advisory, Segall Bryant & Hamill, Dimensional, Schroders and MFS: EXTERNAL) and the funds the Manager kept (NYLIM). aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. Six registrants (see notes). Not ingested: NYLIM MacKay Muni Income Opportunities Fund (1995668; votes are other registered funds' trustee elections), NYLIM MacKay DefinedTerm Muni Opportunities Fund (1518557; notice reports only), NYLIM's own institutional-manager N-PX (1133639) and IndexIQ Advisors LLC (1415996), MainStay Capital Management (1127612, notice), Eclipse Funds (868307), IndexIQ Trust (1427789), and the legacy-HTML N-PX before 2024.
+      # Series with no rule below have no operating-company votes in the 2024-2026 vote tables (or are listed under 'no rule'). Vote rows 2024 / 2025 / 2026 in the comments.
+      - cik: "787441"
+        adviser: "New York Life Investment Management LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/787441/000174177321000187/c485bpos.htm"  # 485BPOS (SAI) filed 2021-02-24 (0001741773-21-000187), 'PROXY VOTING POLICIES AND PROCEDURES'
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Board has adopted Proxy Voting Policies and Procedures for the Funds that delegate all responsibility for voting proxies ... to New York Life Investments ... The Manager has adopted its own Proxy Voting Policies and Procedures ... the Manager may delegate proxy voting authority to the Subadvisor'; then per fund 'The Manager has delegated proxy-voting authority to the Fund's Subadvisor, X' (MacKay Shields, NYL Investors, Epoch, Winslow Capital, Wellington from 2022-02-25) and 'The Manager has retained voting authority for the MainStay Balanced Fund (portion), ...Allocation Funds' (earliest SAI read 2021-02-24, 0001741773-21-000187; same structure through the SAI of 2026-02-26). No registrant-wide key: each series is keyed by the voter the SAI names for it (earliest naming SAI date). WMC Value is never named: UNRESOLVED."
+        series_adviser:
+          S000006894: [{key: MACKAY_SHIELDS, from: "2021-02-24"}]   # MacKay Strategic Bond Fund (21 / 23 / -)
+          S000006896: [{key: MACKAY_SHIELDS, from: "2021-02-24"}]   # MacKay High Yield Corporate Bond Fund (56 / 88 / 65)
+          S000006898: [{key: MACKAY_SHIELDS, from: "2021-02-24"}]   # MacKay Tax Free Bond Fund (6 / 12 / 3)
+          S000006899: [{key: MACKAY_SHIELDS, from: "2021-02-24"}]   # MacKay Convertible Fund (24 / 15 / 24)
+          S000006900: [{key: UNRESOLVED, from: "2021-02-24"}]   # Income Builder Fund: Epoch equity portion + MacKay fixed-income portion (two voters in one series) (1,876 / 1,866 / 1,751)
+          S000006902: [{key: MACKAY_SHIELDS, from: "2021-02-24"}]   # MacKay International Equity Fund (78 / - / -)
+          S000006903: [{key: EXTERNAL, from: "2022-02-25"}]   # WMC Enduring Capital Fund: Wellington (417 / 398 / 342)
+          S000006905: [{key: EXTERNAL, from: "2021-02-24"}]   # Winslow Large Cap Growth Fund: Winslow Capital (616 / 599 / 580)
+          S000006906: [{key: UNRESOLVED, from: "2021-02-24"}]   # WMC Value Fund: never named in the SAI proxy section; N-CEN says Wellington (887 / 894 / 817)
+        name: "NYLIM FUNDS"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "1469192"
+        adviser: "New York Life Investment Management LLC (the Manager); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1469192/000174177321000186/c485bpos.htm"  # 485BPOS (SAI) filed 2021-02-24 (0001741773-21-000186)
+        adviser_verified: "2026-11-21"
+        voting_note: "Same SAI wording as the sibling trust (earliest SAI read 2021-02-24, 0001741773-21-000186; Wellington first named 2021-03-29, 0001741773-21-000725; Cushing named 2022-08-29, before that 'the Fund's Subadvisor'; Fiera 2023-04-19, 0001104659-23-046991; PineStone 2023-06-15, 0001104659-23-071532). S&P 500 Index Fund: MacKay Shields until the 2022-03-29 SAI, IndexIQ Advisors from 2022-08-29 (0001741773-22-002923) to the 2024-05-01 SAI, Manager-retained from 2024-08-28 (0001741773-24-003668); the gaps between SAIs are UNRESOLVED. Balanced (three voters) and WMC Small Companies (not named) UNRESOLVED."
+        series_adviser:
+          S000026784: [{key: EXTERNAL, from: "2021-02-24"}]   # Epoch U.S. Equity Yield Fund (1,500 / 1,367 / 1,402)
+          S000026786: [{key: EXTERNAL, from: "2021-02-24"}]   # Epoch Global Equity Yield Fund (1,866 / 1,856 / 1,741)
+          S000028227: [{key: MACKAY_SHIELDS, from: "2021-02-24"}]   # MacKay High Yield Muni Bond Fund (52 / 90 / 111)
+          S000028522: [{key: EXTERNAL, from: "2021-02-24"}]   # Epoch International Choice Fund (698 / 689 / 716)
+          S000028525: [{key: MACKAY_SHIELDS, from: "2021-02-24", until: "2022-03-29"}, {key: UNRESOLVED, from: "2022-03-30", until: "2022-08-28"}, {key: INDEXIQ, from: "2022-08-29", until: "2024-05-01"}, {key: UNRESOLVED, from: "2024-05-02", until: "2024-08-27"}, {key: NYLIM, from: "2024-08-28"}]   # S&P 500 Index Fund (7,016 / 6,694 / 6,593)
+          S000028529: [{key: NYL_INVESTORS, from: "2021-02-24"}]   # Floating Rate Fund (10 / 10 / 14)
+          S000028532: [{key: NYLIM, from: "2021-02-24"}]   # Conservative Allocation Fund (fund of funds; Manager retained) (1 / - / 4)
+          S000028533: [{key: NYLIM, from: "2021-02-24"}]   # Moderate Allocation Fund (1 / - / 4)
+          S000028534: [{key: NYLIM, from: "2021-02-24"}]   # Growth Allocation Fund (1 / - / 4)
+          S000028535: [{key: NYLIM, from: "2021-02-24"}]   # Equity Allocation Fund (1 / - / 4)
+          S000028537: [{key: MACKAY_SHIELDS, from: "2021-02-24"}]   # MacKay Total Return Bond Fund (10 / 10 / 14)
+          S000028542: [{key: EXTERNAL, from: "2021-03-29"}]   # WMC International Research Equity Fund: Wellington (3,083 / 3,188 / 3,584)
+          S000036714: [{key: UNRESOLVED, from: "2021-02-24"}]   # Balanced Fund: Wellington equity + NYL Investors fixed income + Manager portion (887 / 894 / 817)
+          S000036715: [{key: UNRESOLVED, from: "2021-02-24"}]   # WMC Small Companies Fund: not named in the SAI proxy section (1,007 / 1,140 / 1,057)
+          S000036992: [{key: MACKAY_SHIELDS, from: "2021-02-24"}]   # MacKay New York Muni Fund (11 / 26 / 32)
+          S000039301: [{key: MACKAY_SHIELDS, from: "2021-02-24"}]   # MacKay Short Duration High Income Fund (37 / 69 / 14)
+          S000039358: [{key: EXTERNAL, from: "2021-03-29"}]   # WMC Growth Fund: Wellington (838 / 648 / 640)
+          S000039903: [{key: MACKAY_SHIELDS, from: "2021-02-24"}]   # MacKay California Muni Fund (- / 5 / 5)
+          S000045768: [{key: EXTERNAL, from: "2022-08-29"}]   # Cushing MLP Premier Fund: Cushing, named in the SAI only from 2022-08-29 (before: "the Fund's Subadvisor"); N-CEN lists it unaffiliated (212 / 252 / 214)
+          S000054257: [{key: EXTERNAL, from: "2021-02-24"}]   # Epoch Capital Growth Fund (1,549 / 1,566 / 1,522)
+          S000059215: [{key: CANDRIAM, from: "2021-02-24"}]   # Candriam Emerging Markets Equity Fund (1,568 / 1,817 / 1,748)
+          S000067318: [{key: EXTERNAL, from: "2021-02-24"}]   # CBRE Global Infrastructure Fund: CBRE Clarion (803 / 669 / 735)
+          S000067319: [{key: EXTERNAL, from: "2021-02-24"}]   # CBRE Real Estate Fund (467 / 514 / 469)
+          S000068835: [{key: NYLIM, from: "2021-02-24"}]   # Conservative ETF Allocation Fund (- / 47 / 4)
+          S000068837: [{key: NYLIM, from: "2021-02-24"}]   # Equity ETF Allocation Fund (- / 34 / 4)
+          S000068838: [{key: NYLIM, from: "2021-02-24"}]   # Moderate ETF Allocation Fund (- / 47 / 4)
+          S000068839: [{key: NYLIM, from: "2021-02-24"}]   # Growth ETF Allocation Fund (- / 47 / 4)
+          S000073437: [{key: NYLIM, from: "2021-09-30", until: "2024-02-25"}, {key: UNRESOLVED, from: "2024-02-26"}]   # ESG Multi-Asset Allocation Fund (named as retained 2021-09-30 to the 2023-08-28 SAI; not in 2024-02-26) (72 / - / -)
+          S000080473: [{key: EXTERNAL, from: "2023-04-19"}]   # Fiera SMID Growth Fund (627 / 685 / 756)
+          S000081082: [{key: EXTERNAL, from: "2023-06-15"}]   # PineStone Global Equity Fund (530 / 502 / 430)
+          S000081083: [{key: EXTERNAL, from: "2023-06-15"}]   # PineStone International Equity Fund (658 / 648 / 640)
+          S000081084: [{key: EXTERNAL, from: "2023-06-15"}]   # PineStone U.S. Equity Fund (377 / 379 / 374)
+        name: "NYLIM FUNDS TRUST"
+        validated: "2026-11-21"
+      - cik: "887340"
+        adviser: "New York Life Investment Management LLC (the Manager); subadvisers vote per portfolio"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/887340/000174177321000834/c485bpos.htm"  # 485BPOS (SAI) filed 2021-04-23 (0001741773-21-000834)
+        adviser_verified: "2026-11-21"
+        voting_note: "Same SAI structure ('Portfolios'; earliest SAI read 2021-04-23, 0001741773-21-000834; re-read 2022-04-19, 2023-04-14 and 2024-2026): the Manager delegates to the named Subadvisors and 'has retained voting authority for the MainStay VP Asset Allocation Portfolios and a portion of the MainStay VP Balanced Portfolio'. S&P 500 Index Portfolio: MacKay Shields until the 2022-04-19 SAI, IndexIQ Advisors 2023-04-14 to 2024-04-19, Manager-retained from 2024-12-18 (0001741773-24-004633); gaps UNRESOLVED. Hedge Multi-Strategy: IndexIQ Advisors 2023-04-14 (first named) to 2024-04-19, Manager from 2024-12-18."
+        series_adviser:
+          S000009425: [{key: EXTERNAL, from: "2021-04-23"}]   # Wellington Growth Portfolio (838 / 648 / 640)
+          S000009427: [{key: MACKAY_SHIELDS, from: "2021-04-23"}]   # MacKay Convertible Portfolio (24 / 15 / 24)
+          S000009429: [{key: EXTERNAL, from: "2021-04-23"}]   # Epoch U.S. Equity Yield Portfolio (1,500 / 1,367 / 1,402)
+          S000009430: [{key: EXTERNAL, from: "2021-04-23"}]   # Winslow Large Cap Growth Portfolio (616 / 599 / 580)
+          S000009432: [{key: EXTERNAL, from: "2021-04-23"}]   # Mid Cap portfolio: Wellington Mid Cap (SAIs to 2024-04-19), Schroders (named 2024-12-18): both unaffiliated (1,482 / 761 / 735)
+          S000009436: [{key: EXTERNAL, from: "2021-04-23"}]   # Dimensional U.S. Equity Portfolio: Wellington U.S. Equity before, Dimensional named 2024-12-18 (1,066 / 1,295 / 1,591)
+          S000009437: [{key: UNRESOLVED, from: "2021-04-23"}]   # Balanced Portfolio: Wellington + NYL Investors + Manager portion (887 / 894 / 817)
+          S000009438: [{key: NYL_INVESTORS, from: "2021-04-23"}]   # Floating Rate Portfolio (10 / 10 / 14)
+          S000009439: [{key: NYLIM, from: "2021-04-23"}]   # Conservative Allocation Portfolio (- / - / 112)
+          S000009440: [{key: NYLIM, from: "2021-04-23"}]   # Equity Allocation Portfolio (- / - / 84)
+          S000009441: [{key: NYLIM, from: "2021-04-23"}]   # Moderate Allocation Portfolio (- / - / 112)
+          S000009442: [{key: NYLIM, from: "2021-04-23"}]   # Growth Allocation Portfolio (- / - / 116)
+          S000009443: [{key: MACKAY_SHIELDS, from: "2021-04-23", until: "2022-04-19"}, {key: UNRESOLVED, from: "2022-04-20", until: "2023-04-13"}, {key: INDEXIQ, from: "2023-04-14", until: "2024-04-19"}, {key: UNRESOLVED, from: "2024-04-20", until: "2024-12-17"}, {key: NYLIM, from: "2024-12-18"}]   # S&P 500 Index Portfolio (7,016 / 6,694 / 6,593)
+          S000009444: [{key: UNRESOLVED, from: "2021-04-23"}]   # Income Builder Portfolio: Epoch equity + MacKay fixed income (1,876 / 1,856 / 1,741)
+          S000009448: [{key: MACKAY_SHIELDS, from: "2021-04-23"}]   # MacKay High Yield Corporate Bond Portfolio (46 / 59 / 41)
+          S000009449: [{key: EXTERNAL, from: "2024-04-19"}]   # PineStone International Equity Portfolio: first named 2024-04-19 (691 / 600 / 599)
+          S000031904: [{key: MACKAY_SHIELDS, from: "2021-04-23"}]   # MacKay Strategic Bond Portfolio (- / - / 4)
+          S000033925: [{key: CANDRIAM, from: "2021-04-23"}]   # Candriam Emerging Markets Equity Portfolio (1,568 / 1,817 / 1,748)
+          S000033926: [{key: EXTERNAL, from: "2021-04-23"}]   # Small Cap Growth Portfolio: Brown Advisory + Segall Bryant & Hamill (1,176 / 1,195 / 1,009)
+          S000033927: [{key: EXTERNAL, from: "2021-04-23"}]   # Natural Resources Portfolio: Mellon, then Newton (611 / 514 / 653)
+          S000033928: [{key: EXTERNAL, from: "2021-04-23"}]   # Janus Henderson Balanced Portfolio (977 / 1,017 / 975)
+          S000033929: [{key: EXTERNAL, from: "2021-04-23"}]   # Fidelity Institutional AM Utilities Portfolio: FIAM (407 / 426 / 421)
+          S000033930: [{key: EXTERNAL, from: "2021-04-23"}]   # American Century Equity Portfolio (T. Rowe Price Equity Income before 2022-04-19) (1,558 / 1,395 / 1,371)
+          S000033931: [{key: EXTERNAL, from: "2021-04-23"}]   # PIMCO Real Return Portfolio (- / - / 4)
+          S000049057: [{key: EXTERNAL, from: "2021-04-23"}]   # CBRE Global Infrastructure Portfolio (803 / 669 / 735)
+          S000053035: [{key: EXTERNAL, from: "2021-04-23"}]   # Wellington Small Cap Portfolio (2,104 / 2,187 / 2,175)
+          S000063068: [{key: INDEXIQ, from: "2023-04-14", until: "2024-04-19"}, {key: UNRESOLVED, from: "2024-04-20", until: "2024-12-17"}, {key: NYLIM, from: "2024-12-18"}]   # Hedge Multi-Strategy Portfolio (- / 108 / 10)
+          S000089397: [{key: EXTERNAL, from: "2024-12-18"}]   # MFS Investors Trust Portfolio (- / 692 / 1,000)
+          S000089398: [{key: EXTERNAL, from: "2024-12-18"}]   # MFS Research Portfolio (- / 1,133 / 1,442)
+          S000089399: [{key: EXTERNAL, from: "2024-12-18"}]   # Newton Technology Growth Portfolio (- / 299 / 418)
+        name: "NYLIM VP FUNDS TRUST"
+        validated: "2026-11-21"
+      - cik: "1415995"
+        adviser: "IndexIQ Advisors LLC, then New York Life Investment Management LLC (the Advisor); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1415995/000110465921111027/tm2123983-5_485bpos.htm"  # 485BPOS (SAI) filed 2021-08-30 (0001104659-21-111027), 'PROXY VOTING POLICIES'
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'PROXY VOTING POLICIES': 'the Board has delegated responsibility for decisions regarding proxy voting for securities held by each Fund to the Advisor. The Advisor will vote such proxies in accordance with its proxy policies and procedures, a summary of which is included in Appendix A' (one-fund SAI 2021-01-12, 0001104659-21-003095; multi-fund SAI 2021-08-30; same through 2023-08-28, 0001104659-23-095581). Advisor = IndexIQ Advisors LLC until the 2023-08-28 SAI; from the SAI of 2024-08-27 (0001999371-24-010693) the Advisor is New York Life Investment Management LLC (IndexIQ Advisors was reorganised into NYLIM, effective 2024-09-12 per NYLIM's ADV). Every Form N-CEN 2021-2026 lists no sub-adviser for any series."
+        adviser_key_history: [{key: INDEXIQ, from: "2021-08-30", until: "2024-08-26"}, {key: NYLIM, from: "2024-08-27"}]
+        # Series with votes (rows 2024 / 2025 / 2026): S000023661 Hedge Multi-Strategy Tracker, S000025928 IQ Real Return, S000025931 Merger Arbitrage, S000025932 IQ Global Resources, S000032652 CBRE NextGen Real Estate, S000050195 FTSE International Equity Currency Neutral (13,105 / 13,168 / 12,963), S000054231 Candriam International Equity, S000054232 Candriam U.S. Large Cap Equity, S000057680/57681 IQ U.S. Large/Small Cap, S000062011 500 International, S000070449 Healthy Hearts, S000071178 Engender Equality, S000073838 Clean Oceans, S000073839 Cleaner Transport, S000074744/74745/74746 R&D Leaders, S000077598 Candriam U.S. Mid Cap Equity. Advisor-voted: no series rule. Index-tracking ESG funds vote under the ISS SRI guidelines, the others under Sustainability guidelines (one policy summary).
+        name: "NYLIM ETF Trust"
+        validated: "2026-11-21"
+      - cik: "1426439"
+        adviser: "IndexIQ Advisors LLC, then New York Life Investment Management LLC (the Advisor); subadvisers vote per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1426439/000110465923095604/tm2319108d1_485bpos.htm"  # 485BPOS (SAI) filed 2023-08-28 (0001104659-23-095604)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'PROXY VOTING POLICIES': 'The Board has delegated responsibility for decisions regarding proxy voting for securities held by each series of the Trust to the Advisor. Where a Fund has retained the services of a Subadvisor ... the Advisor may delegate proxy-voting authority to the Subadvisor ... The Advisor has delegated proxy-voting authority to each Fund's Subadvisor' (earliest SAI read 2021-06-17, 0001104659-21-082629). Named: Winslow Capital (0001104659-23-095604, 2023-08-28; 'The Advisor has delegated proxy-voting authority to the Fund's Subadvisor, Winslow Capital'), CBRE (0001104659-23-050257, 2023-04-26), Ausbil (0001999371-26-009522, 2026-04-30)."
+        series_adviser:
+          S000075560: [{key: EXTERNAL, from: "2023-08-28"}]   # Winslow Large Cap Growth ETF (616 / 599 / 495)
+          S000075561: [{key: EXTERNAL, from: "2023-08-28"}]   # Winslow Focused Large Cap Growth ETF (374 / 419 / 394)
+          S000079855: [{key: EXTERNAL, from: "2023-04-26"}]   # CBRE Real Assets ETF (1,367 / 1,327 / 1,467)
+          S000101653: [{key: AUSBIL, from: "2026-04-30"}]   # International Small-Mid Cap Equity ETF (- / - / 49)
+        name: "NYLIM Active ETF Trust"
+        validated: "2026-11-21"
+      - cik: "1855066"
+        adviser: "New York Life Investment Management LLC (the Manager); CBRE Investment Management (subadviser, delegated)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1855066/000110465921051250/tm2112316d1_n2.htm"  # N-2 filed 2021-04-16 (0001104659-21-051250), 'Subadvisor Proxy Voting Guidelines'
+        adviser_verified: "2026-11-21"
+        voting_note: "N-2 SAI: 'Subadvisor Proxy Voting Guidelines. The Manager has delegated proxy-voting authority to the Fund's Subadvisor, CBRE Clarion.' (earliest 2021 filing, 2021-04-16; N-2/A 2021-09-07, 2021-09-27, 2021-10-26). Unaffiliated (N-CEN 2022-2026)."
+        adviser_key_history: [{key: EXTERNAL, from: "2021-04-16"}]
+        name: "NYLIM CBRE Global Infrastructure Megatrends Term Fund"
+        validated: "2026-11-21"
+    voting_scope_notes:
+      - "Keyed per series from the EDGAR filing date of the first SAI that names the series under that voter; earlier meetings stay unlabelled. The Manager's rule is a default: 'the Manager may delegate proxy voting authority to the Subadvisor'; the SAI's fund-by-fund lists say who it did delegate to. Sub-adviser identity and the affiliation flag come from Form N-CEN; dates never do."
+      - "Affiliates voting under their own policy: MacKay Shields, NYL Investors, Candriam, IndexIQ Advisors, Ausbil. EXTERNAL (unaffiliated, no archived policy): Epoch ('TD Epoch'), Winslow, Wellington, CBRE, Cushing, Fiera, PineStone, Janus Henderson, FIAM, American Century, Newton, Brown Advisory, Segall Bryant & Hamill, Dimensional, Schroders, MFS, T. Rowe Price, Mellon, PIMCO, Markston."
+      - "UNRESOLVED: series with more than one voter in one vote table (Income Builder, Balanced), series the SAI never names (WMC Value, WMC Small Companies) and the gaps between SAIs when the voter changes (S&P 500 Index Fund / Portfolio, Hedge Multi-Strategy, ESG Multi-Asset)."
+      - "Not ingested (left out): NYLIM MacKay Muni Income Opportunities Fund (1995668, votes are trustee elections of other registered funds), NYLIM MacKay DefinedTerm Muni Opportunities Fund (1518557, notice reports only), NYLIM's own institutional-manager N-PX (1133639) and IndexIQ Advisors LLC (1415996), and the legacy-HTML N-PX before 2024 (not ingested without --legacy). The fund-of-funds allocation series vote underlying registered funds; the Manager retained them (NYLIM) but they are not operating-company votes."
+      - "Policy text: newyorklifeinvestments.com redirects to nylim.com and answers honest clients (robots.txt allows everything except /assets/noindex). Four policies are archived: NYLIM's own PDF (website label plus the SAI's 'Manager's Proxy Voting Guidelines', which are different documents and never mixed), NYL Investors' PDF, IndexIQ Advisors' PDF (now 404; Wayback only) and the MacKay Shields summary printed in the SAI. Candriam, Ausbil and the unaffiliated advisers' summaries are printed in the SAI but not proposed as labels."
+    commitments:
+      # NYLIM's own policy (website). 200 application/pdf, 10 pages, ModDate 2026-04-02, last-modified 2026-07-07; the www.newyorklifeinvestments.com URL redirects to nylim.com. Wayback holds this URL: 2021-05-12 (200), 2022-05-12, 2023-03-14, 2023-12-16, 2024-09-20, 2024-10-09, 2025-08-16; the nylim.com host 2026-03-08 and 2026-08-20. The 2021-05-12 capture reads 'NEW YORK LIFE INVESTMENT MANAGEMENT LLC PROXY VOTING POLICY AND PROCEDURES ... ("New York Life Investments") (the "Adviser")'.
+      - label: nylim-proxy-voting-policy-and-procedures
+        url: "https://www.newyorklifeinvestments.com/assets/documents/proxies/nylim-proxy-voting-procedures.pdf"
+        adviser: "New York Life Investment Management LLC"
+        adviser_key: "NYLIM"
+        former_urls:
+          - "https://www.nylim.com/assets/documents/proxies/nylim-proxy-voting-procedures.pdf"
+      # NYL Investors LLC (fixed-income affiliate). 200 application/pdf, 12 pages, ModDate 2026-02-03. Wayback: newyorklifeinvestments.com host 2023-12-16 (200, 11 pages, ModDate 2023-02-14), nylim.com host 2026-03-14, 2026-08-20.
+      - label: nyl-investors-proxy-voting-policy-and-procedures
+        url: "https://www.newyorklifeinvestments.com/assets/documents/proxies/nyl-investors-proxy-voting-policy-and-procedures.pdf"
+        adviser: "NYL Investors LLC"
+        adviser_key: "NYL_INVESTORS"
+        former_urls:
+          - "https://www.nylim.com/assets/documents/proxies/nyl-investors-proxy-voting-policy-and-procedures.pdf"
+      # IndexIQ Advisors LLC. The canonical URL now answers 404 (definitive: the adviser was merged into NYLIM 2024-09-12); Wayback 200 capture 2021-05-12 (10 pages, ModDate 2021-03-15, 'IndexIQ Advisors LLC Proxy Voting Policy and Procedures ... It is IndexIQ's policy that where proxy voting authority has been delegated to the Adviser by clients').
+      - label: indexiq-proxy-voting-policy-and-procedures
+        url: "https://www.newyorklifeinvestments.com/assets/documents/proxies/indexiq-proxy-voting-procedures.pdf"
+        adviser: "IndexIQ Advisors LLC"
+        adviser_key: "INDEXIQ"
+      # The Manager's own text as printed in the SAI: from 'PROXY VOTING POLICIES AND PROCEDURES It is the policy of the ...' to the start of the subadviser summaries. One label per trust (Funds / Portfolios wording). The list of funds the Manager retained is removed (it changes every year), and standalone 3-digit page numbers printed inside the text. Verified on 7 SAIs of 787441, 34 of 1469192 and 7 of 887340 (start unique, end found in every full SAI; the three 2021-03-22 / 2021-03-29 prospectus filings without the section return nothing).
+      - label: nylim-proxy-voting-policy-as-printed-in-sai-funds
+        adviser: "New York Life Investment Management LLC"
+        adviser_key: "NYLIM"
+        sai_appendix:
+          cik: "0000787441"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "PROXY VOTING POLICIES AND PROCEDURES It is the policy of the"
+          end:
+            - "Subadvisor Proxy Voting Guidelines."
+          strip_patterns:
+            - 'The Manager has retained voting authority for [^.]*\.'
+            - '(?<=[A-Za-z.,"”’)]) \d{3}(?= [A-Za-z“"''])'
+      - label: nylim-proxy-voting-policy-as-printed-in-sai-trust
+        adviser: "New York Life Investment Management LLC"
+        adviser_key: "NYLIM"
+        sai_appendix:
+          cik: "0001469192"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "PROXY VOTING POLICIES AND PROCEDURES It is the policy of the"
+          end:
+            - "Subadvisor Proxy Voting Guidelines."
+          strip_patterns:
+            - 'The Manager has retained voting authority for [^.]*\.'
+            - '(?<=[A-Za-z.,"”’)]) \d{3}(?= [A-Za-z“"''])'
+      - label: nylim-proxy-voting-policy-as-printed-in-sai-vp
+        adviser: "New York Life Investment Management LLC"
+        adviser_key: "NYLIM"
+        sai_appendix:
+          cik: "0000887340"
+          forms: ["485BPOS"]
+          since: "2021-01-01"
+          start:
+            - "PROXY VOTING POLICIES AND PROCEDURES It is the policy of the"
+          end:
+            - "Subadvisor Proxy Voting Guidelines."
+          strip_patterns:
+            - 'The Manager has retained voting authority for [^.]*\.'
+            - '(?<=[A-Za-z.,"”’)]) \d{3}(?= [A-Za-z“"''])'
+      # MacKay Shields summary (2,094 characters, identical text in 33 SAIs of 1469192 from 2022-08-29 and in 787441 from 2023-02-23). The long 2021-22 text ('1. Introduction MacKay Shields LLC ...') is a different edition and is not captured by this label.
+      - label: mackay-shields-proxy-voting-summary-as-printed-in-sai-trust
+        adviser: "MacKay Shields LLC"
+        adviser_key: "MACKAY_SHIELDS"
+        sai_appendix:
+          cik: "0001469192"
+          forms: ["485BPOS"]
+          since: "2022-08-01"
+          start:
+            - "MacKay Shields has adopted Proxy-Voting Policies and Procedures designed to make sure that where clients have delegated proxy-voting authority to MacKay Shields"
+          end:
+            - "MainStay Balanced (fixed-income portion)"
+            - "NYLI Balanced (fixed-income portion)"
+            - "NYLIM Balanced (fixed-income portion)"
+          strip_patterns:
+            - '(?<=[A-Za-z.,"”’)]) \d{3}(?= [A-Za-z“"''])'
+      - label: mackay-shields-proxy-voting-summary-as-printed-in-sai-funds
+        adviser: "MacKay Shields LLC"
+        adviser_key: "MACKAY_SHIELDS"
+        sai_appendix:
+          cik: "0000787441"
+          forms: ["485BPOS"]
+          since: "2023-01-01"
+          start:
+            - "MacKay Shields has adopted Proxy-Voting Policies and Procedures designed to make sure that where clients have delegated proxy-voting authority to MacKay Shields"
+          end:
+            - "MainStay Balanced (fixed-income portion)"
+            - "NYLI Balanced (fixed-income portion)"
+            - "NYLIM Balanced (fixed-income portion)"
+          strip_patterns:
+            - '(?<=[A-Za-z.,"”’)]) \d{3}(?= [A-Za-z“"''])'
