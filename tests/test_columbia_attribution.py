@@ -23,7 +23,9 @@ PYRFORD = "S000074123"
 # 929521 Variable Series Trust (was Wanger Advisors Trust): Investment Manager was Columbia Wanger Asset
 # Management (CWAM) until 2025-07-07, so CMIA only from the SAI dated 2026-05-01 (0001193125-26-179394).
 # 99614 Tri-Continental, 1471420 Seligman Premium Technology: closed-end, N-CSR Item 7 filed 2023-03-03.
-MORE = {"815425": "2023-05-01", "929521": "2026-05-01", "99614": "2023-03-03", "1471420": "2023-03-03"}
+# 1413032 Variable Series Trust II (sweep 2026-11-21): combined SAI dated 2022-05-01 (0001193125-22-125641).
+MORE = {"815425": "2023-05-01", "929521": "2026-05-01", "99614": "2023-03-03", "1471420": "2023-03-03",
+        "1413032": "2022-05-01"}
 ALL = {**TRUSTS, **MORE}
 
 

@@ -63,7 +63,9 @@ def test_registry_keeps_franklin_resources_as_the_institution():
 
 def test_exactly_the_franklin_and_putnam_registrants():
     ciks = {str(e["cik"]) for e in FT["npx_ciks"]}
-    assert ciks == set(PUTNAM) | set(FRANKLIN)
+    # the 2026-11-21 sweep registrants are asserted in tests/test_franklin_templeton_sweep.py
+    sweep = {"805650", "809707", "825063", "1655589", "872625", "837274", "805664", "225930"}
+    assert ciks - sweep == set(PUTNAM) | set(FRANKLIN)
     assert not ciks & LEFT_OUT
     for e in FT["npx_ciks"]:
         assert e["adviser_source"].startswith("https://www.sec.gov/Archives/")
