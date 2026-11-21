@@ -5978,3 +5978,137 @@ institutions:
             - "NYLIM Balanced (fixed-income portion)"
           strip_patterns:
             - '(?<=[A-Za-z.,"”’)]) \d{3}(?= [A-Za-z“"''])'
+  diamond_hill:
+    display_name: "Diamond Hill Capital Management"
+    short_name: "Diamond Hill"
+    cik: "0001217541"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Diamond Hill Capital Management, LLC, Columbus OH (CIK 1217541, the 13-F filer and the investment adviser of the Diamond Hill Funds; Diamond Hill Investment Group, Inc. is the parent). One US fund registrant that files N-PX vote tables with operating-company votes is ingested: Diamond Hill Funds (CIK 1032423, formerly BSG Funds; 13 series, eight with votes in the 2024-2026 vote tables). Every SAI read (2021-2026) says 'The Trust has delegated proxy voting responsibilities with respect to each of the Funds to the Adviser' and that the Adviser's own Proxy Policy governs; no sub-adviser is named in the SAI or in any Form N-CEN, so there is no series exception. Left out: Diamond Hill Capital Management, LLC's own institutional-manager N-PX (CIK 1217541; overlaps the fund tables), Diamond Hill Securitized Credit Fund (CIK 2022290; an N-2 interval fund whose N-PX of 2025 and 2026 carries no vote table) and Diamond Hill Financial Trends Fund, Inc. (CIK 852954; the latest N-PX on file is from 2012). aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. One registrant (see notes). Series with votes in the 2026 N-PX (rows; tickers of the first class): S000003154 DHSCX (506), S000003155 DHLAX (666), S000003156 DIAMX (757), S000012190 DHMAX (603), S000012191 DHTAX (338), S000043502 DHPAX (659), S000065011 DHIAX (914), S000071665 DHFAX (14).
+      # S000055043, S000055044, S000088234, S000093192, S000094326 had no vote rows in 2026 (fixed-income series and new funds); they stay unlabelled until they vote.
+      - cik: "1032423"
+        adviser: "Diamond Hill Capital Management, LLC (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1032423/000103242321000034/ck0001032423-20201231.htm"  # 485BPOS (SAI) filed 2021-02-26 (0001032423-21-000034), 'Proxy Voting Policies and Procedures'
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Trust has delegated proxy voting responsibilities with respect to each of the Funds to the Adviser, subject to the general oversight of the Board. The Adviser has adopted written proxy voting policies and procedures (\"Proxy Policy\") ... and the Proxy Policy has been approved by the Trustees of the Trust as the policies and procedures that the Adviser will use when voting proxies on behalf of the Funds.' Earliest SAI read 2021-02-26 (0001032423-21-000034); same wording in 2022-02-25 (0001032423-22-000020), 2024-02-26 (0001032423-24-000016), 2025-06-09, 2026-02-25 (0001398344-26-003660) and 2026-10-28 (0001398344-26-019005). The SAI does not print the policy; the website copy is archived (commitments). No sub-adviser in any SAI or Form N-CEN (2021-03 to 2026-03)."
+        adviser_key_history: [{key: DIAMOND_HILL, from: "2021-02-26"}]
+        name: "DIAMOND HILL FUNDS"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed DIAMOND_HILL from the EDGAR filing date of the earliest SAI read (2021-02-26); earlier meetings stay unlabelled. Votes follow Diamond Hill Capital Management's own Proxy Policy; the Trust delegated all voting to the Adviser and no sub-adviser exists."
+      - "Not ingested (left out): Diamond Hill Capital Management's institutional-manager N-PX (CIK 1217541), Diamond Hill Securitized Credit Fund (CIK 2022290, no vote table) and Diamond Hill Financial Trends Fund (CIK 852954, latest N-PX 2012), and the legacy-HTML N-PX before 2024 (not ingested without --legacy)."
+      - "Policy text: only the website PDF; the SAI does not reprint it. Diamond Hill Investment Group, Inc. filed merger proxy statements (PREM14A / DEFM14A) in 2026 that were not read here: a later change of adviser or policy must be re-read from the next SAI."
+    commitments:
+      # Verified 2026-11-21 (200 application/pdf to the honest client, no redirect, 311,514 bytes; first page 'Diamond Hill Capital Management LLC Proxy Voting Policy, Procedures and Guidelines'). robots.txt does not disallow /sitefiles/. The site's /about/policies-and-disclosures page 302-redirects to the funds' code of ethics PDF, so the PDF URL is taken from the investment-sustainability page link.
+      - label: diamond-hill-proxy-voting-policy
+        url: "https://www.diamond-hill.com/sitefiles/live/documents/governance-disclosures/Proxy-Voting-Policy.pdf"
+        adviser: "Diamond Hill Capital Management, LLC"
+        adviser_key: "DIAMOND_HILL"
+  brown_advisory:
+    display_name: "Brown Advisory"
+    short_name: "Brown Advisory"
+    cik: "0001114667"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Brown Advisory LLC, Baltimore MD (CIK 1114667, formerly Beatty Haynes & Associates; the 13-F filer and investment adviser of the Brown Advisory Funds; its parent Brown Advisory Inc is CIK 1345929 and its UK affiliate Brown Advisory Ltd is CIK 1742040). One US fund registrant that files N-PX vote tables with operating-company votes is ingested: Brown Advisory Funds (CIK 1548609; 14 series with votes in 2026). The SAI says the Board's Proxy Voting Policies 'delegate the responsibility for voting proxies to the Adviser or Sub-Advisers, as applicable' and attaches, as Appendix B, the Brown Advisory LLC / Brown Advisory Limited policy and the policies of the unaffiliated sub-advisers Wellington, Pzena and Beutel Goodman. It does not list fund by fund who votes, so: series with no unaffiliated sub-adviser (the Adviser, or its affiliate Brown Advisory Ltd under the shared policy: Global Leaders, Sustainable International Leaders) are BROWN_ADVISORY; series with one unaffiliated sub-adviser per the N-CEN (WMC Strategic European Equity, Beutel Goodman Large-Cap Value, WMC Japan Equity) are EXTERNAL; Emerging Markets Select (Wellington and Pzena, a split mandate) is UNRESOLVED. Left out: the institutional-manager N-PX of Brown Advisory LLC (CIK 1114667), Brown Advisory Inc (CIK 1345929) and Brown Advisory Ltd (CIK 1742040), which overlap the fund tables, and the bond series with no vote rows. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. One registrant (see notes). Vote rows in the 2026 N-PX in the comments.
+      # Series with no rule below are the Adviser's own (Brown Advisory LLC; Global Leaders and Sustainable International Leaders are sub-advised by the affiliate Brown Advisory Ltd. under the same policy): BROWN_ADVISORY by the registrant history from 2021-10-29, the first SAI covering every fund.
+      # The single-fund SAIs of 2021-09-30, 2022-02-28 (Sustainable International Leaders), 2023-02-28 and 2024-09-27 (WMC Japan Equity) use the same wording and are not used as the registrant start.
+      - cik: "1548609"
+        adviser: "Brown Advisory LLC (the Adviser); unaffiliated sub-advisers (Wellington, Pzena, Beutel Goodman) per series"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1548609/000089418921007672/ck0001548609-20210630.htm"  # 485BPOS (SAI) filed 2021-10-29 (0000894189-21-007672), 'Proxy Voting Procedures'
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Procedures': 'The Board has adopted Proxy Voting Policies and Procedures (the \"Trust Proxy Voting Policies\") on behalf of the Trust which delegate the responsibility for voting proxies to the Adviser or Sub-Advisers, as applicable ... The Adviser has adopted its own separate Proxy Voting Policies and Procedures ... and each of the Sub-Advisers have adopted their own respective Proxy Voting Policies and Procedures', all attached as Appendix B (Brown Advisory LLC and Brown Advisory Limited, Wellington, Pzena, Beutel Goodman). First SAI covering every fund 2021-10-29 (0000894189-21-007672); same wording 2022-10-28, 2023-10-27, 2024-10-29, 2025-10-29 (0000894189-25-012724) and 2026-10-30. Sub-advisers per Form N-CEN (2021-09 to 2026-09): Wellington for WMC Strategic European Equity and WMC Japan Equity (from the SAI of 2024-09-27), Beutel Goodman for Large-Cap Value, Wellington and Pzena for Emerging Markets Select (the 2025 N-CEN lists no sub-adviser for it; UNRESOLVED stays), Brown Advisory Ltd (affiliate, shared policy) for Global Leaders and Sustainable International Leaders."
+        adviser_key_history: [{key: BROWN_ADVISORY, from: "2021-10-29"}]
+        series_adviser:
+          S000042683: [{key: EXTERNAL, from: "2021-10-29"}]   # Brown Advisory - WMC Strategic European Equity Fund: Wellington (1,561 votes in 2026)
+          S000061323: [{key: EXTERNAL, from: "2021-10-29"}]   # Brown Advisory - Beutel Goodman Large-Cap Value Fund: Beutel Goodman (407)
+          S000088082: [{key: EXTERNAL, from: "2024-09-27"}]   # Brown Advisory - WMC Japan Equity Fund: Wellington, first SAI 2024-09-27 (938)
+          S000039101: [{key: UNRESOLVED, from: "2021-10-29"}]   # Emerging Markets Select Fund: Wellington + Pzena (1,274)
+        name: "BROWN ADVISORY FUNDS"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed BROWN_ADVISORY per series from 2021-10-29 (EDGAR filing date of the first SAI naming every fund); earlier meetings stay unlabelled. Sub-advised series: EXTERNAL (Wellington, Beutel Goodman), UNRESOLVED (Emerging Markets Select: two sub-advisers). The SAI says 'the Adviser or Sub-Advisers, as applicable' without a fund-by-fund list; a fund-level statement of who votes would let the UNRESOLVED and EXTERNAL series be re-keyed."
+      - "Not ingested (left out): the institutional-manager N-PX of Brown Advisory LLC (CIK 1114667), Brown Advisory Inc (CIK 1345929) and Brown Advisory Ltd (CIK 1742040), and the legacy-HTML N-PX before 2024 (not ingested without --legacy)."
+      - "Policy text: the website PDF (dated November 2025) and the policy as printed in the SAI Appendix B (Brown Advisory LLC and Brown Advisory Limited section only; the sub-advisers' policies that follow are not captured). Typographic differences between SAIs of the same year (bullets, spacing) will surface as separate versions."
+    commitments:
+      # Verified 2026-11-21 (200 application/pdf to the honest client, no redirect, 189,431 bytes; first page 'BROWN ADVISORY PROXY VOTING POLICY ... November 2025'). robots.txt does not disallow /sites/default/files/.
+      - label: brown-advisory-proxy-voting-policy
+        url: "https://www.brownadvisory.com/sites/default/files/Proxy_Voting_Policy_0.pdf"
+        adviser: "Brown Advisory LLC"
+        adviser_key: "BROWN_ADVISORY"
+      # Appendix B as printed in the SAI (485BPOS), dated by EDGAR filing date: the Brown Advisory section ends where the next sub-adviser's policy begins (Wellington, Pzena or Beutel Goodman; heading wording varies by year) or at Part C in the single-fund SAIs. Page furniture 'B-7' printed mid-text.
+      # Ten SAIs 2021-09-30 to 2026-10-30; extraction checked 2026-11-21 on each (sections 28,000 to 31,800 characters, never an outlier).
+      - label: brown-advisory-proxy-voting-policy-as-printed-in-sai
+        adviser: "Brown Advisory LLC"
+        adviser_key: "BROWN_ADVISORY"
+        sai_appendix:
+          cik: "0001548609"
+          forms: ["485BPOS"]
+          since: "2021-04-01"
+          start:
+            - "APPENDIX B – PROXY VOTING POLICIES BROWN ADVISORY LLC AND BROWN ADVISORY LIMITED PROXY VOTING POLICY ON SECURITIES"
+          end:
+            - "Wellington Management Company LLP Global Proxy"
+            - "PZENA INVESTMENT MANAGMENT"
+            - "PZENA INVESTMENT MANAGEMENT"
+            - "BEUTEL, GOODMAN & COMPANY LTD."
+            - "BROWN ADVISORY FUNDS PART C OTHER INFORMATION"
+          strip_page_numbers: true
+          strip_patterns:
+            - '(?<![A-Za-z])B-\s?\d{1,2}(?![\d-])'
+  pacer:
+    display_name: "Pacer Advisors"
+    short_name: "Pacer"
+    cik: "0001616667"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Pacer Advisors, Inc., Malvern PA (CIK 1616667, the 13-F filer and the investment adviser of the Pacer ETFs; Pacer Financial, Inc. is the distributor). One US fund registrant that files N-PX vote tables with operating-company votes is ingested: Pacer Funds Trust (CIK 1616668; 44 series with votes in the 2026 vote table, index and structured-outcome ETFs). The multi-fund SAIs say 'The Funds have delegated proxy voting responsibilities to the Adviser' and that the Adviser 'has adopted the Glass Lewis Investment Manager Guidelines', printed as the SAI appendix. The SAIs name the exceptions, which are keyed EXTERNAL per series: FLRT (Pacific Asset Management, from the SAI of 2022-08-26 'except for FLRT'; Aristotle Pacific from 2023-08-25; its single-fund SAI of 2021-10-19 already delegates to 'the Sub-Adviser'), INDQ (ActiveAlpha, single-fund SAI of 2025-12-22) and the Barings funds AAAP and PBSC (SAI of 2026-06-04). The other ETFs, including those with a sub-advisory agreement on the exhibit list (Metaurus Advisors), are in SAIs that delegate to the Adviser. Left out: Pacer Advisors' own institutional-manager N-PX (CIK 1616667), which overlaps the fund table. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. One registrant (see notes). The trust files several SAIs per year (one per fiscal-year / launch group); the earliest read from 2021 on (2021-02-23, USAI) starts the trust key, and every later SAI read (2021-2026, 32 filings) delegates to the Adviser except where noted in the series rules.
+      # Series with no rule are keyed PACER from 2021-02-23 by the registrant history; series launched later are covered by the SAIs of their launch group, all of which delegate to the Adviser.
+      - cik: "1616668"
+        adviser: "Pacer Advisors, Inc. (the Adviser); sub-advisers vote only for FLRT, INDQ, AAAP and PBSC"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1616668/000089418921000991/ck0001616668-20201031.htm"  # 485BPOS (SAI) filed 2021-02-23 (0000894189-21-000991), 'Proxy Voting Policy'
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policy': 'The Funds have delegated proxy voting responsibilities to the Adviser, subject to the Board's oversight ... The Adviser has adopted the Glass Lewis Investment Manager Guidelines attached as Appendix A.' Earliest SAI read 2021-02-23 (0000894189-21-000991); same wording in 2021-08-26 (0000894189-21-006008), 2024-08-14, 2025-03-24, 2026-03-10 (PSAI, WDAI) and 2026-08-24. Exceptions in the SAI text: 'except for FLRT which has delegated proxy voting responsibilities to Pacific Asset Management' (2022-08-26, 0000894189-22-006285; the single-fund FLRT SAI of 2021-10-19, 0000894189-21-007363, delegates to 'the Sub-Adviser'), 'Aristotle Pacific' (2023-08-25, 0000894189-23-006255, through 2026-08-27); 'The Fund has delegated proxy voting responsibilities to the Sub-Adviser' for INDQ (2025-12-22, 0000894189-25-017392, ActiveAlpha); 'The Funds have delegated proxy voting responsibilities to Barings LLC' for AAAP and PBSC (2026-06-04, 0000894189-26-017051). Pacific Asset Management, Aristotle Pacific, ActiveAlpha and Barings are unaffiliated with Pacer: EXTERNAL."
+        adviser_key_history: [{key: PACER, from: "2021-02-23"}]
+        series_adviser:
+          S000073714: [{key: EXTERNAL, from: "2021-10-19"}]   # Pacer Pacific Asset Floating Rate High Income ETF (FLRT): Pacific Asset Management, then Aristotle Pacific (2 votes in 2026)
+          S000097528: [{key: UNRESOLVED, until: "2025-12-21"}, {key: EXTERNAL, from: "2025-12-22"}]   # Pacer ActiveAlpha India Quality ETF (INDQ): ActiveAlpha (30 votes in 2026)
+          S000101891: [{key: UNRESOLVED, until: "2026-06-03"}, {key: EXTERNAL, from: "2026-06-04"}]   # Pacer Barings CLO Market Flex ETF (AAAP): Barings (no votes yet)
+          S000101892: [{key: UNRESOLVED, until: "2026-06-03"}, {key: EXTERNAL, from: "2026-06-04"}]   # Pacer Barings Secured Credit Flex ETF (PBSC): Barings (no votes yet)
+        name: "PACER FUNDS TRUST"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+    voting_scope_notes:
+      - "Keyed PACER from the EDGAR filing date of the earliest SAI read (2021-02-23, which covers USAI only; the multi-fund SAI of 2021-08-26 repeats the wording for the other funds); earlier meetings stay unlabelled. Sub-adviser-voted series (FLRT, INDQ, AAAP, PBSC) are EXTERNAL from their first SAI naming the sub-adviser; INDQ, AAAP and PBSC are UNRESOLVED before it."
+      - "Not ingested (left out): Pacer Advisors' institutional-manager N-PX (CIK 1616667) and the legacy-HTML N-PX before 2024 (not ingested without --legacy)."
+      - "Policy text: the SAI appendix only. paceretfs.com has no proxy voting policy page (404 on /proxy-voting; no link in the home, library or important-documents pages). The appendix prints the Glass Lewis Investment Manager Guidelines the Adviser adopted, as a template: its text is Glass Lewis's, adopted by Pacer, and is identical in every SAI read except for a stray comma after 'Therefore' (removed by strip_patterns so typography does not invent an edition). The sub-adviser policies printed after it (Appendix C, Pacific Asset Management for FLRT) are not captured."
+    commitments:
+      # Appendix as printed in the SAI (485BPOS): headed 'APPENDIX A' or 'APPENDIX B' (and 'for the Funds' / 'for all Funds' / 'for all Funds except for FLRT'), so the start marker is the first sentence of the Glass Lewis text. Ends at the next appendix (C), the next prospectus in a multi-SAI filing, or Part C. Page furniture 'A-2' / 'B-2'.
+      # Dry-run 2026-11-21 over the 32 485BPOS filings of 2021-2026: the filings that print the Adviser's guidelines give the identical section (about 6,980 characters); the rest (prospectus-only filings, the single-fund sub-adviser SAIs and the multi-SAI February filings whose two copies disagree) give nothing, as intended. One version expected.
+      - label: pacer-glass-lewis-investment-manager-guidelines-as-printed-in-sai
+        adviser: "Pacer Advisors, Inc."
+        adviser_key: "PACER"
+        sai_appendix:
+          cik: "0001616668"
+          forms: ["485BPOS"]
+          allow_identical_copies: true
+          since: "2021-01-01"
+          start:
+            - "GLASS LEWIS INVESTMENT MANAGER GUIDELINES The Glass Lewis Investment Manager Guidelines are designed to maximize returns"
+          end:
+            - "APPENDIX C"
+            - "PROSPECTUS"
+            - "PACER FUNDS TRUST PART C OTHER INFORMATION"
+            - "PART C OTHER INFORMATION"
+          strip_page_numbers: true
+          strip_patterns:
+            - '(?<![A-Za-z])[AB]-\s?\d{1,2}(?![\d-])'
+            - 'Therefore,?'
