@@ -438,6 +438,17 @@ institutions:
         adviser_verified: "2026-11-17"
         name: "Goldman Sachs ETF Trust"
         validated: "2026-06-26"
+      # Sweep of 2026-11-21: Goldman Sachs Trust II (multi-manager funds; 24,478 vote lines in the 2026 N-PX; 8 series). UNRESOLVED registrant-wide: the SAI says that when a
+      # Fund allocates assets to Underlying Managers they take all action on those securities and the Investment Adviser (GSAM) is not responsible for them, while GSAM votes
+      # what it holds itself. Series with one external manager would be EXTERNAL, but no per-series reading was done, so none is claimed.
+      - cik: "1557156"
+        adviser: "Goldman Sachs Asset Management, L.P. (Investment Adviser) for securities it holds itself; unaffiliated Underlying Managers for their sleeves (series not mapped)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1557156/000119312522058202/d225293d485bpos.htm"  # 485BPOS filed 2022-02-28 (0001193125-22-058202), 'Proxy Voting by the Investment Adviser'; 2026-02-26 editions (0001193125-26-076853, -076906) repeat it
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting by the Investment Adviser': when a Fund allocates assets to Underlying Managers, the Underlying Managers (or the custodian) are responsible for all action on the securities they hold and the Investment Adviser is not; Appendix C summarises the Underlying Managers' proxy voting guidelines. More than one voter per Fund and unmapped series, so UNRESOLVED."
+        adviser_key_history: [{key: UNRESOLVED, from: "2022-02-28"}]
+        name: "Goldman Sachs Trust II"
+        validated: "2026-11-21"
     commitments:
       # GSAM's web presence moved gsam.com → am.gs.com (gsam.com still 403s
       # non-browser clients; we do NOT spoof UAs). am.gs.com serves the
@@ -988,7 +999,76 @@ institutions:
         adviser_key_history: [{key: PUTNAM, from: "2021-05-20"}]
         name: "Putnam ETF Trust"
         validated: "2026-11-18"   # entity name confirmed via data.sec.gov submissions API
+      # Franklin / Templeton / Mutual Series registrants, added 2026-11-21 (sweep). Each files a FUND VOTING REPORT N-PX with equity votes (2026-08-21 filings). Keyed
+      # from the EDGAR filing date of the earliest 485BPOS (SAI) read (2022 or later). Only Franklin Advisers, Inc. maps to the FRANKLIN key; every other voter prints
+      # its own Proxy Voting Policies & Procedures (Franklin Mutual Advisers, Templeton Global Equity Group, Franklin Templeton Investment Solutions, ClearBridge and
+      # the other sub-advisers of the Variable Insurance Products Trust) and has no key in this block, so those registrants are UNRESOLVED (quarantined), never guessed.
+      - cik: "805650"
+        adviser: "Franklin Advisers, Inc. (Franklin Rising Dividends Fund, the registrant's only series, S000006858)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/805650/000174177322000111/c485bpos.htm"  # 485BPOS filed 2022-01-26 (0001741773-22-000111); same wording in -23-000089, -24-000065, -25-000275, 0001655589-26-000059 (2026-01-26)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': the board of trustees delegated the authority to vote proxies to the Fund's investment manager under the Policies adopted by the investment manager; Appendix A is the Franklin Advisers, Inc. Proxy Voting Policies & Procedures (July 2021)."
+        adviser_key_history: [{key: FRANKLIN, from: "2022-01-26"}]
+        name: "Franklin Managed Trust"
+        validated: "2026-11-21"
+      - cik: "809707"
+        adviser: "Franklin Advisers, Inc. (Convertible Securities, Floating Rate Daily Access, Low Duration Total Return, Total Return); Franklin Templeton Institutional, LLC is sub-advisor of the Total Return Fund for equity-allocation advice"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/809707/000174177322000406/c485bpos.htm"  # 485BPOS filed 2022-02-25 (0001741773-22-000406); 2026-02-25 edition (0001655589-26-000150) repeats the delegation
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': the board of trustees delegated the authority to vote proxies to the Fund's investment manager under the Policies it adopted; the only Appendix A policy printed is Franklin Advisers, Inc. (2022) / Franklin Equity Group (2026). The sub-advisor's role is described as advice to the investment manager, not voting."
+        adviser_key_history: [{key: FRANKLIN, from: "2022-02-25"}]
+        name: "Franklin Investors Securities Trust"
+        validated: "2026-11-21"
+      - cik: "825063"
+        adviser: "Franklin Mutual Advisers, LLC (the investment manager of the Mutual Series funds), which votes under its OWN Proxy Voting Policies & Procedures (March 2022 / March 2025), not the Franklin Equity Group policy"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/825063/000174177322001277/c485bpos.htm"  # 485BPOS filed 2022-04-27 (0001741773-22-001277); 2026-04-28 edition (0001655589-26-000598) repeats it
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI Appendix A is 'Franklin Mutual Advisers, LLC Proxy Voting Policies & Procedures' (administration delegated to the Franklin Templeton Proxy Group). No key for Franklin Mutual Advisers exists in this block and its policy is a different document from FRANKLIN's, so the registrant is UNRESOLVED rather than FRANKLIN; a distinct key would need its policy archived as a commitment."
+        adviser_key_history: [{key: UNRESOLVED, from: "2022-04-27"}]
+        name: "Franklin Mutual Series Funds"
+        validated: "2026-11-21"
+      - cik: "1655589"
+        adviser: "Several series under different Franklin Templeton policies: the trust's SAIs print the Franklin Equity Group policy (2024, 2026-05) and the Franklin Templeton Investment Solutions policy (2026-10); series are not mapped to SAIs here"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1655589/000174177324002496/c485bpos.htm"  # 485BPOS filed 2024-05-30 (0001741773-24-002496), Franklin Equity Group policy; Investment Solutions policy in 0001655589-26-001380 (2026-10-22)
+        adviser_verified: "2026-11-21"
+        voting_note: "Each SAI says the board delegated proxy voting to the Fund's investment manager under that manager's policy, but different SAIs of this one registrant print different policies (Franklin Equity Group; Franklin Templeton Investment Solutions), and the series-to-SAI mapping was not established. UNRESOLVED registrant-wide (15 series in the 2026 N-PX); earlier SAIs than 2024-05-30 are not in the recent-filings list and were not read."
+        adviser_key_history: [{key: UNRESOLVED, from: "2024-05-30"}]
+        name: "Franklin Templeton ETF Trust"
+        validated: "2026-11-21"
+      - cik: "872625"
+        adviser: "Several series under different Franklin Templeton policies (Franklin Templeton Investment Solutions in 2022; Franklin Equity Group and Investment Solutions in 2026)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/872625/000174177322002835/c485bpos.htm"  # 485BPOS filed 2022-08-25 (0001741773-22-002835), Investment Solutions policy; 2026-08-25 edition (0001655589-26-001178) prints both policies
+        adviser_verified: "2026-11-21"
+        voting_note: "Each SAI says the board delegated proxy voting to the Fund's investment manager under its own policy; the 2026 SAI prints two different policies for the trust's series, and the series-to-policy mapping was not established. UNRESOLVED registrant-wide."
+        adviser_key_history: [{key: UNRESOLVED, from: "2022-08-25"}]
+        name: "Franklin Strategic Series"
+        validated: "2026-11-21"
+      - cik: "837274"
+        adviser: "Franklin Advisers and affiliates plus sub-advisors (ClearBridge, Franklin Mutual Advisers, Templeton and Emerging Markets groups, Franklin Templeton Investment Solutions); the 2026 SAI prints six different policies"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/837274/000174177322000997/c485bpos.htm"  # 485BPOS filed 2022-03-15 (0001741773-22-000997); 2026-04-27 edition (0001655589-26-000592): 'delegated the authority to vote proxies to the subadvisors, in accordance with the Proxy Voting Policies and Procedures adopted by the investment manager or sub-advisor'
+        adviser_verified: "2026-11-21"
+        voting_note: "Voting is delegated per series to the investment manager or the sub-advisor under that adviser's own policy; the SAI prints policies headed Franklin Equity Group, Franklin Mutual Advisers, Franklin Templeton Emerging Markets Equity Group, Templeton Global Equity Group, Franklin Templeton Investment Solutions and ClearBridge Investments. Several of these have no key in this block and the series mapping was not established, so UNRESOLVED registrant-wide."
+        adviser_key_history: [{key: UNRESOLVED, from: "2022-03-15"}]
+        name: "Franklin Templeton Variable Insurance Products Trust"
+        validated: "2026-11-21"
+      - cik: "805664"
+        adviser: "The Fund's investment manager under the Templeton Global Equity Group Proxy Voting Policies & Procedures (March 2022 onward), a Templeton policy with no key in this block"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/805664/000174177322004375/c485bpos.htm"  # 485BPOS filed 2022-12-27 (0001741773-22-004375); 2025-12-23 edition (0001655589-25-000289) prints the same policy
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI Appendix A is 'Templeton Global Equity Group Proxy Voting Policies & Procedures', a separate investment group within Franklin Templeton, not the Franklin Equity Group policy keyed FRANKLIN. UNRESOLVED until that policy is archived under its own key."
+        adviser_key_history: [{key: UNRESOLVED, from: "2022-12-27"}]
+        name: "Templeton Growth Fund Inc"
+        validated: "2026-11-21"
+      - cik: "225930"
+        adviser: "Templeton Global Advisors Limited (investment manager) and a sub-advisor, under the Templeton Global Equity Group Proxy Voting Policies & Procedures, a Templeton policy with no key in this block"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/225930/000174177322004367/c485bpos.htm"  # 485BPOS filed 2022-12-27 (0001741773-22-004367); 2025-12-23 edition (0001655589-25-000283) prints the same policy
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI: the board delegated proxy voting to the Fund's investment manager (Templeton Global Advisors Limited; 'investment manager and sub-advisor' for the second fund) under the Templeton Global Equity Group policy, not the Franklin Equity Group policy keyed FRANKLIN. UNRESOLVED until that policy is archived under its own key."
+        adviser_key_history: [{key: UNRESOLVED, from: "2022-12-27"}]
+        name: "Templeton Funds"
+        validated: "2026-11-21"
     voting_scope_notes:
+      - "Sweep of 2026-11-21 (eight further registrants, all kept; none left out): Franklin Managed Trust (805650) and Franklin Investors Securities Trust (809707) are keyed FRANKLIN from the SAIs of 2022-01-26 and 2022-02-25 (Franklin Advisers, Inc.). Franklin Mutual Series Funds (825063, Franklin Mutual Advisers' own policy), Templeton Growth Fund (805664) and Templeton Funds (225930) (Templeton Global Equity Group policy), and the multi-policy trusts Franklin Templeton ETF Trust (1655589), Franklin Strategic Series (872625) and Franklin Templeton Variable Insurance Products Trust (837274; sub-advisers including ClearBridge) are UNRESOLVED: their voters print their own policies, which have no key in this block. No new key is proposed; Franklin Mutual Advisers and the Templeton Global Equity Group would each need their policy archived as a commitment first."
       - "Two adviser groups. FRANKLIN: Franklin Custodian Funds (38721) from 2021-01-26 (SAI 0001379491-21-000215) and Franklin ETF Trust (1551895) from 2021-07-28 (0001379491-21-003455); each SAI says the board delegated voting to the investment manager, Franklin Advisers, Inc. PUTNAM: the Putnam Funds and the Putnam ETF Trust, from each registrant's earliest SAI whose Part II says the Trustees delegated proxy voting to Putnam Management (Putnam Funds Trust and Putnam High Yield Fund 2023-03-27, Putnam Variable Trust 2023-04-28, Putnam Investment Funds 2023-06-27, Putnam International Equity Fund 2023-10-26, George Putnam Balanced Fund 2023-11-27, Putnam Global Health Care Fund 2023-12-28, Putnam Asset Allocation Funds 2023-12-29, Putnam Diversified Income Trust 2024-01-25, Putnam Convertible Securities Fund, Putnam Large Cap Value Fund and Putnam Focused International Equity Fund 2024-02-26, Putnam ETF Trust 2021-05-20). The accessions are in each registrant's adviser_source."
       - "Regime change inside the Putnam funds: SAIs to 2023-02-28 say the Trustees of the Putnam Funds established the proxy voting guidelines and that the Director of Proxy Voting and Corporate Governance, a member of the Office of the Trustees, directed the votes (the Putnam Funds' own guidelines, not Putnam Management's). From 2023-03-27 the SAIs say the Trustees delegated proxy voting authority to Putnam Management and approved its procedures, and print a footnote 'Effective January 27, 2023, the Board of Trustees of the Putnam Mutual Funds delegated proxy voting authority to Putnam Investment Management, LLC.' Each registrant is keyed PUTNAM only from its OWN first SAI of the new wording; its meetings before that stay unlabelled (a known loss of coverage for the registrants whose first such SAI is late: Large Cap Value, Convertible Securities and Focused International Equity, 2024-02-26, so meetings 2023-07-01 to 2024-02-25 are unlabelled), never guessed from a sister trust's filing."
       - "No Putnam rule ends: the SAIs read to 2026-10-26 (Putnam Funds Trust 0001193125-26-431489, Putnam Variable Trust 0001193125-26-410580) still say the Board delegated voting to Putnam Management and print the Putnam Investments Proxy Voting Procedures, although Franklin Advisers, Inc. became the Investment Manager of some series in 2025-26 (the Franklin Asset Allocation, Franklin Multi-Asset Income, Franklin Dynamic AA Equity and Franklin Retirement Advantage funds) with Putnam Management as sub-adviser whose services 'may include ... proxy voting'. The procedures route items on securities held solely in accounts managed by the Global Asset Allocation team within Franklin Templeton Investment Solutions to that team's portfolio managers for a recommendation; the vote is still cast under the Putnam procedures."
@@ -1445,7 +1525,17 @@ institutions:
         adviser_key: "CRMC"
         name: "Capital Group Completion Fund Series"
         validated: "2026-11-17"
+      # Sweep of 2026-11-21: The New Economy Fund (equity, 2,166 vote lines in the 2026 N-PX). Keyed from the effective date of the earliest SAI read (2022-02-01).
+      - cik: "719608"
+        adviser: "Capital Research and Management Company (CRMC), the fund's investment adviser, which adopted the Proxy Voting Procedures and Principles"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/719608/000005193122000109/ck0000719608-20220117.htm"  # 485BPOS filed 2022-01-31 (0000051931-22-000109), effective 2022-02-01; 2026-01-30 edition (0000051931-26-000087) repeats it
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy voting procedures and principles': the fund's investment adviser, in consultation with the fund's board, adopted the Proxy Voting Procedures and Principles for voting the fund's proxies; the prospectus names Capital Research and Management Company as the investment adviser. No sub-adviser."
+        adviser_key_history: [{key: CRMC, from: "2022-02-01"}]
+        name: "New Economy Fund"
+        validated: "2026-11-21"
     voting_scope_notes:
+      - "Left out 2026-11-21: American High Income Trust (CIK 823620), a high-yield bond fund whose 2026 N-PX holds only 154 vote lines (mostly issuers in restructuring), so it carries no equity voting record; consistent with the bond-only exclusion above."
       - "One policy, the Capital Group Proxy Voting Procedures and Principles, covers CRMC and its advisory affiliates; the SAI says final voting authority is held by a committee of the appropriate equity investment division, so one CRMC vote may be cast by different divisions (https://www.sec.gov/Archives/edgar/data/44201/000005193126001095/ck0000044201-20261030.htm). Divisions are not separated here."
       - "Only the 37 trusts listed were verified (American Funds Income Series, CIK 770161, files only a notice report, so it carries no vote rows); American Funds has further trusts (bond funds, target-date series, the Capital Group Fixed Income ETF Trust, the KKR co-branded (plus) ETFs, which are sub-advised, and Capital Group Portfolio Series) that are not covered."
     commitments:
@@ -1880,7 +1970,18 @@ institutions:
         adviser_key_history: [{key: CMIA, from: "2023-03-03"}]
         name: "Columbia Seligman Premium Technology Growth Fund, Inc."
         validated: "2026-11-18"
+      # Sweep of 2026-11-21: Columbia Funds Variable Series Trust II (40 series in the 2026 N-PX; N-PX filed 2024-09 onward under this CIK). Its SAI is the combined SAI of the
+      # Columbia Funds Variable Insurance Trust and Variable Series Trust II, filed under 815425 (the cover lists Variable Series Trust II's funds).
+      - cik: "1413032"
+        adviser: "Columbia Management Investment Advisers, LLC (the Investment Manager)"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/815425/000119312522125641/d234962d485bpos.htm"  # 485BPOS filed 2022-04-28, SAI dated 2022-05-01; same sentence in -23-117412, 0001193125-24-111820 (filed under 1413032), -26-180155 (2026-05-01)
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI Proxy Voting Policies and Procedures: the Funds delegated proxy voting to the Investment Manager (CMIA), including Funds managed by subadvisers. No 'guidelines do not apply' endnote for any subadviser was found in the 2022 or 2026 SAIs (only a search for that wording was run, not a full read of Appendix B)."
+        adviser_key_history: [{key: CMIA, from: "2022-05-01"}]
+        name: "Columbia Funds Variable Series Trust II"
+        validated: "2026-11-21"
     voting_scope_notes:
+      - "Variable Series Trust II (1413032) added 2026-11-21, keyed CMIA from the SAI dated 2022-05-01 (accession 0001193125-22-125641, the combined Variable Insurance Trust / Variable Series Trust II SAI)."
       - "Keyed CMIA, per trust, from the effective date of the earliest SAI read (2023-03-01 to 2023-08-01): Columbia Funds Series Trust I (773757), Series Trust II (1352280), Columbia Funds Series Trust (1097519), Columbia Acorn Trust (2110), Columbia ETF Trust I (1551950) and Columbia ETF Trust II (1450501). Each trust's SAI says the Funds delegated proxy voting to Columbia Management Investment Advisers, LLC, including Funds managed by subadvisers, in every edition read (2023 to 2026). Earlier meetings stay unlabelled; SAIs from before 2023 were not read."
       - "Columbia Pyrford International Stock Fund (S000074123, Series Trust II) is kept out of CMIA (EXTERNAL, not paired with any policy) until 2026-04-30: the Corporate Governance Guidelines printed in the SAI carried the endnote that they do not apply to Pyrford International Limited through the March 1, 2026 SAIs, so who voted its proxies is unclear; the SAI dated May 1, 2026 drops the note and the series is keyed CMIA from 2026-05-01."
       - "Second pass (2026-11-18): Columbia Funds Variable Insurance Trust (815425, keyed CMIA from the SAI dated 2023-05-01, accession 0001193125-23-117412), Columbia Funds Variable Series Trust (929521, keyed CMIA only from the SAI dated 2026-05-01, accession 0001193125-26-179394: until 2025-07-07 it was Wanger Advisors Trust with Columbia Wanger Asset Management as Investment Manager, so earlier meetings stay unlabelled) and the closed-end Tri-Continental Corporation (99614) and Columbia Seligman Premium Technology Growth Fund (1471420), keyed from the N-CSR filed 2023-03-03 (0001683863-23-001735, -23-001719; Item 7 prints the same delegation). No series was keyed EXTERNAL: the Variable Insurance Trust SAIs name Pyrford only as a former subadviser, and every SAI says the Investment Manager votes for subadvised Funds too."
