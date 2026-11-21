@@ -5978,3 +5978,90 @@ institutions:
             - "NYLIM Balanced (fixed-income portion)"
           strip_patterns:
             - '(?<=[A-Za-z.,"”’)]) \d{3}(?= [A-Za-z“"''])'
+  harris_oakmark:
+    display_name: "Harris Associates / Oakmark Funds"
+    short_name: "Harris Oakmark"
+    cik: "0000813917"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "Harris Associates L.P., Chicago IL (CIK 813917, the investment adviser of the Oakmark Funds; its SAIs describe it as affiliated with Natixis Investment Managers). Two US fund registrants that file N-PX vote tables with operating-company votes are ingested: Harris Associates Investment Trust (CIK 872323, the Oakmark Funds: Oakmark, Select, Equity and Income, Global, Global Select, International, International Small Cap and Bond) and Harris Oakmark ETF Trust (CIK 2035827, Oakmark U.S. Large Cap ETF, later Global Large Cap and International Large Cap ETFs). Every SAI says 'The Adviser, as part of its management responsibilities, is responsible for exercising all voting rights with respect to the Funds' portfolio securities in accordance with the Adviser's proxy voting policies and procedures'; later SAIs add that the Adviser may delegate a particular issuer to a third party to comply with the Bank Holding Company Act (an issuer-level exception, not a series voter). Neither trust has a sub-adviser. Left out: Harris Associates L.P.'s own institutional-manager N-PX (CIK 813917; overlaps the fund tables). Natixis registrants that Harris sub-advises are not Oakmark registrants and are not included. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. Two Oakmark registrants file N-PX with a vote table of operating-company votes (Harris Associates Investment Trust 0001104659-26-103685 proxytable.xml; Harris Oakmark ETF Trust 0001104659-26-103687 ProxyVotingTable.xml).
+      # The Oakmark Funds' own SAI prints a SUMMARY of the voting guidelines, not the policy, so there is no sai_appendix commitment; the policy PDFs are on the managers' websites (commitments below).
+      - cik: "872323"
+        adviser: "Harris Associates L.P. (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/872323/000110465922008782/tm222482d1_485bpos.htm"  # 485BPOS (SAI) filed 2022-01-28 (0001104659-22-008782), 'Proxy Voting Policies and Procedures'
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Adviser, as part of its management responsibilities, is responsible for exercising all voting rights with respect to the Funds' portfolio securities in accordance with the Adviser's proxy voting policies and procedures.' Earliest SAI read that covers every series 2022-01-28 (0001104659-22-008782; Post-Effective Amendment No. 69, all eight series). The 485BPOS of 2021-10-01 (0001104659-21-121961) is a single-series SAI (Oakmark Small Cap Fund) with the same wording and is not used as the registrant-wide start. The 485BPOS of 2026-01-27 (0001104659-26-007045) adds that the Adviser 'may delegate proxy voting for a particular issuer to a third-party in order to comply with the Bank Holding Company Act of 1956'; that is issuer-level and no series is voted by a third party. No sub-adviser in the SAI."
+        adviser_key_history: [{key: HARRIS_ASSOCIATES, from: "2022-01-28"}]
+        name: "HARRIS ASSOCIATES INVESTMENT TRUST"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API
+      - cik: "2035827"
+        adviser: "Harris Associates L.P. (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/2035827/000110465924120578/tm2422492d3_n1aa.htm"  # N-1A/A filed 2024-11-19 (0001104659-24-120578): the registration-statement SAI, 'Proxy Voting Policies and Procedures'
+        adviser_verified: "2026-11-21"
+        voting_note: "Harris Oakmark ETF Trust (Delaware trust, 811-23998; first N-PX period ended 2025-06-30). SAI 'Proxy Voting Policies and Procedures' in the N-1A/A of 2024-11-19 (0001104659-24-120578; the earliest SAI of the trust, no 485BPOS or 497 SAI exists before it; the registration became effective with the 497J of 2024-11-27): 'The Adviser ... is responsible for exercising all voting rights with respect to the Fund's portfolio securities in accordance with the Adviser's proxy voting policies and procedures. Under limited circumstances, the Adviser may delegate proxy voting for a particular issuer to a third-party in order to comply with the Bank Holding Company Act.' Re-read in the 485BPOS of 2025-11-07 (0001104659-25-108404). No sub-adviser."
+        adviser_key_history: [{key: HARRIS_ASSOCIATES, from: "2024-11-19"}]
+        name: "Harris Oakmark ETF Trust"
+        validated: "2026-11-21"
+    voting_scope_notes:
+      - "Keyed HARRIS_ASSOCIATES per registrant from the EDGAR filing date of the earliest SAI read that covers the registrant (Harris Associates Investment Trust 2022-01-28, Harris Oakmark ETF Trust 2024-11-19); earlier meetings stay unlabelled. Votes follow Harris Associates L.P.'s own proxy voting policy; ISS may vote a single issuer where the Bank Holding Company Act requires it (an issuer-level exception that is not separable from the table)."
+      - "Left out: Harris Associates L.P.'s own institutional-manager N-PX (CIK 813917; N-PX and N-PX/A filings), which overlaps the fund tables."
+      - "Policy text: the Oakmark SAIs print only a summary of the voting guidelines, so there is no SAI-appendix capture; the two PDFs below are the policy documents on the managers' websites (both 200 via glasshouse.http.get on 2026-11-21; the guidelines PDF says 'Last Updated: April 2026')."
+    commitments:
+      # Harris Associates L.P. proxy voting policy, guidelines and procedures (harrisassoc.com, 200 application/pdf 2026-11-21). One live edition; dated editions come from Wayback.
+      - label: harris-associates-proxy-voting-policy-and-guidelines
+        adviser: "Harris Associates L.P."
+        adviser_key: "HARRIS_ASSOCIATES"
+        url: "https://harrisassoc.com/wp-content/uploads/sites/2/2019/10/HALPSummaryofProxyVotingGuidelines.pdf"
+      # The Oakmark Funds' 'Description of Proxy Voting Policy' (oakmark.com, 200 application/pdf 2026-11-21): states the Funds authorised Harris to vote and summarises the policy.
+      - label: oakmark-funds-description-of-proxy-voting-policy
+        adviser: "Harris Associates L.P."
+        adviser_key: "HARRIS_ASSOCIATES"
+        url: "https://oakmark.com/wp-content/uploads/sites/3/2019/10/proxypolicy.pdf"
+  baron:
+    display_name: "Baron Capital / BAMCO (Baron Funds)"
+    short_name: "Baron"
+    cik: "0001017918"
+    country: "USA"
+    type: "asset_manager"
+    aum_usd_tr: 0.0
+    notes: "BAMCO, Inc., New York NY (CIK 1017918, the 13-F filer and the investment adviser of the Baron Funds; its affiliate Baron Capital Management, Inc., CIK 790504, co-adopts the proxy voting policy). Three US fund registrants that file N-PX vote tables with operating-company votes are ingested: Baron Investment Funds Trust (CIK 810902; Asset, Growth, Small Cap, Opportunity, Fifth Avenue Growth, Discovery and Durable Advantage), Baron Select Funds (CIK 1217673; Partners, Focused Growth, International Growth, Real Estate, Emerging Markets, Global Opportunity, Real Estate Income, Health Care, FinTech, India, Technology and WealthBuilder) and Baron ETF Trust (CIK 2081199; seven ETFs from December 2025). Every SAI says 'The Funds have delegated all decision making on proxy voting to the Adviser. The Adviser makes its own independent voting decisions, although it may consider recommendations from third parties'; no sub-adviser exists. Baron WealthBuilder Fund (S000060172) is a fund of funds in Baron Select Funds and has no vote rows in the 2026 table; it stays inside the ingested registrant because series cannot be excluded at ingest. Left out: BAMCO's (CIK 1017918) and Baron Capital Management's (CIK 790504) own institutional-manager N-PX filings, which overlap the fund tables. aum_usd_tr is not verified."
+    npx_ciks:
+      # Added 2026-11-21. Three Baron registrants (N-PX filed 2026-08-18 read: 0001193125-26-354949, -354950, -354953, each with a ProxyVotingTable.xml; Select Funds series with votes: S000024707, S000030894, S000061847, S000071635, S000027257, S000060170, S000036767, S000022521, S000000588, S000074874, S000067398).
+      # The SAI prints a SUMMARY of the policy and says the full text is on BaronCapitalGroup.com, so there is no sai_appendix commitment.
+      - cik: "810902"
+        adviser: "BAMCO, Inc. (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/810902/000119312521020206/d130752d485bpos.htm"  # 485BPOS (SAI) filed 2021-01-28 (0001193125-21-020206), 'Proxy Voting Policies and Procedures'
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI 'Proxy Voting Policies and Procedures': 'The Funds have delegated all decision making on proxy voting to the Adviser. The Adviser makes its own independent voting decisions, although it may consider recommendations from third parties in its decision-making process.' Adviser = BAMCO ('BAMCO is the investment adviser of the Fund'). Earliest SAI read 2021-01-28 (0001193125-21-020206); same wording in the 485BPOS of 2026-01-28 (0001193125-26-026826). No sub-adviser."
+        adviser_key_history: [{key: BAMCO, from: "2021-01-28"}]
+        name: "BARON INVESTMENT FUNDS TRUST"
+        validated: "2026-11-21"   # entity name confirmed via data.sec.gov submissions API (f/k/a Baron Asset Fund)
+      - cik: "1217673"
+        adviser: "BAMCO, Inc. (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1217673/000119312521143206/d124606d485bpos.htm"  # 485BPOS (SAI) filed 2021-04-30 (0001193125-21-143206), 'Proxy Voting Policies and Procedures'
+        adviser_verified: "2026-11-21"
+        voting_note: "Same SAI wording as Baron Investment Funds Trust: 'The Funds have delegated all decision making on proxy voting to the Adviser. The Adviser makes its own independent voting decisions.' Earliest SAI read 2021-04-30 (0001193125-21-143206, the multi-fund SAI; the single-fund SAI of the same day, 0001193125-21-143232, says the same for the WealthBuilder Fund); re-read 2026-04-30 (0001193125-26-195805 and 0001193125-26-195847). No sub-adviser."
+        adviser_key_history: [{key: BAMCO, from: "2021-04-30"}]
+        name: "BARON SELECT FUNDS"
+        validated: "2026-11-21"
+      - cik: "2081199"
+        adviser: "BAMCO, Inc. (the Adviser); no sub-adviser"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/2081199/000119312525309878/d797499d497.htm"  # 497 (SAI) filed 2025-12-05 (0001193125-25-309878), 'Proxy Voting Policies and Procedures'
+        adviser_verified: "2026-11-21"
+        voting_note: "Baron ETF Trust (811-24115; registration effective 2025-11-20; the FinTech and Technology mutual funds were reorganised into Baron Financials ETF and Baron Technology ETF on 2025-12-12). SAI 'Proxy Voting Policies and Procedures': 'The Funds have delegated all decision making on proxy voting to the Adviser. The Adviser makes its own independent voting decisions.' 'BAMCO is the investment adviser of the Fund.' Earliest 485BPOS/497 SAI read 2025-12-05 (0001193125-25-309878); same wording in the N-1A/A of 2025-11-19 (0001193125-25-288262) and the 485BPOS of 2026-04-30 (0001193125-26-196075). No sub-adviser."
+        adviser_key_history: [{key: BAMCO, from: "2025-12-05"}]
+        name: "Baron ETF Trust"
+        validated: "2026-11-21"
+    voting_scope_notes:
+      - "Keyed BAMCO per registrant from the EDGAR filing date of the earliest SAI read (Baron Investment Funds Trust 2021-01-28, Baron Select Funds 2021-04-30, Baron ETF Trust 2025-12-05); earlier meetings stay unlabelled. Votes follow the BAMCO / Baron Capital Management Proxy Voting Policies and Procedures; ISS research is reviewed but 'the Adviser does not vote proxies based on ISS' recommendations'."
+      - "Left out: the institutional-manager N-PX filings of BAMCO (CIK 1017918) and Baron Capital Management (CIK 790504), which overlap the fund tables. Baron WealthBuilder Fund (fund of funds, in Baron Select Funds) has no vote rows in the 2026 table."
+      - "Policy text: the SAI prints only a summary and refers to BaronCapitalGroup.com 'Regulatory Documents'; the live PDF (200 application/pdf on 2026-11-21, file dated 10.20.25) is the policy."
+    commitments:
+      # BAMCO / Baron Capital Management 'Proxy Voting Policies and Procedures' (baroncapitalgroup.com, Regulatory Documents; 200 application/pdf 2026-11-21). The URL carries the edition date (2025-11 upload); earlier editions come from Wayback.
+      - label: baron-proxy-voting-policies-and-procedures
+        adviser: "BAMCO, Inc. and Baron Capital Management, Inc."
+        adviser_key: "BAMCO"
+        url: "https://www.baroncapitalgroup.com/sites/default/files/2025-11/baron-capital-proxy-policies-and-procedures-10.20.25.pdf"
