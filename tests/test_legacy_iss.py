@@ -99,7 +99,7 @@ def test_detects_iss_proxyedge_and_neither():
     assert legacy_iss.is_iss_text(BASIC)
     assert legacy_iss.is_iss_text(make_doc("X", [MGMT], "Diss Rec"))
     assert not legacy_iss.is_iss_text("Agenda Number: 1\nFORM N-Px REPORT")
-    assert not legacy_iss.is_iss_text("#     Proposal   Mgt Rec  Vote Cast   Sponsor\nno banner")
+    assert legacy_iss.is_iss_text("#     Proposal   Mgt Rec  Vote Cast   Sponsor\nno banner")  # State Street omits it
     assert not legacy_iss.is_iss_text("FORM N-Px REPORT only")
     assert legacy_iss.detect_format({"a": BASIC}) == "iss"
     assert legacy_iss.detect_format({"a": "x Agenda Number: 1"}) == "proxyedge"
@@ -384,3 +384,13 @@ def test_npx_both_flags_send_each_format_to_its_parser(conn, monkeypatch):
     conn.commit()
     assert _npx_run(conn, monkeypatch, {"a": "nothing"}, legacy_iss_text=True,
                     legacy_proxyedge=True).get("no_format") == 1
+
+
+def test_iss_text_without_the_form_banner_is_detected():
+    # State Street's 2023 N-PX documents (e.g. 0001193125-23-286243) carry the ISS meeting
+    # blocks and column header but no "FORM N-Px REPORT" banner.
+    from glasshouse.ingest import legacy_iss
+    body = ("<PRE>\nA.P. MOLLER-MAERSK A/S\n\nTicker:       MAERSK.B       Security ID:  K0514G135\n"
+            "#     Proposal                                Mgt Rec   Vote Cast    Sponsor\n")
+    assert legacy_iss.is_iss_text(body)
+    assert not legacy_iss.is_iss_text("Proposal Vote Cast Sponsor in running prose")

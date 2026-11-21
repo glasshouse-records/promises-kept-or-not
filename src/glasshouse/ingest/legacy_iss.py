@@ -83,7 +83,9 @@ _ISS_COLHDR = re.compile(r"#\s+Proposal\s+(?:Mgt Rec|Diss Rec)\s+Vote Cast\s+Spo
 # -- format detection --------------------------------------------------------
 
 def is_iss_text(text: str) -> bool:
-    return "FORM N-Px REPORT" in text and _ISS_COLHDR.search(text) is not None
+    # The column header alone identifies the layout (State Street omits the banner);
+    # content is still validated by the two-parser agreement gate.
+    return _ISS_COLHDR.search(text) is not None
 
 
 def detect_format(docs: dict[str, str]) -> str | None:
