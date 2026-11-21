@@ -32,6 +32,56 @@ institutions:
         adviser_verified: "2026-11-17"
         name: "JPMorgan Institutional Trust"
         validated: "2026-06-26"
+      # Added 2026-11-21 (sweep). Evidence for all five: the combined J.P. Morgan Funds SAI filed under each trust says
+      # "The Board of Trustees has delegated to the Adviser and its affiliated advisers, proxy voting authority" and
+      # applies the Adviser's Guidelines (regional guidelines; Sustainable Proxy Guidelines for three sustainable funds).
+      # The earliest SAI read per trust (2022-10-25) is the `from` date; the 2026-10 SAIs say the same. The one named
+      # exception, the Behavioral Value Fund (FullerThaler), is in Undiscovered Managers Funds, not in these trusts.
+      # The key JPMAM is new: the two entries above carry no adviser_key (left unchanged).
+      - cik: "763852"
+        adviser: "J.P. Morgan Investment Management Inc. (JPMIM) and affiliated advisers, under the J.P. Morgan Asset Management proxy voting Guidelines"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/763852/000119312522268465/d383217d485bpos.htm"  # 485BPOS filed 2022-10-25 (SAI, Proxy Voting Procedures and Guidelines); same text in 0001193125-26-434123 filed 2026-10-27
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI: Board delegated voting to the Adviser and its affiliated advisers under the Adviser's Guidelines; no exception names a series of this trust. The sustainable-strategy funds follow the Sustainable Proxy Guidelines, a variant of the same policy. Votes before 2022-10-25 are unlabelled (no SAI read)."
+        adviser_key_history: [{key: JPMAM, from: "2022-10-25"}]
+        name: "JPMorgan Trust II"
+        validated: "2026-11-21"
+      - cik: "1485894"
+        adviser: "J.P. Morgan Investment Management Inc. (JPMIM) and affiliated advisers, under the J.P. Morgan Asset Management proxy voting Guidelines"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1485894/000119312522268474/d379336d485bpos.htm"  # 485BPOS filed 2022-10-25 (SAI); same text in 0001193125-26-425282 filed 2026-10-19
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI: Board delegated voting to the Adviser and its affiliated advisers under the Adviser's Guidelines; no exception. Votes before 2022-10-25 are unlabelled (no SAI read)."
+        adviser_key_history: [{key: JPMAM, from: "2022-10-25"}]
+        name: "J.P. Morgan Exchange-Traded Fund Trust"
+        validated: "2026-11-21"
+      - cik: "803747"
+        adviser: "J.P. Morgan Investment Management Inc. (JPMIM) and affiliated advisers, under the J.P. Morgan Asset Management proxy voting Guidelines"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/803747/000119312522268472/d388873d485bpos.htm"  # 485BPOS filed 2022-10-25 (SAI); same text in 0001193125-26-433261 filed 2026-10-27
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI: Board delegated voting to the Adviser and its affiliated advisers under the Adviser's Guidelines; the only exception named (Behavioral Value Fund, FullerThaler) is not a series of this trust. Votes before 2022-10-25 are unlabelled (no SAI read)."
+        adviser_key_history: [{key: JPMAM, from: "2022-10-25"}]
+        name: "JP Morgan Mutual Fund Investment Trust"
+        validated: "2026-11-21"
+      - cik: "1037897"
+        adviser: "J.P. Morgan Investment Management Inc. (JPMIM) and affiliated advisers, under the J.P. Morgan Asset Management proxy voting Guidelines"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1037897/000119312522268467/d388094d485bpos.htm"  # 485BPOS filed 2022-10-25 (SAI); same text in 0001193125-26-433298 filed 2026-10-27
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI: Board delegated voting to the Adviser and its affiliated advisers under the Adviser's Guidelines; the only exception named (Behavioral Value Fund, FullerThaler) is not a series of this trust. Votes before 2022-10-25 are unlabelled (no SAI read)."
+        adviser_key_history: [{key: JPMAM, from: "2022-10-25"}]
+        name: "J.P. Morgan Fleming Mutual Fund Group, Inc."
+        validated: "2026-11-21"
+      - cik: "1659326"
+        adviser: "J.P. Morgan Investment Management Inc. (JPMIM) and affiliated advisers, under the J.P. Morgan Asset Management proxy voting Guidelines"
+        adviser_source: "https://www.sec.gov/Archives/edgar/data/1659326/000119312522268466/d404312d485bpos.htm"  # 485BPOS filed 2022-10-25 (SAI); same text in 0001193125-26-433786 filed 2026-10-27
+        adviser_verified: "2026-11-21"
+        voting_note: "SAI: Board delegated voting to the Adviser and its affiliated advisers under the Adviser's Guidelines; the only exception named (Behavioral Value Fund, FullerThaler) is not a series of this trust. Votes before 2022-10-25 are unlabelled (no SAI read). The trust files two N-PX reports; the 2026-08-18 filing 0001193125-26-355605 has no proxyvote.xml, so its series were not checked for vote rows."
+        adviser_key_history: [{key: JPMAM, from: "2022-10-25"}]
+        name: "JPMorgan Trust IV"
+        validated: "2026-11-21"
+      # Not ingested (left out), 2026-11-21 sweep:
+      #  - 1047712 Undiscovered Managers Funds: sole N-PX series S000004186 is the Behavioral Value Fund, whose proxy
+      #    voting the SAI (0001193125-22-268468; 0001193125-26-426623) says is delegated to the sub-adviser FullerThaler under its
+      #    own policy (not JPMAM's), so it would be EXTERNAL; left out rather than attributed to JPMorgan.
     commitments:
       # Canonical, verified 2026-06-26 (200, application/pdf): JPMAM "Global Proxy
       # Voting Procedures and Guidelines" from am.jpmorgan.com.
