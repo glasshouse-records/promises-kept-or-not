@@ -77,7 +77,7 @@ def test_html_entities_are_decoded_only_for_html():
 
 
 def test_proxy_contest_labels():
-    rows = parse(fx("contest.txt"))
+    rows = parse(fx("contest_lines.txt"))
     by_id = {}
     for r in rows:
         by_id.setdefault((r["card_label"], r["proposal_id"]), r)
