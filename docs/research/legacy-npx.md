@@ -28,3 +28,7 @@
 - **The filing's SGML header (`.hdr.sgml`) lists each series ID with its name.** So fund heading → series ID can come from the filing itself.
 - **One filing can carry another registrant's funds.** JP Morgan Mutual Fund Investment Trust's 2023 N-PX document is the same 35 MB report as the ETF Trust's. Rule: a fund section is kept only if its name maps to a series in the filing's own header. Otherwise the same votes would be counted under two registrants.
 - **The documents are large** (up to 35 MB of text), so the cache under `data/legacy_cache/` is gzip-compressed and keeps one copy per document.
+- **ISS text: two parsers agree on 4,827,995 rows over every cached 2023 ISS document** (2026-11-21), with 21 rows that differ; every document is under the 0.5% gate (worst 0.29%). Three format quirks found by the disagreements, each now a regression test in both parsers:
+  - Invesco frames fund headings as `=Name====`, with no space.
+  - Northern Funds continue a heading ending in `-` on an unframed line (the subadviser's name).
+  - Frequency recommendations wrap inside their column (`Three` / `Years`). In the real documents, all 7,267 bare number words continue with "Year(s)" on the next line, so an uncompleted stub is dropped.

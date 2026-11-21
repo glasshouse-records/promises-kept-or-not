@@ -27,15 +27,19 @@ SPONSORS = ("Management", "Shareholder")
 # What the manager voted (observed in the samples).
 VOTES = frozenset({
     "For", "Against", "Abstain", "Withhold", "Withheld", "None", "One Year", "1 Year",
-    "Two Years", "2 Years", "Three Years", "3 Years", "Three", "Do Not Vote",
+    "Two Years", "2 Years", "Three Years", "3 Years", "One", "Two", "Three", "Do Not Vote",
     "Did Not Vote", "TNA", "No Vote", "FOR", "AGAINST", "N/A",
 })
 # What the issuer (Mgt Rec) or dissident (Diss Rec) recommended.
 RECS = frozenset({
     "For", "Against", "Abstain", "Withhold", "None", "One Year", "1 Year", "Two Years",
-    "2 Years", "Three Years", "3 Years", "Three", "FOR", "AGAINST", "N/A",
+    "2 Years", "Three Years", "3 Years", "One", "Two", "Three", "FOR", "AGAINST", "N/A",
     "No Vote",
 })
+# A bare number word is the first half of a value wrapped onto the next line
+# ("Three" / "Years"); it must be completed there or the proposal is dropped.
+_STUBS = frozenset({"One", "Two", "Three"})
+_YEAR_TAILS = frozenset({"Year", "Years"})
 _VOTES_LONGEST_FIRST = sorted(VOTES, key=len, reverse=True)
 _RECS_LONGEST_FIRST = sorted(RECS, key=len, reverse=True)
 
@@ -191,6 +195,8 @@ def _run(text: str) -> tuple[list[dict], dict]:
             ptext = _norm(" ".join(p["text"]))
             if not reason and not ptext:
                 reason = "empty_text"
+            if not reason and (p["rec"] in _STUBS or p["vote"] in _STUBS):
+                reason = "unfinished_wrapped_value"
             if reason:
                 stats["proposals_dropped"] += 1
                 reasons[f"proposal:{reason}"] += 1
@@ -303,7 +309,12 @@ def _run(text: str) -> tuple[list[dict], dict]:
                         prop["rec"], prop["vote"], prop["sponsor"] = res[1], res[2], res[3]
         else:  # indented: continuation of the current proposal, or pre-proposal text
             if m.cur is not None:
-                m.cur["text"].append(line.strip())
+                segs = re.split(r"\s{2,}", line.strip())
+                for key in ("vote", "rec"):  # rightmost fragment completes the rightmost stub
+                    if m.cur[key] in _STUBS and segs and segs[-1] in _YEAR_TAILS:
+                        m.cur[key] = f"{m.cur[key]} {segs.pop()}"
+                if segs:
+                    m.cur["text"].append(" ".join(segs))
             elif m.rec_label:
                 m.pre.append(line.strip())
             else:

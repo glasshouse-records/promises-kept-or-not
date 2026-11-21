@@ -122,7 +122,8 @@ def test_literal_vocab_values_survive():
     got = [(r["proposal_id"], r["rec"], r["vote"], r["sponsor"]) for r in parse(HEAD + meeting(body))]
     assert got == [
         ("1", "One Year", "One Year", "Management"),
-        ("2", "Three", "1 Year", "Management"),
+        # 2: a bare "Three" never stands alone in the real 2023 documents (7,267 of 7,267
+        # continue with "Years" on the next line), so an unfinished stub is dropped.
         ("3", "Two Years", "One Year", "Management"),
         ("4", "For", "Withhold", "Management"),
         ("5", "None", "Do Not Vote", "Shareholder"),
@@ -243,4 +244,23 @@ def test_no_vote_is_a_valid_rec_and_blank_rec_is_dropped():
 
 def test_malformed_id_is_dropped():
     body = "3,    Shareholder Proposal Regarding Report   Against   Against      Shareholder"
+    assert parse(HEAD + meeting(body)) == []
+
+
+WRAPPED_FREQ = (
+    "5     Advisory Vote on Say on Pay Frequency   Three     One Year     Management\n"
+    "                                              Years\n"
+    "6     Report on Lobbying Payments and Policy  Against   Against      Shareholder")
+
+
+def test_frequency_rec_wrapped_onto_the_next_line():
+    # Vanguard 2023 N-PX (0001104659-23-095672): "Three" / "Years" wraps in the Mgt Rec column.
+    rows = parse(HEAD + meeting(WRAPPED_FREQ))
+    assert [(r["proposal_id"], r["proposal_text"], r["rec"], r["vote"]) for r in rows] == [
+        ("5", "Advisory Vote on Say on Pay Frequency", "Three Years", "One Year"),
+        ("6", "Report on Lobbying Payments and Policy", "Against", "Against")]
+
+
+def test_a_bare_number_rec_that_never_completes_is_dropped():
+    body = "5     Advisory Vote on Say on Pay Frequency   Three     One Year     Management"
     assert parse(HEAD + meeting(body)) == []

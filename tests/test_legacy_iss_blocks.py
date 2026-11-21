@@ -131,13 +131,16 @@ def test_literal_values_kept_and_unknown_dropped():
     assert s["reasons"]["proposal:sponsor_not_in_vocab"] == 1
 
 
-def test_wrapped_recommendation_is_dropped_not_guessed():
+def test_wrapped_recommendation_continues_its_column_and_a_stub_is_dropped():
+    # Contract amendment 2026-11-21: a fragment inside the Mgt Rec column continues it.
     t = doc(
         prop_line("1", "Say on Pay Frequency", "Three", "One Year", "Management"),
         " " * 47 + "Years",
         prop_line("2", "Fine", "For", "For", "Management"),
     )
-    assert [r["proposal_id"] for r in parse(t)] == ["2"]
+    assert [(r["proposal_id"], r["rec"]) for r in parse(t)] == [("1", "Three Years"), ("2", "For")]
+    stub = doc(prop_line("1", "Say on Pay Frequency", "Three", "One Year", "Management"))
+    assert parse(stub) == []
 
 
 def test_word_crossing_column_boundary_is_dropped():
@@ -221,3 +224,22 @@ def test_fund_heading_without_space_after_the_frame():
     rows = parse(doc)
     assert [(r["fund_heading"], r["proposal_id"], r["vote"]) for r in rows] == [
         ("Invesco Active U.S. Real Estate ETF", "1a", "For")]
+
+
+def test_frequency_rec_wrapped_onto_the_next_line():
+    # Vanguard 2023 N-PX (0001104659-23-095672): "Three" / "Years" wraps in the Mgt Rec column.
+    rows = parse(doc(prop_line("5", "Advisory Vote on Say on Pay Frequency", "Three", "One Year", "Management"),
+                     " " * 46 + "Years"))
+    assert [(r["proposal_text"], r["rec"], r["vote"]) for r in rows] == [
+        ("Advisory Vote on Say on Pay Frequency", "Three Years", "One Year")]
+
+
+def test_heading_continued_on_an_unframed_line():
+    # Northern Funds 2023 N-PX (0001193125-23-222567).
+    d = doc(prop_line("1", "Elect Director Jaime Ardila", "For", "For", "Management"),
+            heading="Northern Active M international Equity Fund -")
+    d = d.replace("Equity Fund - =================\n",
+                  "Equity Fund - =================\n          Polen Capital Management, LLC\n", 1)
+    assert "Polen" in d
+    assert {r["fund_heading"] for r in parse(d)} == {
+        "Northern Active M international Equity Fund - Polen Capital Management, LLC"}

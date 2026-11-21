@@ -99,6 +99,11 @@ def _sections(lines: list[str]):
             while i < n and (m2 := _FRAME_RE.match(lines[i])) and set(m2.group(1)) != {"="}:
                 parts.append(m2.group(1))
                 i += 1
+            # "= Fund - =====" then an unframed, indented line naming the adviser.
+            if parts[-1].endswith("-") and i < n and lines[i][:1] == " " and lines[i].strip() \
+                    and not lines[i].lstrip().startswith(("=", "#", "-")):
+                parts.append(lines[i])
+                i += 1
             yield heading, buf
             heading, buf = _ws(" ".join(parts)), []
             continue
@@ -268,10 +273,16 @@ def _scan_proposals(body: list[str]):
         if cur["closed"]:
             cur["bad"] = cur["bad"] or "continuation_after_blank"
             continue
-        if ln[cols.ir :].strip():
+        ln_ = ln.ljust(cols.isp + 1)
+        if ln_[cols.isp :].strip() or any(ln_[i - 1] != " " for i in (cols.ir, cols.iv)):
             cur["bad"] = cur["bad"] or "continuation_beyond_text_column"
             continue
-        cur["texts"].append(ln[cols.ip : cols.ir].strip())
+        # A value wrapped inside its own column ("Three" / "Years") continues that column.
+        for key, part in (("rec", ln_[cols.ir : cols.iv]), ("vote", ln_[cols.iv : cols.isp])):
+            if part.strip():
+                cur[key] = _ws(f"{cur[key]} {part}")
+        if ln_[cols.ip : cols.ir].strip():
+            cur["texts"].append(ln_[cols.ip : cols.ir].strip())
     flush_group()
     return out
 
