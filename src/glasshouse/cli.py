@@ -1082,9 +1082,10 @@ def main(argv: list[str] | None = None) -> int:
                             "(rows both independent parsers agree on, gated per filing); "
                             "tagged legacy_format and quarantined from releases and analysis")
     npx_p.add_argument("--legacy-iss", action="store_true",
-                       help="ingest July 2022-June 2023 ISS-style 'FORM N-Px REPORT' text "
-                            "N-PX (rows both independent parsers agree on, gated per "
-                            "filing); tagged iss_text and quarantined like --legacy-proxyedge")
+                       help="ingest July 2022-June 2023 ISS-style N-PX, both the 'FORM N-Px "
+                            "REPORT' text and the HTML-table layouts (rows both independent "
+                            "parsers agree on, gated per filing); tagged iss_text / iss_html "
+                            "and quarantined like --legacy-proxyedge")
     npx_p.set_defaults(func=cmd_ingest_npx)
     com = ing.add_parser("commitments")
     com.add_argument("--wayback", action="store_true",
