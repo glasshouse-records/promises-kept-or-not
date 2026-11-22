@@ -19,8 +19,10 @@ counted per heading.
 
 Proxy contests: every row with a card label, a "Diss Rec" column or a contest meeting type is dropped and counted
 (`contest_rows_dropped`): the same proposal appears on two cards and the management
-recommendation is undefined. Management recommendation is set only under "Mgt Rec", with
-the vote mapping below; `for_against_management` stays NULL (ProxyEdge-only).
+recommendation is undefined. `management_recommendation` carries the XML meaning (whether
+THIS vote went WITH = "FOR" or AGAINST management), derived only under "Mgt Rec" from the
+mapped rec and vote (`with_management`); anything not clearly with or against is "".
+`for_against_management` stays NULL (ProxyEdge-only).
 
 Vote vocabulary. XML rows in the ledger store the filer's words in mixed spellings (FOR,
 AGAINST, WITHHOLD, ABSTAIN, ONE YEAR and 1 YEAR, DO NOT VOTE, 'Did Not Vote', TNA, 'No
@@ -89,6 +91,22 @@ HOW_VOTED = {
     "Do Not Vote": "DO NOT VOTE", "Did Not Vote": "Did Not Vote",
     "TNA": "TNA", "No Vote": "No Vote",
 }
+_WITH_VALUES = frozenset({"FOR", "AGAINST", "ABSTAIN", "WITHHOLD", "1 YEAR", "2 YEARS", "3 YEARS"})
+_FREQ = frozenset({"1 YEAR", "2 YEARS", "3 YEARS"})
+
+
+def with_management(rec: str, vote: str) -> str:
+    """XML meaning from mapped (stored) rec and vote: "FOR" = with management, "AGAINST" =
+    against, "" = not clear. Never guesses."""
+    if rec in _WITH_VALUES and vote == rec:
+        return "FOR"
+    if ((rec == "FOR" and vote in ("AGAINST", "WITHHOLD"))
+            or (rec in ("AGAINST", "WITHHOLD") and vote == "FOR")
+            or (rec in _FREQ and vote in _FREQ and vote != rec)):
+        return "AGAINST"
+    return ""
+
+
 VOTE_DROPPED = frozenset({"None", "N/A", "Take No Action"})
 VOTE_SOURCE = {"Management": "ISSUER", "Shareholder": "SECURITY HOLDER"}
 
@@ -220,7 +238,8 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
         if not m:
             info["dropped_date"] += 1
             continue
-        rec = HOW_VOTED.get(r["rec"], "") if r["rec_label"] == "Mgt Rec" else ""
+        rec = (with_management(HOW_VOTED.get(r["rec"], ""), how)
+               if r["rec_label"] == "Mgt Rec" else "")
         out.append({
             "issuer_name": r["issuer_name"], "cusip": r["security_id"], "isin": None,
             "meeting_date": f"{m.group(2)}/{m.group(3)}/{m.group(1)}",

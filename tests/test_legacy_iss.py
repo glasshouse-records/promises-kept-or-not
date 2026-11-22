@@ -173,7 +173,7 @@ def test_diss_rec_drops_the_row_even_without_a_card_label():
 def test_mgt_rec_sets_the_management_recommendation_with_the_vote_mapping():
     rows, _ = _rows(FUND, [("For", "Against", "Management"), ("Against", "Against", "Shareholder"),
                            ("Withhold", "Withheld", "Management")])
-    assert [r["management_recommendation"] for r in rows] == ["FOR", "AGAINST", "WITHHOLD"]
+    assert [r["management_recommendation"] for r in rows] == ["AGAINST", "FOR", "FOR"]
     assert [r["how_voted"] for r in rows] == ["AGAINST", "AGAINST", "WITHHOLD"]
     assert all(r["for_against_management"] is None for r in rows)
 
@@ -482,7 +482,7 @@ def test_html_vote_mapping_is_upper_case_and_text_rows_keep_theirs():
     assert st["disagreement_rate"] == 0 and len(rows) == 3
     out, info = legacy_iss.to_vote_rows(rows, {legacy_pe._norm(FUND): SID}, "iss_html")
     assert [r["how_voted"] for r in out] == ["FOR", "ABSTAIN", "WITHHOLD"]
-    assert [r["management_recommendation"] for r in out] == ["FOR", "AGAINST", "WITHHOLD"]
+    assert [r["management_recommendation"] for r in out] == ["FOR", "", "FOR"]
     assert {r["legacy_format"] for r in out} == {"iss_html"} and info["dropped_vote"] == 0
 
 

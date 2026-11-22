@@ -139,12 +139,12 @@ def test_unknown_vote_is_dropped_and_counted():
     assert rows == [] and info["dropped_vote"] == 2
 
 
-@pytest.mark.parametrize("vote,fa,rec", [("For", "For", "FOR"), ("Against", "For", "AGAINST"),
+@pytest.mark.parametrize("vote,fa,rec", [("For", "For", "FOR"), ("Against", "For", "FOR"),
                                          ("For", "Against", "AGAINST"),
-                                         ("Against", "Against", "FOR"),
-                                         ("Abstain", "For", ""), ("Withheld", "Against", ""),
-                                         ("For", "", ""), ("1 Year", "For", "")])
-def test_management_recommendation_derived_only_when_unambiguous(vote, fa, rec):
+                                         ("Against", "Against", "AGAINST"),
+                                         ("Abstain", "For", "FOR"), ("Withheld", "Against", "AGAINST"),
+                                         ("For", "", ""), ("1 Year", "For", "FOR")])
+def test_management_recommendation_is_the_printed_for_against_management(vote, fa, rec):
     (v,), _ = legacy_pe.to_vote_rows([_row(vote=vote, for_against_management=fa)], SMAP)
     assert v["management_recommendation"] == rec and v["for_against_management"] == fa
 
