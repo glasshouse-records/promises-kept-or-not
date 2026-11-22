@@ -1,1 +1,299 @@
 registrant_cik,heading,series_id,rule,note
+0000045291,2X26 JHF U.S. Global Leaders Growth Fund,S000000620,jh_code_prefix,header name 'U.S. Global Leaders Growth Fund' in 0001438934-23-000214; reviewed 2026-11-22
+0000045291,2X32 JHF Classic Value Fund,S000000617,jh_code_prefix,header name 'Classic Value Fund' in 0001438934-23-000214; reviewed 2026-11-22
+0000313212,Africa & Middle East Fund,S000018747,brand_prefix,header name 'T. Rowe Price Africa & Middle East Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,Asia Opportunities Fund,S000045439,brand_prefix,header name 'T. Rowe Price Asia Opportunities Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,China Evolution Equity Fund,S000066812,brand_prefix,header name 'T. Rowe Price China Evolution Equity Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,Dynamic Credit Fund,S000063538,brand_prefix,header name 'T. Rowe Price Dynamic Credit Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,Emerging Europe Fund,S000001488,brand_prefix,header name 'T. Rowe Price Emerging Europe Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,Emerging Markets Discovery Stock Fund,S000050390,brand_prefix,header name 'T. Rowe Price Emerging Markets Discovery Stock Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,Emerging Markets Stock Fund,S000001496,brand_prefix,header name 'T. Rowe Price Emerging Markets Stock Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,European Stock Fund,S000001492,brand_prefix,header name 'T. Rowe Price European Stock Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,Global Consumer Fund,S000053738,brand_prefix,header name 'T. Rowe Price Global Consumer Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,Global Growth Stock Fund,S000023645,brand_prefix,header name 'T. Rowe Price Global Growth Stock Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,Global Impact Equity Fund,S000070716,brand_prefix,header name 'T. Rowe Price Global Impact Equity Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,Global Industrials Fund,S000042685,brand_prefix,header name 'T. Rowe Price Global Industrials Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,Global Stock Fund,S000001497,brand_prefix,header name 'T. Rowe Price Global Stock Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,International Disciplined Equity Fund,S000046336,brand_prefix,header name 'T. Rowe Price International Disciplined Equity Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,International Discovery Fund,S000001491,brand_prefix,header name 'T. Rowe Price International Discovery Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,International Stock Fund,S000001487,brand_prefix,header name 'T. Rowe Price International Stock Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,International Value Equity Fund,S000001498,brand_prefix,header name 'T. Rowe Price International Value Equity Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,Japan Fund,S000001494,brand_prefix,header name 'T. Rowe Price Japan Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,Latin America Fund,S000001495,brand_prefix,header name 'T. Rowe Price Latin America Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,New Asia Fund,S000001493,brand_prefix,header name 'T. Rowe Price New Asia Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000313212,Overseas Stock Fund,S000014995,brand_prefix,header name 'T. Rowe Price Overseas Stock Fund' in 0001193125-23-225681; reviewed 2026-11-22
+0000719269,MFS Variable Insurance Trust II - MFS Blended Research Core Equity Portfolio,S000002640,trust_prefix,header name 'MFS Blended Research Core Equity Portfolio' in 0001193125-23-223256; reviewed 2026-11-22
+0000719269,MFS Variable Insurance Trust II - MFS Core Equity Portfolio,S000002656,trust_prefix,header name 'MFS Core Equity Portfolio' in 0001193125-23-223256; reviewed 2026-11-22
+0000719269,MFS Variable Insurance Trust II - MFS Emerging Markets Equity Portfolio,S000002658,trust_prefix,header name 'MFS Emerging Markets Equity Portfolio' in 0001193125-23-223256; reviewed 2026-11-22
+0000719269,MFS Variable Insurance Trust II - MFS Global Growth Portfolio,S000002660,trust_prefix,header name 'MFS Global Growth Portfolio' in 0001193125-23-223256; reviewed 2026-11-22
+0000719269,MFS Variable Insurance Trust II - MFS Global Research Portfolio,S000002647,trust_prefix,header name 'MFS Global Research Portfolio' in 0001193125-23-223256; reviewed 2026-11-22
+0000719269,MFS Variable Insurance Trust II - MFS Global Tactical Allocation Portfolio,S000002661,trust_prefix,header name 'MFS Global Tactical Allocation Portfolio' in 0001193125-23-223256; reviewed 2026-11-22
+0000719269,MFS Variable Insurance Trust II - MFS High Yield Portfolio,S000002636,trust_prefix,header name 'MFS High Yield Portfolio' in 0001193125-23-223256; reviewed 2026-11-22
+0000719269,MFS Variable Insurance Trust II - MFS International Growth Portfolio,S000002637,trust_prefix,header name 'MFS International Growth Portfolio' in 0001193125-23-223256; reviewed 2026-11-22
+0000719269,MFS Variable Insurance Trust II - MFS International Intrinsic Value Portfolio,S000002638,trust_prefix,header name 'MFS International Intrinsic Value Portfolio' in 0001193125-23-223256; reviewed 2026-11-22
+0000719269,MFS Variable Insurance Trust II - MFS Massachusetts Investors Growth Stock Portfolio,S000002639,trust_prefix,header name 'MFS Massachusetts Investors Growth Stock Portfolio' in 0001193125-23-223256; reviewed 2026-11-22
+0000719269,MFS Variable Insurance Trust II - MFS Research International Portfolio,S000002646,trust_prefix,header name 'MFS Research International Portfolio' in 0001193125-23-223256; reviewed 2026-11-22
+0000719269,MFS Variable Insurance Trust II - MFS Technology Portfolio,S000002651,trust_prefix,header name 'MFS Technology Portfolio' in 0001193125-23-223256; reviewed 2026-11-22
+0000741375,Morgan Stanley Institutional Fund Trust - Discovery Portfolio,S000004127,trust_prefix,header name 'Discovery Portfolio' in 0001133228-23-005160; reviewed 2026-11-22
+0000741375,Morgan Stanley Institutional Fund Trust - Dynamic Value Portfolio,S000071262,trust_prefix,header name 'Dynamic Value Portfolio' in 0001133228-23-005160; reviewed 2026-11-22
+0000741375,Morgan Stanley Institutional Fund Trust - Global Strategist Portfolio,S000004124,trust_prefix,header name 'Global Strategist Portfolio' in 0001133228-23-005160; reviewed 2026-11-22
+0000741375,Morgan Stanley Institutional Fund Trust - Short Duration Municipal Income Portfolio,S000063885,trust_prefix,header name 'Short Duration Municipal Income Portfolio' in 0001133228-23-005160; reviewed 2026-11-22
+0000743861,2X13 JHF Financial Industries Fund,S000000634,jh_code_prefix,header name 'Financial Industries Fund' in 0001438934-23-000220; reviewed 2026-11-22
+0000743861,2X14 JHF Regional Bank Fund,S000000635,jh_code_prefix,header name 'Regional Bank Fund' in 0001438934-23-000220; reviewed 2026-11-22
+0000756913,2A04 JHVIT Real Estate Securities Trust,S000008338,jh_code_prefix,header name 'Real Estate Securities Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2A17 JHVIT Fundamental All Cap Core Trust,S000008296,jh_code_prefix,header name 'Fundamental All Cap Core Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2A28 JHVIT Fundamental Large Cap Value Trust,S000008321,jh_code_prefix,header name 'Fundamental Large Cap Value Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2A29 JHVIT Strategic Income Opportunities Trust,S000008320,jh_code_prefix,header name 'Strategic Income Opportunities Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2A39 JHVIT Core Bond Trust,S000008222,jh_code_prefix,header name 'Core Bond Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2ACK JHVIT Small Cap Opportunities Trust,S000008312,jh_code_prefix,header name 'Small Cap Opportunities Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C03 JHVIT Investment Quality Bond Trust,S000008273,jh_code_prefix,header name 'Investment Quality Bond Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C1C JHVIT Managed Volatility Conservative Portfolio,S000008281,jh_code_prefix,header name 'Managed Volatility Conservative Portfolio' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C25 JHVIT Blue Chip Growth Trust,S000008217,jh_code_prefix,header name 'Blue Chip Growth Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C26 JHVIT Equity Income Trust,S000008228,jh_code_prefix,header name 'Equity Income Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C2C JHVIT Managed Volatility Moderate Portfolio,S000008280,jh_code_prefix,header name 'Managed Volatility Moderate Portfolio' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C2K JHVIT Managed Volatility Balanced Portfolio,S000008279,jh_code_prefix,header name 'Managed Volatility Balanced Portfolio' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C3C JHVIT Managed Volatility Growth Portfolio,S000008278,jh_code_prefix,header name 'Managed Volatility Growth Portfolio' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C46 JHVIT High Yield Trust,S000008240,jh_code_prefix,header name 'High Yield Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C52 JHVIT Small Company Value Trust,S000008316,jh_code_prefix,header name 'Small Company Value Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C62 JHVIT Mid Cap Growth Trust,S000008286,jh_code_prefix,header name 'Mid Cap Growth Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C70 JHVIT Small Cap Index Trust,S000008311,jh_code_prefix,header name 'Small Cap Index Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C71 JHVIT Mid Cap Index Trust,S000008285,jh_code_prefix,header name 'Mid Cap Index Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C72 JHVIT Total Stock Market Index Trust,S000008325,jh_code_prefix,header name 'Total Stock Market Index Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C75 JHVIT Capital Appreciation Trust,S000008220,jh_code_prefix,header name 'Capital Appreciation Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C77 JHVIT Health Sciences Trust,S000008239,jh_code_prefix,header name 'Health Sciences Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2C78 JHVIT Financial Industries Trust,S000008229,jh_code_prefix,header name 'Financial Industries Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2CKR JHVIT Capital Appreciation Value Trust,S000021933,jh_code_prefix,header name 'Capital Appreciation Value Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2X1C JHVIT Strategic Equity Allocation Trust,S000036499,jh_code_prefix,header name 'Strategic Equity Allocation Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2Y13 JHVIT Short Term Government Income Trust,S000024662,jh_code_prefix,header name 'Short Term Government Income Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2Y31 JHVIT Select Bond Trust,S000026132,jh_code_prefix,header name 'Select Bond Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2Y50 JHVIT Ultra Short Term Bond Trust,S000029542,jh_code_prefix,header name 'Ultra Short Term Bond Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2Y62 JHVIT Lifestyle Growth Portfolio,S000032006,jh_code_prefix,header name 'Lifestyle Growth Portfolio' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2Y63 JHVIT Lifestyle Balanced Portfolio,S000032004,jh_code_prefix,header name 'Lifestyle Balanced Portfolio' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2Y64 JHVIT Lifestyle Moderate Portfolio,S000032007,jh_code_prefix,header name 'Lifestyle Moderate Portfolio' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,2Y65 JHVIT Lifestyle Conservative Portfolio,S000032005,jh_code_prefix,header name 'Lifestyle Conservative Portfolio' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,3363 JHVIT Emerging Markets Value Trust,S000017255,jh_code_prefix,header name 'Emerging Markets Value Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,3364 JHVIT International Small Company Trust,S000008301,jh_code_prefix,header name 'International Small Company Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,3367 JHVIT International Equity Index Trust,S000008297,jh_code_prefix,header name 'International Equity Index Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,3368 JHVIT Global Equity Trust,S000008231,jh_code_prefix,header name 'Global Equity Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,3369 JHVIT Disciplined Value International Trust,S000008302,jh_code_prefix,header name 'Disciplined Value International Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,6721 JHVIT 500 Index Trust,S000008219,jh_code_prefix,header name '500 Index Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,6724 JHVIT Small Cap Stock Trust,S000008343,jh_code_prefix,header name 'Small Cap Stock Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,6741 JHVIT Total Bond Market Trust,S000008214,jh_code_prefix,header name 'Total Bond Market Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,6743 JHVIT Mid Value Trust,S000008289,jh_code_prefix,header name 'Mid Value Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,6753 JHVIT Small Cap Value Trust,S000008313,jh_code_prefix,header name 'Small Cap Value Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000756913,675C JHVIT Active Bond Trust,S000008236,jh_code_prefix,header name 'Active Bond Trust' in 0001438934-23-000262; reviewed 2026-11-22
+0000773485,All-Cap Opportunities Fund,S000002104,brand_prefix,header name 'T. Rowe Price All-Cap Opportunities Fund' in 0001193125-23-225779; reviewed 2026-11-22
+0000775688,Equity Income Fund,S000002076,brand_prefix,header name 'T. Rowe Price Equity Income Fund' in 0001193125-23-225717; reviewed 2026-11-22
+0000777535,CREF Equity Index,S000005083,cref_account,header name 'Equity Index Account' in 0000930413-23-002009; reviewed 2026-11-22
+0000777535,CREF Global Equities,S000005081,cref_account,header name 'Global Equities Account' in 0000930413-23-002009; reviewed 2026-11-22
+0000777535,CREF Growth,S000005082,cref_account,header name 'Growth Account' in 0000930413-23-002009; reviewed 2026-11-22
+0000777535,CREF Inflation-Linked Bond,S000005085,cref_account,header name 'Inflation-Linked Bond Account' in 0000930413-23-002009; reviewed 2026-11-22
+0000777535,CREF Money Market,S000005087,cref_account,header name 'Money Market Account' in 0000930413-23-002009; reviewed 2026-11-22
+0000777535,CREF Social Choice,S000005086,cref_account,header name 'Social Choice Account' in 0000930413-23-002009; reviewed 2026-11-22
+0000777535,CREF Stock,S000005080,cref_account,header name 'Stock Account' in 0000930413-23-002009; reviewed 2026-11-22
+0000793347,Capital Appreciation Fund,S000002070,brand_prefix,header name 'T. Rowe Price Capital Appreciation Fund' in 0001193125-23-225756; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Advantage Portfolio",S000027993,trust_prefix,header name 'Advantage Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - American Resilience Portfolio",S000076841,trust_prefix,header name 'American Resilience Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Asia Opportunity Portfolio",S000051832,trust_prefix,header name 'Asia Opportunity Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - China Equity Portfolio",S000066376,trust_prefix,header name 'China Equity Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Counterpoint Global Portfolio",S000059877,trust_prefix,header name 'Counterpoint Global Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Developing Opportunity Portfolio",S000067259,trust_prefix,header name 'Developing Opportunity Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Emerging Markets Leaders Portfolio",S000047473,trust_prefix,header name 'Emerging Markets Leaders Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Emerging Markets Portfolio",S000002826,trust_prefix,header name 'EMERGING MARKETS PORTFOLIO' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Emerging Markets ex China Portfolio",S000076838,trust_prefix,header name 'Emerging Markets ex China Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Global Concentrated Portfolio",S000053786,trust_prefix,header name 'Global Concentrated Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Global Core Portfolio",S000053787,trust_prefix,header name 'Global Core Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Global Endurance Portfolio",S000063049,trust_prefix,header name 'Global Endurance Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Global Focus Real Estate Portfolio",S000072500,trust_prefix,header name 'Global Focus Real Estate Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Global Franchise Portfolio",S000002830,trust_prefix,header name 'GLOBAL FRANCHISE PORTFOLIO' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Global Infrastructure Portfolio",S000029874,trust_prefix,header name 'Global Infrastructure Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Global Opportunity Portfolio",S000027995,trust_prefix,header name 'Global Opportunity Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Global Permanence Portfolio",S000065236,trust_prefix,header name 'Global Permanence Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Global Real Estate Portfolio",S000012825,trust_prefix,header name 'Global Real Estate Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Global Sustain Portfolio",S000041864,trust_prefix,header name 'Global Sustain Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Growth Portfolio",S000002828,trust_prefix,header name 'GROWTH PORTFOLIO' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Inception Portfolio",S000002825,trust_prefix,header name 'Inception Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - International Advantage Portfolio",S000030618,trust_prefix,header name 'International Advantage Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - International Equity Portfolio",S000002832,trust_prefix,header name 'INTERNATIONAL EQUITY PORTFOLIO' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - International Opportunity Portfolio",S000027992,trust_prefix,header name 'International Opportunity Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - International Resilience Portfolio",S000076842,trust_prefix,header name 'International Resilience Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Multi-Asset Real Return Portfolio",S000061991,trust_prefix,header name 'Multi-Asset Real Return Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Next Gen Emerging Markets Portfolio",S000037507,trust_prefix,header name 'Next Gen Emerging Markets Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Passport Overseas Equity Portfolio",S000002820,trust_prefix,header name 'Passport Overseas Equity Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Permanence Portfolio",S000068163,trust_prefix,header name 'Permanence Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - U.S. Focus Real Estate Portfolio",S000073484,trust_prefix,header name 'U.S. Focus Real Estate Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - U.S. Real Estate Portfolio",S000002821,trust_prefix,header name 'U.S. REAL ESTATE PORTFOLIO' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - US Core Portfolio",S000053789,trust_prefix,header name 'US Core Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc. - Vitality Portfolio",S000074797,trust_prefix,header name 'Vitality Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000836487,"Morgan Stanley Institutional Fund, Inc.- Global Insight Portfolio",S000030616,trust_prefix,header name 'Global Insight Portfolio' in 0001133228-23-005163; reviewed 2026-11-22
+0000857490,VANGUARD VARIABLE INSURANCE FUND - EQUITY INCOME PORTFOLIO,S000004399,trust_prefix,header name 'Equity Income Portfolio' in 0001104659-23-095789; reviewed 2026-11-22
+0000857490,VANGUARD VARIABLE INSURANCE FUND - EQUITY INDEX PORTFOLIO,S000004400,trust_prefix,header name 'Equity Index Portfolio' in 0001104659-23-095790; reviewed 2026-11-22
+0000857490,VANGUARD VARIABLE INSURANCE FUND - MID-CAP INDEX PORTFOLIO,S000004404,trust_prefix,header name 'Mid-Cap Index Portfolio' in 0001104659-23-095799; reviewed 2026-11-22
+0000857490,VANGUARD VARIABLE INSURANCE FUND - REAL ESTATE INDEX PORTFOLIO,S000004392,trust_prefix,header name 'Real Estate Index Portfolio' in 0001104659-23-095803; reviewed 2026-11-22
+0000857490,VANGUARD VARIABLE INSURANCE FUND - SMALL COMPANY GROWTH PORTFOLIO,S000004394,trust_prefix,header name 'Small Company Growth Portfolio' in 0001104659-23-095807; reviewed 2026-11-22
+0000858581,Equity Index 500 Fund,S000002089,brand_prefix,header name 'T. Rowe Price Equity Index 500 Fund' in 0001193125-23-225759; reviewed 2026-11-22
+0000858581,Extended Equity Market Index Fund,S000002090,brand_prefix,header name 'T. Rowe Price Extended Equity Market Index Fund' in 0001193125-23-225759; reviewed 2026-11-22
+0000858581,Mid-Cap Index Fund,S000051326,brand_prefix,header name 'T. Rowe Price Mid-Cap Index Fund' in 0001193125-23-225759; reviewed 2026-11-22
+0000858581,Small-Cap Index Fund,S000051327,brand_prefix,header name 'T. Rowe Price Small-Cap Index Fund' in 0001193125-23-225759; reviewed 2026-11-22
+0000858581,Total Equity Market Index Fund,S000002091,brand_prefix,header name 'T. Rowe Price Total Equity Market Index Fund' in 0001193125-23-225759; reviewed 2026-11-22
+0000872323,The Oakmark Bond Fund,S000068760,brand_prefix,header name 'Oakmark Bond Fund' in 0001104659-23-095315; reviewed 2026-11-22
+0000872323,The Oakmark Fund,S000002758,brand_prefix,header name 'Oakmark Fund' in 0001104659-23-095315; reviewed 2026-11-22
+0000872323,The Oakmark Global Fund,S000002761,brand_prefix,header name 'Oakmark Global Fund' in 0001104659-23-095315; reviewed 2026-11-22
+0000872323,The Oakmark Global Select Fund,S000013607,brand_prefix,header name 'Oakmark Global Select Fund' in 0001104659-23-095315; reviewed 2026-11-22
+0000872323,The Oakmark International Fund,S000002762,brand_prefix,header name 'Oakmark International Fund' in 0001104659-23-095315; reviewed 2026-11-22
+0000872323,The Oakmark International Small Cap Fund,S000002763,brand_prefix,header name 'Oakmark International Small Cap Fund' in 0001104659-23-095315; reviewed 2026-11-22
+0000872323,The Oakmark Select Fund,S000002759,brand_prefix,header name 'Oakmark Select Fund' in 0001104659-23-095315; reviewed 2026-11-22
+0000899148,LONG SHORT EQUITY FUND,S000003686,brand_prefix,header name 'Guggenheim Long Short Equity Fund' in 0001821268-23-000169; reviewed 2026-11-22
+0000899148,MULTI-HEDGE STRATEGIES FUND,S000003763,brand_prefix,header name 'Guggenheim Multi-Hedge Strategies Fund' in 0001821268-23-000169; reviewed 2026-11-22
+0000910671,Communications & Technology Fund,S000002101,brand_prefix,header name 'T. Rowe Price Communications & Technology Fund' in 0001193125-23-225798; reviewed 2026-11-22
+0000916620,Northern U.S. Quality ESG Fund,S000055816,brand_prefix,header name 'U.S. Quality ESG Fund' in 0001193125-23-222567; reviewed 2026-11-22
+0000918294,All-Cap Opportunities Portfolio,S000002078,brand_prefix,header name 'T. Rowe Price All-Cap Opportunities Portfolio' in 0001193125-23-225748; reviewed 2026-11-22
+0000918294,Blue Chip Growth Portfolio,S000002081,brand_prefix,header name 'T. Rowe Price Blue Chip Growth Portfolio' in 0001193125-23-225748; reviewed 2026-11-22
+0000918294,Equity Income Portfolio,S000002077,brand_prefix,header name 'T. Rowe Price Equity Income Portfolio' in 0001193125-23-225748; reviewed 2026-11-22
+0000918294,Equity Index 500 Portfolio,S000002082,brand_prefix,header name 'T. Rowe Price Equity Index 500 Portfolio' in 0001193125-23-225748; reviewed 2026-11-22
+0000918294,Health Sciences Portfolio,S000002083,brand_prefix,header name 'T. Rowe Price Health Sciences Portfolio' in 0001193125-23-225748; reviewed 2026-11-22
+0000918294,Mid-Cap Growth Portfolio,S000002080,brand_prefix,header name 'T. Rowe Price Mid-Cap Growth Portfolio' in 0001193125-23-225748; reviewed 2026-11-22
+0000918294,Moderate Allocation Portfolio,S000002079,brand_prefix,header name 'T. Rowe Price Moderate Allocation Portfolio' in 0001193125-23-225748; reviewed 2026-11-22
+0000918571,MFS Variable Insurance Trust - MFS Global Equity Series,S000002674,trust_prefix,header name 'MFS Global Equity Series' in 0001193125-23-223255; reviewed 2026-11-22
+0000918571,MFS Variable Insurance Trust - MFS Growth Series,S000002673,trust_prefix,header name 'MFS Growth Series' in 0001193125-23-223255; reviewed 2026-11-22
+0000918571,MFS Variable Insurance Trust - MFS Investors Trust Series,S000002677,trust_prefix,header name 'MFS Investors Trust Series' in 0001193125-23-223255; reviewed 2026-11-22
+0000918571,MFS Variable Insurance Trust - MFS Mid Cap Growth Series,S000002678,trust_prefix,header name 'MFS Mid Cap Growth Series' in 0001193125-23-223255; reviewed 2026-11-22
+0000918571,MFS Variable Insurance Trust - MFS New Discovery Series,S000002680,trust_prefix,header name 'MFS New Discovery Series' in 0001193125-23-223255; reviewed 2026-11-22
+0000918571,MFS Variable Insurance Trust - MFS Research Series,S000002668,trust_prefix,header name 'MFS Research Series' in 0001193125-23-223255; reviewed 2026-11-22
+0000918571,MFS Variable Insurance Trust - MFS Total Return Series,S000002670,trust_prefix,header name 'MFS Total Return Series' in 0001193125-23-223255; reviewed 2026-11-22
+0000918571,MFS Variable Insurance Trust - MFS Utilities Series,S000002671,trust_prefix,header name 'MFS Utilities Series' in 0001193125-23-223255; reviewed 2026-11-22
+0000918571,MFS Variable Insurance Trust - MFS Value Series,S000002672,trust_prefix,header name 'MFS Value Series' in 0001193125-23-223255; reviewed 2026-11-22
+0000931151,U.S. Equity Research Fund,S000002071,brand_prefix,header name 'T. Rowe Price U.S. Equity Research Fund' in 0001193125-23-225830; reviewed 2026-11-22
+0001011378,"Morgan Stanley Variable Insurance Fund, Inc. - Discovery Portfolio",S000004167,trust_prefix,header name 'Discovery Portfolio' in 0001133228-23-005184; reviewed 2026-11-22
+0001011378,"Morgan Stanley Variable Insurance Fund, Inc. - Emerging Markets Equity Portfolio",S000004175,trust_prefix,header name 'Emerging Markets Equity Portfolio' in 0001133228-23-005184; reviewed 2026-11-22
+0001011378,"Morgan Stanley Variable Insurance Fund, Inc. - Global Franchise Portfolio",S000004178,trust_prefix,header name 'Global Franchise Portfolio' in 0001133228-23-005184; reviewed 2026-11-22
+0001011378,"Morgan Stanley Variable Insurance Fund, Inc. - Global Infrastructure Portfolio",S000043472,trust_prefix,header name 'Global Infrastructure Portfolio' in 0001133228-23-005184; reviewed 2026-11-22
+0001011378,"Morgan Stanley Variable Insurance Fund, Inc. - Global Real Estate Portfolio",S000010224,trust_prefix,header name 'Global Real Estate Portfolio' in 0001133228-23-005184; reviewed 2026-11-22
+0001011378,"Morgan Stanley Variable Insurance Fund, Inc. - Global Strategist Portfolio",S000004181,trust_prefix,header name 'Global Strategist Portfolio' in 0001133228-23-005184; reviewed 2026-11-22
+0001011378,"Morgan Stanley Variable Insurance Fund, Inc. - Growth Portfolio",S000004177,trust_prefix,header name 'Growth Portfolio' in 0001133228-23-005184; reviewed 2026-11-22
+0001012968,Institutional Large-Cap Core Growth Fund,S000002096,brand_prefix,header name 'T. Rowe Price Institutional Large-Cap Core Growth Fund' in 0001193125-23-225897; reviewed 2026-11-22
+0001012968,Institutional Mid-Cap Equity Growth Fund,S000002092,brand_prefix,header name 'T. Rowe Price Institutional Mid-Cap Equity Growth Fund' in 0001193125-23-225897; reviewed 2026-11-22
+0001012968,Institutional Small-Cap Stock Fund,S000002094,brand_prefix,header name 'T. Rowe Price Institutional Small-Cap Stock Fund' in 0001193125-23-225897; reviewed 2026-11-22
+0001012968,Large-Cap Growth Fund,S000002095,brand_prefix,header name 'T. Rowe Price Large-Cap Growth Fund' in 0001193125-23-225897; reviewed 2026-11-22
+0001012968,Large-Cap Value Fund,S000002093,brand_prefix,header name 'T. Rowe Price Large-Cap Value Fund' in 0001193125-23-225897; reviewed 2026-11-22
+0001038469,Integrated Global Equity Fund,S000052903,brand_prefix,header name 'T. Rowe Price Integrated Global Equity Fund' in 0001193125-23-225817; reviewed 2026-11-22
+0001038469,Integrated U.S. Large-Cap Value Equity Fund,S000052905,brand_prefix,header name 'T. Rowe Price Integrated U.S. Large-Cap Value Equity Fund' in 0001193125-23-225817; reviewed 2026-11-22
+0001038469,Integrated U.S. Small-Cap Growth Equity Fund,S000002074,brand_prefix,header name 'T. Rowe Price Integrated U.S. Small-Cap Growth Equity Fund' in 0001193125-23-225817; reviewed 2026-11-22
+0001038469,Integrated U.S. Small-Mid Cap Core Equity Fund,S000052904,brand_prefix,header name 'T. Rowe Price Integrated U.S. Small-Mid Cap Core Equity Fund' in 0001193125-23-225817; reviewed 2026-11-22
+0001064046,VT BANKING FUND,S000003758,brand_prefix,header name 'Banking Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT BIOTECHNOLOGY FUND,S000003711,brand_prefix,header name 'Biotechnology Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT CONSUMER PRODUCTS FUND,S000003712,brand_prefix,header name 'Consumer Products Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT DOW 2X STRATEGY FUND,S000003753,brand_prefix,header name 'Dow 2x Strategy Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT ELECTRONICS FUND,S000003713,brand_prefix,header name 'Electronics Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT ENERGY FUND,S000003714,brand_prefix,header name 'Energy Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT ENERGY SERVICES FUND,S000003715,brand_prefix,header name 'Energy Services Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT EUROPE 1.25X STRATEGY FUND,S000003749,brand_prefix,header name 'Europe 1.25x Strategy Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT FINANCIAL SERVICES FUND,S000003716,brand_prefix,header name 'Financial Services Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT HEALTH CARE FUND,S000003717,brand_prefix,header name 'Health Care Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT HIGH YIELD STRATEGY FUND,S000016688,brand_prefix,header name 'High Yield Strategy Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT INTERNET FUND,S000003718,brand_prefix,header name 'Internet Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT LEISURE FUND,S000003719,brand_prefix,header name 'Leisure Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT MID-CAP 1.5X STRATEGY FUND,S000003727,brand_prefix,header name 'Mid-Cap 1.5x Strategy Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT MULTI-HEDGE STRATEGIES FUND,S000003747,brand_prefix,header name 'Multi-Hedge Strategies Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT NASDAQ-100 2X STRATEGY FUND,S000003752,brand_prefix,header name 'NASDAQ-100(R) 2x Strategy Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT NASDAQ-100 FUND,S000003756,brand_prefix,header name 'NASDAQ-100(R) Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT NOVA FUND,S000003732,brand_prefix,header name 'Nova Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT PRECIOUS METALS FUND,S000003743,brand_prefix,header name 'Precious Metals Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT REAL ESTATE FUND,S000003726,brand_prefix,header name 'Real Estate Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT RETAILING FUND,S000003720,brand_prefix,header name 'Retailing Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT RUSSELL 2000 1.5X STRATEGY FUND,S000003728,brand_prefix,header name 'Russell 2000(R) 1.5x Strategy Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT RUSSELL 2000 2X STRATEGY FUND,S000011813,brand_prefix,header name 'Russell 2000(R) 2x Strategy Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT S&P 500 2X STRATEGY FUND,S000003751,brand_prefix,header name 'S&P 500 2x Strategy Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT S&P 500 PURE GROWTH FUND,S000003739,brand_prefix,header name 'S&P 500 Pure Growth Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT S&P 500 PURE VALUE FUND,S000003738,brand_prefix,header name 'S&P 500 Pure Value Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT S&P MIDCAP 400 PURE GROWTH FUND,S000003744,brand_prefix,header name 'S&P MidCap 400 Pure Growth Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT S&P MIDCAP 400 PURE VALUE FUND,S000003742,brand_prefix,header name 'S&P MidCap 400 Pure Value Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT S&P SMALLCAP 600 PURE GROWTH FUND,S000003741,brand_prefix,header name 'S&P SmallCap 600 Pure Growth Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT S&P SMALLCAP 600 PURE VALUE FUND,S000003740,brand_prefix,header name 'S&P SmallCap 600 Pure Value Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT TECHNOLOGY FUND,S000003722,brand_prefix,header name 'Technology Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT TELECOMMUNICATIONS FUND,S000003723,brand_prefix,header name 'Telecommunications Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT TRANSPORTATION FUND,S000003724,brand_prefix,header name 'Transportation Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001064046,VT UTILITIES FUND,S000003725,brand_prefix,header name 'Utilities Fund' in 0001821268-23-000174; reviewed 2026-11-22
+0001065698,MFS Variable Insurance Trust III - MFS Blended Research Small Cap Equity Portfolio,S000008071,trust_prefix,header name 'MFS Blended Research Small Cap Equity Portfolio' in 0001193125-23-223257; reviewed 2026-11-22
+0001065698,MFS Variable Insurance Trust III - MFS Global Real Estate Portfolio,S000008069,trust_prefix,header name 'MFS Global Real Estate Portfolio' in 0001193125-23-223257; reviewed 2026-11-22
+0001065698,MFS Variable Insurance Trust III - MFS Mid Cap Value Portfolio,S000018843,trust_prefix,header name 'MFS Mid Cap Value Portfolio' in 0001193125-23-223257; reviewed 2026-11-22
+0001065698,MFS Variable Insurance Trust III - MFS New Discovery Value Portfolio,S000023374,trust_prefix,header name 'MFS New Discovery Value Portfolio' in 0001193125-23-223257; reviewed 2026-11-22
+0001068204,TIAA-CREF Life Growth & Income Fund,S000005090,brand_prefix,header name 'Growth & Income Fund' in 0000930413-23-002011; reviewed 2026-11-22
+0001068204,TIAA-CREF Life Growth Equity Fund,S000005088,brand_prefix,header name 'Growth Equity Fund' in 0000930413-23-002011; reviewed 2026-11-22
+0001068204,TIAA-CREF Life International Equity Fund,S000005091,brand_prefix,header name 'International Equity Fund' in 0000930413-23-002011; reviewed 2026-11-22
+0001068204,TIAA-CREF Life Large-Cap Value Fund,S000005092,brand_prefix,header name 'Large-Cap Value Fund' in 0000930413-23-002011; reviewed 2026-11-22
+0001068204,TIAA-CREF Life Real Estate Securities Fund,S000005096,brand_prefix,header name 'Real Estate Securities Fund' in 0000930413-23-002011; reviewed 2026-11-22
+0001068204,TIAA-CREF Life Small-Cap Equity Fund,S000005093,brand_prefix,header name 'Small-Cap Equity Fund' in 0000930413-23-002011; reviewed 2026-11-22
+0001068204,TIAA-CREF Life Social Choice Equity Fund,S000005095,brand_prefix,header name 'Social Choice Equity Fund' in 0000930413-23-002011; reviewed 2026-11-22
+0001068204,TIAA-CREF Life Stock Index Fund,S000005094,brand_prefix,header name 'Stock Index Fund' in 0000930413-23-002011; reviewed 2026-11-22
+0001174610,DJ BROOKFIELD GLOBAL INFRASTRUCTURE ETF,S000040181,brand_prefix,header name 'ProShares DJ Brookfield Global Infrastructure ETF' in 0001193125-23-221585; reviewed 2026-11-22
+0001174610,Ultra Nasdaq Cloud Computing,S000070720,brand_prefix,header name 'ProShares Ultra Nasdaq Cloud Computing' in 0001193125-23-221585; reviewed 2026-11-22
+0001331971,2C4C JHF II Multi-Asset High Income Fund,S000045160,jh_code_prefix,header name 'Multi-Asset High Income Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2C4K JHFII Alternative Asset Allocation Fund,S000023552,jh_code_prefix,header name 'Alternative Asset Allocation Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2C5C JHFII Income Preservation Blend Portfolio,S000028821,jh_code_prefix,header name 'Income Preservation Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2C6C JHFII 2025 Preservation Blend Portfolio,S000028823,jh_code_prefix,header name '2025 Preservation Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2C6K JHFII 2030 Preservation Blend Portfolio,S000028824,jh_code_prefix,header name '2030 Preservation Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2C7C JHFII 2035 Preservation Blend Portfolio,S000028825,jh_code_prefix,header name '2035 Preservation Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2C7K JHFII 2040 Preservation Blend Portfolio,S000028826,jh_code_prefix,header name '2040 Preservation Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2C8C JHFII 2045 Preservation Blend Portfolio,S000028817,jh_code_prefix,header name '2045 Preservation Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2C8K JHFII 2050 Preservation Blend Portfolio,S000028818,jh_code_prefix,header name '2050 Preservation Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2C9C JHFII 2055 Preservation Blend Portfolio,S000044501,jh_code_prefix,header name '2055 Preservation Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2CAC JHFII 2060 Preservation Blend Portfolio,S000053253,jh_code_prefix,header name '2060 Preservation Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2CBC JHFII 2060 Lifetime Blend Portfolio,S000053255,jh_code_prefix,header name '2060 Lifetime Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2CHK JHF II New Opportunities Fund,S000003360,jh_code_prefix,header name 'New Opportunities Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2CVA JHF II Capital Appreciation Fund,S000003312,jh_code_prefix,header name 'Capital Appreciation Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2CZ0 JHF II Equity Income Fund,S000003317,jh_code_prefix,header name 'Equity Income Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2CZ5 JHF II High Yield Fund,S000003320,jh_code_prefix,header name 'High Yield Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2CZB JHF II Real Estate Securities Fund,S000003356,jh_code_prefix,header name 'Real Estate Securities Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2CZY JHF II Blue Chip Growth Fund,S000003311,jh_code_prefix,header name 'Blue Chip Growth Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DAB JHF II Small Cap Growth Fund,S000003363,jh_code_prefix,header name 'Small Cap Growth Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DAC JHFII Lifestyle Blend Aggressive Portfolio,S000043433,jh_code_prefix,header name 'Lifestyle Blend Aggressive Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DAK JHFII Lifestyle Blend Balanced Portfolio,S000043434,jh_code_prefix,header name 'Lifestyle Blend Balanced Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DBP JHFII Strategic Income Opportunities Fund,S000009820,jh_code_prefix,header name 'Strategic Income Opportunities Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DCK JHFII Lifestyle Blend Conservative Portfolio,S000043435,jh_code_prefix,header name 'Lifestyle Blend Conservative Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DCU JHF II Floating Rate Income Fund,S000020234,jh_code_prefix,header name 'Floating Rate Income Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DDC JHFII Lifestyle Blend Growth Portfolio,S000043436,jh_code_prefix,header name 'Lifestyle Blend Growth Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DDK JHFII Lifestyle Blend Moderate Portfolio,S000043437,jh_code_prefix,header name 'Lifestyle Blend Moderate Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DEC JHFII Multimanager Lifestyle Conservative Portfolio,S000003338,jh_code_prefix,header name 'Multimanager Lifestyle Conservative Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DEK JHFII Multimanager Lifestyle Moderate Portfolio,S000003342,jh_code_prefix,header name 'Multimanager Lifestyle Moderate Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DFC JHFII Multimanager Lifestyle Balanced Portfolio,S000003337,jh_code_prefix,header name 'Multimanager Lifestyle Balanced Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DFK JHFII Multimanager Lifestyle Growth Portfolio,S000003339,jh_code_prefix,header name 'Multimanager Lifestyle Growth Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DGC JHFII Multimanager Lifestyle Aggressive Portfolio,S000003335,jh_code_prefix,header name 'Multimanager Lifestyle Aggressive Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DGK JHF II Multimanager 2010 Lifetime Portfolio,S000013649,jh_code_prefix,header name 'Multimanager 2010 Lifetime Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DHC JHF II Multimanager 2015 Lifetime Portfolio,S000013652,jh_code_prefix,header name 'Multimanager 2015 Lifetime Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DHK JHF II Multimanager 2020 Lifetime Portfolio,S000013653,jh_code_prefix,header name 'Multimanager 2020 Lifetime Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DIC JHF II Multimanager 2025 Lifetime Portfolio,S000013654,jh_code_prefix,header name 'Multimanager 2025 Lifetime Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DIK JHF II Multimanager 2030 Lifetime Portfolio,S000013655,jh_code_prefix,header name 'Multimanager 2030 Lifetime Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DJC JHF II Multimanager 2035 Lifetime Portfolio,S000013656,jh_code_prefix,header name 'Multimanager 2035 Lifetime Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DJK JHF II Multimanager 2040 Lifetime Portfolio,S000013657,jh_code_prefix,header name 'Multimanager 2040 Lifetime Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DLC JHF II Multimanager 2045 Lifetime Portfolio,S000013658,jh_code_prefix,header name 'Multimanager 2045 Lifetime Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DLK JHFII Multimanager 2055 Lifetime Portfolio,S000044502,jh_code_prefix,header name 'Multimanager 2055 Lifetime Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DMC JHF II Multimanager 2050 Lifetime Portfolio,S000013659,jh_code_prefix,header name 'Multimanager 2050 Lifetime Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DMK JHFII Multimanager 2060 Lifetime Portfolio,S000053254,jh_code_prefix,header name 'Multimanager 2060 Lifetime Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DNC JHFII 2010 Lifetime Blend Portfolio,S000042847,jh_code_prefix,header name '2010 Lifetime Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DNK JHFII 2015 Lifetime Blend Portfolio,S000042848,jh_code_prefix,header name '2015 Lifetime Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DOC JHFII 2020 Lifetime Blend Portfolio,S000042849,jh_code_prefix,header name '2020 Lifetime Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DOK JHFII 2025 Lifetime Blend Portfolio,S000042850,jh_code_prefix,header name '2025 Lifetime Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DPC JHFII 2030 Lifetime Blend Portfolio,S000042851,jh_code_prefix,header name '2030 Lifetime Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DPK JHFII 2035 Lifetime Blend Portfolio,S000042852,jh_code_prefix,header name '2035 Lifetime Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DQC JHFII 2040 Lifetime Blend Portfolio,S000042853,jh_code_prefix,header name '2040 Lifetime Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DQK JHFII 2045 Lifetime Blend Portfolio,S000042854,jh_code_prefix,header name '2045 Lifetime Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DRC JHFII 2050 Lifetime Blend Portfolio,S000042855,jh_code_prefix,header name '2050 Lifetime Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2DRK JHFII 2055 Lifetime Blend Portfolio,S000044503,jh_code_prefix,header name '2055 Lifetime Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2X7C JHF II U.S. Sector Rotation Fund,S000055171,jh_code_prefix,header name 'U.S. Sector Rotation Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2XRC JHFII Multimanager 2065 Lifetime Portfolio,S000069425,jh_code_prefix,header name 'Multimanager 2065 Lifetime Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2XSC JHFII 2065 Preservation Blend Portfolio,S000069424,jh_code_prefix,header name '2065 Preservation Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2XTC JHFII 2065 Lifetime Blend Portfolio,S000069423,jh_code_prefix,header name '2065 Lifetime Blend Portfolio' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2Y16 JHF II Mid Value Fund,S000024677,jh_code_prefix,header name 'Mid Value Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2Y21 JHF II Small Cap Value Fund,S000009819,jh_code_prefix,header name 'Small Cap Value Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2Y57 JHF II Capital Appreciation Value Fund,S000030799,jh_code_prefix,header name 'Capital Appreciation Value Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2Y68 JHFII Fundamental All Cap Core Fund,S000032685,jh_code_prefix,header name 'Fundamental All Cap Core Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,2Y74 JHFII Health Sciences Fund,S000034046,jh_code_prefix,header name 'Health Sciences Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,3341 JHFII Multi-Asset Absolute Return Fund,S000035066,jh_code_prefix,header name 'Multi-Asset Absolute Return Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,3342 JHFII Emerging Markets Debt Fund,S000027304,jh_code_prefix,header name 'Emerging Markets Debt Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,3343 JHFII Fundamental Global Franchise Fund,S000037602,jh_code_prefix,header name 'Fundamental Global Franchise Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,3344 JHFII Global Equity Fund,S000040959,jh_code_prefix,header name 'Global Equity Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,3348 JHFII International Small Company Fund,S000009779,jh_code_prefix,header name 'International Small Company Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001331971,3374 JHFII International Strategic Equity Allocation Fund,S000055170,jh_code_prefix,header name 'International Strategic Equity Allocation Fund' in 0001438934-23-000258; reviewed 2026-11-22
+0001593547,Advisors Inner Circle Fund III - Aperture New World Opportunities Fund,S000063768,trust_prefix,header name 'Aperture New World Opportunities Fund' in 0001135428-23-000140; reviewed 2026-11-22
+0001593547,The Advisors' Inner Circle Fund III - Aperture International Equity Fund,S000069244,trust_prefix,header name 'Aperture International Equity Fund' in 0001135428-23-000140; reviewed 2026-11-22
