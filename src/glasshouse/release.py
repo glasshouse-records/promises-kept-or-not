@@ -263,8 +263,8 @@ NEW_TABLES: dict[str, dict] = {
                        "UNDATED are never comparable with any policy",
         "accession": "→ filings.accession", "source_url": "EDGAR source",
         "weight_basis": "how `position` was weighted: 'shares' = by shares_voted; 'lines' = by "
-                        "line count because no share counts were filed (every 2022-23 legacy "
-                        "line). Line-weighted and share-weighted positions are not comparable "
+                        "line count, the 2022-23 legacy era (those filings print no share counts); "
+                        "'xml-no-shares' = XML lines that filed no share counts, also by line count. Line-weighted and share-weighted positions are not comparable "
                         "in rates across periods; legacy and XML lines are never pooled into "
                         "one decision",
         "vote_id": "→ votes.id of a representative line"},
@@ -282,8 +282,8 @@ NEW_TABLES: dict[str, dict] = {
         "adviser_key": "voting adviser group; same semantics as proposal_decisions",
         "accession": "→ filings.accession", "source_url": "EDGAR source",
         "weight_basis": "how `position` was weighted: 'shares' = by shares_voted; 'lines' = by "
-                        "line count because no share counts were filed (every 2022-23 legacy "
-                        "line). Line-weighted and share-weighted positions are not comparable "
+                        "line count, the 2022-23 legacy era (those filings print no share counts); "
+                        "'xml-no-shares' = XML lines that filed no share counts, also by line count. Line-weighted and share-weighted positions are not comparable "
                         "in rates across periods; legacy and XML lines are never pooled into "
                         "one decision",
         "vote_id": "→ votes.id of a representative line",
@@ -310,8 +310,8 @@ NEW_TABLES: dict[str, dict] = {
         "adviser_key": "voting adviser group; same semantics as proposal_decisions",
         "accession": "→ filings.accession", "source_url": "EDGAR source",
         "weight_basis": "how `position` was weighted: 'shares' = by shares_voted; 'lines' = by "
-                        "line count because no share counts were filed (every 2022-23 legacy "
-                        "line). Line-weighted and share-weighted positions are not comparable "
+                        "line count, the 2022-23 legacy era (those filings print no share counts); "
+                        "'xml-no-shares' = XML lines that filed no share counts, also by line count. Line-weighted and share-weighted positions are not comparable "
                         "in rates across periods; legacy and XML lines are never pooled into "
                         "one decision",
         "vote_id": "→ votes.id of a representative line",
