@@ -10,6 +10,9 @@ A fund's votes are attributed to a series ONLY through the filing's own SGML hea
 Rows land with `legacy_format = 'proxyedge'` and `shares_voted` NULL (the format has no
 share counts). They are quarantined from releases and analysis by
 `ledger.NON_LEGACY_VOTE_SQL` until a human promotes them.
+
+`management_recommendation` carries the XML meaning (whether THIS vote went WITH = "FOR" or
+AGAINST management), copied from the printed For/Against Management column; else "".
 """
 
 from __future__ import annotations
@@ -285,9 +288,8 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
             info["dropped_date"] += 1
             continue
         fa = r["for_against_management"]
-        rec = ""
-        if how in ("FOR", "AGAINST") and fa in ("For", "Against"):
-            rec = how if fa == "For" else ("AGAINST" if how == "FOR" else "FOR")
+        # XML meaning: WITH (FOR) / AGAINST management, copied from the printed column.
+        rec = {"For": "FOR", "Against": "AGAINST"}.get(fa, "")
         out.append({
             "issuer_name": r["issuer_name"], "cusip": r["security_id"], "isin": r["isin"],
             "meeting_date": f"{m.group(2)}/{m.group(3)}/{m.group(1)}",
