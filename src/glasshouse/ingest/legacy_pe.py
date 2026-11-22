@@ -50,6 +50,87 @@ def _key(row: dict) -> tuple:
     return tuple(row[k] for k in KEYS)
 
 
+# -- precision guards (shared with legacy_iss) -------------------------------
+
+_MEETING_FIELDS = ("fund_name", "fund_heading", "issuer_name", "meeting_date",
+                   "security_id", "ticker")
+
+
+def meeting_key(row: dict) -> tuple:
+    """Fund heading, issuer, meeting date and security id/ticker, where the row has them."""
+    return tuple(row[f] for f in _MEETING_FIELDS if f in row)
+
+
+def _issuer_sort_key(name: str) -> str:
+    """First alphanumeric character, casefolded. ISS's collation of punctuation is not
+    reproducible (real order: E-GUARDIAN, E.ON SE, E-J HOLDINGS; stripping punctuation
+    still gives eon > ej), so only a drop to an earlier initial counts as a reset."""
+    return next((c for c in name.casefold() if c.isalnum()), "")
+
+
+def drop_disputed_meetings(out: list[dict], disputed_rows: list[dict]) -> tuple[list[dict], dict]:
+    """Any meeting with a row only one parser produced loses ALL its agreed rows."""
+    bad = {meeting_key(r) for r in disputed_rows}
+    kept = [r for r in out if meeting_key(r) not in bad]
+    return kept, {"meetings_dropped_disputed": len(bad),
+                  "rows_dropped_disputed": len(out) - len(kept)}
+
+
+def order_guard(rows: list[dict], fund_field: str) -> tuple[list[dict], dict]:
+    """Within a fund section meetings are listed in alphabetical issuer order. A later
+    issuer that sorts before the previous one (a reset) may mean a missed fund boundary:
+    drop the section from the reset to its end, unless that tail exactly repeats an
+    earlier run of the same section (an as-filed repeat, kept)."""
+    sections: list[list[dict]] = []
+    for r in rows:
+        if sections and sections[-1][0][fund_field] == r[fund_field]:
+            sections[-1].append(r)
+        else:
+            sections.append([r])
+    kept: list[dict] = []
+    resets = repeats = dropped = 0
+    for sec in sections:
+        meetings: list[tuple] = []   # (meeting key, issuer, first row index)
+        for i, r in enumerate(sec):
+            mk = meeting_key(r)
+            if not meetings or meetings[-1][0] != mk:
+                meetings.append((mk, r["issuer_name"], i))
+        cut = None
+        for m in range(1, len(meetings)):
+            if _issuer_sort_key(meetings[m][1]) < _issuer_sort_key(meetings[m - 1][1]):
+                resets += 1
+                tail = [x[0] for x in meetings[m:]]
+                head = [x[0] for x in meetings[:m]]
+                if any(head[j:j + len(tail)] == tail for j in range(len(head) - len(tail) + 1)):
+                    repeats += 1
+                else:
+                    cut = meetings[m][2]
+                break
+        if cut is None:
+            kept.extend(sec)
+        else:
+            kept.extend(sec[:cut])
+            dropped += len(sec) - cut
+    if resets:
+        logger.info("order guard: resets=%d repeats=%d rows_dropped=%d", resets, repeats, dropped)
+    return kept, {"order_resets": resets, "order_repeats": repeats, "rows_dropped_order": dropped}
+
+
+def guarded(out: list[dict], rows_a: list[dict], rows_b: list[dict], ca: Counter,
+            cb: Counter, fund_field: str, keyfn=None) -> tuple[list[dict], dict]:
+    """Both guards over the multiset-intersection rows; returns rows and the new stats."""
+    keyfn = keyfn or _key
+    by_key = {keyfn(r): r for r in rows_b} | {keyfn(r): r for r in rows_a}
+    disputed = [by_key[k] for k in [*(ca - cb), *(cb - ca)]]
+    out, s1 = drop_disputed_meetings(out, disputed)
+    out, s2 = order_guard(out, fund_field)
+    st = {**s1, **s2}
+    if s1["meetings_dropped_disputed"]:
+        logger.info("disputed meetings dropped=%d rows=%d", s1["meetings_dropped_disputed"],
+                    s1["rows_dropped_disputed"])
+    return out, st
+
+
 def agreed(text: str) -> tuple[list[dict], dict]:
     """Rows both parsers produced identically (multiset intersection, in parser A's
     order) and the agreement stats."""
@@ -66,9 +147,11 @@ def agreed(text: str) -> tuple[list[dict], dict]:
             out.append(r)
     n_agreed = sum(common.values())
     a_only, b_only = sum((ca - cb).values()), sum((cb - ca).values())
+    out, guard_stats = guarded(out, rows_a, rows_b, ca, cb, "fund_name")
     return out, {"rows_a": len(rows_a), "rows_b": len(rows_b), "agreed": n_agreed,
                  "a_only": a_only, "b_only": b_only,
-                 "disagreement_rate": (a_only + b_only) / max(1, n_agreed + a_only + b_only)}
+                 "disagreement_rate": (a_only + b_only) / max(1, n_agreed + a_only + b_only),
+                 **guard_stats}
 
 
 # -- series map --------------------------------------------------------------
