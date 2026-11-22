@@ -25,7 +25,7 @@ from pathlib import Path
 from lxml import etree
 
 from .. import http, ledger
-from . import legacy_iss, legacy_pe
+from . import legacy_iss, legacy_issueno, legacy_pe
 from .edgar import Filing, filing_directory, list_filings
 
 logger = logging.getLogger(__name__)
@@ -194,6 +194,7 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                legacy: bool = False,
                legacy_proxyedge: bool = False,
                legacy_iss_text: bool = False,
+               legacy_issueno_text: bool = False,
                reingest: set[str] | None = None,
                reingest_reason: str = "") -> dict:
     """Ingest N-PX filings for a CIK into the evidence ledger.
@@ -217,10 +218,15 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
     LEGACY_ISSHTML_REJECTED); see legacy_iss. With both flags each filing goes
     to the parser for its own format; a filing in neither format is skipped (counted in
     stats["no_format"]).
+
+    legacy_issueno_text=True (opt-in): the same for the "Issue No." text layout (Schwab, VanEck,
+    Hartford, Russell: LEGACY_ISSUENO / LEGACY_ISSUENO_REJECTED); see legacy_issueno. Its
+    rows are quarantined (legacy_format 'issueno' is not promoted).
     """
     today = date.today().isoformat()
     stats = {"filings": 0, "skipped": 0, "notices": 0, "votes": 0, "failed": 0}
     reingest = set(reingest or ())
+    legacy_issueno_flag = legacy_issueno_text
 
     filings = list_filings(cik, NPX_FORMS, limit=max_filings)
     for filing in filings:
@@ -237,9 +243,11 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
             fam = ("iss" if rt.startswith(("LEGACY_ISS_", "LEGACY_ISSHTML_")) or
                    rt in ("LEGACY_ISS", "LEGACY_ISSHTML")
                    else "proxyedge" if rt in ("LEGACY_PROXYEDGE", "LEGACY_PROXYEDGE_REJECTED")
+                   else "issueno" if rt in ("LEGACY_ISSUENO", "LEGACY_ISSUENO_REJECTED")
                    else None)
             if (reingest and fam == "iss" and legacy_iss_text) or \
-                    (reingest and fam == "proxyedge" and legacy_proxyedge):
+                    (reingest and fam == "proxyedge" and legacy_proxyedge) or \
+                    (reingest and fam == "issueno" and legacy_issueno_flag):
                 # a named legacy filing re-parsed under its own format's flag; the record
                 # is replaced in one transaction by legacy_pe.record_filing (XML rows
                 # are never touched: it deletes only legacy_format IS NOT NULL votes)
@@ -254,7 +262,8 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
         if exists and not replace:
             # legacy mode may upgrade a filing previously skipped as
             # LEGACY_NO_COVER (no votes attached) — reprocess it. Otherwise skip.
-            if (legacy or legacy_proxyedge or legacy_iss_text) and exists[0] == "LEGACY_NO_COVER":
+            if ((legacy or legacy_proxyedge or legacy_iss_text or legacy_issueno_flag)
+                    and exists[0] == "LEGACY_NO_COVER"):
                 upgrade_no_cover = True    # its record is replaced only if it is ingested below
             else:
                 stats["skipped"] += 1
@@ -291,7 +300,7 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                                filing.accession_number)
                 stats["skipped"] += 1
                 continue
-            if legacy_proxyedge or legacy_iss_text:
+            if legacy_proxyedge or legacy_iss_text or legacy_issueno_flag:
                 if not legacy_pe.is_candidate(filing):
                     stats["skipped"] += 1
                     continue
@@ -304,6 +313,9 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                             conn, filing, institution_id, today)
                     elif fmt == "proxyedge" and legacy_proxyedge:
                         n = legacy_pe.ingest_filing_from_sources(
+                            conn, filing, institution_id, today)
+                    elif fmt == "issueno" and legacy_issueno_flag:
+                        n = legacy_issueno.ingest_filing_from_sources(
                             conn, filing, institution_id, today)
                     else:                   # neither format (or not the one asked for)
                         stats["no_format"] = stats.get("no_format", 0) + 1
@@ -447,6 +459,8 @@ def _reingest_legacy(conn: sqlite3.Connection, filing: Filing, institution_id: s
             n = legacy_iss.ingest_filing_from_sources(conn, filing, institution_id, today)
         elif fam == "proxyedge" and fmt == "proxyedge":
             n = legacy_pe.ingest_filing_from_sources(conn, filing, institution_id, today)
+        elif fam == "issueno" and fmt == "issueno":
+            n = legacy_issueno.ingest_filing_from_sources(conn, filing, institution_id, today)
         else:
             stats["no_format"] = stats.get("no_format", 0) + 1
             return

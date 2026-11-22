@@ -91,7 +91,8 @@ def cmd_ingest_npx(args) -> int:
             stats = npx.ingest_npx(conn, cik, institution_id=inst_id, reingest=reingest,
                                    reingest_reason=args.reason,
                                    legacy_proxyedge=getattr(args, "legacy_proxyedge", False),
-                                   legacy_iss_text=getattr(args, "legacy_iss", False))
+                                   legacy_iss_text=getattr(args, "legacy_iss", False),
+                                   legacy_issueno_text=getattr(args, "legacy_issueno", False))
             print(f"  CIK {cik}: {stats}")
         return 0
     if args.cik:
@@ -107,7 +108,8 @@ def cmd_ingest_npx(args) -> int:
                                max_filings=args.max_filings, max_tables=args.max_tables,
                                legacy=getattr(args, "legacy", False),
                                legacy_proxyedge=getattr(args, "legacy_proxyedge", False),
-                               legacy_iss_text=getattr(args, "legacy_iss", False))
+                               legacy_iss_text=getattr(args, "legacy_iss", False),
+                               legacy_issueno_text=getattr(args, "legacy_issueno", False))
         print(f"  CIK {cik}: {stats}")
     return 0
 
@@ -1103,6 +1105,11 @@ def main(argv: list[str] | None = None) -> int:
                             "REPORT' text and the HTML-table layouts (rows both independent "
                             "parsers agree on, gated per filing); tagged iss_text / iss_html "
                             "and quarantined like --legacy-proxyedge")
+    npx_p.add_argument("--legacy-issueno", action="store_true",
+                       help="ingest July 2022-June 2023 N-PX in the 'Issue No.' text layout "
+                            "(Schwab, VanEck, Hartford, Russell; rows both independent parsers "
+                            "agree on, gated per filing); tagged issueno and QUARANTINED "
+                            "(not promoted into releases or analysis)")
     npx_p.set_defaults(func=cmd_ingest_npx)
     com = ing.add_parser("commitments")
     com.add_argument("--wayback", action="store_true",

@@ -25,7 +25,7 @@ RECS = frozenset(
     {"For", "FOR", "Against", "Abstain", "Withhold", "N/A", "1 Year", "2 Years", "3 Years"}
 )
 VOTES = frozenset(
-    {"For", "FOR", "Against", "Abstain", "Withhold", "N/A", "TNA", "1 Year", "Echo Vote"}
+    {"For", "FOR", "Against", "Abstain", "Withhold", "N/A", "TNA", "1 Year", "2 Years", "3 Years", "Echo Vote"}
 )
 FOR_AGAINST = frozenset({"For", "FOR", "Against", "N/A"})
 SECURITY_ID_TYPES = frozenset({"CUSIP", "CINS", "ISIN", "SEDOL"})

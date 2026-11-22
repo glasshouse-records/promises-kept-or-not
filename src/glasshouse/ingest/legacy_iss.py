@@ -126,6 +126,17 @@ def is_iss_text(text: str) -> bool:
     return _ISS_COLHDR.search(text) is not None
 
 
+_WS = r"(?:\s|&nbsp;|&#160;|\xa0)+"
+_ISSUENO_HDR = re.compile(
+    rf"Issue{_WS}No\.{_WS}Description{_WS}Proponent{_WS}Mgmt{_WS}Rec{_WS}Vote{_WS}Cast", re.I)
+
+
+def is_issueno(text: str) -> bool:
+    """The legacy N-PX 'Issue No.' layout (see legacy_issueno): its column header, any case
+    (Russell prints it upper case), any whitespace, `&nbsp;` allowed."""
+    return _ISSUENO_HDR.search(text) is not None
+
+
 _ISS_HTML_HDR = re.compile(r"<th\b[^>]*>\s*Proposal No\s*</th>", re.I)
 
 
@@ -163,18 +174,20 @@ def prepare(doc: str) -> str:
 
 def doc_format(text: str) -> str | None:
     """One document's format, checked in order: ISS text (also as Courier HTML), ISS
-    HTML, ProxyEdge."""
+    HTML, 'issueno' (legacy "Issue No." layout), ProxyEdge."""
     if is_iss_text(text) or courier_html_to_text(text) is not None:
         return "iss"
     if is_iss_html(text):
         return "iss_html"
+    if is_issueno(text):
+        return "issueno"
     if "Agenda Number:" in text:
         return "proxyedge"
     return None
 
 
 def detect_format(docs: dict[str, str]) -> str | None:
-    """'iss', 'iss_html', 'proxyedge', or None (none, or a mix we will not guess about)."""
+    """'iss', 'iss_html', 'issueno', 'proxyedge', or None (none, or a mix we will not guess about)."""
     found = {f for f in map(doc_format, docs.values()) if f}
     return found.pop() if len(found) == 1 else None
 

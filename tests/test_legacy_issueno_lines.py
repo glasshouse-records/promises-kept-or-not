@@ -189,3 +189,14 @@ def test_shareholder_vocab_and_lowercase_cins_dropped():
     out = m.parse(doc("1          Report                   ShrHoldr   Against    For        Against\n"))
     assert out[0]["proponent"] == "ShrHoldr"
     assert m.parse(doc(ROW.format(i="1", d="x")).replace("CUSIP", "cusip")) == []
+
+
+def test_multi_year_frequency_votes_are_in_the_vote_vocabulary():
+    # The blocks parser accepts 2 Years / 3 Years votes; a vote of a closed-set frequency
+    # must not be dropped here alone (that would only cost recall via the agreement gate).
+    rows = (
+        "13         Frequency of Say on Pay  Mgmt       1 Year     3 Years    Against\n"
+        "14         Frequency of Say on Pay  Mgmt       3 Years    2 Years    Against\n"
+    )
+    out = m.parse(doc(rows))
+    assert [(r["rec"], r["vote"]) for r in out] == [("1 Year", "3 Years"), ("3 Years", "2 Years")]

@@ -1001,6 +1001,18 @@ both parsers read it.
   FUNDS POLICY"). They split one fund's shares across policies, and stored under the
   fund they would look like contradictory votes by one fund. Then: votes outside a closed vocabulary (e.g. "None", "N/A",
   "Take No Action"); unknown sponsors; unparseable meeting dates.
+- **"Issue No." layout (quarantined, opt-in `--legacy-issueno`).** Schwab, VanEck,
+  Hartford and Russell print a fourth layout (column header "Issue No. Description
+  Proponent Mgmt Rec Vote Cast"; Hartford wraps it in HTML, Russell in SGML-table
+  markup). Same two-parser/14-field agreement gate, guards and header-only fund mapping
+  as above (`legacy_format` `issueno`, `report_type` `LEGACY_ISSUENO`). Every row of a
+  meeting typed as a contest is dropped; only For, Against, Abstain, Withhold, 1/2/3
+  Year(s) and TNA votes are kept ("N/A", "Echo Vote" and anything else are dropped);
+  proponents Mgmt/MGMT and ShrHoldr map to issuer / security holder and any other (N/A)
+  drops the row. `for_against_management` is the filer's own column (N/A is NULL).
+  Security IDs are kept only if the CUSIP/CINS or ISIN check digit validates (SEDOL is
+  not kept). These rows are NOT promoted: `issueno` is outside
+  `PROMOTED_LEGACY_FORMATS`, so releases and analysis exclude them until a human decides.
 - **Columns.** `legacy_format` is `proxyedge`, `iss_text` or `iss_html` (NULL for XML
   rows). `shares_voted` is NULL: these formats print no share counts.
   `management_recommendation` has the XML meaning: whether THIS vote went with (FOR)
