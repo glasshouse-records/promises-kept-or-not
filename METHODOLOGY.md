@@ -952,12 +952,17 @@ text, and ISS HTML tables. Research notes: `docs/research/legacy-npx.md`.
 
 - **Two parsers, one answer.** Each layout is read by two parsers written independently
   from one written contract. A row is kept only when both produce it identically over
-  all 14 fields (fund heading, issuer, ticker, security ID, meeting date and type,
-  record date, recommendation column, proxy card, proposal number and text,
-  recommendation, vote, sponsor). If the parsers disagree on more than 0.5% of a
-  filing's rows, the whole filing is rejected (`report_type` ending `_REJECTED`) and
-  nothing from it is inserted. Per-document agreement counts are in the `legacy_parse`
-  table.
+  every field the layout prints (14 for the ISS layouts: fund heading, issuer, ticker,
+  security ID, meeting date and type, record date, recommendation column, proxy card,
+  proposal number and text, recommendation, vote, sponsor; 13 for ProxyEdge). If the
+  parsers disagree on more than 0.5% of any one document's rows, or neither parser
+  reads any row, the whole filing is rejected and nothing from it is inserted.
+  Per-document agreement counts are in the `legacy_parse` table.
+- **`report_type` values for legacy filings** (these are parse verdicts, not N-PX cover
+  values): `LEGACY_PROXYEDGE`, `LEGACY_ISS` (ISS text), `LEGACY_ISSHTML` (accepted);
+  the same with `_REJECTED` (gate failed, or nothing parsed: see `legacy_parse`);
+  `LEGACY_NO_COVER` (a pre-XML filing not ingested); `LEGACY_PARSED` (the older
+  single-parser path, Fidelity tables).
 - **Fund → series** only through the filing's own SGML header: exact normalised name
   match, or one trailing " - SUFFIX" removed. Trademark marks ("(R)", "(SM)", "(TM)",
   ®, ™, ℠) are removed from both sides first. Failing that, a heading may map through
@@ -966,8 +971,14 @@ text, and ISS HTML tables. Research notes: `docs/research/legacy-npx.md`.
   Account", "T. Rowe Price"/trust-name prefixes. An alias counts only if its series is
   listed in that filing's own header. No fuzzy matching. A heading that still does not
   match is dropped and counted, so recall is knowingly incomplete.
-- **Dropped on purpose:** proxy-contest rows (two cards, so the management
-  recommendation is undefined); votes outside a closed vocabulary (e.g. "None", "N/A",
+- **Dropped on purpose:** every row of a proxy contest: a card label, a "Dissident
+  Recommendation" column, or a meeting typed "Proxy Contest". ISS often prints the
+  dissident's card under a "Management Recommendation" header, e.g. Illumina 2023-05-25,
+  where Icahn's slate would otherwise be read as management's recommendation. Also
+  dropped: Vanguard's 2023 pilot voting-policy sections ("FUND NAME - GLASS LEWIS ESG
+  POLICY", "- COMPANY BOARD-ALIGNED POLICY", "- NOT VOTING POLICY", "- VANGUARD-ADVISED
+  FUNDS POLICY"). They split one fund's shares across policies, and stored under the
+  fund they would look like contradictory votes by one fund. Then: votes outside a closed vocabulary (e.g. "None", "N/A",
   "Take No Action"); unknown sponsors; unparseable meeting dates.
 - **Columns.** `legacy_format` is `proxyedge`, `iss_text` or `iss_html` (NULL for XML
   rows). `shares_voted` is NULL: these formats print no share counts.
@@ -978,6 +989,14 @@ text, and ISS HTML tables. Research notes: `docs/research/legacy-npx.md`.
   → AGAINST; AGAINST + Against → FOR). Otherwise it is left empty.
   `for_against_management` comes only from ProxyEdge, which prints it; it is NULL
   elsewhere and never derived.
+- **Line counts are not comparable to XML rows.** With no share counts, the duplicate
+  marking groups identical lines, so sub-adviser sleeves of one series that voted alike
+  collapse into one line. Filers that repeat a meeting (e.g. Principal LifeTime prints
+  some meetings once per fund-of-funds holder) are kept as filed. Count meetings or
+  proposals, not lines.
+- **`retrieval_date`** is the day the filing was parsed into the ledger. The documents
+  may have been downloaded earlier into the local cache. The bytes are SEC's, unchanged,
+  at the filing's `source_url`.
 - **Quarantine.** Legacy rows are in the ledger but excluded from releases and every
   analytic read (`ledger.NON_LEGACY_VOTE_SQL`) until a reviewer pass and a hand sample
   against the source filings support promoting them.
