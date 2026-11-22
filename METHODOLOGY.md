@@ -971,7 +971,11 @@ text, and ISS HTML tables. Research notes: `docs/research/legacy-npx.md`.
   "Take No Action"); unknown sponsors; unparseable meeting dates.
 - **Columns.** `legacy_format` is `proxyedge`, `iss_text` or `iss_html` (NULL for XML
   rows). `shares_voted` is NULL: these formats print no share counts.
-  `management_recommendation` is set only under a "Mgt Rec" column.
+  ISS formats: `management_recommendation` is set only under a "Mgt Rec" column.
+  ProxyEdge prints no recommendation column, only the vote and whether it was "For" or
+  "Against" management. There, the recommendation is inferred only for a FOR or AGAINST
+  vote with a printed For/Against (FOR + For → FOR; FOR + Against → AGAINST; AGAINST + For
+  → AGAINST; AGAINST + Against → FOR). Otherwise it is left empty.
   `for_against_management` comes only from ProxyEdge, which prints it; it is NULL
   elsewhere and never derived.
 - **Quarantine.** Legacy rows are in the ledger but excluded from releases and every
