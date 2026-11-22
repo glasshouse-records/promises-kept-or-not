@@ -170,7 +170,7 @@ ISO dates, compared with the MEETING date) and `series_adviser` (per fund
 series, optionally dated) override it, in that order (series rule, then
 history, then default). A meeting date that does not parse, on a series or
 registrant that has any dated rule, resolves to `UNDATED`: its own group, never
-paired with a policy (the adviser in force cannot be told). Rule bounds are
+paired with a policy (the adviser in force cannot be told). Meeting dates are normalised to ISO only when the reading is unambiguous: M/D/YYYY, M/D/YY, YYYYMMDD, and day-first D/M/YYYY only when the first part exceeds 12; a value that is still not a real date (`30/24/2024`, `00`) is kept as filed and counted as 'date not machine-readable'. Rule bounds are
 validated at build (ISO days, `from` <= `until`, no overlaps) and a bad rule
 stops the build. A policy document takes its key the same way, from its own
 `adviser_key_history`, on each version's CAPTURE date (the day the text was

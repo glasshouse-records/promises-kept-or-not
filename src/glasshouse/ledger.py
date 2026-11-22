@@ -49,18 +49,36 @@ def non_legacy_vote_sql(alias: str = "") -> str:
 
 def iso_meeting_date(col: str = "meeting_date") -> str:
     # Filers write 06/30/2025 or, since 2026, 9/30/2025 — both are M/D/YYYY;
-    # one filing writes M/D/YY.
+    # one filing writes M/D/YY; some write YYYYMMDD or day-first (30/07/2023).
+    # Precision over recall: only readings that cannot be anything else become
+    # ISO. A/B/YYYY with A <= 12 stays month-first (as it always was); A > 12
+    # can only be a day, so it is read day-first when B is a real month; any
+    # other value (30/24/2024, '00', '148850') is returned unchanged.
     rest = f"substr({col}, instr({col},'/')+1)"
-    return (f"CASE WHEN {col} GLOB '[0-9]*/[0-9]*/[0-9][0-9][0-9][0-9]' "
+    a = f"CAST(substr({col},1,instr({col},'/')-1) AS INTEGER)"
+    b = f"CAST(substr({rest},1,instr({rest},'/')-1) AS INTEGER)"
+    slashes = f"{col} NOT GLOB '*[^0-9/]*'"
+    ymd_m = f"CAST(substr({col},5,2) AS INTEGER)"
+    ymd_d = f"CAST(substr({col},7,2) AS INTEGER)"
+    return (f"CASE WHEN {col} GLOB '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]' "
+            f"THEN CASE WHEN {ymd_m} BETWEEN 1 AND 12 AND {ymd_d} BETWEEN 1 AND 31 "
+            f"THEN substr({col},1,4)||'-'||substr({col},5,2)||'-'||substr({col},7,2) "
+            f"ELSE {col} END "
+            f"WHEN {col} GLOB '[0-9]*/[0-9]*/[0-9][0-9][0-9][0-9]' "
             f"AND length({col}) <= 10 "
+            f"THEN CASE WHEN {a} <= 12 "
             f"THEN substr({rest}, instr({rest},'/')+1)||'-'||"
-            f"printf('%02d', substr({col},1,instr({col},'/')-1))||'-'||"
-            f"printf('%02d', substr({rest},1,instr({rest},'/')-1)) "
+            f"printf('%02d', {a})||'-'||printf('%02d', {b}) "
+            f"WHEN {slashes} AND {a} <= 31 AND {b} BETWEEN 1 AND 12 "
+            f"THEN substr({rest}, instr({rest},'/')+1)||'-'||"
+            f"printf('%02d', {b})||'-'||printf('%02d', {a}) "
+            f"ELSE {col} END "
             # one 2024 Wellington N-PX writes M/D/YY (01/23/24): N-PX began in 2003
             f"WHEN {col} GLOB '[0-9]*/[0-9]*/[0-9][0-9]' AND length({col}) <= 8 "
+            f"THEN CASE WHEN {a} <= 12 "
             f"THEN '20'||substr({rest}, instr({rest},'/')+1)||'-'||"
-            f"printf('%02d', substr({col},1,instr({col},'/')-1))||'-'||"
-            f"printf('%02d', substr({rest},1,instr({rest},'/')-1)) "
+            f"printf('%02d', {a})||'-'||printf('%02d', {b}) "
+            f"ELSE {col} END "
             f"ELSE {col} END")
 
 
