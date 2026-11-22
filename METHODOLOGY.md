@@ -967,7 +967,12 @@ text, and ISS HTML tables. Research notes: `docs/research/legacy-npx.md`.
   proposal number and text, recommendation, vote, sponsor; 13 for ProxyEdge). If the
   parsers disagree on more than 0.5% of any one document's rows, or neither parser
   reads any row, the whole filing is rejected and nothing from it is inserted.
-  Per-document agreement counts are in the `legacy_parse` table.
+  Per-document agreement counts are in the `legacy_parse` table. Inside an accepted
+  document, a meeting with even one disputed row loses all its rows. A further check,
+  independent of both parsers, watches the alphabetical order of issuers within each
+  fund section. A jump back to an earlier initial letter means a fund boundary may
+  have been missed, and the rest of that section is dropped. An exact as-filed repeat
+  of a run of meetings is kept.
 - **`report_type` values for legacy filings** (these are parse verdicts, not N-PX cover
   values): `LEGACY_PROXYEDGE`, `LEGACY_ISS` (ISS text), `LEGACY_ISSHTML` (accepted);
   the same with `_REJECTED` (gate failed, or nothing parsed: see `legacy_parse`);
@@ -992,11 +997,13 @@ text, and ISS HTML tables. Research notes: `docs/research/legacy-npx.md`.
   "Take No Action"); unknown sponsors; unparseable meeting dates.
 - **Columns.** `legacy_format` is `proxyedge`, `iss_text` or `iss_html` (NULL for XML
   rows). `shares_voted` is NULL: these formats print no share counts.
-  ISS formats: `management_recommendation` is set only under a "Mgt Rec" column.
-  ProxyEdge prints no recommendation column, only the vote and whether it was "For" or
-  "Against" management. There, the recommendation is inferred only for a FOR or AGAINST
-  vote with a printed For/Against (FOR + For → FOR; FOR + Against → AGAINST; AGAINST + For
-  → AGAINST; AGAINST + Against → FOR). Otherwise it is left empty.
+  `management_recommendation` has the XML meaning: whether THIS vote went with (FOR)
+  or against (AGAINST) management, not what management recommended. ProxyEdge prints
+  it ("For"/"Against" Management) and it is copied. In the ISS layouts it is computed
+  from the printed recommendation (under a "Mgt Rec" column only) and the vote: the
+  same → FOR; plainly opposite (For vs Against/Withhold, or two different frequencies)
+  → AGAINST; anything else (abstain against a For, Do Not Vote, no printed
+  recommendation) → empty.
   `for_against_management` comes only from ProxyEdge, which prints it; it is NULL
   elsewhere and never derived.
 - **Line counts are not comparable to XML rows.** With no share counts, the duplicate
