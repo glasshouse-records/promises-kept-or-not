@@ -944,6 +944,35 @@ Scope is deliberately narrow, precision-first:
   leans on the management recommendation must first be verified against the
   issuer's proxy statement.
 
+### Legacy N-PX, July 2022 – June 2023 (quarantined; added 2026-11-22)
+
+Before the XML form (votes from July 2023), N-PX was free text. The 2022-23 year is
+being read from three filer layouts: Broadridge ProxyEdge text, ISS "FORM N-Px REPORT"
+text, and ISS HTML tables. Research notes: `docs/research/legacy-npx.md`.
+
+- **Two parsers, one answer.** Each layout is read by two parsers written independently
+  from one written contract. A row is kept only when both produce it identically over
+  all 14 fields (fund heading, issuer, ticker, security ID, meeting date and type,
+  record date, recommendation column, proxy card, proposal number and text,
+  recommendation, vote, sponsor). If the parsers disagree on more than 0.5% of a
+  filing's rows, the whole filing is rejected (`report_type` ending `_REJECTED`) and
+  nothing from it is inserted. Per-document agreement counts are in the `legacy_parse`
+  table.
+- **Fund → series** only through the filing's own SGML header: exact normalised name
+  match, or one trailing " - SUFFIX" removed. No fuzzy matching. A heading that does
+  not match is dropped and counted, so recall is knowingly incomplete.
+- **Dropped on purpose:** proxy-contest rows (two cards, so the management
+  recommendation is undefined); votes outside a closed vocabulary (e.g. "None", "N/A",
+  "Take No Action"); unknown sponsors; unparseable meeting dates.
+- **Columns.** `legacy_format` is `proxyedge`, `iss_text` or `iss_html` (NULL for XML
+  rows). `shares_voted` is NULL: these formats print no share counts.
+  `management_recommendation` is set only under a "Mgt Rec" column.
+  `for_against_management` comes only from ProxyEdge, which prints it; it is NULL
+  elsewhere and never derived.
+- **Quarantine.** Legacy rows are in the ledger but excluded from releases and every
+  analytic read (`ledger.NON_LEGACY_VOTE_SQL`) until a reviewer pass and a hand sample
+  against the source filings support promoting them.
+
 ## Scoring — the Concern Index (v0)
 
 For a company's set of resolved enforcement actions:
