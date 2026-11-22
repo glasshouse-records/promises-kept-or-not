@@ -1,0 +1,14 @@
+Fund Name : Schwab Test Fund
+
+________________________________________________________________________________
+Charles Schwab Corp.
+Ticker     Security ID:             Meeting Date          Meeting Status
+SCHW       CUSIP 808513600          05/18/2023            Echo Vote
+Meeting Type                        Country of Trade
+Annual                              United States
+Issue No.  Description              Proponent  Mgmt Rec   Vote Cast  For/Against
+                                                                      Mgmt
+
+1.1        Elect Marianne C. Brown  Mgmt       For        Echo Vote  N/A
+1.2        Elect Frank C.           Mgmt       For        Echo Vote  N/A
+            Herringer

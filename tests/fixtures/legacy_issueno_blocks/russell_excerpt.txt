@@ -1,0 +1,56 @@
+Fund Name : RIC Emerging Markets Fund
+
+--------------------------------------------------------------------------------
+
+37 INTERACTIVE ENTERTAINMENT NETWORK TECHNOLOGY GROUP CO., LTD.
+
+<TABLE>
+<S>                            <C>                            <C>                            <C>
+TICKER                         SECURITY ID:                   MEETING DATE                   MEETING STATUS
+002555                         CINS Y9717X105                 09/15/2022                     Voted
+MEETING TYPE                   COUNTRY OF TRADE
+Special                        China
+</TABLE>
+
+<TABLE>
+<CAPTION>
+                                                                                                  FOR/AGNST
+ISSUE NO.  DESCRIPTION                                            PROPONENT  MGMT REC  VOTE CAST    MGMT
+<C>        <S>                                                    <C>        <C>       <C>        <C>
+   1       2022 Interim Profit Distribution Plan                  Mgmt       For       For        For
+   2       Application for Bank Credit Line                       Mgmt       For       For        For
+   3       Adjustment Of Estimated Guarantee Quota For
+             Subsidiaries In 2022                                 Mgmt       For       For        For
+</TABLE>
+
+--------------------------------------------------------------------------------
+
+3SBIO INC
+
+<TABLE>
+<S>                            <C>                            <C>                            <C>
+TICKER                         SECURITY ID:                   MEETING DATE                   MEETING STATUS
+1530                           CINS G8875G102                 06/20/2023                     Voted
+MEETING TYPE                   COUNTRY OF TRADE
+Annual                         Cayman Islands
+</TABLE>
+
+<TABLE>
+<CAPTION>
+                                                                                                  FOR/AGNST
+ISSUE NO.  DESCRIPTION                                            PROPONENT  MGMT REC  VOTE CAST    MGMT
+<C>        <S>                                                    <C>        <C>       <C>        <C>
+   1       Non-Voting Meeting Note                                N/A        N/A       N/A        N/A
+   2       Non-Voting Meeting Note                                N/A        N/A       N/A        N/A
+   3       Accounts and Reports                                   Mgmt       For       For        For
+   4       Elect PU Tianruo                                       Mgmt       For       Against    Against
+   5       Elect Heidi YANG Hoi Ti                                Mgmt       For       For        For
+   6       Elect ZHANG Dan                                        Mgmt       For       For        For
+   7       Directors' Fees                                        Mgmt       For       For        For
+   8       Allocation of Profits/Dividends                        Mgmt       For       For        For
+   9       Appointment of Auditor and Authority to Set Fees       Mgmt       For       For        For
+   10      Authority to Issue Shares w/o Preemptive Rights        Mgmt       For       Against    Against
+   11      Authority to Repurchase Shares                         Mgmt       For       For        For
+   12      Authority to Issue Repurchased Shares                  Mgmt       For       Against    Against
+</TABLE>
+
