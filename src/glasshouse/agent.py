@@ -26,6 +26,7 @@ import sqlite3
 from datetime import UTC, date, datetime
 
 from . import investigate, registry
+from .fmt import shares_phrase
 from .http import DATA_DIR
 
 BRIEFS_DIR = DATA_DIR / "agent" / "briefs"
@@ -103,7 +104,7 @@ def _draft(rec: investigate.ThemeRecord, score: float, conn=None, llm: bool = Fa
         f"{label} ({span}), its funds voted AGAINST {rec.votes_against} ({pct}%).")
     if top:
         standfirst += (f" The largest: {top['issuer_name']}, where it voted against "
-                       f"“{top['vote_description']}” with {int(top['shares_voted']):,} shares.")
+                       f"“{top['vote_description']}” ({shares_phrase(top['shares_voted'])}).")
     if llm and conn is not None:                 # optional, advisory; falls back if unconfigured
         headline, standfirst = _llm_polish(conn, rec, headline, standfirst)
     body = (f"# {headline}\n\n"

@@ -469,6 +469,7 @@ also grow the eval gold set.</p>
 let S=null, tab='investigate';
 const $=s=>document.querySelector(s);
 const e=t=>{const d=document.createElement('div');d.textContent=t??'';return d.innerHTML};
+const shn=v=>(v===null||v===undefined||v===''||isNaN(Number(v)))?'shares not filed':Math.round(Number(v)).toLocaleString('en-US')+' sh';
 
 async function load(){S=await (await fetch('/api/state')).json();render()}
 async function post(action,payload,el){
@@ -600,7 +601,7 @@ function coDrill(i){
   d.innerHTML=`<div class='card claim'><span class=ribbon>lead — verify before publishing</span>
    <h3>${e(h.institution_name)} — AGAINST votes here</h3>`+
    (h.examples.map(x=>`<div class=stat><span>${e(x.meeting_date)} ·
-     ${Math.round(Number(x.shares_voted)).toLocaleString('en-US')} sh ·
+     ${shn(x.shares_voted)} ·
      <span class=meta>${(x.themes||[]).map(e).join(', ')}</span><br>
      <span class=meta>“${e(x.vote_description)}” — N-PX
      <a href='${e(x.source_url||"#")}' target=_blank>${e(x.accession)}</a></span></span></div>`).join('')
@@ -764,7 +765,7 @@ function investigate(){
 function drill(ri,t){
   const i=window._inv[ri], c=i.cells[t], d=$('#drill');
   const ex=(c.examples||[]).map(x=>`<div class=stat><span>${e(x.meeting_date)} ·
-     <b>${e(x.issuer_name)}</b> · ${Math.round(Number(x.shares_voted)).toLocaleString('en-US')} sh<br>
+     <b>${e(x.issuer_name)}</b> · ${shn(x.shares_voted)}<br>
      <span class=meta>“${e(x.vote_description)}” — N-PX ${e(x.accession)}</span></span></div>`).join('')
      ||"<p class=meta>no cited examples</p>";
   const yrs=Object.keys(c.trend||{}).sort();
@@ -858,7 +859,7 @@ function review(){
      <blockquote>“${e(p.commitment_quote)}”</blockquote>
      <div class=cite>${e(p.doc_label)} @ ${e(p.doc_version)} · sha ${e(p.doc_sha256.slice(0,12))}…</div></div>
     <div class='saydid did'><div class=tag>What it did</div>
-     <blockquote>Voted <b style='color:var(--against)'>${e(p.how_voted)}</b> — ${Math.round(Number(p.shares_voted)).toLocaleString('en-US')} sh</blockquote>
+     <blockquote>Voted <b style='color:var(--against)'>${e(p.how_voted)}</b> — ${shn(p.shares_voted)}</blockquote>
      <div class=cite>“${e(p.vote_description)}” — ${e(p.meeting_date)} · N-PX ${e(p.accession)}</div></div>
    </div>
    <div class=actions>

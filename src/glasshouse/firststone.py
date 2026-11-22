@@ -38,6 +38,7 @@ from pathlib import Path
 
 from . import investigate, registry, timeline
 from .contradictions import capture_text
+from .fmt import shares_phrase
 from .http import DATA_DIR
 
 NEWSROOM_DIR = DATA_DIR / "newsroom"
@@ -352,7 +353,7 @@ def _compose_body(s: dict) -> str:
              f"(against-rate {round(s['against_rate'] * 100)}%). Largest cited votes:", ""]
     for e in s["examples"][:6]:
         lines.append(f"- {e['issuer_name']} ({e['meeting_date']}): voted AGAINST "
-                     f"“{e['vote_description']}” with {int(e['shares_voted']):,} shares "
+                     f"“{e['vote_description']}” ({shares_phrase(e['shares_voted'])}) "
                      f"— N-PX `{e['accession']}`"
                      + (f" ([filing]({e['source_url']}))" if e.get("source_url") else ""))
     if s.get("trend"):

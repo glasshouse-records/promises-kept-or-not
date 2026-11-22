@@ -21,6 +21,7 @@ import sqlite3
 from dataclasses import asdict
 from datetime import date
 
+from .fmt import shares_phrase, vote_vs_mgmt
 from .ledger import NON_LEGACY_VOTE_SQL, VERSION_DATE_SQL
 
 
@@ -118,8 +119,8 @@ def dossier(conn: sqlite3.Connection, finding_id: int) -> str:
         f"SAYS: \"{p['commitment_quote']}\"",
         f"  — {p['doc_label']} @ {p['doc_version']}, sha256 {p['doc_sha256']}",
         f"  — source: {p['doc_url']}",
-        f"DID: voted {p['how_voted']} with {int(float(p['shares_voted'])):,} shares "
-        f"(mgmt rec as filed: {p['management_recommendation'] or '—'})",
+        f"DID: voted {p['how_voted']} ({shares_phrase(p.get('shares_voted'))}; "
+        f"vote vs management: {vote_vs_mgmt(p.get('management_recommendation'))})",
         f"  — proposal: \"{p['vote_description']}\"",
         f"  — SEC Form N-PX {p['accession']}",
         "",

@@ -42,6 +42,7 @@ from .contradictions import (
     proposal_is_oppositional,
     score_commitment_sentence,
 )
+from .fmt import shares_phrase
 from .http import DATA_DIR
 from .ledger import NON_LEGACY_VOTE_SQL, VERSION_DATE_SQL
 
@@ -159,7 +160,7 @@ def _scan_one(conn: sqlite3.Connection, proposal_pats: list[str],
             b["against"] += 1
             b["examples"].append({"issuer_name": v["issuer_name"], "meeting_date": v["meeting_date"],
                                   "vote_description": desc[:200], "how_voted": "AGAINST",
-                                  "shares_voted": v["shares_voted"] or 0.0,
+                                  "shares_voted": v["shares_voted"],
                                   "accession": v["accession"], "source_url": v["source_url"] or ""})
         elif hv == "ABSTAIN":
             b["abstain"] += 1
@@ -401,7 +402,7 @@ def company_record(conn: sqlite3.Connection, query: str) -> dict:
                 themes = [th for th, rx in regexes.items() if rx.search(desc)]
                 d["examples"].append({
                     "meeting_date": v["meeting_date"], "vote_description": desc[:200],
-                    "shares_voted": v["shares_voted"] or 0.0, "accession": v["accession"],
+                    "shares_voted": v["shares_voted"], "accession": v["accession"],
                     "source_url": v["source_url"] or "", "themes": themes})
 
     names_map = {i["id"]: i["display_name"] for i in
@@ -450,7 +451,7 @@ def _scan_matrix(conn: sqlite3.Connection) -> dict[str, dict[str, dict]]:
                 b["against"] += 1
                 b["examples"].append({
                     "issuer_name": v["issuer_name"], "meeting_date": v["meeting_date"],
-                    "vote_description": desc[:200], "shares_voted": v["shares_voted"] or 0.0,
+                    "vote_description": desc[:200], "shares_voted": v["shares_voted"],
                     "accession": v["accession"], "source_url": v["source_url"] or ""})
             elif hv == "ABSTAIN":
                 b["abstain"] += 1
@@ -564,7 +565,7 @@ def evidence_pack(rec: ThemeRecord, *, hypothesis: str = "") -> str:
             desc = (e["vote_description"] or "").replace("|", "\\|")[:120]
             src = e.get("source_url") or e["accession"]
             lines.append(f"| {e['meeting_date']} | {e['issuer_name']} | "
-                         f"{int(e['shares_voted']):,} | {desc} | [{e['accession']}]({src}) |")
+                         f"{shares_phrase(e['shares_voted'])} | {desc} | [{e['accession']}]({src}) |")
     lines += [
         "", "## Method & caveats",
         "- Votes are SEC N-PX, de-duplicated (`is_duplicate = 0`); unvalidated "

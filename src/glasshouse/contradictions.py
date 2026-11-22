@@ -370,7 +370,7 @@ class ContradictionCandidate:
     vote_description: str
     how_voted: str
     management_recommendation: str
-    shares_voted: float
+    shares_voted: float | None   # NULL for legacy N-PX rows: shares not filed
     quarantined: bool = field(default=True, init=False)  # ALWAYS — human review required
 
 
@@ -591,7 +591,7 @@ def find_commitment_vote_contradictions(
                     cusip=v["cusip"], meeting_date=v["meeting_date"],
                     vote_description=desc[:300], how_voted=v["how_voted"],
                     management_recommendation=v["management_recommendation"],
-                    shares_voted=v["shares_voted"] or 0.0,
+                    shares_voted=v["shares_voted"],
                 ))
                 n += 1
                 if n >= limit_per_theme:

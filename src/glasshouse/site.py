@@ -23,6 +23,7 @@ from pathlib import Path
 
 from . import timeline
 from .contradictions import distinct_versions
+from .fmt import shares_phrase
 from .http import DATA_DIR
 from .ledger import NON_LEGACY_VOTE_SQL
 
@@ -473,12 +474,19 @@ def _approved_findings(conn) -> list[dict]:
     return out
 
 
+def _featured_finding(findings: list[dict]) -> dict | None:
+    """The finding with the most shares; a NULL (not filed) count ranks last."""
+    if not findings:
+        return None
+    return max(findings, key=lambda p: float(p.get("shares_voted") or 0))
+
+
 def _finding_card(p: dict, featured: bool = False) -> str:
     extra = ""
     if featured:
         extra = ("<div style='margin-top:1rem'>"
                  + _donut(100.0, "of cited shares", "var(--against)",
-                          f"{int(float(p['shares_voted'])):,} shares voted "
+                          f"{_e(shares_phrase(p.get('shares_voted')))}; voted "
                           f"{_e(p['how_voted'])} on this proposal") + "</div>")
     return f"""<div class='card claim fitem r'>
   <span class='ribbon ok'>verified · human reviewed {_e(p.get('_reviewed', ''))}</span>
@@ -490,7 +498,7 @@ def _finding_card(p: dict, featured: bool = False) -> str:
       {_e(p['doc_sha256'][:16])}… · <a href='{_e(p['doc_url'])}'>source document</a></div></div>
     <div class='saydid did'><div class=tag>What it did</div>
       <blockquote>Voted <b style='color:var(--against)'>{_e(p['how_voted'])}</b> —
-      {int(float(p['shares_voted'])):,} shares</blockquote>
+      {_e(shares_phrase(p.get('shares_voted')))}</blockquote>
       <div class=cite>“{_e(p['vote_description'])}” — {_e(p['issuer_name'])}, meeting
       {_e(p['meeting_date'])} · SEC Form N-PX {_e(p['accession'])}</div>{extra}</div>
   </div>
@@ -925,7 +933,7 @@ def _build_index(conn, out_dir, stats, insts, findings) -> None:
         "SELECT agency, COUNT(*) FROM enforcement_actions WHERE is_duplicate = 0 "
         "GROUP BY agency ORDER BY 2 DESC LIMIT 8").fetchall()
     split = _vote_split(conn)
-    featured = max(findings, key=lambda p: float(p["shares_voted"])) if findings else None
+    featured = _featured_finding(findings)
     top = next((r for r in insts if r["n_votes"]), None)
 
     body = f"""

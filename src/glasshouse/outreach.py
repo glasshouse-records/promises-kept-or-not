@@ -20,6 +20,7 @@ import sqlite3
 from datetime import UTC, date, datetime
 from pathlib import Path
 
+from .fmt import shares_phrase, vote_vs_mgmt
 from .http import DATA_DIR
 
 OUTBOX_DIR = DATA_DIR / "outbox"
@@ -44,7 +45,7 @@ Subject: Question regarding {institution}'s proxy voting record — {subject}
 
    {issuer} — meeting of {meeting_date}
    Proposal: {proposal}
-   Vote cast: {how_voted} ({shares:,.0f} shares; management recommendation: {mgmt_rec})
+   Vote cast: {how_voted} ({shares_txt}; vote vs management: {mgmt_rec})
 
 Question: how does the vote in (2) implement the policy in (1)?
 
@@ -55,7 +56,7 @@ response will be recorded in our public non-response ledger.
 
 _POST_TEMPLATE = """\
 {institution}'s policy ({doc_version}) states: "{commitment_short}" Its funds \
-voted {how_voted} ({shares:,.0f} sh) on "{proposal_short}" at {issuer}, {meeting_date}. \
+voted {how_voted} ({shares_sh}) on "{proposal_short}" at {issuer}, {meeting_date}. \
 N-PX {accession}.
 """
 
@@ -72,8 +73,8 @@ Peg: {issuer}'s {meeting_date} meeting (SEC Form N-PX {accession}).
 The records, all public and linked:
 1. {institution}'s policy "{doc_label}" (retrieved {doc_version}, SHA-256
    {doc_sha}) states: "{commitment_quote}" — {doc_url}
-2. Its funds voted {how_voted} with {shares:,.0f} shares on: "{proposal}"
-   (management recommendation: {mgmt_rec}).
+2. Its funds voted {how_voted} ({shares_txt}) on: "{proposal}"
+   (vote vs management: {mgmt_rec}).
 
 We can provide the full evidence pack: archived policy versions, the vote
 records as filed, and our methodology including what we exclude and why.
@@ -92,8 +93,8 @@ For the investment committee's public record:
 
 1. {institution}'s published policy "{doc_label}" (retrieved {doc_version},
    SHA-256 {doc_sha}) states: "{commitment_quote}" ({doc_url})
-2. SEC Form N-PX {accession} reports its funds voted {how_voted} with
-   {shares:,.0f} shares on: "{proposal}" at {issuer}, meeting of {meeting_date}.
+2. SEC Form N-PX {accession} reports its funds voted {how_voted}
+   ({shares_txt}) on: "{proposal}" at {issuer}, meeting of {meeting_date}.
 
 Question for the record: has the committee assessed whether this voting record
 is consistent with the policy on the basis of which the manager was retained?
@@ -113,7 +114,7 @@ serve as a footnote in yours:
 
 - {institution}'s archived policy language: "{commitment_quote}"
   ({doc_label}, retrieved {doc_version}, SHA-256 {doc_sha}, {doc_url})
-- Its vote: {how_voted}, {shares:,.0f} shares, on "{proposal}" at {issuer}
+- Its vote: {how_voted}, {shares_txt}, on "{proposal}" at {issuer}
   ({meeting_date}, SEC Form N-PX {accession}).
 
 The full pack (machine-readable, with methodology and limitations) is yours
@@ -187,8 +188,9 @@ def draft_from_candidate(conn: sqlite3.Connection, candidate, kind: str = "inqui
         "commitment_quote": candidate.commitment_quote, "doc_url": candidate.doc_url,
         "accession": candidate.accession, "issuer": candidate.issuer_name,
         "meeting_date": candidate.meeting_date, "proposal": candidate.vote_description,
-        "how_voted": candidate.how_voted, "shares": candidate.shares_voted,
-        "mgmt_rec": candidate.management_recommendation}
+        "how_voted": candidate.how_voted,
+        "shares_txt": shares_phrase(candidate.shares_voted),
+        "mgmt_rec": vote_vs_mgmt(candidate.management_recommendation)}
     contacts = _contacts()
 
     if kind == "inquiry":
@@ -199,7 +201,8 @@ def draft_from_candidate(conn: sqlite3.Connection, candidate, kind: str = "inqui
         body = _POST_TEMPLATE.format(
             institution=institution, doc_version=candidate.doc_version,
             commitment_short=candidate.commitment_quote[:120],
-            how_voted=candidate.how_voted, shares=candidate.shares_voted,
+            how_voted=candidate.how_voted,
+            shares_sh=shares_phrase(candidate.shares_voted, "sh"),
             proposal_short=candidate.vote_description[:80],
             issuer=candidate.issuer_name, meeting_date=candidate.meeting_date,
             accession=candidate.accession)

@@ -21,6 +21,7 @@ import sqlite3
 from dataclasses import fields
 
 from .contradictions import distinct_versions
+from .fmt import shares_phrase
 from .http import DATA_DIR
 from .ledger import NON_LEGACY_VOTE_SQL
 
@@ -68,7 +69,7 @@ def story_queue(conn: sqlite3.Connection, limit: int = 40) -> list[dict]:
             # Verified findings always outrank unverified candidates/triggers
             # (base 2.0 > any candidate's ≤1.5): publishability beats raw weight.
             "score": round(2.0 + _shares_weight(shares), 3),
-            "why": ["human-verified finding", f"{int(shares):,} shares voted",
+            "why": ["human-verified finding", f"{shares_phrase(p.get('shares_voted'))} voted",
                     f"reviewer: {r['reviewer_note'][:80]}"],
             "payload": p, "drafted": sorted(steps),
             "next_step": next((s for s in _LADDER if s not in steps), None),
@@ -95,7 +96,7 @@ def story_queue(conn: sqlite3.Connection, limit: int = 40) -> list[dict]:
             "shares": shares,
             "score": round(0.5 + _shares_weight(shares), 3),
             "why": [f"{c.get('theme')} policy vs. {c.get('how_voted')} vote",
-                    f"{int(shares):,} shares", "lexical match — quarantined"],
+                    f"{shares_phrase(c.get('shares_voted'))}", "lexical match — quarantined"],
             "payload": c, "drafted": sorted(drafted.get(fp, set())),
             "next_step": "review",
         })

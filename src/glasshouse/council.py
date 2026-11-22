@@ -27,6 +27,7 @@ import sqlite3
 from datetime import UTC, datetime
 
 from . import llm
+from .fmt import shares_phrase, vote_vs_mgmt
 
 _ROLES = {
     "skeptic": (
@@ -63,8 +64,8 @@ def _candidate_brief(p: dict) -> str:
     return (f"POLICY ({p['institution_id']}, theme={p['theme']}, doc={p['doc_label']} "
             f"@ {p['doc_version']}):\n  \"{p['commitment_quote']}\"\n"
             f"VOTE (SEC N-PX {p['accession']}, {p['issuer_name']}, {p['meeting_date']}):\n"
-            f"  voted {p['how_voted']} with {int(float(p['shares_voted'])):,} shares; "
-            f"management recommendation as filed: {p.get('management_recommendation', '—')}\n"
+            f"  voted {p['how_voted']} ({shares_phrase(p.get('shares_voted'))}); "
+            f"vote vs management: {vote_vs_mgmt(p.get('management_recommendation'))}\n"
             f"  proposal: \"{p['vote_description']}\"")
 
 

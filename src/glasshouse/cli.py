@@ -17,6 +17,7 @@ import sys
 from datetime import UTC
 
 from . import findings, ledger, registry
+from .fmt import shares_known, shares_phrase, vote_vs_mgmt
 
 
 def _conn():
@@ -232,7 +233,7 @@ def cmd_investigate(args) -> int:
         print(f"     cite: {top.doc_url}")
         for e in top.examples[:args.examples]:
             print(f"     • {e['meeting_date']}  AGAINST  {e['issuer_name'][:30]:<30} "
-                  f"{e['shares_voted']:>13,.0f} sh")
+                  f"{shares_phrase(e['shares_voted'], 'sh'):>13}")
             print(f"         “{e['vote_description'][:78]}”")
         print(f"     (filing accession {top.examples[0]['accession'] if top.examples else 'n/a'} → EDGAR)")
         return 0
@@ -563,7 +564,7 @@ def cmd_report_contradictions(args) -> int:
         print(f"    \"{r.commitment_quote}\"")
         print(f"    source: {r.doc_url}")
         print(f"  DID  (N-PX {r.accession}, {r.issuer_name}, meeting {r.meeting_date}):")
-        print(f"    voted {r.how_voted} ({int(r.shares_voted):,} sh; mgmt rec {r.management_recommendation})")
+        print(f"    voted {r.how_voted} ({shares_phrase(r.shares_voted, 'sh')}; vote vs management: {vote_vs_mgmt(r.management_recommendation)})")
         print(f"    proposal: {r.vote_description}")
     print(f"\n{len(rows)} candidates. None is a finding until a human reads the "
           f"commitment and the proposal together (see PENDING_VERIFICATION.md).")
@@ -610,7 +611,7 @@ def cmd_outreach_draft(args) -> int:
     if not cands:
         print("no matching contradiction candidates to draft from")
         return 1
-    c = max(cands, key=lambda x: x.shares_voted)
+    c = max(cands, key=lambda x: x.shares_voted or 0.0)
     oid = outreach.draft_from_candidate(conn, c, kind=args.kind)
     row = conn.execute("SELECT body_path FROM outreach WHERE id=?", (oid,)).fetchone()
     print(f"  draft #{oid} ({args.kind}) → {row['body_path']}")
@@ -660,16 +661,24 @@ def cmd_report_awards(_args) -> int:
     cands = contradictions.find_commitment_vote_contradictions(conn, limit_per_theme=25)
     by_inst: dict[str, dict] = {}
     for c in cands:
-        d = by_inst.setdefault(c.institution_id, {"n": 0, "shares": 0.0})
+        d = by_inst.setdefault(c.institution_id, {"n": 0, "shares": 0.0, "unfiled": 0})
         d["n"] += 1
-        d["shares"] += c.shares_voted
+        if shares_known(c.shares_voted):
+            d["shares"] += c.shares_voted
+        else:
+            d["unfiled"] += 1
     print("ANNUAL RANKED AWARDS (draft — candidates only, all quarantined)\n")
     print("Most votes against own stated policy themes:")
     for inst, d in sorted(by_inst.items(), key=lambda kv: -kv[1]["n"]):
         print(f"  {inst}: {d['n']} candidate votes")
     print("\nLargest say–do gap (shares-weighted candidates):")
     for inst, d in sorted(by_inst.items(), key=lambda kv: -kv[1]["shares"]):
-        print(f"  {inst}: {int(d['shares']):,} shares voted against own themes")
+        if d["unfiled"] == d["n"]:
+            print(f"  {inst}: shares not filed on any of {d['n']} candidate votes")
+        else:
+            extra = (f" (+{d['unfiled']} votes with shares not filed)"
+                     if d["unfiled"] else "")
+            print(f"  {inst}: {int(d['shares']):,} shares voted against own themes{extra}")
     nr = outreach.non_response_ledger(conn)
     if nr:
         print("\nLongest non-response:")
@@ -716,7 +725,7 @@ def cmd_report_flagged_votes(args) -> int:
         print(f"\n{r.institution} @ {r.issuer_name} ({r.meeting_date}) [LEAD — {r.join_method} join]")
         if r.issuer_lei:
             print(f"  issuer identity (GLEIF): LEI {r.issuer_lei}, country {r.issuer_country or '?'}")
-        print(f"  voted {r.how_voted} (mgmt rec: {r.management_recommendation or '—'})")
+        print(f"  voted {r.how_voted} (vote vs management: {vote_vs_mgmt(r.management_recommendation)})")
         print(f"  proposal: {r.vote_description}")
         print(f"  enforcement: {r.agency} | {r.resolution_type} | {r.primary_ref or 'NO REF'} | {r.action_date}")
     print(f"\n{len(rows)} leads. ALL name-join rows are quarantined until the entity "
@@ -867,7 +876,7 @@ def cmd_review(args) -> int:
             print(f"\n#{f['id']} [{f['status']}] {f['theme']} | {f['institution_id']} "
                   f"@ {p['issuer_name']} ({p['meeting_date']})")
             print(f"   says: \"{p['commitment_quote'][:110]}\"")
-            print(f"   did:  {p['how_voted']} {int(float(p['shares_voted'])):,} sh — "
+            print(f"   did:  {p['how_voted']} {shares_phrase(p.get('shares_voted'), 'sh')} — "
                   f"{p['vote_description'][:110]}")
             if f["reviewer_note"]:
                 print(f"   note: {f['reviewer_note']} ({f['reviewed_date']})")
