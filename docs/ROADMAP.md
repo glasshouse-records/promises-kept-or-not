@@ -15,10 +15,10 @@ Tick with the date and one line of result.
 
 ## 2. Close the known instrument gaps
 - [ ] **2022-23 voting year (legacy N-PX)**, see `docs/research/legacy-npx.md`. The rows are quarantined (`legacy_format`), so nothing ships until the steps below are done.
-  - (a) Finish the live ingest of ISS text and ProxyEdge across all families, then ISS HTML (`--legacy-iss`), serialised and followed by a dedupe.
-  - (b) Recall: build a hand-checked heading→series alias list, never fuzzy. It is needed for Avantis (5 funds), Principal SAM portfolios, Northern's Active M and Multi-Manager funds without the 'Northern' prefix, Invesco's '(R)', DFA US Sustainability Targeted Value, and Fidelity's 'VOTE SUMMARY REPORT ... - SUB-ADVISER' headings.
+  - [x] (a) 2026-11-22 done: 316 ISS-text, 93 ISS-HTML, 57 ProxyEdge filings in; 9.55M quarantined votes (8.34M text, 0.69M HTML, 0.52M ProxyEdge); 11 filings rejected by the agreement gate; AllianceBernstein HTML variant added as contract amendment 2. Finish the live ingest of ISS text and ProxyEdge across all families, then ISS HTML (`--legacy-iss`), serialised and followed by a dedupe.
+  - [~] (b) 2026-11-22 partly done: trademark marks stripped + 298 reviewed aliases in `config/legacy_series_aliases.csv` (JH codes, CREF, brand/trust prefixes), +1.76M votes after re-ingest. Still open: Avantis, Principal SAM, Northern Active M, DFA, Fidelity sub-adviser headings, AST sleeves, filings whose header lists one series (JPMorgan ETFs). Recall: build a hand-checked heading→series alias list, never fuzzy. It is needed for Avantis (5 funds), Principal SAM portfolios, Northern's Active M and Multi-Manager funds without the 'Northern' prefix, Invesco's '(R)', DFA US Sustainability Targeted Value, and Fidelity's 'VOTE SUMMARY REPORT ... - SUB-ADVISER' headings.
   - (c) Write a second parser for Fidelity's tables (`npx_legacy` is single-parser), and parsers for Federated's flat table, the Neuberger/Franklin 'Issue No.' layout, Diamond Hill and Dodge & Cox.
-  - (d) Document `legacy_format` and `for_against_management` in the DATASHEET; per-filing agreement rates go in COVERAGE.json.
+  - (d) METHODOLOGY section written 2026-11-22; still to do: DATASHEET columns; per-filing agreement rates go in COVERAGE.json.
   - (e) Review pass (glasshouse-reviewer) and a random sample checked by hand against the source.
   - (f) Decide promotion into the release: a new Zenodo version at that milestone.
 - [x] 2026-11-17 `country=` on the director tools (country that issued the ISIN); Vanguard Jan–Jun 2026 splits sum to the overall 79,430.
