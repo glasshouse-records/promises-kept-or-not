@@ -967,10 +967,12 @@ def cmd_signal(args) -> int:
 def cmd_dedupe(_args) -> int:
     conn = _conn()
     n = ledger.dedupe_votes(conn)
-    total = conn.execute(
-        f"SELECT COUNT(*) FROM votes WHERE {ledger.NON_LEGACY_VOTE_SQL}").fetchone()[0]
-    print(f"  marked {n:,} duplicate vote rows of {total:,} "
-          f"(kept in ledger as filed; excluded from analytics)")
+    total, dup = conn.execute(
+        f"SELECT COUNT(*), COALESCE(SUM(is_duplicate), 0) FROM votes "
+        f"WHERE {ledger.NON_LEGACY_VOTE_SQL}").fetchone()
+    print(f"  marked {dup:,} duplicate vote rows of {total:,} "
+          f"(kept in ledger as filed; excluded from analytics); "
+          f"{n - dup:,} more among quarantined legacy rows")
     ne = ledger.dedupe_enforcement(conn)
     print(f"  marked {ne:,} live enforcement rows superseded by curated records")
     return 0
