@@ -72,7 +72,11 @@ def test_agreed_drops_a_row_only_one_parser_produced(monkeypatch):
     real = legacy_iss_lines.parse
     monkeypatch.setattr(legacy_iss_lines, "parse", lambda t: real(t)[1:])
     rows, st = legacy_iss.agreed(BASIC)
-    assert len(rows) == 20 and st["a_only"] == 1 and st["b_only"] == 0
+    # the disputed row's whole meeting goes (meeting-level drop), other meetings stay
+    first = legacy_iss_blocks.parse(BASIC)
+    same = sum(legacy_pe.meeting_key(r) == legacy_pe.meeting_key(first[0]) for r in first)
+    assert same > 1 and len(rows) == 21 - same and st["rows_dropped_disputed"] == same - 1
+    assert st["a_only"] == 1 and st["b_only"] == 0
     assert st["disagreement_rate"] == pytest.approx(1 / 21)
 
 
@@ -87,8 +91,9 @@ def test_a_field_difference_over_all_fields_is_a_disagreement(monkeypatch):
 
 def test_agreed_is_a_multiset_intersection(monkeypatch):
     base = legacy_iss_blocks.parse(BASIC)[0]
-    monkeypatch.setattr(legacy_iss_blocks, "parse", lambda t: [base] * 3)
-    monkeypatch.setattr(legacy_iss_lines, "parse", lambda t: [base] * 2)
+    other = {**base, "issuer_name": "ZZ OTHER MEETING INC."}   # surplus copy in its own meeting
+    monkeypatch.setattr(legacy_iss_blocks, "parse", lambda t: [base] * 2 + [other] * 2)
+    monkeypatch.setattr(legacy_iss_lines, "parse", lambda t: [base] * 2 + [other])
     rows, st = legacy_iss.agreed(BASIC)
     assert len(rows) == 2 and st["a_only"] == 1
 
@@ -251,7 +256,8 @@ def test_gate_rejects_the_filing_when_parsers_disagree(conn, monkeypatch):
 def test_gate_boundary_is_inclusive_at_half_a_percent(conn, monkeypatch):
     base = legacy_iss_blocks.parse(BASIC)[0]
     rows = [{**base, "proposal_id": str(i)} for i in range(199)]
-    monkeypatch.setattr(legacy_iss_blocks, "parse", lambda t: rows + [base])
+    extra = {**base, "issuer_name": "ZZ OTHER MEETING INC."}   # the one disputed row, own meeting
+    monkeypatch.setattr(legacy_iss_blocks, "parse", lambda t: rows + [extra])
     monkeypatch.setattr(legacy_iss_lines, "parse", lambda t: rows)   # 1 / 200 == 0.005
     assert _ingest(conn) == 199
     assert conn.execute("SELECT report_type FROM filings").fetchone()[0] == "LEGACY_ISS"

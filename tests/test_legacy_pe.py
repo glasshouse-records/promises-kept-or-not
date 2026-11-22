@@ -44,14 +44,18 @@ def test_agreed_drops_a_row_only_one_parser_produced(monkeypatch):
     real = legacy_pe_lines.parse
     monkeypatch.setattr(legacy_pe_lines, "parse", lambda t: real(t)[1:])
     rows, st = legacy_pe.agreed(BASIC)
-    assert len(rows) == 11 and st["a_only"] == 1 and st["b_only"] == 0
+    first = legacy_pe_blocks.parse(BASIC)
+    same = sum(legacy_pe.meeting_key(r) == legacy_pe.meeting_key(first[0]) for r in first)
+    assert same > 1 and len(rows) == 12 - same and st["rows_dropped_disputed"] == same - 1
+    assert st["a_only"] == 1 and st["b_only"] == 0
     assert st["disagreement_rate"] == pytest.approx(1 / 12)
 
 
 def test_agreed_is_a_multiset_intersection(monkeypatch):
     base = legacy_pe_blocks.parse(BASIC)[0]
-    monkeypatch.setattr(legacy_pe_blocks, "parse", lambda t: [base, base, base])
-    monkeypatch.setattr(legacy_pe_lines, "parse", lambda t: [base, base])
+    other = {**base, "issuer_name": "ZZ OTHER MEETING INC."}   # surplus copy in its own meeting
+    monkeypatch.setattr(legacy_pe_blocks, "parse", lambda t: [base, base, other, other])
+    monkeypatch.setattr(legacy_pe_lines, "parse", lambda t: [base, base, other])
     rows, st = legacy_pe.agreed(BASIC)
     assert len(rows) == 2 and st["a_only"] == 1
 
