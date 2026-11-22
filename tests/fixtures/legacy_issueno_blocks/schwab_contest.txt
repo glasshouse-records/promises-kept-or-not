@@ -1,0 +1,19 @@
+Fund Name : Schwab Test Fund
+________________________________________________________________________________
+Illumina, Inc.
+Ticker     Security ID:             Meeting Date          Meeting Status
+ILMN       CUSIP 452327109          05/25/2023            Take No Action
+Meeting Type                        Country of Trade
+Proxy Contest                       United States
+Issue No.  Description              Proponent  Mgmt Rec   Vote Cast  For/Against
+                                                                      Mgmt
+
+1          Elect Management         Mgmt       For        TNA        N/A
+            Nominee Frances
+            Arnold
+
+2          Elect Management         Mgmt       For        TNA        N/A
+            Nominee Francis A.
+            deSouza
+
+3          Elect Management         Mgmt       For        TNA        N/A
