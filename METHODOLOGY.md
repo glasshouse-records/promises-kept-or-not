@@ -253,6 +253,16 @@ Proxy Voting Policy, Guidelines and Conflicts of Interest Policy as an appendix
 twice, once per SAI, and both copies must be identical; printed page numbers
 are removed). Re-check the website if a sanctioned path appears.
 
+PGIM / Jennison (probed 2026-11-22): the Jennison Associates policy PDF on
+jennison.com, last captured 2026-11-20, is gone from that host: jennison.com now
+302-redirects every path to pgim.com, and www.pgim.com answers honest clients with
+403 (including robots.txt). Glasshouse does not change its identification to get
+in, and no other PGIM-controlled host serving honest clients was found. The label
+`proxy-voting-policy-and-procedures` is therefore marked blocked (not gone: no 404
+or deprecation notice). The 2026-11-20 capture stays in the ledger, and the policy
+continues to be archived through `jennison-proxy-voting-policy-as-printed-in-sai`
+(Prudential Jennison Blend Fund SAI). Re-check pgim.com if a sanctioned path appears.
+
 MFS (added 2026-11-18): mfs.com answers requests that identify themselves
 honestly (200 on the home page and on the policy page; probed 2026-11-18), so it
 is not a blocked source. The policy page itself links no PDF in its markup; the

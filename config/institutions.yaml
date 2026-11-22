@@ -4674,6 +4674,7 @@ institutions:
         url: "https://www.jennison.com/content/dam/jennison/us/en/active/documents/reports/proxy-voting/20260228%20Proxy%20Voting%20Policy%20and%20Procedures%20FINAL.pdf"
         adviser: "Jennison Associates LLC"
         adviser_key: "JENNISON"
+        access: {status: blocked, reason: "jennison.com now 302-redirects to pgim.com, which answers honest clients with 403; no other official host found; documented in METHODOLOGY, never evaded; SAI-printed label and the 2026-11-20 capture remain", checked: "2026-11-22"}
       # The Jennison policy as printed in Appendix I of the Prudential Jennison Blend Fund SAI (one heading per annual 485BPOS, to Appendix II), dated by EDGAR filing date; page marks "NN Table of Contents"
       # and the fund-name footer are removed. Separate label from the website PDF. Stray page numbers inside a sentence (73, 75, 77) are not removed, so a page-number shift can read as an edit.
       - label: jennison-proxy-voting-policy-as-printed-in-sai
