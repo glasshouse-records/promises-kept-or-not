@@ -296,13 +296,10 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                     stats["skipped"] += 1
                     continue
                 try:
-                    fmt = "proxyedge"
-                    if legacy_iss_text:     # decide per filing (cached after first fetch)
-                        fmt = legacy_iss.detect_format(
-                            legacy_pe.load_filing_texts(filing)[0])
-                    if fmt in legacy_iss.PARSERS or (fmt == "proxyedge" and legacy_proxyedge):
-                        drop_no_cover_record()
-                    if fmt in legacy_iss.PARSERS:
+                    # no write lock across network or parse: record_filing replaces any
+                    # prior (LEGACY_NO_COVER) filings row inside its own transaction
+                    fmt = legacy_iss.detect_format(legacy_pe.load_filing_texts(filing)[0])
+                    if fmt in legacy_iss.PARSERS and legacy_iss_text:
                         n = legacy_iss.ingest_filing_from_sources(
                             conn, filing, institution_id, today)
                     elif fmt == "proxyedge" and legacy_proxyedge:

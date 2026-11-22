@@ -114,7 +114,7 @@ def test_exact_normalised_heading_maps():
     assert [r["vote_series"] for r in rows] == [SID] and info["unmapped"] == {}
 
 
-@pytest.mark.parametrize("suffix", ["WELLINGTON", "GLASS LEWIS ESG POLICY", "Polen Capital, LLC"])
+@pytest.mark.parametrize("suffix", ["WELLINGTON", "Subadviser: Acme", "Polen Capital, LLC"])
 def test_one_trailing_suffix_is_stripped(suffix):
     rows, info = _rows(f"{FUND} - {suffix}", [MGMT])
     assert [r["vote_series"] for r in rows] == [SID] and info["unmapped"] == {}
@@ -314,6 +314,7 @@ def test_from_sources_uses_the_cache_loader_and_ingests(conn, tmp_path, monkeypa
     d.mkdir()
     (d / "doc.txt.gz").write_bytes(gzip.compress(BASIC.encode()))
     (d / f"{ACC}.hdr.sgml").write_text(HDR)
+    (d / legacy_pe.COMPLETE_MARKER).write_text("")
     monkeypatch.setattr(legacy_pe, "CACHE_DIR", tmp_path)
     monkeypatch.setattr(legacy_pe.http, "get",
                         lambda *a, **k: pytest.fail("network used despite cache"))

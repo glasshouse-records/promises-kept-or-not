@@ -17,7 +17,7 @@ never matches. No fuzzy matching, and the suffix is never used to derive an advi
 comes from config via series_id, as for XML rows). Unmatched headings are dropped and
 counted per heading.
 
-Proxy contests: every row with a card label or a "Diss Rec" column is dropped and counted
+Proxy contests: every row with a card label, a "Diss Rec" column or a contest meeting type is dropped and counted
 (`contest_rows_dropped`): the same proposal appears on two cards and the management
 recommendation is undefined. Management recommendation is set only under "Mgt Rec", with
 the vote mapping below; `for_against_management` stays NULL (ProxyEdge-only).
@@ -164,7 +164,18 @@ def series_for(heading: str, smap: dict[str, str], aliases: dict[str, str] | Non
     return _series_for(heading, smap, aliases, header_sids)[0]
 
 
+def is_policy_section(heading: str) -> bool:
+    """A Vanguard 'FUND - <name> POLICY' voting-policy section: its votes follow a policy
+    other than the fund's own, so they must not be merged into the fund's record."""
+    if " - " not in heading:
+        return False
+    words = heading.rsplit(" - ", 1)[1].split()
+    return bool(words) and words[-1].upper() == "POLICY"
+
+
 def _series_for(heading, smap, aliases, header_sids) -> tuple[str | None, bool]:
+    if is_policy_section(heading):
+        return None, False
     sid = smap.get(legacy_pe._norm(heading))
     if sid is None and " - " in heading:
         sid = smap.get(legacy_pe._norm(heading.rsplit(" - ", 1)[0]))
@@ -181,14 +192,18 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
     out: list[dict] = []
     unmapped: Counter = Counter()
     info = {"contest_rows_dropped": 0, "dropped_vote": 0, "dropped_date": 0,
-            "dropped_sponsor": 0, "alias_not_in_header": 0}
+            "dropped_sponsor": 0, "alias_not_in_header": 0, "policy_section_dropped": 0}
     for r in rows:
         sid, bad = _series_for(r["fund_heading"], smap, aliases, header_sids)
         info["alias_not_in_header"] += bad
+        if sid is None and is_policy_section(r["fund_heading"]):
+            info["policy_section_dropped"] += 1
+            continue
         if sid is None:
             unmapped[r["fund_heading"]] += 1
             continue
-        if r["card_label"] or r["rec_label"] == "Diss Rec":
+        if (r["card_label"] or r["rec_label"] == "Diss Rec"
+                or "contest" in (r.get("meeting_type") or "").lower()):
             info["contest_rows_dropped"] += 1
             continue
         source = VOTE_SOURCE.get(r["sponsor"])
