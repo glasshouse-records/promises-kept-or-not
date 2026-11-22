@@ -20,6 +20,10 @@ Tick with the date and one line of result.
   - (c) Write a second parser for Fidelity's tables (`npx_legacy` is single-parser), and parsers for Federated's flat table, the Neuberger/Franklin 'Issue No.' layout, Diamond Hill and Dodge & Cox.
   - (d) METHODOLOGY section written 2026-11-22; still to do: DATASHEET columns; per-filing agreement rates go in COVERAGE.json.
   - (e) Review pass (glasshouse-reviewer) and a random sample checked by hand against the source.
+  - (e2) From the 2026-11-22 review, before promotion:
+    - an ingest-time guard independent of both parsers: an alphabetical-order reset of issuers within a fund section flags a missed fund boundary (the review found only 2 resets, both genuine repeats);
+    - both HTML parsers reset the fund at "END NPX REPORT" and "SIGNATURE" (contract amendment 3, one builder per parser);
+    - drop a whole meeting when any of its rows is a_only/b_only, instead of keeping its agreed rows.
   - (f) Decide promotion into the release: a new Zenodo version at that milestone.
 - [x] 2026-11-17 `country=` on the director tools (country that issued the ISIN); Vanguard Jan–Jun 2026 splits sum to the overall 79,430.
 - [x] 2026-11-17 `country=` with a code no item carries now explains itself (GB, not UK).
