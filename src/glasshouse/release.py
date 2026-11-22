@@ -70,21 +70,85 @@ def _emit_csv(conn: sqlite3.Connection, table: str, where: str, facts: Path) -> 
     return name, n
 
 
-def _emit_parquet(conn: sqlite3.Connection, table: str, where: str, facts: Path) -> str | None:
+PARQUET_BATCH_ROWS = 250_000   # bounded memory: votes is ~51M rows on an 8 GB machine
+_PARQUET_SCHEMA_PENDING_MAX = 2_000_000   # all-NULL columns past this default to string
+
+
+def _write_parquet(path: Path, cols: list[str], rows) -> bool:
+    """Stream `rows` (tuples in `cols` order) to Parquet in PARQUET_BATCH_ROWS
+    row groups. The schema is inferred from the data; a column that is NULL in
+    the first batches is held back until a later batch reveals its type (or the
+    pending cap is reached, when it is typed string). Returns False if pyarrow
+    is not installed."""
     try:
         import pyarrow as pa
         import pyarrow.parquet as pq
     except ImportError:
-        return None
+        return False
+    writer = None
+    schema = None
+    pending: list = []
+    pending_rows = 0
+
+    def to_batch(chunk):
+        return pa.table({c: [r[i] for r in chunk] for i, c in enumerate(cols)})
+
+    def resolve(tables, force):
+        fields = []
+        for i, c in enumerate(cols):
+            types = [t.schema.field(i).type for t in tables]
+            real = [ty for ty in types if not pa.types.is_null(ty)]
+            if not real:
+                if not force:
+                    return None
+                fields.append(pa.field(c, pa.null() if force == "end" else pa.string()))
+            else:
+                fields.append(pa.field(c, real[0]))
+        return pa.schema(fields)
+
+    def flush(tables):
+        nonlocal writer
+        for t in tables:
+            t = t.cast(schema)
+            if writer is None:
+                writer = pq.ParquetWriter(path, schema)
+            writer.write_table(t)
+
+    chunk: list = []
+    try:
+        for row in rows:
+            chunk.append(tuple(row))
+            if len(chunk) < PARQUET_BATCH_ROWS:
+                continue
+            t, chunk = to_batch(chunk), []
+            if schema is None:
+                pending.append(t)
+                pending_rows += t.num_rows
+                schema = resolve(pending, "cap" if pending_rows >= _PARQUET_SCHEMA_PENDING_MAX
+                                 else None)
+                if schema is not None:
+                    flush(pending)
+                    pending = []
+            else:
+                flush([t])
+        if chunk:
+            pending.append(to_batch(chunk)) if schema is None else flush([to_batch(chunk)])
+        if schema is None:
+            if not pending:
+                pending = [to_batch([])]
+            schema = resolve(pending, "end")
+        flush(pending)
+    finally:
+        if writer is not None:
+            writer.close()
+    return True
+
+
+def _emit_parquet(conn: sqlite3.Connection, table: str, where: str, facts: Path) -> str | None:
     cols = publish.public_columns(conn, table)
     cur = conn.execute(f"SELECT {','.join(cols)} FROM {table} {where}")
-    data: dict[str, list] = {c: [] for c in cols}
-    for row in cur:
-        for c in cols:
-            data[c].append(row[c])
     name = f"{table}.parquet"
-    pq.write_table(pa.table(data), facts / name)
-    return name
+    return name if _write_parquet(facts / name, cols, cur) else None
 
 
 class StaleEngineError(RuntimeError):
@@ -110,19 +174,8 @@ def _emit_rows(name: str, cols: list[str], rows_fn, n: int, facts: Path,
         for row in rows_fn():
             w.writerow(row)
     pq_name = None
-    if with_parquet:
-        try:
-            import pyarrow as pa
-            import pyarrow.parquet as pq
-        except ImportError:
-            pa = None
-        if pa is not None:
-            data: dict[str, list] = {c: [] for c in cols}
-            for row in rows_fn():
-                for c, v in zip(cols, row, strict=True):
-                    data[c].append(v)
-            pq_name = f"{name}.parquet"
-            pq.write_table(pa.table(data), facts / pq_name)
+    if with_parquet and _write_parquet(facts / f"{name}.parquet", cols, rows_fn()):
+        pq_name = f"{name}.parquet"
     return csv_name, pq_name
 
 

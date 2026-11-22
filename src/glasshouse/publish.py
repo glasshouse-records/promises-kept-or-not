@@ -82,9 +82,9 @@ def build_public_snapshot(conn: sqlite3.Connection, dest: Path | str) -> Path:
                     out.execute(f"ALTER TABLE {table} DROP COLUMN {col}")
             cols = public_columns(conn, table)
             collist = ",".join(cols)
-            rows = conn.execute(f"SELECT {collist} FROM {table} {where}").fetchall()
-            if rows:
-                placeholders = ",".join("?" * len(cols))
+            placeholders = ",".join("?" * len(cols))
+            cur = conn.execute(f"SELECT {collist} FROM {table} {where}")
+            while rows := cur.fetchmany(100_000):     # streamed: votes is ~51M rows
                 out.executemany(f"INSERT INTO {table} ({collist}) VALUES ({placeholders})",
                                 [tuple(r) for r in rows])
             # carry the table's indexes for query performance on the mirror
