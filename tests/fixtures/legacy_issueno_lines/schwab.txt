@@ -1,0 +1,41 @@
+Fund Name : Schwab 1000 Index Fund
+________________________________________________________________________________
+3M Company
+Ticker     Security ID:             Meeting Date          Meeting Status
+MMM        CUSIP 88579Y101          05/09/2023            Voted
+Meeting Type                        Country of Trade
+Annual                              United States
+Issue No.  Description              Proponent  Mgmt Rec   Vote Cast  For/Against
+                                                                      Mgmt
+
+1          Elect Thomas K. Brown    Mgmt       For        For        For
+2          Elect Anne H. Chow       Mgmt       For        For        For
+3          Elect David B. Dillon    Mgmt       For        For        For
+4          Elect Michael L. Eskew   Mgmt       For        For        For
+5          Elect James R.           Mgmt       For        For        For
+            Fitterling
+
+6          Elect Amy E. Hood        Mgmt       For        For        For
+7          Elect Suzan Kereere      Mgmt       For        For        For
+8          Elect Gregory R. Page    Mgmt       For        For        For
+9          Elect Pedro J. Pizarro   Mgmt       For        For        For
+10         Elect Michael F. Roman   Mgmt       For        For        For
+11         Ratification of Auditor  Mgmt       For        For        For
+12         Advisory Vote on         Mgmt       For        For        For
+            Executive
+            Compensation
+
+13         Frequency of Advisory    Mgmt       1 Year     1 Year     For
+            Vote on Executive
+            Compensation
+
+________________________________________________________________________________
+A. O. Smith Corporation
+Ticker     Security ID:             Meeting Date          Meeting Status
+AOS        CUSIP 831865209          04/11/2023            Voted
+Meeting Type                        Country of Trade
+Annual                              United States
+Issue No.  Description              Proponent  Mgmt Rec   Vote Cast  For/Against
+                                                                      Mgmt
+
+1.1        Elect Ronald D. Brown    Mgmt       For        Withhold   Against
