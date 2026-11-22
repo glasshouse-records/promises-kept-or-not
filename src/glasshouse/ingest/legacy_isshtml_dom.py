@@ -28,7 +28,8 @@ _DATE_RE = re.compile(r"^([A-Za-z]{3})\s+(\d{1,2}),\s*(\d{4})$")
 _MONTHS = {m: i for i, m in enumerate(
     ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"], 1)}
 _CENTER_STYLE_RE = re.compile(r"(?:^|;)\s*text-align\s*:\s*center\s*(?:;|$)", re.I)
-_COVER = ("form n-px", "ica file number", "registrant name", "reporting period")
+_COVER = ("form n-px", "ica file number", "registrant name", "reporting period",
+          "(name and address", "annual report of proxy voting", "date of reporting period")
 
 
 def _collapse(s: str) -> str:
@@ -65,7 +66,8 @@ class _Tree(HTMLParser):
         self.tables: list[_Table] = []   # open-table stack
         self.row: list[list[_Cell] | None] = []  # parallel: current row per open table
         self.cell: list[_Cell | None] = []
-        self.p: list[str] | None = None  # open centred paragraph text
+        self.p: list[str] | None = None  # open paragraph text (outside tables)
+        self.p_centred = False
         self.skip = 0
 
     def _close_cell(self):
@@ -80,8 +82,12 @@ class _Tree(HTMLParser):
     def _close_p(self):
         if self.p is not None:
             name = _collapse("".join(self.p))
-            self.p = None
-            if name and not name.lower().startswith(_COVER):
+            centred, self.p, self.p_centred = self.p_centred, None, False
+            low = name.lower()
+            if low == "end npx report" or low.startswith("signature"):
+                self.events.append(("end", ""))  # amendment 3: no fund in force after this
+            elif centred and name and not low.startswith(_COVER) \
+                    and "registrant" not in low and "agent for service" not in low:
                 self.events.append(("fund", name))
 
     def handle_starttag(self, tag, attrs):
@@ -92,8 +98,8 @@ class _Tree(HTMLParser):
             self._close_p()
             centred = (a.get("align") or "").strip().lower() == "center" \
                 or _CENTER_STYLE_RE.search(a.get("style") or "")
-            if not self.tables and centred:
-                self.p = []
+            if not self.tables:
+                self.p, self.p_centred = [], bool(centred)
         elif tag == "table":
             self._close_p()
             t = _Table()
@@ -205,6 +211,9 @@ def _run(text: str) -> tuple[list[dict], dict]:
              "ignored_colspan_rows": 0}
     fund = ""
     for kind, obj in tree.events:
+        if kind == "end":
+            fund = ""
+            continue
         if kind == "fund":
             fund = obj  # type: ignore[assignment]
             stats["funds"] += 1
