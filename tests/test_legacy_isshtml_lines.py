@@ -127,3 +127,12 @@ def test_ab_variant_style_centred_funds_and_colspan_meeting_blocks():
     assert all(r["fund_heading"] != "FORM N-PX" for r in rows)
     st_ = p.parse_stats(load("lines_ab_variant.htm"))
     assert st_["rows"] == 4 and st_["dropped"] == 0 and st_["meetings"] == 2
+
+
+def test_end_report_resets_fund_and_cover_lines_are_not_funds():
+    text = load("lines_end_report.htm")
+    rows = p.parse(text)
+    assert [(r["fund_heading"], r["issuer_name"]) for r in rows] == [
+        ("First Fund", "ISSUER ONE"), ("Second Fund", "ISSUER TWO")]
+    st = p.parse_stats(text)
+    assert st["reasons"]["no_fund"] == 2 and st["funds"] == 2
