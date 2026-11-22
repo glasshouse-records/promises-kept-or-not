@@ -72,8 +72,9 @@ CREATE TABLE proposals (
     accession      TEXT, source_url TEXT, vote_id INTEGER,
     adviser        TEXT,            -- voting adviser key; NULL unless the institution has
                                     -- 2+ known advisers (then 'unlabelled' = no adviser on record)
-    weight_basis   TEXT             -- 'shares' (position from share counts) | 'lines' (from line
-                                    -- counts: no shares filed, e.g. every 2022-23 legacy line)
+    weight_basis   TEXT             -- 'lines' = 2022-23 legacy era (no share counts filed; the
+                                    -- position counts lines) | 'shares' = XML, share-weighted |
+                                    -- 'xml-no-shares' = XML whose lines filed no share counts
 );
 CREATE INDEX ix_p_inst ON proposals(institution_id, year);
 CREATE INDEX ix_p_ballot ON proposals(ballot_key);
@@ -579,8 +580,12 @@ def _multi_group(led: sqlite3.Connection, rules: dict, doc_rules: dict) -> dict[
 
 
 def _weight_basis(g: dict) -> str:
-    """'shares' when the group's position was weighted by share counts, else 'lines'."""
-    return "shares" if g["sf"] + g["sa"] > 0 else "lines"
+    """'lines' for the 2022-23 legacy era (no share counts are ever filed there);
+    for XML, 'shares' when share counts weighted the position, else 'xml-no-shares'
+    (a pre-existing XML case, e.g. abstain-only, that must not read as legacy)."""
+    if g.get("era") == "legacy":
+        return "lines"
+    return "shares" if g["sf"] + g["sa"] > 0 else "xml-no-shares"
 
 
 def _position(g: dict) -> str:
@@ -1010,7 +1015,8 @@ class Engine:
                 f"SELECT {alias}.year y, {alias}.weight_basis b, COUNT(*) n FROM {table} {alias} "
                 f"{join} WHERE {w} GROUP BY y, b", p):
             by_year[r["y"]][r["b"]] = r["n"]
-        if len({b for bs in by_year.values() for b in bs}) < 2:
+        bases = {b for bs in by_year.values() for b in bs}
+        if "lines" not in bases or len(bases) < 2:   # only the legacy era mixes bases
             return []
         detail = "; ".join(f"{y}: " + ", ".join(f"{n} {b}-weighted" for b, n in sorted(bs.items()))
                            for y, bs in sorted(by_year.items(), key=lambda kv: kv[0] or 0))

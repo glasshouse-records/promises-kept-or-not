@@ -121,3 +121,15 @@ def test_director_and_pay_tools_say_2022_23_is_not_categorised(both):
                  "alpha", "2024-01-01:2024-12-31,2025-01-01:2025-12-31")}
     for name, env in calls.items():
         assert any("2023-07-01" in c and "categor" in c for c in env["caveats"]), name
+
+
+def test_xml_group_without_share_counts_is_not_a_legacy_basis():
+    """An XML decision with no share counts (e.g. abstain-only) must not trigger the
+    legacy mixed-basis caveat: only the 2022-23 legacy era is 'lines'."""
+    from glasshouse import engine
+    xml_no_shares = {"era": "xml", "sf": 0.0, "sa": 0.0}
+    xml_shares = {"era": "xml", "sf": 10.0, "sa": 0.0}
+    legacy = {"era": "legacy", "sf": 0.0, "sa": 0.0}
+    assert engine._weight_basis(legacy) == "lines"
+    assert engine._weight_basis(xml_shares) == "shares"
+    assert engine._weight_basis(xml_no_shares) == "xml-no-shares"
