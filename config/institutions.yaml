@@ -6536,6 +6536,9 @@ institutions:
           allow_identical_copies: true
           strip_page_numbers: true
           page_sequence: true
+          # Reviewed 2026-11-21/22: the May 2026 edition is genuinely ~23 kB against ~86 kB
+          # (correct start/end markers; ends "Appendix A: Sub-Adviser-Voted Funds None").
+          accepted_outliers: ["0000837276-26-000070"]
           strip_patterns:
             - '(?<![A-Za-z])B-\s?\d{1,2}(?![\d-])'
   new_york_life:

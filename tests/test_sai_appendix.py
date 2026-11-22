@@ -346,3 +346,17 @@ def test_page_sequence_prefers_the_mark_at_the_page_foot_over_an_equal_number_ea
 def test_page_sequence_needs_a_long_run_so_a_short_run_of_real_numbers_is_kept():
     body = "Ranges: 10 11 12 are tiers. " + "Text. " * 20
     assert "10 11 12" in sai.extract_section(doc(body), START, END, page_sequence=True)
+
+
+def test_reviewed_outlier_accession_is_recorded(conn, caplog):
+    """A human-checked edition that is genuinely much shorter (Voya May 2026) is listed
+    in the label's `accepted_outliers`; it is recorded, and only that accession."""
+    fs = [_filing(str(i), f"2024-0{i}-01", doc(BODY + f" Amendment number {i}."))
+          for i in range(1, 4)]
+    fs.append(_filing("big", "2025-01-01", doc(BODY * 10)))
+    fs.append(_filing("big2", "2025-02-01", doc(BODY * 11)))
+    with caplog.at_level("INFO"):
+        sai.ingest_filings(conn, "wel", "wel-sai", fs, START, END, accepted_outliers={"big"})
+    urls = {r[0] for r in conn.execute("SELECT url FROM commitments")}
+    assert "https://sec/big.htm" in urls and "https://sec/big2.htm" not in urls
+    assert "accepted" in caplog.text

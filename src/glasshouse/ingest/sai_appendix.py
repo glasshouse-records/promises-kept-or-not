@@ -213,7 +213,8 @@ def ingest_filings(conn: sqlite3.Connection, institution_id: str, doc_label: str
                    strip_page_numbers: bool = False,
                    flagged: list[str] | None = None,
                    strip_patterns: list[str] | None = None,
-                   page_sequence: bool = False) -> int:
+                   page_sequence: bool = False,
+                   accepted_outliers: set[str] | None = None) -> int:
     """Extract and record each filing ({accession, filing_date, url, text} or
     a pre-extracted `section`), oldest first. Returns rows added or moved.
 
@@ -221,7 +222,9 @@ def ingest_filings(conn: sqlite3.Connection, institution_id: str, doc_label: str
     than the label's median (rows on file plus this batch) is logged and not
     recorded: it is almost certainly a different document (Wellington's 2023 SAI
     printed the voting guidelines too), and diffing it against its neighbours
-    would report hundreds of sentences "removed"."""
+    would report hundreds of sentences "removed". An accession a human has checked
+    and listed in the label's `accepted_outliers` (config, with a note) is recorded
+    anyway and logged as accepted."""
     cands = []
     for f in sorted(filings, key=lambda f: (f["filing_date"], f["accession"])):
         section = f.get("section")
@@ -241,7 +244,13 @@ def ingest_filings(conn: sqlite3.Connection, institution_id: str, doc_label: str
     n = 0
     for f, section in cands:
         size = len(section.encode())
-        if median and (size > OUTLIER_FACTOR * median or size * OUTLIER_FACTOR < median):
+        outlier = bool(median) and (size > OUTLIER_FACTOR * median
+                                    or size * OUTLIER_FACTOR < median)
+        if outlier and f["accession"] in (accepted_outliers or set()):
+            logger.warning("%s/%s: length outlier %d bytes vs median %.0f in %s accepted "
+                           "(reviewed, listed in accepted_outliers)", institution_id,
+                           doc_label, size, median, f["accession"])
+        elif outlier:
             detail = f"length outlier: {size} bytes vs median {median:.0f}"
             logger.warning("%s/%s: %s in %s (%s); NOT recorded, needs a human look "
                            "(a genuine rewrite would be skipped otherwise)",
@@ -311,7 +320,9 @@ def fetch_sai_appendices(conn: sqlite3.Connection, institutions: dict[str, dict]
                 flagged: list[str] = []
                 n = ingest_filings(conn, inst_id, label,
                                    [b for b in batch if b["section"] is not None],
-                                   cfg["start"], cfg["end"], copies, pages, flagged, patterns, sequence)
+                                   cfg["start"], cfg["end"], copies, pages, flagged, patterns, sequence,
+                                   accepted_outliers={str(a) for a in
+                                                      cfg.get("accepted_outliers") or []})
                 for b in batch:
                     if b["section"] is None:
                         logger.info("%s/%s: no clean section in %s (%s); nothing recorded",
