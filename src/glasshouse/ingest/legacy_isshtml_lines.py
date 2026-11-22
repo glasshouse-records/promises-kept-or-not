@@ -25,7 +25,9 @@ VOTES = RECS | {"TNA", "Withheld"}
 SPONSORS = frozenset({"Management", "Shareholder"})
 REC_LABELS = {"Management Recommendation": "Mgt Rec", "Dissident Recommendation": "Diss Rec"}
 HEADER = ("Proposal No", "Proposal", "Proposed By")
-_COVER = ("FORM N-PX", "ICA File Number", "Registrant Name", "Reporting Period")
+_COVER = ("FORM N-PX", "ICA File Number", "Registrant Name", "Reporting Period",
+          "(Name and Address", "ANNUAL REPORT OF PROXY VOTING RECORD", "Date of reporting period")
+_COVER_ANY = ("registrant", "agent for service")      # centred lines containing these: not funds
 _MONTHS = {m: i for i, m in enumerate(
     ("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"), 1)}
 
@@ -106,11 +108,17 @@ def _run(text: str) -> tuple[list[dict], Counter, dict]:
         kind = tok.lastgroup
         if kind == "p":
             m = re.match(r"<p[^>]*>", tok[0], re.I)
-            if not _CENTER.search(m[0]):
-                continue
             name = _clean(tok[0][m.end():-len("</p>")] if tok[0].lower().endswith("</p>")
                           else tok[0][m.end():])
-            if not name or name.startswith(_COVER):
+            if name.upper() == "END NPX REPORT" or name.upper().startswith("SIGNATURE"):
+                fund = None                     # amendment 3: no fund until the next real one
+                in_table = False
+                reset_table()
+                continue
+            if not _CENTER.search(m[0]):
+                continue
+            if (not name or name.upper().startswith(tuple(c.upper() for c in _COVER))
+                    or any(c in name.lower() for c in _COVER_ANY)):
                 continue
             fund = name
             n["funds"] += 1
