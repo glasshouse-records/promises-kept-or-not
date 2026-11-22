@@ -120,3 +120,15 @@ def test_datasheet_has_season_coverage_and_known_gaps_computed_from_data(conn):
                    "unmapped", "Proxy contests", "Vanguard", "share counts", "categor",
                    "same-direction"):
         assert needle in sheet, needle
+
+
+def test_season_coverage_never_invents_a_season_from_an_unreadable_date(conn):
+    # As filed: YYYYMMDD, day-first, and impossible months. None of these may be cut up into a
+    # fake season like '11/7-'; they are counted under one honest label instead.
+    for d in ("20240425", "30/07/2023", "30/24/2024", "11/7/2023x"):
+        _vote(conn, None, shares=1, date=d)
+    _vote(conn, None, shares=1, date="08/01/2023")
+    seasons = {s["season"]: s for s in dataset.season_coverage(conn)}
+    assert set(seasons) == {"2023-24", dataset.UNREADABLE_DATE_SEASON}
+    assert seasons[dataset.UNREADABLE_DATE_SEASON]["xml_lines"] == 4
+    assert seasons["2023-24"]["xml_lines"] == 1

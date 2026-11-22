@@ -265,7 +265,13 @@ def coverage(conn: sqlite3.Connection) -> list[dict]:
     return rows
 
 
+UNREADABLE_DATE_SEASON = "date not machine-readable"
+# A meeting date that is not ISO with a real month after normalisation (as filed: YYYYMMDD,
+# day-first, impossible months) is counted under one label, never cut into a fake season.
 _SEASON_SQL = (f"CASE WHEN {_ISO} IS NULL OR {_ISO} = '' THEN 'undated' "
+               f"WHEN NOT ({_ISO} GLOB '[12][0-9][0-9][0-9]-[01][0-9]-[0-3][0-9]' "
+               f"AND substr({_ISO},6,2) BETWEEN '01' AND '12') "
+               f"THEN '{UNREADABLE_DATE_SEASON}' "
                f"WHEN substr({_ISO},6,2) >= '07' THEN substr({_ISO},1,4) || '-' || "
                f"substr(CAST(substr({_ISO},1,4) + 1 AS TEXT),3,2) "
                f"ELSE CAST(substr({_ISO},1,4) - 1 AS TEXT) || '-' || substr({_ISO},3,2) END")
@@ -399,7 +405,10 @@ def build_datasheet(conn: sqlite3.Connection) -> str:
         "## Coverage by N-PX season",
         "", "A season runs for meetings from 1 July to 30 June (2022-23 = 2022-07-01 to "
         "2023-06-30). `legacy lines` are 2022-23 text-filing lines read by two agreeing parsers "
-        "(`votes.legacy_format` set); `XML lines` come from SEC XML N-PX. Shipped lines only.",
+        "(`votes.legacy_format` set); `XML lines` come from SEC XML N-PX. Shipped lines only. "
+        f"`{UNREADABLE_DATE_SEASON}` counts lines whose `meeting_date`, as the filer wrote it, "
+        "is not a month-first or ISO date with a real month (e.g. `20240425`, `30/07/2023`); "
+        "they are shipped unchanged but not assigned a season.",
         "", "| Season | legacy lines | XML lines |", "|---|--:|--:|",
         *[f"| {s['season']} | {s['legacy_lines']:,} | {s['xml_lines']:,} |"
           for s in season_coverage(conn)],
