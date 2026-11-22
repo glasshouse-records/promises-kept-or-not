@@ -229,12 +229,24 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
             (filing.accession_number,)
         ).fetchone()
         replace = False
+        if exists and reingest and filing.accession_number not in reingest:
+            stats["skipped"] += 1              # a re-ingest touches only the named filings
+            continue
         if exists and (filing.accession_number in reingest if reingest else exists[1]):
-            if exists[0] in ("LEGACY_NO_COVER", "LEGACY_PARSED",
-                             "LEGACY_PROXYEDGE", "LEGACY_PROXYEDGE_REJECTED",
-                             "LEGACY_ISS", "LEGACY_ISS_REJECTED",
-                             "LEGACY_ISSHTML", "LEGACY_ISSHTML_REJECTED"):
-                stats["skipped"] += 1          # legacy filings are not replaced here
+            rt = exists[0]
+            fam = ("iss" if rt.startswith(("LEGACY_ISS_", "LEGACY_ISSHTML_")) or
+                   rt in ("LEGACY_ISS", "LEGACY_ISSHTML")
+                   else "proxyedge" if rt in ("LEGACY_PROXYEDGE", "LEGACY_PROXYEDGE_REJECTED")
+                   else None)
+            if (reingest and fam == "iss" and legacy_iss_text) or \
+                    (reingest and fam == "proxyedge" and legacy_proxyedge):
+                # a named legacy filing re-parsed under its own format's flag; the record
+                # is replaced in one transaction by legacy_pe.record_filing (XML rows
+                # are never touched: it deletes only legacy_format IS NOT NULL votes)
+                _reingest_legacy(conn, filing, institution_id, today, fam, stats)
+                continue
+            if rt.startswith("LEGACY_"):
+                stats["skipped"] += 1          # other legacy filings are not replaced here
                 continue
             replace = True
         elif reingest and not exists:
@@ -426,6 +438,29 @@ _VOTE_INSERT = """INSERT INTO votes
      category_type, vote_source, shares_on_loan, vote_series, how_voted,
      shares_voted, management_recommendation)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"""
+
+
+def _reingest_legacy(conn: sqlite3.Connection, filing: Filing, institution_id: str | None,
+                     today: str, fam: str, stats: dict) -> None:
+    """Re-parse one named legacy text filing. If its documents are not in the format the
+    ledger recorded, nothing is written (the old record and rows stay)."""
+    try:
+        fmt = legacy_iss.detect_format(legacy_pe.load_filing_texts(filing)[0])
+        if fam == "iss" and fmt in legacy_iss.PARSERS:
+            n = legacy_iss.ingest_filing_from_sources(conn, filing, institution_id, today)
+        elif fam == "proxyedge" and fmt == "proxyedge":
+            n = legacy_pe.ingest_filing_from_sources(conn, filing, institution_id, today)
+        else:
+            stats["no_format"] = stats.get("no_format", 0) + 1
+            return
+    except Exception as exc:        # network or parse: the old record stays
+        conn.rollback()
+        logger.warning("legacy re-ingest %s failed (%s) — old record kept",
+                       filing.accession_number, exc)
+        stats["failed"] += 1
+        return
+    stats["votes"] += n
+    stats["filings"] += 1
 
 
 def _ingest_legacy_filing(conn: sqlite3.Connection, filing: Filing,

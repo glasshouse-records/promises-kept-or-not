@@ -525,10 +525,14 @@ def test_npx_flag_routes_iss_html_filings(conn, monkeypatch):
     st = _npx_run(conn, monkeypatch, {"a": HTML}, legacy_iss_text=True)
     assert st["votes"] == 3 and st["filings"] == 1
     assert conn.execute("SELECT report_type FROM filings").fetchone()[0] == "LEGACY_ISSHTML"
-    # a second run skips it, including the --reingest path
-    st = _npx_run(conn, monkeypatch, {"a": HTML}, legacy_iss_text=True,
-                  reingest={ACC})
+    # a second run skips it; a named --reingest with the flag re-parses it (replacing
+    # the rows), and without the flag it stays skipped
+    st = _npx_run(conn, monkeypatch, {"a": HTML}, legacy_iss_text=True)
     assert st["skipped"] == 1 and st["votes"] == 0
+    st = _npx_run(conn, monkeypatch, {"a": HTML}, reingest={ACC})
+    assert st["skipped"] == 1 and st["votes"] == 0
+    st = _npx_run(conn, monkeypatch, {"a": HTML}, legacy_iss_text=True, reingest={ACC})
+    assert st["votes"] == 3 and conn.execute("SELECT COUNT(*) FROM votes").fetchone()[0] == 3
 
 
 def test_a_no_cover_filing_in_iss_html_format_is_upgraded(conn, monkeypatch):

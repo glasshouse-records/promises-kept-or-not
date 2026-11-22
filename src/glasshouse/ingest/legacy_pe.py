@@ -73,17 +73,21 @@ def agreed(text: str) -> tuple[list[dict], dict]:
 
 # -- series map --------------------------------------------------------------
 
+_MARKS = re.compile(r"\((?:R|SM|TM)\)|[\u00ae\u2122\u2120]")
+
+
 def _norm(name: str) -> str:
-    return " ".join(name.split()).casefold()
+    """Printed fund name -> comparison key: trademark marks removed ("(R)", "(SM)", "(TM)"
+    as printed, and the characters), whitespace collapsed, casefolded. Nothing else."""
+    return " ".join(_MARKS.sub(" ", name).split()).casefold()
 
 
 _SGML = re.compile(r"<SERIES-ID>\s*(S\d{9})\s*\n\s*<SERIES-NAME>([^\n<]*)", re.I)
 _PLAIN = re.compile(r"^\s*(S\d{9})\b[ \t]*(.*)$")
 
 
-def series_map(hdr_text: str) -> dict[str, str]:
-    """Normalised fund name -> series id from the filing's own header. A name that
-    maps to two different series is removed (ambiguous)."""
+def _header_pairs(hdr_text: str) -> list[tuple[str, str]]:
+    """(printed series name, series id) pairs from the filing's own header."""
     pairs: list[tuple[str, str]] = [(m.group(2), m.group(1)) for m in _SGML.finditer(hdr_text)]
     if not pairs:
         lines = hdr_text.splitlines()
@@ -97,6 +101,19 @@ def series_map(hdr_text: str) -> dict[str, str]:
                 name = "" if _PLAIN.match(nxt) else nxt
             if name.strip():
                 pairs.append((name, m.group(1)))
+    return pairs
+
+
+def header_series_ids(hdr_text: str) -> set[str]:
+    """Every series id the filing's own header lists (named or not)."""
+    ids = {m.group(1) for m in re.finditer(r"<SERIES-ID>\s*(S\d{9})", hdr_text, re.I)}
+    return ids or {sid for _, sid in _header_pairs(hdr_text)}
+
+
+def series_map(hdr_text: str) -> dict[str, str]:
+    """Normalised fund name -> series id from the filing's own header. A name that
+    maps to two different series is removed (ambiguous)."""
+    pairs = _header_pairs(hdr_text)
     seen: dict[str, set[str]] = {}
     for name, sid in pairs:
         if _norm(name):
@@ -104,16 +121,71 @@ def series_map(hdr_text: str) -> dict[str, str]:
     return {n: next(iter(s)) for n, s in seen.items() if len(s) == 1}
 
 
+# -- reviewed alias file -----------------------------------------------------
+
+ALIAS_PATH = Path(__file__).resolve().parents[3] / "config" / "legacy_series_aliases.csv"
+
+
+def _cik10(cik: object) -> str:
+    return str(cik).strip().zfill(10)
+
+
+def _heading(heading: str) -> str:
+    return " ".join(heading.split())
+
+
+def load_aliases(path: Path | None = None) -> dict[tuple[str, str], str]:
+    """Reviewed (registrant CIK, heading as printed) -> series id. Raises on a duplicate
+    key with different series ids. A missing file is an empty alias set."""
+    import csv
+    p = path or ALIAS_PATH
+    if not p.exists():
+        return {}
+    out: dict[tuple[str, str], str] = {}
+    with p.open(newline="", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            key = (_cik10(row["registrant_cik"]), _heading(row["heading"]))
+            sid = row["series_id"].strip()
+            if out.get(key, sid) != sid:
+                raise ValueError(f"conflicting alias for {key}: {out[key]} vs {sid}")
+            out[key] = sid
+    return out
+
+
+def filing_aliases(aliases: dict[tuple[str, str], str] | None, cik: object) -> dict[str, str]:
+    """The aliases that apply to one filing: heading -> series id for its registrant CIK."""
+    c = _cik10(cik)
+    return {h: sid for (k, h), sid in (aliases or {}).items() if k == c}
+
+
+def alias_series(heading: str, aliases: dict[str, str] | None,
+                 header_sids: set[str] | None) -> tuple[str | None, bool]:
+    """(series id, alias_not_in_header). An alias counts only if its series is in this
+    filing's own header."""
+    sid = (aliases or {}).get(_heading(heading))
+    if sid is None:
+        return None, False
+    if sid in (header_sids or set()):
+        return sid, False
+    return None, True
+
+
 # -- ledger rows -------------------------------------------------------------
 
-def to_vote_rows(rows: list[dict], smap: dict[str, str]) -> tuple[list[dict], dict]:
+def to_vote_rows(rows: list[dict], smap: dict[str, str],
+                 aliases: dict[str, str] | None = None,
+                 header_sids: set[str] | None = None) -> tuple[list[dict], dict]:
     """Agreed rows -> ledger vote dicts, plus drop counters. Only funds named in THIS
     filing's header are kept (a combined document can carry other registrants' funds)."""
     out: list[dict] = []
     unmapped: Counter = Counter()
-    info = {"dropped_type": 0, "dropped_vote": 0, "dropped_date": 0}
+    info = {"dropped_type": 0, "dropped_vote": 0, "dropped_date": 0,
+            "alias_not_in_header": 0}
     for r in rows:
         sid = smap.get(_norm(r["fund_name"]))
+        if sid is None:
+            sid, bad = alias_series(r["fund_name"], aliases, header_sids)
+            info["alias_not_in_header"] += bad
         if sid is None:
             unmapped[r["fund_name"]] += 1
             continue
@@ -160,16 +232,18 @@ def is_candidate(filing: Filing) -> bool:
 
 
 def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str | None,
-                  today: str, docs: dict[str, str], hdr_text: str) -> int:
+                  today: str, docs: dict[str, str], hdr_text: str,
+                  aliases: dict[tuple[str, str], str] | None = None) -> int:
     """Parse every vote document of one filing, gate it, record it. One transaction
     (no network inside). Returns votes inserted."""
     smap = series_map(hdr_text)
+    fa, sids = filing_aliases(aliases, filing.cik), header_series_ids(hdr_text)
     parsed = []
     for name, text in sorted(docs.items()):
         if "Agenda Number:" not in text:
             continue
         rows, st = agreed(text)
-        votes, info = to_vote_rows(rows, smap)
+        votes, info = to_vote_rows(rows, smap, fa, sids)
         parsed.append((name, text.count("Agenda Number:"), st, votes, info))
     return record_filing(conn, filing, institution_id, today, parsed, REPORT_OK,
                          REPORT_REJECTED)
@@ -272,6 +346,6 @@ def ingest_filing_from_sources(conn: sqlite3.Connection, filing: Filing,
                                institution_id: str | None, today: str) -> int:
     """Fetch (network/cache, no write lock held) then ingest one filing."""
     docs, hdr = load_filing_texts(filing)
-    n = ingest_filing(conn, filing, institution_id, today, docs, hdr)
+    n = ingest_filing(conn, filing, institution_id, today, docs, hdr, load_aliases())
     logger.info("ingested LEGACY_PROXYEDGE %s: %d votes", filing.accession_number, n)
     return n

@@ -88,7 +88,9 @@ def cmd_ingest_npx(args) -> int:
             return 2
         for cik, inst_id in rows:
             stats = npx.ingest_npx(conn, cik, institution_id=inst_id, reingest=reingest,
-                                   reingest_reason=args.reason)
+                                   reingest_reason=args.reason,
+                                   legacy_proxyedge=getattr(args, "legacy_proxyedge", False),
+                                   legacy_iss_text=getattr(args, "legacy_iss", False))
             print(f"  CIK {cik}: {stats}")
         return 0
     if args.cik:

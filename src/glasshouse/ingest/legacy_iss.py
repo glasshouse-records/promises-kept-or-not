@@ -157,23 +157,34 @@ def agreed(text: str, parsers=(legacy_iss_blocks, legacy_iss_lines)) -> tuple[li
 
 # -- ledger rows -------------------------------------------------------------
 
-def series_for(heading: str, smap: dict[str, str]) -> str | None:
-    """Exact normalised match, else exactly one trailing ' - SUFFIX' stripped. Else None."""
+def series_for(heading: str, smap: dict[str, str], aliases: dict[str, str] | None = None,
+               header_sids: set[str] | None = None) -> str | None:
+    """Exact normalised match, else exactly one trailing ' - SUFFIX' stripped, else the
+    reviewed alias (only if its series is in the filing's own header). Else None."""
+    return _series_for(heading, smap, aliases, header_sids)[0]
+
+
+def _series_for(heading, smap, aliases, header_sids) -> tuple[str | None, bool]:
     sid = smap.get(legacy_pe._norm(heading))
     if sid is None and " - " in heading:
         sid = smap.get(legacy_pe._norm(heading.rsplit(" - ", 1)[0]))
-    return sid
+    if sid is not None:
+        return sid, False
+    return legacy_pe.alias_series(heading, aliases, header_sids)
 
 
 def to_vote_rows(rows: list[dict], smap: dict[str, str],
-                 legacy_format: str = LEGACY_FORMAT) -> tuple[list[dict], dict]:
+                 legacy_format: str = LEGACY_FORMAT,
+                 aliases: dict[str, str] | None = None,
+                 header_sids: set[str] | None = None) -> tuple[list[dict], dict]:
     """Agreed rows -> ledger vote dicts, plus drop counters."""
     out: list[dict] = []
     unmapped: Counter = Counter()
     info = {"contest_rows_dropped": 0, "dropped_vote": 0, "dropped_date": 0,
-            "dropped_sponsor": 0}
+            "dropped_sponsor": 0, "alias_not_in_header": 0}
     for r in rows:
-        sid = series_for(r["fund_heading"], smap)
+        sid, bad = _series_for(r["fund_heading"], smap, aliases, header_sids)
+        info["alias_not_in_header"] += bad
         if sid is None:
             unmapped[r["fund_heading"]] += 1
             continue
@@ -212,18 +223,21 @@ is_candidate = legacy_pe.is_candidate
 
 def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str | None,
                   today: str, docs: dict[str, str], hdr_text: str,
-                  fmt: str = "iss") -> int:
+                  fmt: str = "iss",
+                  aliases: dict[tuple[str, str], str] | None = None) -> int:
     """Parse every document of one filing that is in format `fmt` ('iss' text or
     'iss_html'), gate it, record it. One transaction (no network inside). Returns votes
     inserted."""
     tag, report_ok, report_rejected = FORMATS[fmt]
     smap = legacy_pe.series_map(hdr_text)
+    fa = legacy_pe.filing_aliases(aliases, filing.cik)
+    sids = legacy_pe.header_series_ids(hdr_text)
     parsed = []
     for name, text in sorted(docs.items()):
         if doc_format(text) != fmt:
             continue
         rows, st = agreed(text, PARSERS[fmt])
-        votes, info = to_vote_rows(rows, smap, tag)
+        votes, info = to_vote_rows(rows, smap, tag, fa, sids)
         info["funds_unmapped"] = info["unmapped"]
         parsed.append((name, text.count("Meeting Date:"), st, votes, info))
         logger.info("%s %s: agreed=%d emitted=%d unmapped=%d contest=%d vocab=%d",
@@ -242,6 +256,7 @@ def ingest_filing_from_sources(conn: sqlite3.Connection, filing: Filing,
     fmt = detect_format(docs)
     if fmt not in PARSERS:
         return None
-    n = ingest_filing(conn, filing, institution_id, today, docs, hdr, fmt)
+    n = ingest_filing(conn, filing, institution_id, today, docs, hdr, fmt,
+                      legacy_pe.load_aliases())
     logger.info("ingested %s %s: %d votes", FORMATS[fmt][1], filing.accession_number, n)
     return n
