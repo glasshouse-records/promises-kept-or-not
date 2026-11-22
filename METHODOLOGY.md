@@ -959,8 +959,13 @@ text, and ISS HTML tables. Research notes: `docs/research/legacy-npx.md`.
   nothing from it is inserted. Per-document agreement counts are in the `legacy_parse`
   table.
 - **Fund → series** only through the filing's own SGML header: exact normalised name
-  match, or one trailing " - SUFFIX" removed. No fuzzy matching. A heading that does
-  not match is dropped and counted, so recall is knowingly incomplete.
+  match, or one trailing " - SUFFIX" removed. Trademark marks ("(R)", "(SM)", "(TM)",
+  ®, ™, ℠) are removed from both sides first. Failing that, a heading may map through
+  `config/legacy_series_aliases.csv`: 298 hand-reviewed (registrant CIK, heading) →
+  series entries, e.g. John Hancock's "3347 JHFII …" codes, "CREF Stock" → "Stock
+  Account", "T. Rowe Price"/trust-name prefixes. An alias counts only if its series is
+  listed in that filing's own header. No fuzzy matching. A heading that still does not
+  match is dropped and counted, so recall is knowingly incomplete.
 - **Dropped on purpose:** proxy-contest rows (two cards, so the management
   recommendation is undefined); votes outside a closed vocabulary (e.g. "None", "N/A",
   "Take No Action"); unknown sponsors; unparseable meeting dates.
