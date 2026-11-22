@@ -150,9 +150,11 @@ def agreed(text: str, parsers=(legacy_iss_blocks, legacy_iss_lines)) -> tuple[li
             out.append(r)
     n_agreed = sum(common.values())
     a_only, b_only = sum((ca - cb).values()), sum((cb - ca).values())
+    out, guard_stats = legacy_pe.guarded(out, rows_a, rows_b, ca, cb, "fund_heading", _key)
     return out, {"rows_a": len(rows_a), "rows_b": len(rows_b), "agreed": n_agreed,
                  "a_only": a_only, "b_only": b_only,
-                 "disagreement_rate": (a_only + b_only) / max(1, n_agreed + a_only + b_only)}
+                 "disagreement_rate": (a_only + b_only) / max(1, n_agreed + a_only + b_only),
+                 **guard_stats}
 
 
 # -- ledger rows -------------------------------------------------------------
