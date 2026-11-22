@@ -116,3 +116,22 @@ def test_amendment1_uppercase_literals_emitted_lowercase_and_typos_dropped():
     for bad in ("for", "against", "3", "Unknown", "Againt", "Took No Action", "Non-Voting"):
         d = base.replace("<td>Against</td>", f"<td>{bad}</td>")
         assert len(m.parse(d)) == 1, bad
+
+
+def test_ab_variant_style_centred_funds_and_two_tr_meeting_block():
+    text = load("ab_variant")
+    rows = m.parse(text)
+    assert [(r["fund_heading"], r["issuer_name"], r["ticker"], r["security_id"],
+             r["meeting_date"], r["record_date"], r["meeting_type"], r["proposal_id"],
+             r["vote"]) for r in rows] == [
+        ("AB All Market Real Return Portfolio", "3I INFRASTRUCTURE PLC", "3IN", "G8873L178",
+         "2022-07-07", "2022-07-05", "Annual", "1", "For"),
+        ("AB All Market Real Return Portfolio", "3I INFRASTRUCTURE PLC", "3IN", "G8873L178",
+         "2022-07-07", "2022-07-05", "Annual", "2", "Against"),
+        ("AB Income Fund", "AOS CORP", "AOS", "831865209", "2023-04-11", "2023-02-14",
+         "Annual", "1.1", "For"),
+    ]
+    assert all(r["rec_label"] == "Mgt Rec" and r["card_label"] == "" for r in rows)
+    assert not any("FORM" in r["fund_heading"] for r in rows)
+    stats = m.parse_stats(text)
+    assert stats["reasons"] == {} and stats["bad_meetings"] == 0 and stats["meetings"] == 2

@@ -1,7 +1,7 @@
 """Legacy N-PX (ISS "Wdesk/ISS" HTML-table export) -> one dict per voted proposal.
 
 Parser A: builds a light tree (tables -> rows -> cells) with ``html.parser`` and
-walks it.  Fund names come from ``<p align=center>`` elements in document order.
+walks it.  Fund names come from centred ``<p>`` elements (align=center or style text-align: center) in document order.
 Precision over recall: anything ambiguous is dropped and counted in
 ``parse_stats()['reasons']``; nothing is inferred from neighbouring rows, typos
 are never fixed and nothing is fuzzy-matched.  Pure functions, stdlib only.
@@ -27,6 +27,7 @@ _ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.\-()]*$")
 _DATE_RE = re.compile(r"^([A-Za-z]{3})\s+(\d{1,2}),\s*(\d{4})$")
 _MONTHS = {m: i for i, m in enumerate(
     ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"], 1)}
+_CENTER_STYLE_RE = re.compile(r"(?:^|;)\s*text-align\s*:\s*center\s*(?:;|$)", re.I)
 _COVER = ("form n-px", "ica file number", "registrant name", "reporting period")
 
 
@@ -89,7 +90,9 @@ class _Tree(HTMLParser):
             self.skip += 1
         elif tag == "p":
             self._close_p()
-            if not self.tables and (a.get("align") or "").strip().lower() == "center":
+            centred = (a.get("align") or "").strip().lower() == "center" \
+                or _CENTER_STYLE_RE.search(a.get("style") or "")
+            if not self.tables and centred:
                 self.p = []
         elif tag == "table":
             self._close_p()
