@@ -958,7 +958,9 @@ Scope is deliberately narrow, precision-first:
 
 Before the XML form (votes from July 2023), N-PX was free text. The 2022-23 year is
 being read from three filer layouts: Broadridge ProxyEdge text, ISS "FORM N-Px REPORT"
-text, and ISS HTML tables. Research notes: `docs/research/legacy-npx.md`.
+text, and ISS HTML tables. Research notes: `docs/research/legacy-npx.md`. ISS text also arrives as Courier HTML paragraphs
+(one `<P>` per line, spaces as `&nbsp;`); it is converted line for line to plain text before
+both parsers read it.
 
 - **Two parsers, one answer.** Each layout is read by two parsers written independently
   from one written contract. A row is kept only when both produce it identically over

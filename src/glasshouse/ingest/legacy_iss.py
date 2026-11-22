@@ -52,6 +52,7 @@ Filing storage, the gate and `legacy_parse` stats are `legacy_pe.record_filing`.
 
 from __future__ import annotations
 
+import html
 import logging
 import re
 import sqlite3
@@ -132,9 +133,38 @@ def is_iss_html(text: str) -> bool:
     return _ISS_HTML_HDR.search(text) is not None
 
 
+_P_ELEMENT = re.compile(r"<P\b[^>]*Courier New[^>]*>(.*?)</P>", re.I | re.S)
+_TAG = re.compile(r"<[^>]*>")
+
+
+def courier_html_to_text(doc: str) -> str | None:
+    """ISS "FORM N-Px" text printed as HTML (one Courier New <P> per line, spaces as
+    `&nbsp;` mixed with literal spaces) -> the plain text both ISS parsers read: one line
+    per <P>, tags removed, every entity decoded (a non-breaking space becomes exactly one
+    space; literal spaces are kept, so fixed-width columns survive). None unless the ISS
+    column header is absent from the raw document but present, on a single line, after
+    conversion (so plain ISS text, other HTML and anything else are never touched)."""
+    if is_iss_text(doc) or "<P" not in doc:
+        return None
+    lines = []
+    for m in _P_ELEMENT.finditer(doc):
+        s = html.unescape(_TAG.sub("", m.group(1))).replace("\xa0", " ")
+        lines.append(re.sub(r"[\r\n\t]", " ", s))
+    if not any(_ISS_COLHDR.search(ln) for ln in lines):
+        return None
+    return "\n".join(lines) + "\n"
+
+
+def prepare(doc: str) -> str:
+    """The text the ISS parsers should read: converted Courier HTML, else `doc` as is."""
+    converted = courier_html_to_text(doc)
+    return doc if converted is None else converted
+
+
 def doc_format(text: str) -> str | None:
-    """One document's format, checked in order: ISS text, ISS HTML, ProxyEdge."""
-    if is_iss_text(text):
+    """One document's format, checked in order: ISS text (also as Courier HTML), ISS
+    HTML, ProxyEdge."""
+    if is_iss_text(text) or courier_html_to_text(text) is not None:
         return "iss"
     if is_iss_html(text):
         return "iss_html"
@@ -277,6 +307,7 @@ def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
     for name, text in sorted(docs.items()):
         if doc_format(text) != fmt:
             continue
+        text = prepare(text)  # Courier-HTML ISS text -> plain lines, for BOTH parsers
         rows, st = agreed(text, PARSERS[fmt])
         votes, info = to_vote_rows(rows, smap, tag, fa, sids)
         info["funds_unmapped"] = info["unmapped"]
