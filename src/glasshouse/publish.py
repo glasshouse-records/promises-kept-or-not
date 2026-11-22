@@ -26,8 +26,9 @@ PUBLIC_TABLES: dict[str, str] = {
     "institutions": "",
     "filings": "",
     "fund_series": "",
-    # legacy votes (legacy_html, ProxyEdge legacy_format) are pre-2024 parsed and not yet
-    # validated — they stay out of the public release until promoted (precision over recall).
+    # Single-parser `legacy_html` votes and any legacy_format not in
+    # ledger.PROMOTED_LEGACY_FORMATS stay out (precision over recall); the promoted 2022-23
+    # two-parser rows ship, identifiable by votes.legacy_format.
     # IFNULL: structured votes may have NULL/'' vote_source and must stay in.
     # how_voted != '' drops administrative N-PX rows (postal-meeting notices,
     # no-vote records) that aren't actual votes — a "proxy votes" table should
@@ -49,12 +50,10 @@ OPERATOR_ONLY = ("triage", "llm_log", "outreach", "signals", "match_log", "runs"
 # Columns dropped from otherwise-public tables: operator-internal artifacts that
 # are useless to consumers and leak local structure (content_path is the
 # maintainer's local cache path for a commitment doc).
-# votes: legacy_format / for_against_management exist only on quarantined legacy rows (which
-# never ship), so the columns stay out of the release until those rows are promoted and the
-# columns documented.
+# votes: legacy_format / for_against_management SHIP (a promoted 2022-23 row must be
+# identifiable); both are documented in dataset.DATA_DICTIONARY.
 PUBLIC_DROP_COLS: dict[str, set[str]] = {
     "commitments": {"content_path"},
-    "votes": {"legacy_format", "for_against_management"},
 }
 
 

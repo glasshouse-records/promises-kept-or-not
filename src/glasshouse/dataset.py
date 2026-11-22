@@ -62,25 +62,43 @@ DATA_DICTIONARY: dict[str, dict] = {
               "identifier); derived tables cite it as vote_id",
         "accession": "→ filings.accession: the N-PX filing this line came from",
         "issuer_name": "company voted on, as filed",
-        "cusip": "security CUSIP, as filed",
-        "isin": "security ISIN, as filed",
+        "cusip": "security CUSIP, as filed; on legacy rows (legacy_format set) kept only when "
+                 "its check digit validates, else empty",
+        "isin": "security ISIN, as filed; on legacy rows kept only when its check digit "
+                "validates, else empty",
         "meeting_date": "meeting date as filed, M/D/YYYY text (07/11/2024 or 7/11/2024), not ISO",
         "vote_description": "verbatim proposal text as filed",
         "category_type": "as filed in N-PX field categoryType: the SEC's subject category of the "
                          "item (e.g. DIRECTOR ELECTIONS, SECTION 14A SAY-ON-PAY VOTES, "
-                         "CAPITAL STRUCTURE)",
+                         "CAPITAL STRUCTURE); '' on legacy rows (legacy_format set): the 2022-23 "
+                         "text filings print no N-PX category and Glasshouse does not derive one",
         "vote_source": "as filed in N-PX field voteSource: ISSUER (put on the ballot by the "
                        "issuer) or SECURITY HOLDER (shareholder proposal); empty where the "
-                       "filer left it blank (see Code lists)",
+                       "filer left it blank (see Code lists). On legacy rows: taken from the "
+                       "printed sponsor of the item",
         "shares_on_loan": "as filed in N-PX field sharesOnLoan: shares on loan; 0 where not filed",
         "vote_series": "as filed in N-PX field voteSeries: id of the fund series that cast the "
                        "vote (S000…); joins to fund_series.series_id; empty where not filed",
         "how_voted": "as filed in N-PX field howVoted: FOR, AGAINST, WITHHOLD, ABSTAIN or "
-                     "another code as filed (see Code lists)",
-        "shares_voted": "shares cast on this line, as filed",
+                     "another code as filed (see Code lists). Legacy rows (legacy_format set) "
+                     "are normalised to the XML spellings",
+        "shares_voted": "shares cast on this line, as filed. NULL on legacy rows (legacy_format "
+                        "set): the 2022-23 text layouts print no share counts, so the engine "
+                        "weights those decisions by line count (see proposal_decisions.weight_basis)",
         "management_recommendation": "as filed in N-PX; engine.py reads it as whether THIS vote "
                                      "went with (FOR) or against (AGAINST) management, not what "
-                                     "management recommended: KNOWN-UNRELIABLE, do not rely on it",
+                                     "management recommended: KNOWN-UNRELIABLE, do not rely on it. "
+                                     "On legacy rows: copied from ProxyEdge's printed For/Against "
+                                     "Management column, or, in the ISS layouts, computed from the "
+                                     "printed recommendation and the vote (see METHODOLOGY); FOR, "
+                                     "AGAINST or empty",
+        "legacy_format": "NULL = a line from an SEC XML N-PX filing. 'proxyedge', 'iss_text' or "
+                         "'iss_html' = a line from a 2022-23 (July 2022 - June 2023) text filing "
+                         "read by two independent parsers that agreed on it; see METHODOLOGY "
+                         "('Legacy N-PX, July 2022 - June 2023'). Such lines have no share counts "
+                         "and no category",
+        "for_against_management": "ProxyEdge's printed For/Against Management column, as printed; "
+                                  "NULL except on 'proxyedge' legacy rows",
         "is_duplicate": "1 = as-filed duplicate of another line; always 0 in the release, "
                         "which excludes duplicates"},
     "holdings": {"_": "13-F / N-PORT holdings (full USD). No source_url or retrieval_date: "
@@ -247,6 +265,53 @@ def coverage(conn: sqlite3.Connection) -> list[dict]:
     return rows
 
 
+_SEASON_SQL = (f"CASE WHEN {_ISO} IS NULL OR {_ISO} = '' THEN 'undated' "
+               f"WHEN substr({_ISO},6,2) >= '07' THEN substr({_ISO},1,4) || '-' || "
+               f"substr(CAST(substr({_ISO},1,4) + 1 AS TEXT),3,2) "
+               f"ELSE CAST(substr({_ISO},1,4) - 1 AS TEXT) || '-' || substr({_ISO},3,2) END")
+
+
+def season_coverage(conn: sqlite3.Connection) -> list[dict]:
+    """Shipped vote lines per N-PX season (meetings 1 July to 30 June, e.g. 2022-23 =
+    2022-07-01..2023-06-30), split into legacy lines (legacy_format set: 2022-23 text
+    filings, two agreeing parsers) and XML lines. Over the same filter the release applies."""
+    rows = conn.execute(
+        f"SELECT {_SEASON_SQL} AS season, SUM(v.legacy_format IS NOT NULL) AS legacy_lines, "
+        f"SUM(v.legacy_format IS NULL) AS xml_lines FROM votes v "
+        f"{PUBLIC_TABLES['votes'].replace('WHERE ', 'WHERE v.', 1)} GROUP BY season "
+        f"ORDER BY season").fetchall()
+    return [{"season": r["season"], "legacy_lines": r["legacy_lines"] or 0,
+             "xml_lines": r["xml_lines"] or 0} for r in rows]
+
+
+def known_gaps(conn: sqlite3.Connection) -> list[str]:
+    """What the 2022-23 legacy lines do NOT contain, so absence is never read as a clean record.
+    Counts come from the parse log at build time."""
+    p = conn.execute(
+        "SELECT COUNT(DISTINCT accession) n, "
+        "COALESCE(SUM(IFNULL(rows_dropped_disputed,0) + IFNULL(rows_dropped_order,0)),0) d, "
+        "SUM(IFNULL(funds_unmapped,'') != '') u FROM legacy_parse").fetchone()
+    return [
+        "Layouts not parsed, so those filings contribute no 2022-23 lines: Fidelity's own "
+        "tables, the Federated flat table, Neuberger Berman / Franklin 'Issue No.' filings, "
+        "Diamond Hill and Dodge & Cox.",
+        f"Fund headings that could not be mapped to a fund series are dropped ({p['u'] or 0} of "
+        f"{p['n'] or 0} parsed legacy documents had unmapped headings).",
+        f"Lines the two parsers disputed, or that broke the row-order guard, are dropped "
+        f"({p['d']:,} lines across the parse log): precision over recall.",
+        "Proxy contests (a dissident card beside management's) are dropped.",
+        "Vanguard's pilot policy sections are dropped.",
+        "Legacy lines carry no share counts: `shares_voted` is NULL, and every legacy "
+        "decision is line-weighted (`weight_basis` = 'lines'), unlike the share-weighted "
+        "decisions from July 2023.",
+        "Legacy lines carry no N-PX category (`category_type` is ''), so 2022-23 meetings do "
+        "not appear in the director-election or say-on-pay tables.",
+        "De-duplication collapses same-direction lines of one fund, so line counts are not "
+        "comparable across eras (a legacy line count and an XML line count measure different "
+        "things).",
+    ]
+
+
 def git_state(repo: Path | str | None = None) -> dict:
     """The commit actually checked out in `repo` (default: this repository) and whether
     the working tree differs from it. An untracked file counts as dirty: it can change
@@ -331,7 +396,16 @@ def build_datasheet(conn: sqlite3.Connection) -> str:
           for r in cov],
         "", "_Institutions in the registry but not yet ingested are omitted — "
         "absence here means no data, not a clean record._", "",
-        "## Tables", "",
+        "## Coverage by N-PX season",
+        "", "A season runs for meetings from 1 July to 30 June (2022-23 = 2022-07-01 to "
+        "2023-06-30). `legacy lines` are 2022-23 text-filing lines read by two agreeing parsers "
+        "(`votes.legacy_format` set); `XML lines` come from SEC XML N-PX. Shipped lines only.",
+        "", "| Season | legacy lines | XML lines |", "|---|--:|--:|",
+        *[f"| {s['season']} | {s['legacy_lines']:,} | {s['xml_lines']:,} |"
+          for s in season_coverage(conn)],
+        "", "## Known gaps (2022-23 legacy lines)",
+        *[f"- {g}" for g in known_gaps(conn)],
+        "", "## Tables", "",
     ]
     for res in pkg["resources"]:
         lines.append(f"### `{res['name']}` ({res['rowCount']:,} rows)")

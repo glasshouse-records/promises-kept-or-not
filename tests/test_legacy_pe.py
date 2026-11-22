@@ -250,9 +250,10 @@ def test_cache_is_used_before_the_network(tmp_path, monkeypatch):
 
 # -- quarantine --------------------------------------------------------------
 
-def test_legacy_rows_are_not_published_and_not_analysed(conn):
+def test_unpromoted_legacy_rows_are_not_published_and_not_analysed(conn):
     _ingest(conn)
-    conn.execute("UPDATE votes SET vote_source='SECURITY HOLDER', category_type='X'")
+    conn.execute("UPDATE votes SET vote_source='SECURITY HOLDER', category_type='X', "
+                 "legacy_format='not_yet_promoted'")
     conn.commit()
     ledger.dedupe_votes(conn)
     assert conn.execute(
@@ -274,8 +275,8 @@ def test_xml_rows_still_pass_the_shared_predicate(conn):
     assert len(engine._grouped(conn, "v.vote_source = 'SECURITY HOLDER'")) == 1
 
 
-def test_legacy_only_columns_do_not_ship_while_legacy_rows_are_quarantined(conn):
-    assert {"legacy_format", "for_against_management"}.isdisjoint(
+def test_legacy_identifying_columns_ship_with_the_promoted_rows(conn):
+    assert {"legacy_format", "for_against_management"} <= set(
         publish.public_columns(conn, "votes"))
 
 
