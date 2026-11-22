@@ -110,7 +110,7 @@ SMAP = {FUND.casefold(): "S000001447"}
 
 def test_to_vote_rows_maps_every_field():
     (v,), info = legacy_pe.to_vote_rows([_row()], SMAP)
-    assert v == {"issuer_name": "ACME", "cusip": "123456789", "isin": "US1234567890",
+    assert v == {"issuer_name": "ACME", "cusip": "", "isin": "",  # was "123456789"/"US1234567890": both fail their check digit
                  "meeting_date": "01/25/2023", "vote_description": "Elect X",
                  "category_type": "", "vote_source": "ISSUER", "shares_on_loan": None,
                  "vote_series": "S000001447", "how_voted": "FOR", "shares_voted": None,

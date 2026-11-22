@@ -13,9 +13,9 @@ SMAP = {legacy_pe._norm("Fund A"): "S000000001"}
     ("FOR", "AGAINST", "AGAINST"), ("FOR", "WITHHOLD", "AGAINST"),
     ("AGAINST", "FOR", "AGAINST"), ("WITHHOLD", "FOR", "AGAINST"),
     ("1 YEAR", "3 YEARS", "AGAINST"), ("2 YEARS", "1 YEAR", "AGAINST"),
-    ("FOR", "ABSTAIN", ""), ("FOR", "DO NOT VOTE", ""), ("FOR", "TNA", ""),
+    ("FOR", "ABSTAIN", "AGAINST"), ("FOR", "DO NOT VOTE", ""), ("FOR", "TNA", ""),
     ("FOR", "No Vote", ""), ("FOR", "Did Not Vote", ""), ("", "FOR", ""),
-    ("ABSTAIN", "FOR", ""), ("AGAINST", "ABSTAIN", ""), ("1 YEAR", "FOR", ""),
+    ("ABSTAIN", "FOR", ""), ("AGAINST", "ABSTAIN", "AGAINST"), ("1 YEAR", "FOR", ""),
     ("DO NOT VOTE", "DO NOT VOTE", ""), ("TNA", "TNA", ""),
 ])
 def test_with_management_table(rec, vote, want):
@@ -31,7 +31,7 @@ def _iss_row(rec, vote, label="Mgt Rec"):
 
 @pytest.mark.parametrize("rec,vote,want", [
     ("For", "Against", "AGAINST"), ("Against", "Against", "FOR"), ("None", "For", ""),
-    ("N/A", "For", ""), ("For", "Abstain", ""), ("Abstain", "For", ""),
+    ("N/A", "For", ""), ("For", "Abstain", "AGAINST"), ("Abstain", "For", ""), ("Abstain", "Abstain", "FOR"),
 ])
 def test_iss_to_vote_rows_maps_raw_values(rec, vote, want):
     rows, _ = legacy_iss.to_vote_rows([_iss_row(rec, vote)], SMAP, "iss")

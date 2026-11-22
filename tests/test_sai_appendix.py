@@ -6,6 +6,8 @@ found cleanly records NOTHING (a wrong section is a false data point)."""
 
 from __future__ import annotations
 
+import hashlib
+
 import pytest
 
 from glasshouse import ledger
@@ -348,15 +350,78 @@ def test_page_sequence_needs_a_long_run_so_a_short_run_of_real_numbers_is_kept()
     assert "10 11 12" in sai.extract_section(doc(body), START, END, page_sequence=True)
 
 
-def test_reviewed_outlier_accession_is_recorded(conn, caplog):
-    """A human-checked edition that is genuinely much shorter (Voya May 2026) is listed
-    in the label's `accepted_outliers`; it is recorded, and only that accession."""
+def _sha(section):
+    return hashlib.sha256("".join(section.split()).encode()).hexdigest()
+
+
+def _outlier_batch():
     fs = [_filing(str(i), f"2024-0{i}-01", doc(BODY + f" Amendment number {i}."))
           for i in range(1, 4)]
     fs.append(_filing("big", "2025-01-01", doc(BODY * 10)))
     fs.append(_filing("big2", "2025-02-01", doc(BODY * 11)))
+    return fs
+
+
+def _big_sha():
+    return _sha(sai.extract_section(doc(BODY * 10), START, END))
+
+
+def test_reviewed_outlier_accession_is_recorded(conn, caplog):
+    """A human-checked edition that is genuinely much shorter (Voya May 2026) is listed
+    in the label's `accepted_outliers` with the reviewed section's sha256; it is recorded,
+    and only that accession; the acceptance is logged as a capture attempt."""
     with caplog.at_level("INFO"):
-        sai.ingest_filings(conn, "wel", "wel-sai", fs, START, END, accepted_outliers={"big"})
+        sai.ingest_filings(conn, "wel", "wel-sai", _outlier_batch(), START, END,
+                           accepted_outliers=[{"accession": "big", "sha256": _big_sha()}])
     urls = {r[0] for r in conn.execute("SELECT url FROM commitments")}
     assert "https://sec/big.htm" in urls and "https://sec/big2.htm" not in urls
     assert "accepted" in caplog.text
+    row = conn.execute("SELECT url, outcome FROM capture_attempts WHERE outcome='accepted_outlier'"
+                       ).fetchall()
+    assert [tuple(r) for r in row] == [("https://sec/big.htm", "accepted_outlier")]
+
+
+def test_outlier_with_changed_text_is_not_accepted(conn):
+    """Acceptance is keyed on the reviewed text: a different section under the same
+    accession (or a stale sha) is held for review."""
+    flagged = []
+    sai.ingest_filings(conn, "wel", "wel-sai", _outlier_batch(), START, END, flagged=flagged,
+                       accepted_outliers=[{"accession": "big", "sha256": "0" * 64}])
+    assert "https://sec/big.htm" in flagged
+    urls = {r[0] for r in conn.execute("SELECT url FROM commitments")}
+    assert "https://sec/big.htm" not in urls
+    assert conn.execute("SELECT COUNT(*) FROM capture_attempts WHERE outcome='accepted_outlier'"
+                        ).fetchone()[0] == 0
+
+
+def test_bare_accession_string_is_not_accepted(conn):
+    flagged = []
+    sai.ingest_filings(conn, "wel", "wel-sai", _outlier_batch(), START, END, flagged=flagged,
+                       accepted_outliers=["big"])
+    assert "https://sec/big.htm" in flagged
+
+
+def test_accepted_outlier_attempt_outcome_migrates(tmp_path):
+    p = tmp_path / "old.db"
+    c = ledger.connect(p)
+    c.execute("ALTER TABLE capture_attempts RENAME TO ca_old")
+    c.execute("CREATE TABLE capture_attempts (id INTEGER PRIMARY KEY, institution_id TEXT NOT NULL,"
+              " doc_label TEXT NOT NULL, url TEXT NOT NULL, attempted_at TEXT NOT NULL,"
+              " outcome TEXT NOT NULL CHECK (outcome IN "
+              "('new_version','unchanged','failed','needs_review')), detail TEXT NOT NULL DEFAULT '')")
+    c.commit()
+    c.close()
+    c = ledger.connect(p)
+    sai.cm.log_attempt(c, "i", "l", "u", "accepted_outlier", "d")
+    assert c.execute("SELECT outcome FROM capture_attempts").fetchone()[0] == "accepted_outlier"
+
+
+def test_voya_config_entry_has_reviewed_sha():
+    from pathlib import Path
+
+    import yaml
+    cfg = yaml.safe_load((Path(__file__).parents[1] / "config" / "institutions.yaml").read_text())
+    for inst in cfg["institutions"].values() if "institutions" in cfg else cfg.values():
+        for d in (inst or {}).get("commitments") or []:
+            for a in (d.get("sai_appendix") or {}).get("accepted_outliers") or []:
+                assert isinstance(a, dict) and a["accession"] and len(a["sha256"]) == 64

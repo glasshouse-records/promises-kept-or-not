@@ -216,7 +216,7 @@ def test_the_vocabulary_tables_cover_the_parsers_closed_vocabulary_exactly():
 
 def test_to_vote_rows_maps_every_field():
     (v,), info = _rows(FUND, [MGMT])
-    assert v == {"issuer_name": "ACME CORP", "cusip": "123456789", "isin": None,
+    assert v == {"issuer_name": "ACME CORP", "cusip": "", "isin": "",  # was "123456789"/None: invalid check digit
                  "meeting_date": "01/25/2023", "vote_description": "Proposal number 1",
                  "category_type": "", "vote_source": "ISSUER", "shares_on_loan": None,
                  "vote_series": SID, "how_voted": "FOR", "shares_voted": None,
@@ -482,7 +482,7 @@ def test_html_vote_mapping_is_upper_case_and_text_rows_keep_theirs():
     assert st["disagreement_rate"] == 0 and len(rows) == 3
     out, info = legacy_iss.to_vote_rows(rows, {legacy_pe._norm(FUND): SID}, "iss_html")
     assert [r["how_voted"] for r in out] == ["FOR", "ABSTAIN", "WITHHOLD"]
-    assert [r["management_recommendation"] for r in out] == ["FOR", "", "FOR"]
+    assert [r["management_recommendation"] for r in out] == ["FOR", "AGAINST", "FOR"]   # middle row was "": rec Against, vote ABSTAIN
     assert {r["legacy_format"] for r in out} == {"iss_html"} and info["dropped_vote"] == 0
 
 

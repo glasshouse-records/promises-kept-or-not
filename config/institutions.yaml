@@ -6538,7 +6538,10 @@ institutions:
           page_sequence: true
           # Reviewed 2026-11-21/22: the May 2026 edition is genuinely ~23 kB against ~86 kB
           # (correct start/end markers; ends "Appendix A: Sub-Adviser-Voted Funds None").
-          accepted_outliers: ["0000837276-26-000070"]
+          # sha256 = version identity of the reviewed section (commitments id 676 text_sha256).
+          accepted_outliers:
+            - accession: "0000837276-26-000070"
+              sha256: "49f5e346e75115ad63ef7f8fbc34c7c7f7a6f2d9fd2f1dae7bfa1975e15b3d5f"
           strip_patterns:
             - '(?<![A-Za-z])B-\s?\d{1,2}(?![\d-])'
   new_york_life:
