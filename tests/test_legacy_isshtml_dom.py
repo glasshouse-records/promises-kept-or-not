@@ -135,3 +135,21 @@ def test_ab_variant_style_centred_funds_and_two_tr_meeting_block():
     assert not any("FORM" in r["fund_heading"] for r in rows)
     stats = m.parse_stats(text)
     assert stats["reasons"] == {} and stats["bad_meetings"] == 0 and stats["meetings"] == 2
+
+
+def test_end_of_report_resets_fund():
+    text = load("end_report")
+    rows = m.parse(text)
+    assert [(r["fund_heading"], r["issuer_name"]) for r in rows] == [
+        ("First Fund", "FIRSTCO INC"), ("Second Fund", "SECONDCO INC")]
+    assert m.parse_stats(text)["reasons"].get("no_fund") == 1
+    assert m.parse_stats(text)["funds"] == 2
+
+
+def test_signature_ends_fund_and_cover_lines_excluded():
+    for end in ("SIGNATURES", "Signature"):
+        t = ("<p align='center'>F</p><p>" + end + "</p><table><tr><td colspan='5'>X<br>"
+             "Meeting Date: MAY 1, 2023</td></tr></table>")
+        assert m.parse_stats(t)["funds"] == 1
+    t = "<p align='center'>Date of reporting period: x</p><p align='center'>The Registrant Inc</p>"
+    assert m.parse_stats(t)["funds"] == 0
