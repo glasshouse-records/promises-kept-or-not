@@ -216,18 +216,18 @@ def _vote(conn, legacy_format):
 
 def test_diff_new_votes_exclude_quarantined_legacy_rows(conn):
     _vote(conn, None)
-    _vote(conn, "iss_text")
+    _vote(conn, "iss_future")
     assert diff.compute(conn).new_votes == 1            # no prior run
     diff.record_run(conn)
     _vote(conn, None)
-    _vote(conn, "iss_text")
+    _vote(conn, "iss_future")
     assert diff.compute(conn).new_votes == 1
 
 
 def test_dedupe_command_total_excludes_quarantined_legacy_rows(conn, monkeypatch, capsys):
     from glasshouse import cli
     _vote(conn, None)
-    _vote(conn, "iss_text")
+    _vote(conn, "iss_future")
     monkeypatch.setattr(cli, "_conn", lambda: conn)
     cli.cmd_dedupe(None)
     assert " of 1 " in capsys.readouterr().out

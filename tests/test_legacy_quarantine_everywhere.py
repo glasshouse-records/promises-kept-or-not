@@ -1,7 +1,8 @@
-"""Legacy votes (vote_source 'legacy_html' / legacy_format set) must be invisible to every
+"""Unpromoted legacy votes (vote_source 'legacy_html', or a legacy_format outside
+ledger.PROMOTED_LEGACY_FORMATS) must be invisible to every
 analysis, site, metric, newsroom, MCP and triage read of the votes table.
 
-(a) behavioural: a seeded ledger with one XML vote and one 'proxyedge' vote;
+(a) behavioural: a seeded ledger with one XML vote and one unpromoted-format vote;
 (b) static: every SQL string in src/ reading FROM/JOIN votes carries the predicate
     unless it is on the explicit allowlist below."""
 from __future__ import annotations
@@ -20,7 +21,7 @@ def _seed(tmp_path):
     c.execute("INSERT INTO institutions (id, display_name) VALUES ('x','X')")
     c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
               "retrieval_date) VALUES ('A','1','x','N-PX','u','2026-01-01')")
-    for how, fmt in (("FOR", None), ("AGAINST", "proxyedge")):
+    for how, fmt in (("FOR", None), ("AGAINST", "future_fmt")):
         c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date, vote_description, "
                   "how_voted, shares_voted, vote_source, legacy_format, is_duplicate) "
                   "VALUES ('A','Acme','C1','06/30/2025','Climate report',?,100,?,?,0)",
@@ -32,7 +33,32 @@ def _seed(tmp_path):
 def test_helper_alias_and_constant_agree():
     assert ledger.non_legacy_vote_sql() == ledger.NON_LEGACY_VOTE_SQL
     assert ledger.non_legacy_vote_sql("v") == (
-        "IFNULL(v.vote_source,'') != 'legacy_html' AND v.legacy_format IS NULL")
+        "IFNULL(v.vote_source,'') != 'legacy_html' AND "
+        "(v.legacy_format IS NULL OR v.legacy_format IN ('proxyedge','iss_text','iss_html'))")
+
+
+def test_promoted_formats_constant():
+    assert ledger.PROMOTED_LEGACY_FORMATS == ("proxyedge", "iss_text", "iss_html")
+
+
+def _count(c):
+    return c.execute(f"SELECT COUNT(*) FROM votes WHERE {ledger.NON_LEGACY_VOTE_SQL}").fetchone()[0]
+
+
+def test_unpromoted_stay_out_promoted_get_in(tmp_path):
+    c = _seed(tmp_path)  # one XML + one unpromoted 'future_fmt'
+    assert _count(c) == 1
+    c.execute("INSERT INTO votes (accession, issuer_name, how_voted, legacy_format, is_duplicate)"
+              " VALUES ('A','Z','FOR','proxyedge',0)")
+    assert _count(c) == 2
+    for fmt, src in (("future_fmt", "legacy_text"), (None, "legacy_html"), ("iss_text", "legacy_html")):
+        c.execute("INSERT INTO votes (accession, issuer_name, how_voted, vote_source, legacy_format,"
+                  " is_duplicate) VALUES ('A','Z','FOR',?,?,0)", (src, fmt))
+    c.commit()
+    assert _count(c) == 2   # unknown format, legacy_html (any format) stay quarantined
+    c.execute("INSERT INTO votes (accession, issuer_name, how_voted, legacy_format, is_duplicate)"
+              " VALUES ('A','Z','FOR','iss_html',0)")
+    assert _count(c) == 3
 
 
 def test_vote_divergence_ignores_legacy(tmp_path):
@@ -60,7 +86,7 @@ def test_metrics_with_votes_ignores_legacy_only_institution(tmp_path):
     c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
               "retrieval_date) VALUES ('A','1','x','N-PX','u','2026-01-01')")
     c.execute("INSERT INTO votes (accession, issuer_name, how_voted, legacy_format, is_duplicate) "
-              "VALUES ('A','Acme','FOR','proxyedge',0)")
+              "VALUES ('A','Acme','FOR','future_fmt',0)")
     c.commit()
     assert metrics.compute(c)["raw"]["with_votes"] == 0
 
@@ -84,7 +110,7 @@ ALLOW = [
     ("ingest/npx.py", "DELETE FROM votes"),                   # re-ingest replaces own accession
     ("ingest/legacy_pe.py", "DELETE FROM votes"),             # re-ingest of legacy rows
 ]
-PRED = re.compile(r"NON_LEGACY_VOTE_SQL|non_legacy_vote_sql|legacy_format")
+PRED = re.compile(r"NON_LEGACY_VOTE_SQL|non_legacy_vote_sql|legacy_format|PROMOTED_LEGACY")
 READ = re.compile(r"\b(FROM|JOIN)\s+votes\b", re.I)
 SQLISH = re.compile(r"\b(SELECT|DELETE)\b")
 

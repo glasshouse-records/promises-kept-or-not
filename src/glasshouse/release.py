@@ -91,6 +91,10 @@ class StaleEngineError(RuntimeError):
     """The engine index does not describe the current ledger (or is missing)."""
 
 
+class PromotionBlockedError(StaleEngineError):
+    """Promoted legacy votes are stale or inconsistent: refuse to release them."""
+
+
 def _emit_rows(name: str, cols: list[str], rows_fn, n: int, facts: Path,
                with_parquet: bool) -> tuple[str, str | None]:
     """Write a table that is not a plain ledger table (config- or engine-derived).
@@ -163,15 +167,15 @@ POLICY_VERSIONS_COLS = ["commitment_id", "institution", "doc_label", "adviser_ke
 PROPOSAL_COLS = ["proposal_id", "institution_id", "issuer_name", "cusip", "meeting_date",
                  "year", "description", "category", "mgmt_rec", "position", "n_lines",
                  "n_for", "n_against", "n_other", "themes", "oppositional", "ballot_key",
-                 "adviser_key", "accession", "source_url", "vote_id"]
+                 "adviser_key", "accession", "source_url", "vote_id", "weight_basis"]
 DIRECTOR_COLS = ["director_id", "institution_id", "issuer_name", "cusip", "meeting_date",
                  "year", "nominee_item", "position", "n_lines", "n_for", "n_against",
                  "n_other", "meeting_key", "adviser_key", "accession", "source_url",
-                 "vote_id", "isin_country"]
+                 "vote_id", "isin_country", "weight_basis"]
 PAY_COLS = ["pay_id", "institution_id", "issuer_name", "cusip", "meeting_date", "year",
             "description", "kind", "position", "n_lines", "n_for", "n_against", "n_other",
             "meeting_key", "adviser_key", "accession", "source_url", "vote_id",
-            "isin_country"]
+            "isin_country", "weight_basis"]
 
 # Verbatim excerpts of METHODOLOGY.md ("The evidence engine"); tests pin that each
 # is still a substring of it (whitespace-collapsed), so this text cannot drift.
@@ -258,6 +262,11 @@ NEW_TABLES: dict[str, dict] = {
                        "advisers; 'unlabelled' = no adviser on record; UNRESOLVED / EXTERNAL / "
                        "UNDATED are never comparable with any policy",
         "accession": "→ filings.accession", "source_url": "EDGAR source",
+        "weight_basis": "how `position` was weighted: 'shares' = by shares_voted; 'lines' = by "
+                        "line count, the 2022-23 legacy era (those filings print no share counts); "
+                        "'xml-no-shares' = XML lines that filed no share counts, also by line count. Line-weighted and share-weighted positions are not comparable "
+                        "in rates across periods; legacy and XML lines are never pooled into "
+                        "one decision",
         "vote_id": "→ votes.id of a representative line"},
     "director_decisions": {"_": "DERIVED. One row per management director-nominee item "
         "(`vote_source = ISSUER`, category DIRECTOR ELECTIONS) per manager and adviser, "
@@ -272,6 +281,11 @@ NEW_TABLES: dict[str, dict] = {
         "n_other": "lines ABSTAIN or with another code", "meeting_key": "same meeting across managers (CUSIP|date)",
         "adviser_key": "voting adviser group; same semantics as proposal_decisions",
         "accession": "→ filings.accession", "source_url": "EDGAR source",
+        "weight_basis": "how `position` was weighted: 'shares' = by shares_voted; 'lines' = by "
+                        "line count, the 2022-23 legacy era (those filings print no share counts); "
+                        "'xml-no-shares' = XML lines that filed no share counts, also by line count. Line-weighted and share-weighted positions are not comparable "
+                        "in rates across periods; legacy and XML lines are never pooled into "
+                        "one decision",
         "vote_id": "→ votes.id of a representative line",
         "isin_country": "country that ISSUED the ISIN (not where the company is run); "
                         "NULL if none, malformed or lines disagree"},
@@ -295,6 +309,11 @@ NEW_TABLES: dict[str, dict] = {
         "meeting_key": "same meeting across managers (CUSIP|date)",
         "adviser_key": "voting adviser group; same semantics as proposal_decisions",
         "accession": "→ filings.accession", "source_url": "EDGAR source",
+        "weight_basis": "how `position` was weighted: 'shares' = by shares_voted; 'lines' = by "
+                        "line count, the 2022-23 legacy era (those filings print no share counts); "
+                        "'xml-no-shares' = XML lines that filed no share counts, also by line count. Line-weighted and share-weighted positions are not comparable "
+                        "in rates across periods; legacy and XML lines are never pooled into "
+                        "one decision",
         "vote_id": "→ votes.id of a representative line",
         "isin_country": "country that ISSUED the ISIN (not where the company is run); "
                         "NULL if none, malformed or lines disagree"},
@@ -486,9 +505,10 @@ denominator and counts SPLIT and NONE only in its `items` column.
 
 N-PX field voteSource: `ISSUER` (item put on the ballot by the issuer) or `SECURITY HOLDER`
 (shareholder-sponsored proposal). Empty where the filer left it blank. `legacy_html` is a
-Glasshouse tag for pre-2024 votes parsed from HTML (and `votes.legacy_format = 'proxyedge'`
-marks 2022-23 votes parsed from ProxyEdge text filings); those votes are not validated and are
-NOT in this release.
+Glasshouse tag for pre-2024 votes parsed by a single HTML parser; those votes are not
+validated and are NOT in this release. Votes with `votes.legacy_format` set (`proxyedge`,
+`iss_text`, `iss_html`) are 2022-23 text filings read by two agreeing parsers and ARE in this
+release (see `votes.legacy_format`).
 
 ### Kinds of vote (`COVERAGE.json` `vote_kinds`, `votes_by_kind`)
 
@@ -622,6 +642,9 @@ def build_release(conn: sqlite3.Connection, root: Path | str | None = None,
     root = Path(root) if root else RELEASES_DIR
     # Everything that can refuse does so BEFORE the old bundle dir is removed.
     # Duplicate flags first: they concern the facts themselves, need no engine.
+    blockers = ledger.promotion_blockers(conn)
+    if blockers:
+        raise PromotionBlockedError("legacy promotion refused: " + "; ".join(blockers))
     stale_dupes = ledger.duplicate_flags_stale(conn)
     if stale_dupes:
         raise StaleEngineError(stale_dupes)

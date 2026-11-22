@@ -336,7 +336,7 @@ def test_from_sources_returns_none_for_a_non_iss_filing(conn, monkeypatch):
 
 # -- quarantine --------------------------------------------------------------
 
-def test_rows_are_excluded_by_the_shared_predicate_and_xml_rows_pass(conn):
+def test_promoted_rows_pass_the_shared_predicate_and_unpromoted_are_excluded(conn):
     _ingest(conn)
     conn.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
                  "retrieval_date) VALUES ('XML','1','vg','N-PX','u','2026-01-01')")
@@ -345,12 +345,16 @@ def test_rows_are_excluded_by_the_shared_predicate_and_xml_rows_pass(conn):
     conn.commit()
     ledger.dedupe_votes(conn)
     assert conn.execute("SELECT COUNT(*) FROM votes").fetchone()[0] == 22
+    live_iss = conn.execute("SELECT COUNT(*) FROM votes WHERE legacy_format='iss_text' "
+                            "AND is_duplicate=0").fetchone()[0]
+    assert live_iss > 0
     assert conn.execute(
         f"SELECT COUNT(*) FROM votes WHERE is_duplicate=0 AND {ledger.NON_LEGACY_VOTE_SQL}"
-    ).fetchone()[0] == 1
+    ).fetchone()[0] == 1 + live_iss          # iss_text is promoted
+    conn.execute("UPDATE votes SET legacy_format='iss_future' WHERE legacy_format='iss_text'")
     assert conn.execute(
-        "SELECT COUNT(*) FROM votes WHERE legacy_format='iss_text' AND "
-        f"{ledger.NON_LEGACY_VOTE_SQL}").fetchone()[0] == 0
+        f"SELECT COUNT(*) FROM votes WHERE is_duplicate=0 AND {ledger.NON_LEGACY_VOTE_SQL}"
+    ).fetchone()[0] == 1                     # an unpromoted format is not
 
 
 # -- ingest_npx dispatch -----------------------------------------------------
@@ -520,10 +524,10 @@ def test_html_contest_rows_are_dropped(conn):
     assert conn.execute("SELECT report_type FROM filings").fetchone()[0] == "LEGACY_ISSHTML"
 
 
-def test_html_rows_are_quarantined(conn):
+def test_html_rows_are_promoted(conn):
     _html_ingest(conn)
     assert conn.execute(f"SELECT COUNT(*) FROM votes WHERE {ledger.NON_LEGACY_VOTE_SQL}"
-                        ).fetchone()[0] == 0
+                        ).fetchone()[0] == 3
     assert conn.execute("SELECT COUNT(*) FROM votes WHERE legacy_format='iss_html'"
                         ).fetchone()[0] == 3
 

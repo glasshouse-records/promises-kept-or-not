@@ -13,7 +13,7 @@ For each institution it connects:
 expressed as an **against-rate** with the top cited examples. It reuses the
 precision guards from contradictions.py (polarity: an AGAINST vote on an
 ANTI-theme proposal is NOT counted; commitment scoring/discretion) so the
-numbers are defensible. Legacy (unvalidated) votes are excluded, matching the
+numbers are defensible. Unpromoted legacy votes are excluded, matching the
 public release.
 
 Output is evidence for a human/agent to turn into a finding — never an
@@ -568,7 +568,7 @@ def evidence_pack(rec: ThemeRecord, *, hypothesis: str = "") -> str:
                          f"{shares_phrase(e['shares_voted'])} | {desc} | [{e['accession']}]({src}) |")
     lines += [
         "", "## Method & caveats",
-        "- Votes are SEC N-PX, de-duplicated (`is_duplicate = 0`); unvalidated "
+        "- Votes are SEC N-PX, de-duplicated (`is_duplicate = 0`); unpromoted "
         "legacy-parsed votes are excluded.",
         "- Proposals working *against* the theme (anti-ESG/anti-DEI) are excluded by a "
         "polarity guard, so an AGAINST vote here means voting against advancing the theme.",

@@ -70,8 +70,11 @@ CREATE TABLE proposals (
     oppositional   INTEGER NOT NULL DEFAULT 0, -- asks to ROLL BACK the theme
     ballot_key     TEXT,            -- same proposal across managers
     accession      TEXT, source_url TEXT, vote_id INTEGER,
-    adviser        TEXT             -- voting adviser key; NULL unless the institution has
+    adviser        TEXT,            -- voting adviser key; NULL unless the institution has
                                     -- 2+ known advisers (then 'unlabelled' = no adviser on record)
+    weight_basis   TEXT             -- 'lines' = 2022-23 legacy era (no share counts filed; the
+                                    -- position counts lines) | 'shares' = XML, share-weighted |
+                                    -- 'xml-no-shares' = XML whose lines filed no share counts
 );
 CREATE INDEX ix_p_inst ON proposals(institution_id, year);
 CREATE INDEX ix_p_ballot ON proposals(ballot_key);
@@ -89,7 +92,8 @@ CREATE TABLE director_votes (
     accession      TEXT, source_url TEXT, vote_id INTEGER,
     isin_country   TEXT,            -- country that ISSUED the ISIN (not where the company
                                     -- is run); NULL if none, malformed or lines disagree
-    adviser        TEXT             -- as proposals.adviser
+    adviser        TEXT,            -- as proposals.adviser
+    weight_basis   TEXT             -- as proposals.weight_basis
 );
 CREATE TABLE pay_votes (          -- say-on-pay: management's SECTION 14A items
     pay_id         INTEGER PRIMARY KEY,
@@ -103,7 +107,8 @@ CREATE TABLE pay_votes (          -- say-on-pay: management's SECTION 14A items
     meeting_key    TEXT,
     accession      TEXT, source_url TEXT, vote_id INTEGER,
     isin_country   TEXT,
-    adviser        TEXT             -- as proposals.adviser
+    adviser        TEXT,            -- as proposals.adviser
+    weight_basis   TEXT             -- as proposals.weight_basis
 );
 CREATE INDEX ix_pay_inst ON pay_votes(institution_id, year);
 CREATE INDEX ix_pay_country ON pay_votes(isin_country);
@@ -181,6 +186,12 @@ def _ballot_key(cusip: str, issuer: str, date: str, desc: str) -> str:
     return f"{who}|{date}|{' '.join(sorted(set(toks))[:14])}"
 
 
+MIXED_BASIS = "MIXED WEIGHT BASIS"
+LEGACY_UNCATEGORISED = (
+    "The 2022-23 season (meetings before 2023-07-01) is read from text filings that print no "
+    "N-PX category, so those meetings are not categorised and cannot appear in this tool: "
+    "its 2022 and 2023 figures undercount or omit that season, and a year-to-year change "
+    "that crosses 2023-07-01 reflects coverage, not behaviour.")
 SPLIT_FLOOR = 0.05    # the minority side must carry at least this share to be a split
 
 
@@ -462,29 +473,37 @@ def _grouped(led: sqlite3.Connection, which: str,
     institutions. For those the resolved key (by registrant, fund series and
     meeting date) is part of the group key, so lines voted by different advisers
     (under different policies) are never aggregated into one decision. Every
-    other institution groups exactly as it always did."""
+    other institution groups exactly as it always did.
+
+    Lines are read in ledger id order, so group ids are deterministic. Promoted 2022-23
+    legacy lines (`legacy_format` set: line-weighted, no share counts) never share a group
+    with XML lines: the era is part of the group key. Each group records `weight_basis`."""
     iso = iso_meeting_date("v.meeting_date")
     groups: dict[tuple, dict] = {}
     legacy: dict[tuple, list] = {}   # the pre-adviser group key -> advisers seen
     for v in led.execute(
         f"""SELECT v.id, f.institution_id AS iid, v.issuer_name, v.cusip, v.isin, {iso} AS md,
                    v.vote_description AS d, v.category_type, v.how_voted, v.shares_voted,
-                   v.management_recommendation AS mr, v.accession, f.source_url, f.cik AS fcik, v.vote_series AS vseries
+                   v.management_recommendation AS mr, v.accession, f.source_url, f.cik AS fcik,
+                   v.vote_series AS vseries, (v.legacy_format IS NOT NULL) AS is_legacy
             FROM votes v JOIN filings f ON f.accession = v.accession
             WHERE v.is_duplicate = 0 AND {which} AND {NON_LEGACY_VOTE_SQL}
-              AND f.institution_id IS NOT NULL"""):
+              AND f.institution_id IS NOT NULL
+            ORDER BY v.id"""):
         adv = None
         if resolvers and v["iid"] in resolvers:
             adv = resolve_key(resolvers[v["iid"]].get(_norm_cik(v["fcik"])),
                               v["vseries"], v["md"]) or UNLABELLED
+        era = "legacy" if v["is_legacy"] else "xml"
         key = (v["iid"], adv, (v["cusip"] or "").strip().upper() or v["issuer_name"], v["md"],
-               norm(v["d"]))
+               norm(v["d"]), era)
         g = groups.get(key)
         if g is None:
-            lk = (v["iid"], key[2], key[3], key[4])
+            lk = (v["iid"], key[2], key[3], key[4], era)
             seen_adv = legacy.setdefault(lk, [])
             seen_adv.append(adv)
-            g = groups[key] = {"row": v, "adviser": adv, "extra": len(seen_adv) > 1, "isins": set(), "for": 0, "against": 0, "abstain": 0, "other": 0,
+            g = groups[key] = {"row": v, "adviser": adv, "era": era,
+                               "extra": len(seen_adv) > 1, "isins": set(), "for": 0, "against": 0, "abstain": 0, "other": 0,
                                "n": 0, "with_m": 0, "against_m": 0, "sf": 0.0, "sa": 0.0, "freq": 0}
         # N-PX's "management recommendation" element records whether THIS vote
         # went with (FOR) or against (AGAINST) management — not what management
@@ -515,10 +534,13 @@ def _ids(groups: dict[tuple, dict]) -> list[tuple[int, dict]]:
     """(id, group) pairs. A group that merely splits an older pooled group by
     adviser is numbered after all the others, so every id outside the
     multi-adviser institutions is the one earlier builds gave it: drafts in
-    flight cite these ids."""
-    first = [g for g in groups.values() if not g["extra"]]
-    extra = [g for g in groups.values() if g["extra"]]
-    return list(enumerate(first + extra, 1))
+    flight cite these ids. Groups of the 2022-23 legacy era come after all XML groups,
+    so adding legacy lines never renumbers an XML group."""
+    order = []
+    for era in ("xml", "legacy"):     # legacy groups are numbered after every XML group
+        mine = [g for g in groups.values() if g["era"] == era]
+        order += [g for g in mine if not g["extra"]] + [g for g in mine if g["extra"]]
+    return list(enumerate(order, 1))
 
 
 def _multi_group(led: sqlite3.Connection, rules: dict, doc_rules: dict) -> dict[str, set]:
@@ -555,6 +577,15 @@ def _multi_group(led: sqlite3.Connection, rules: dict, doc_rules: dict) -> dict[
                 or (iid in unresolved and (reg_keys or doc_keys[iid]))):
             out[iid] = line_keys[iid] | doc_keys[iid] | ({UNLABELLED} if iid in unresolved else set())
     return out
+
+
+def _weight_basis(g: dict) -> str:
+    """'lines' for the 2022-23 legacy era (no share counts are ever filed there);
+    for XML, 'shares' when share counts weighted the position, else 'xml-no-shares'
+    (a pre-existing XML case, e.g. abstain-only, that must not read as legacy)."""
+    if g.get("era") == "legacy":
+        return "lines"
+    return "shares" if g["sf"] + g["sa"] > 0 else "xml-no-shares"
 
 
 def _position(g: dict) -> str:
@@ -638,9 +669,10 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
                      "," + ",".join(themes) + "," if themes else "",
                      int(is_rollback(desc)),
                      _ballot_key(v["cusip"], v["issuer_name"], md, desc),
-                     v["accession"], v["source_url"] or "", v["id"], g["adviser"]))
+                     v["accession"], v["source_url"] or "", v["id"], g["adviser"],
+                     _weight_basis(g)))
         fts.append((pid, desc, v["issuer_name"] or ""))
-    eng.executemany("INSERT INTO proposals VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
+    eng.executemany("INSERT INTO proposals VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
     eng.executemany("INSERT INTO proposal_fts(rowid, description, issuer_name) VALUES (?,?,?)", fts)
 
     # Management's director nominees: where board-composition policy is acted on.
@@ -656,8 +688,8 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
                       g["n"], g["for"], g["against"], g["abstain"] + g["other"],
                       f"{cusip}|{md}" if cusip and md else "",
                       v["accession"], v["source_url"] or "", v["id"],
-                      isin_country(g["isins"]), g["adviser"]))
-    eng.executemany("INSERT INTO director_votes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", drows)
+                      isin_country(g["isins"]), g["adviser"], _weight_basis(g)))
+    eng.executemany("INSERT INTO director_votes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", drows)
     del dgroups
 
     # Management's say-on-pay items (N-PX category SECTION 14A SAY-ON-PAY VOTES), so
@@ -675,8 +707,8 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
                       _position(g), g["n"], g["for"], g["against"], g["abstain"] + g["other"],
                       f"{cusip}|{md}" if cusip and md else "",
                       v["accession"], v["source_url"] or "", v["id"],
-                      isin_country(g["isins"]), g["adviser"]))
-    eng.executemany("INSERT INTO pay_votes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", prows)
+                      isin_country(g["isins"]), g["adviser"], _weight_basis(g)))
+    eng.executemany("INSERT INTO pay_votes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", prows)
     del pgroups
 
     # Policy text: one row per distinct TEXT version (earliest capture wins —
@@ -957,7 +989,7 @@ class Engine:
                 "company": r["issuer_name"], "cusip": r["cusip"],
                 "meeting_date": r["meeting_date"], "proposal": r["description"],
                 "category": r["category"], "voted_vs_management": r["mgmt_rec"],
-                "position": r["position"],
+                "position": r["position"], "weight_basis": r["weight_basis"],
                 "fund_lines": {"total": r["n_lines"], "for": r["n_for"],
                                "against": r["n_against"], "other": r["n_other"]},
                 "themes": [t for t in r["themes"].split(",") if t],
@@ -973,6 +1005,27 @@ class Engine:
         return {"proposals": sum(t.values()), "for": t["FOR"], "against": t["AGAINST"],
                 "split": t["SPLIT"], "abstain": t["ABSTAIN"], "none": t["NONE"],
                 "support_rate": round(t["FOR"] / decided, 4) if decided else None}
+
+    def _basis(self, table: str, alias: str, join: str, w: str, p: list) -> list[str]:
+        """A caveat when the rows an answer draws on mix weight bases: 2022-23 legacy
+        decisions are line-weighted (no share counts filed), July 2023+ are share-weighted.
+        A rate or year-to-year change across both compares unlike things. Empty otherwise."""
+        by_year: dict = defaultdict(dict)
+        for r in self.db.execute(
+                f"SELECT {alias}.year y, {alias}.weight_basis b, COUNT(*) n FROM {table} {alias} "
+                f"{join} WHERE {w} GROUP BY y, b", p):
+            by_year[r["y"]][r["b"]] = r["n"]
+        bases = {b for bs in by_year.values() for b in bs}
+        if "lines" not in bases or len(bases) < 2:   # only the legacy era mixes bases
+            return []
+        detail = "; ".join(f"{y}: " + ", ".join(f"{n} {b}-weighted" for b, n in sorted(bs.items()))
+                           for y, bs in sorted(by_year.items(), key=lambda kv: kv[0] or 0))
+        return [f"{MIXED_BASIS}: these results mix line-weighted decisions (2022-23 legacy "
+                "filings print no share counts: the position counts each fund line once) with "
+                f"share-weighted decisions (July 2023 onward) [{detail}]. Rates, positions and "
+                "year-to-year changes are NOT comparable across the two bases: a fund holding "
+                "one share counts like one holding a million. Compare within one basis, or "
+                "narrow with since=/until=."]
 
     # -- 1. orientation
     def coverage(self) -> dict:
@@ -1057,6 +1110,10 @@ class Engine:
                      "ingested — often a handful of a large complex. Use filers() before "
                      "writing 'X's funds'; say 'the funds on file'.",
                      "An institution with one policy version has no edit history.",
+                     "Meetings before 2023-07-01 come from 2022-23 legacy text filings: "
+                     "positions there are line-weighted (no share counts filed) and the "
+                     "items are not categorised, so director_record and pay_record omit "
+                     "that season. Each proposal carries `weight_basis`.",
                      *[f"POOLED ADVISERS: {p['institution']} has separately-voted funds "
                        f"({', '.join(p['advisers'])}); its totals pool them. See `by_adviser` "
                        "and pass adviser= to the vote tools."
@@ -1285,7 +1342,8 @@ class Engine:
                     {"matching": total,
                                                    "shown": [self._prop(r) for r in rows]},
                     ["SPLIT means the manager's own funds voted both ways on the same item.",
-                     *self._pooled(institution, adviser)])
+                     *self._pooled(institution, adviser),
+                     *self._basis("proposals", "p", join, w, p)])
 
     def voting_record(self, institution: str, theme=None, query=None, company=None,
                       include_rollback=False, since=None, until=None, adviser=None) -> dict:
@@ -1314,6 +1372,7 @@ class Engine:
                      "against_management": {
                          "count": mr["agm"] or 0, "of": mr["decided"] or 0}},
                     [*self._pooled(institution, adviser),
+                     *self._basis("proposals", "p", join, w, p),
                      "Counts are proposals, not fund ballot lines.",
                      "Position is share-weighted: SPLIT means the minority side carried at "
                      "least 5% of the shares voted. Use fund_votes() to see which funds.",
@@ -1371,7 +1430,7 @@ class Engine:
                                     institution=institution, adviser=adviser),
                     {"shared_proposals": len(shared), "candidate_proposals": len(by_ballot),
                      "managers": table},
-                    [*_ENTITY_NOTE,
+                    [*_ENTITY_NOTE, *self._basis("proposals", "p", join, w, p),
                      "Proposals are matched across managers by company, meeting date and "
                      "wording. Matching is strict, so some identical proposals go "
                      "unmatched; no two different proposals are merged.",
@@ -1431,6 +1490,8 @@ class Engine:
                         "in_force_until": None if until.startswith("9999") else until,
                         "window_days": days, "archive_gap": days > GAP_DAYS,
                         "said": said, "did": self._tally(did)})
+        jb, wb, pb = self._where(institution=iid, theme=theme,
+                                 query=None if theme else query, adviser=sc)
         uncovered = []
         if vers:
             first = min(v["captured"] for v in vers)
@@ -1447,6 +1508,7 @@ class Engine:
         return _env("say_vs_do", _clean(institution=iid, query=query, theme=theme,
                                         adviser=adviser), out,
                     [*self._notes(iid), *uncovered,
+                     *self._basis("proposals", "p", jb, wb, pb),
                      *[g for g in (_authored_gap(v) for v in vers) if g],
                      *([f"Scoped to adviser {sc}: only that adviser's policy documents and "
                         "only votes cast by its funds."] if sc else []),
@@ -1501,6 +1563,8 @@ class Engine:
         return _env("reversals", _clean(institution=institution, theme=theme, query=query,
                                         company=company, adviser=adviser), out,
                     [*self._pooled(institution, adviser),
+                     *self._basis("proposals", "p", join,
+                                  w + " AND p.position IN ('FOR','AGAINST')", p),
                      "Matched on company and the proposal title's significant words. The "
                      "two proposals can differ in substance or sponsor behind a similar "
                      "title, and the company may have changed what it discloses: read "
@@ -1635,7 +1699,8 @@ class Engine:
         "Counts are ballot items as each filer worded them; a slate voted as one "
         "item counts once. Non-US meetings are included: narrow with country= "
         "(US, US,CA or non-US) or company=.",
-        "Year-to-year change can reflect which companies the funds held."]
+        "Year-to-year change can reflect which companies the funds held.",
+        LEGACY_UNCATEGORISED]
 
     def _dtotal(self, w: str, p: list, table="director_votes") -> dict:
         years = self._dyears(w, p, table)
@@ -1679,6 +1744,7 @@ class Engine:
                "by_year": {y: self._dtally(t) for y, t in
                            sorted(years.items(), key=lambda kv: kv[0] or 0)}}
         caveats = [*self._pooled(institution, adviser), *self._DIRECTOR_CAVEATS,
+                   *self._basis("director_votes", "d", "", w, p),
                    *self._coding_shift({y: (t["ABSTAIN"], t["AGAINST"] + t["ABSTAIN"])
                                         for y, t in years.items()})]
         if country is None:
@@ -1711,7 +1777,8 @@ class Engine:
         "only as `frequency_items`.",
         "The record never says WHY pay was opposed. Year-to-year change can reflect which "
         "companies the funds held. Non-US meetings are included: narrow with country= "
-        "(US, US,CA or non-US) or company=."]
+        "(US, US,CA or non-US) or company=.",
+        LEGACY_UNCATEGORISED]
 
     def pay_record(self, institution: str, company=None, year=None, since=None, until=None,
                    country=None, adviser=None) -> dict:
@@ -1736,6 +1803,7 @@ class Engine:
                            sorted(years.items(), key=lambda kv: kv[0] or 0)},
                "frequency_items": nfreq}
         caveats = [*self._pooled(institution, adviser), *self._PAY_CAVEATS,
+                   *self._basis("pay_votes", "d", "", wa, p),
                    *self._coding_shift({y: (t["ABSTAIN"], t["AGAINST"] + t["ABSTAIN"])
                                         for y, t in years.items()})]
         if country is not None:
@@ -1762,12 +1830,13 @@ class Engine:
                       "adviser": r["adviser"],
                       "company": r["issuer_name"], "cusip": r["cusip"],
                       "meeting_date": r["meeting_date"], "nominee_item": r["nominee_item"],
-                      "position": r["position"],
+                      "position": r["position"], "weight_basis": r["weight_basis"],
                       "fund_lines": {"total": r["n_lines"], "for": r["n_for"],
                                      "against": r["n_against"], "other": r["n_other"]},
                       "accession": r["accession"], "source_url": r["source_url"]}
                      for r in rows],
                     [*self._pooled(institution, adviser), *self._DIRECTOR_CAVEATS,
+                     *self._basis("director_votes", "d", "", w, p),
                      f"At most {limit} rows; raise limit= for more.",
                      *self._dexcluded(country, institution=institution, company=company,
                                       year=year, since=since, until=until,
@@ -1818,7 +1887,7 @@ class Engine:
                                              adviser=adviser),
                     {"shared_meetings": len(shared), "candidate_meetings": len(per),
                      "managers": table},
-                    [*_ENTITY_NOTE,
+                    [*_ENTITY_NOTE, *self._basis("director_votes", "d", "", w, p),
                      "Meetings are matched by CUSIP and meeting date. Nominee items are "
                      "NOT matched one-to-one: filers word them differently, and one may "
                      "file a slate as a single item, so compare "
@@ -1876,8 +1945,9 @@ class Engine:
         ns_first = {c for c in panel if per[0][c][1] + per[0][c][2]}
         ns_last = {c for c in panel if per[-1][c][1] + per[-1][c][2]}
         excluded = []
+        ors_w = " OR ".join("d.meeting_date BETWEEN ? AND ?" for _ in spans)
         if country is not None:
-            ors = " OR ".join("d.meeting_date BETWEEN ? AND ?" for _ in spans)
+            ors = ors_w
             n = self.db.execute(
                 "SELECT COUNT(*) FROM director_votes d WHERE d.institution_id=? AND "
                 f"d.cusip != '' AND d.isin_country IS NULL AND ({ors}){aw}",
@@ -1897,6 +1967,9 @@ class Engine:
                      "non_support_in_first_only": len(ns_first - ns_last),
                      "non_support_in_last_only": len(ns_last - ns_first)},
                     [*self._pooled(institution, adviser),
+                     *self._basis("director_votes", "d", "",
+                                  f"d.institution_id=? AND d.cusip != ''{cw}{aw} AND ({ors_w})",
+                                  [iid, *cp, *ap, *[x for span in spans for x in span]]),
                      *self._coding_shift({f"{x['since']}:{x['until']}":
                                           (x["abstain"], x["not_supported"]) for x in out}),
                      "Companies are matched by CUSIP; a company that changed CUSIP or "

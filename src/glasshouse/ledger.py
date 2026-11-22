@@ -27,16 +27,24 @@ DB_PATH = DATA_DIR / "glasshouse.db"
 # was 2025-06-30, so published coverage bounds were wrong and every
 # "most recent evidence" LIMIT picked the wrong rows. Sort on this instead.
 # The GLOB guard passes any value already in ISO through untouched.
-# Legacy votes (HTML-parsed `legacy_html`, ProxyEdge text `legacy_format`) are not yet
-# validated for release or analysis. ONE predicate, used everywhere votes ship or are
-# analysed; unqualified so it works with or without a `v.` alias (filings has neither column).
-NON_LEGACY_VOTE_SQL = "IFNULL(vote_source,'') != 'legacy_html' AND legacy_format IS NULL"
+# The release/analysis boundary for votes. Excluded: single-parser `legacy_html` rows
+# (LEGACY_PARSED; a different management_recommendation meaning) and any legacy_format NOT in
+# PROMOTED_LEGACY_FORMATS (an unknown future format stays out until promoted here). Included:
+# XML votes (legacy_format NULL) and the 2022-23 text-filing rows each read by two agreeing
+# parsers. The name is historical; the predicate is "nothing unpromoted leaks". ONE predicate,
+# used everywhere votes ship or are analysed; unqualified so it works with or without a `v.`
+# alias (filings has neither column).
+PROMOTED_LEGACY_FORMATS = ("proxyedge", "iss_text", "iss_html")
+_PROMOTED_SQL = ",".join(f"'{f}'" for f in PROMOTED_LEGACY_FORMATS)
+NON_LEGACY_VOTE_SQL = (f"IFNULL(vote_source,'') != 'legacy_html' AND "
+                       f"(legacy_format IS NULL OR legacy_format IN ({_PROMOTED_SQL}))")
 
 
 def non_legacy_vote_sql(alias: str = "") -> str:
-    """NON_LEGACY_VOTE_SQL qualified with a table alias (e.g. "v")."""
+    """NON_LEGACY_VOTE_SQL (XML + promoted two-parser legacy rows) qualified with an alias."""
     p = f"{alias}." if alias else ""
-    return f"IFNULL({p}vote_source,'') != 'legacy_html' AND {p}legacy_format IS NULL"
+    return (f"IFNULL({p}vote_source,'') != 'legacy_html' AND "
+            f"({p}legacy_format IS NULL OR {p}legacy_format IN ({_PROMOTED_SQL}))")
 
 
 def iso_meeting_date(col: str = "meeting_date") -> str:
@@ -684,6 +692,27 @@ def legacy_stale_parser_filings(conn: sqlite3.Connection) -> list[tuple]:
         f"AND p.parser_version IS NOT ?)) ORDER BY f.accession",
         (*LEGACY_ACCEPTED_REPORT_TYPES, PARSER_VERSION)).fetchall()
     return [tuple(r) for r in rows]
+
+
+def promotion_blockers(conn: sqlite3.Connection) -> list[str]:
+    """Reasons the promoted 2022-23 legacy votes must NOT ship or be analysed as they stand:
+    an accepted legacy filing parsed by an older parser, or a legacy row whose
+    management_recommendation is not FOR / AGAINST / ''. Empty = clear. Used by the release
+    and `glasshouse integrity`: re-ingest the stale filings first."""
+    out = []
+    stale = legacy_stale_parser_filings(conn)
+    if stale:
+        sample = ", ".join(a for a, _ in stale[:3])
+        out.append(f"{len(stale)} accepted legacy filing(s) have stale or missing parser "
+                   f"version (e.g. {sample}): re-ingest them before promotion")
+    bad = conn.execute(
+        "SELECT COUNT(*) FROM votes WHERE legacy_format IS NOT NULL AND "
+        "(management_recommendation IS NULL OR management_recommendation NOT IN "
+        "('FOR','AGAINST',''))").fetchone()[0]
+    if bad:
+        out.append(f"{bad} legacy vote row(s) have a management_recommendation outside "
+                   "FOR/AGAINST/'' (legacy_bad_management_recommendation)")
+    return out
 
 
 def integrity_check(conn: sqlite3.Connection) -> dict[str, list]:

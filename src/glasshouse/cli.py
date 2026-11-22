@@ -981,7 +981,7 @@ def cmd_dedupe(_args) -> int:
         f"WHERE {ledger.NON_LEGACY_VOTE_SQL}").fetchone()
     print(f"  marked {dup:,} duplicate vote rows of {total:,} "
           f"(kept in ledger as filed; excluded from analytics); "
-          f"{n - dup:,} more among quarantined legacy rows")
+          f"{n - dup:,} more among unpromoted legacy rows")
     ne = ledger.dedupe_enforcement(conn)
     print(f"  marked {ne:,} live enforcement rows superseded by curated records")
     return 0
@@ -991,6 +991,9 @@ def cmd_integrity(_args) -> int:
     conn = _conn()
     problems = ledger.integrity_check(conn)
     hard_fail = False
+    for reason in ledger.promotion_blockers(conn):
+        print(f"  legacy_promotion                     BLOCKED: {reason}")
+        hard_fail = True
     for check, rows in problems.items():
         status = "OK" if not rows else f"{len(rows)} rows"
         print(f"  {check:<36} {status}")
@@ -1094,7 +1097,7 @@ def main(argv: list[str] | None = None) -> int:
     npx_p.add_argument("--legacy-proxyedge", action="store_true",
                        help="ingest July 2022-June 2023 Broadridge ProxyEdge text N-PX "
                             "(rows both independent parsers agree on, gated per filing); "
-                            "tagged legacy_format and quarantined from releases and analysis")
+                            "tagged legacy_format; promoted into releases and analysis (see METHODOLOGY)")
     npx_p.add_argument("--legacy-iss", action="store_true",
                        help="ingest July 2022-June 2023 ISS-style N-PX, both the 'FORM N-Px "
                             "REPORT' text and the HTML-table layouts (rows both independent "
