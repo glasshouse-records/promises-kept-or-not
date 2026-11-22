@@ -12,6 +12,8 @@ import sqlite3
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
+from glasshouse import ledger
+
 
 @dataclass
 class Delta:
@@ -35,13 +37,16 @@ def compute(conn: sqlite3.Connection) -> Delta:
     last = conn.execute("SELECT * FROM runs ORDER BY id DESC LIMIT 1").fetchone()
     if last is None:
         return Delta(since=None,
-                     new_votes=_maxid(conn, "votes"),
+                     new_votes=conn.execute(
+                         f"SELECT COUNT(*) FROM votes WHERE {ledger.NON_LEGACY_VOTE_SQL}"
+                     ).fetchone()[0],
                      new_enforcement=_maxid(conn, "enforcement_actions"),
                      new_commitment_versions=_maxid(conn, "commitments"))
 
     d = Delta(since=last["ts"])
     d.new_votes = conn.execute(
-        "SELECT COUNT(*) FROM votes WHERE id > ?", (last["votes_maxid"],)).fetchone()[0]
+        f"SELECT COUNT(*) FROM votes WHERE id > ? AND {ledger.NON_LEGACY_VOTE_SQL}",
+        (last["votes_maxid"],)).fetchone()[0]
     d.new_enforcement = conn.execute(
         "SELECT COUNT(*) FROM enforcement_actions WHERE id > ?", (last["enf_maxid"],)).fetchone()[0]
     d.new_commitment_versions = conn.execute(

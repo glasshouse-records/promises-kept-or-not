@@ -315,30 +315,44 @@ def list_documents(filing: Filing) -> list[str]:
     return names
 
 
+COMPLETE_MARKER = ".complete"
+
+
+def _read_cache(d: Path, acc: str) -> tuple[dict[str, str], str]:
+    docs = {p.name[:-3]: gzip.decompress(p.read_bytes()).decode("utf-8", "replace")
+            for p in sorted(d.glob("*.gz"))}
+    return docs, (d / f"{acc}.hdr.sgml").read_text("utf-8", "replace")
+
+
 def load_filing_texts(filing: Filing, cache_dir: Path | None = None
                       ) -> tuple[dict[str, str], str]:
-    """({document name: text}, header text). Reads data/legacy_cache/<accession>/ when
-    present; otherwise fetches (and caches gzip)."""
+    """({document name: text}, header text). Reads data/legacy_cache/<accession>/ only when
+    it is known complete; otherwise fetches (and caches gzip). A folder is complete when
+    it holds the `.complete` marker, written after every document and the header are saved.
+    A folder without the marker (older caches, or an interrupted download) is trusted only
+    if it has the header and exactly as many documents as the filing's listing; the
+    listing is fetched to check (honest UA, no document downloads). Else it is re-fetched."""
     d = (cache_dir or CACHE_DIR) / filing.accession_number
     acc = filing.accession_number
-    cached = sorted(p for p in d.glob("*.gz")) if d.is_dir() else []
+    marker, hp = d / COMPLETE_MARKER, d / f"{acc}.hdr.sgml"
+    if marker.exists():
+        return _read_cache(d, acc)
+    names = list_documents(filing)
+    if d.is_dir() and hp.exists() and len(list(d.glob("*.gz"))) == len(names) and \
+            {p.name[:-3] for p in d.glob("*.gz")} == set(names):
+        marker.write_text("")           # an older, complete cache: adopt it
+        return _read_cache(d, acc)
+    d.mkdir(parents=True, exist_ok=True)
+    for p in d.glob("*.gz"):            # stale partial files never mix with a fresh fetch
+        p.unlink()
     docs: dict[str, str] = {}
-    if cached:
-        for p in cached:
-            docs[p.name[:-3]] = gzip.decompress(p.read_bytes()).decode("utf-8", "replace")
-    else:
-        for name in list_documents(filing):
-            raw = http.get(f"{filing.directory_url}/{name}").content
-            docs[name] = raw.decode("utf-8", "replace")
-            d.mkdir(parents=True, exist_ok=True)
-            (d / f"{name}.gz").write_bytes(gzip.compress(raw))
-    hp = d / f"{acc}.hdr.sgml"
-    if hp.exists():
-        hdr = hp.read_text("utf-8", "replace")
-    else:
-        hdr = http.get(f"{filing.directory_url}/{acc}.hdr.sgml").text
-        d.mkdir(parents=True, exist_ok=True)
-        hp.write_text(hdr)
+    for name in names:
+        raw = http.get(f"{filing.directory_url}/{name}").content
+        docs[name] = raw.decode("utf-8", "replace")
+        (d / f"{name}.gz").write_bytes(gzip.compress(raw))
+    hdr = http.get(f"{filing.directory_url}/{acc}.hdr.sgml").text
+    hp.write_text(hdr)
+    marker.write_text("")               # last: only now is the folder a whole filing
     return docs, hdr
 
 

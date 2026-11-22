@@ -967,7 +967,8 @@ def cmd_signal(args) -> int:
 def cmd_dedupe(_args) -> int:
     conn = _conn()
     n = ledger.dedupe_votes(conn)
-    total = conn.execute("SELECT COUNT(*) FROM votes").fetchone()[0]
+    total = conn.execute(
+        f"SELECT COUNT(*) FROM votes WHERE {ledger.NON_LEGACY_VOTE_SQL}").fetchone()[0]
     print(f"  marked {n:,} duplicate vote rows of {total:,} "
           f"(kept in ledger as filed; excluded from analytics)")
     ne = ledger.dedupe_enforcement(conn)
