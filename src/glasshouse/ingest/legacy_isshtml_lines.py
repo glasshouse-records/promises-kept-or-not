@@ -41,7 +41,10 @@ _CELL = re.compile(
 _BR = re.compile(r"<br\b[^>]*>", re.I)
 _TAG = re.compile(r"<[^>]*>")
 _WS = re.compile(r"\s+")
-_CENTER = re.compile(r"\balign\s*=\s*[\"']?center\b", re.I)
+# Centred = align=center (any quoting/case) OR an inline style declaring text-align: center.
+_CENTER = re.compile(
+    r"\balign\s*=\s*[\"']?center\b"
+    r"|\bstyle\s*=\s*(?:\"[^\"]*|'[^']*)(?<![\w-])text-align\s*:\s*center\b", re.I)
 _ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9.\-()]*")
 _DATE = re.compile(r"([A-Za-z]{3})\s+(\d{1,2})\s*,\s*(\d{4})")
 _WORD = re.compile(r"[^\W\d_]+")

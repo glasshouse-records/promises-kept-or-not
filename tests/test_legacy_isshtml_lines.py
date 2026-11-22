@@ -109,3 +109,21 @@ def test_amendment1_uppercase_literals_emitted_lowercase_dropped():
         assert [r["proposal_id"] for r in p.parse(base.replace(">Maybe<", f">{bad}<"))] == ["2"]
     assert p.parse(base.replace(">Maybe<", ">AGAINST<"))[0]["vote"] == "AGAINST"
     assert p.parse(base.replace(">Maybe<", ">ABSTAIN<"))[0]["vote"] == "ABSTAIN"
+
+
+def test_ab_variant_style_centred_funds_and_colspan_meeting_blocks():
+    """Amendment 2: upper-case tags, STYLE text-align centre, two-TR COLSPAN meeting block."""
+    rows = p.parse(load("lines_ab_variant.htm"))
+    assert [(r["fund_heading"], r["issuer_name"], r["proposal_id"], r["vote"]) for r in rows] == [
+        ("AB All Market Real Return Portfolio", "3I INFRASTRUCTURE PLC", "1", "For"),
+        ("AB All Market Real Return Portfolio", "3I INFRASTRUCTURE PLC", "2", "Against"),
+        ("AB Discovery Value Fund", "A. O. SMITH CORPORATION", "1.1", "For"),
+        ("AB Discovery Value Fund", "A. O. SMITH CORPORATION", "2", "One Year")]
+    r = rows[0]
+    assert (r["ticker"], r["security_id"], r["meeting_date"], r["record_date"],
+            r["meeting_type"], r["rec_label"], r["sponsor"]) == (
+        "3IN", "G8873L178", "2022-07-07", "2022-07-05", "Annual",
+        "Mgt Rec", "Management")
+    assert all(r["fund_heading"] != "FORM N-PX" for r in rows)
+    st_ = p.parse_stats(load("lines_ab_variant.htm"))
+    assert st_["rows"] == 4 and st_["dropped"] == 0 and st_["meetings"] == 2
