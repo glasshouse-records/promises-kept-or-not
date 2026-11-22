@@ -970,9 +970,13 @@ text, and ISS HTML tables. Research notes: `docs/research/legacy-npx.md`.
   Per-document agreement counts are in the `legacy_parse` table. Inside an accepted
   document, a meeting with even one disputed row loses all its rows. A further check,
   independent of both parsers, watches the alphabetical order of issuers within each
-  fund section. A jump back to an earlier initial letter means a fund boundary may
-  have been missed, and the rest of that section is dropped. An exact as-filed repeat
-  of a run of meetings is kept.
+  fund section. Only letters count; digits and punctuation collate unpredictably. A
+  jump back to an earlier initial letter means a fund boundary may have been missed,
+  and the rest of that section is dropped. There are two exceptions. ProxyEdge
+  sometimes prints one or two meetings first, out of order: when the rest of the
+  section is sorted, only those head meetings are dropped. A run that repeats earlier
+  rows of the same section field for field (an as-filed repeat) is kept. The counts
+  of every guard, and the parser version, are stored per document in `legacy_parse`.
 - **`report_type` values for legacy filings** (these are parse verdicts, not N-PX cover
   values): `LEGACY_PROXYEDGE`, `LEGACY_ISS` (ISS text), `LEGACY_ISSHTML` (accepted);
   the same with `_REJECTED` (gate failed, or nothing parsed: see `legacy_parse`);
@@ -1002,8 +1006,13 @@ text, and ISS HTML tables. Research notes: `docs/research/legacy-npx.md`.
   it ("For"/"Against" Management) and it is copied. In the ISS layouts it is computed
   from the printed recommendation (under a "Mgt Rec" column only) and the vote: the
   same → FOR; plainly opposite (For vs Against/Withhold, or two different frequencies)
-  → AGAINST; anything else (abstain against a For, Do Not Vote, no printed
+  → AGAINST; an abstention where management recommended For or Against → AGAINST (as
+  most XML filers and ProxyEdge code it); anything else (Do Not Vote, no printed
   recommendation) → empty.
+  `cusip`/`isin`: the printed security ID is kept only when it is a 9-character CUSIP
+  or a 12-character ISIN whose check digit validates. A US/CA ISIN also yields its
+  embedded CUSIP. Anything else (placeholders, lists, codes missing a leading zero) is
+  stored empty, never repaired.
   `for_against_management` comes only from ProxyEdge, which prints it; it is NULL
   elsewhere and never derived.
 - **Line counts are not comparable to XML rows.** With no share counts, the duplicate
