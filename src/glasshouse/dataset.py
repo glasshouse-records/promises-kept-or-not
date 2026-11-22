@@ -45,7 +45,10 @@ DATA_DICTIONARY: dict[str, dict] = {
         "report_type": "as filed in N-PX cover field reportType (e.g. FUND VOTING REPORT, "
                        "FUND NOTICE REPORT, INSTITUTIONAL MANAGER VOTING REPORT); LEGACY_NO_COVER "
                        "= pre-2024 filing with no structured cover, skipped; LEGACY_PARSED = such a "
-                       "filing read from HTML (its votes are not shipped); NULL for 13-F and "
+                       "filing read from HTML (its votes are not shipped); LEGACY_PROXYEDGE, LEGACY_ISS, "
+                       "LEGACY_ISSHTML = 2022-23 text filings read by two agreeing parsers, and "
+                       "the same with _REJECTED when the agreement gate failed or nothing "
+                       "parsed (votes quarantined, not shipped; see METHODOLOGY.md); NULL for 13-F and "
                        "N-PORT filings",
         "source_url": "EDGAR directory of the filing (primary source)",
         "retrieval_date": "date Glasshouse fetched the filing",
