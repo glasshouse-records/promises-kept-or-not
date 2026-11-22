@@ -31,6 +31,7 @@ from .edgar import Filing, filing_directory
 
 logger = logging.getLogger(__name__)
 
+PARSER_VERSION = "2026-11-22b"   # written on every legacy_parse row; bump on any parse/guard change
 KEYS = legacy_pe_blocks.KEYS
 MAX_DISAGREEMENT = 0.005
 PERIOD = "2023-06-30"
@@ -65,25 +66,49 @@ def meeting_key(row: dict) -> tuple:
 
 
 def _issuer_sort_key(name: str) -> str:
-    """First alphanumeric character, casefolded. ISS's collation of punctuation is not
-    reproducible (real order: E-GUARDIAN, E.ON SE, E-J HOLDINGS; stripping punctuation
-    still gives eon > ej), so only a drop to an earlier initial counts as a reset."""
+    """First alphanumeric character, casefolded. ISS's collation of punctuation and digits
+    is not reproducible (real order: E-GUARDIAN, E.ON SE, E-J HOLDINGS; "&DO HOLDINGS",
+    "1&1 AG", "A2A SPA"), so see `_is_reset`."""
     return next((c for c in name.casefold() if c.isalnum()), "")
+
+
+def _is_letter(c: str) -> bool:
+    return len(c) == 1 and "a" <= c <= "z"
+
+
+def _is_reset(prev_issuer: str, issuer: str) -> bool:
+    """A drop to an earlier initial, counted ONLY when both initials are letters a-z."""
+    p, c = _issuer_sort_key(prev_issuer), _issuer_sort_key(issuer)
+    return _is_letter(p) and _is_letter(c) and c < p
 
 
 def drop_disputed_meetings(out: list[dict], disputed_rows: list[dict]) -> tuple[list[dict], dict]:
     """Any meeting with a row only one parser produced loses ALL its agreed rows."""
     bad = {meeting_key(r) for r in disputed_rows}
     kept = [r for r in out if meeting_key(r) not in bad]
-    return kept, {"meetings_dropped_disputed": len(bad),
+    removed = {meeting_key(r) for r in out} & bad
+    return kept, {"meetings_dropped_disputed": len(removed),
                   "rows_dropped_disputed": len(out) - len(kept)}
+
+
+def _is_repeat(sec: list[dict], cut: int) -> bool:
+    """True when the rows from `cut` on equal, field for field and in order, a contiguous
+    run of the section's earlier rows (an as-filed repeat)."""
+    head, tail = sec[:cut], sec[cut:]
+    n = len(tail)
+    return any(head[j] == tail[0] and head[j:j + n] == tail
+               for j in range(len(head) - n + 1))
 
 
 def order_guard(rows: list[dict], fund_field: str) -> tuple[list[dict], dict]:
     """Within a fund section meetings are listed in alphabetical issuer order. A later
-    issuer that sorts before the previous one (a reset) may mean a missed fund boundary:
-    drop the section from the reset to its end, unless that tail exactly repeats an
-    earlier run of the same section (an as-filed repeat, kept)."""
+    issuer that sorts before the previous one (a reset, letters only) may mean a missed
+    fund boundary. At the first reset: if the rows from there to the section's end exactly
+    repeat an earlier run of the section (all fields), they are an as-filed repeat and kept.
+    Else, if it is the section's only reset and the part before it is at most 2 distinct
+    meetings (ProxyEdge sometimes lists one or two meetings first, out of order), only
+    those head rows are dropped and the sorted tail kept. Else the section is cut from the
+    reset to its end."""
     sections: list[list[dict]] = []
     for r in rows:
         if sections and sections[-1][0][fund_field] == r[fund_field]:
@@ -98,19 +123,20 @@ def order_guard(rows: list[dict], fund_field: str) -> tuple[list[dict], dict]:
             mk = meeting_key(r)
             if not meetings or meetings[-1][0] != mk:
                 meetings.append((mk, r["issuer_name"], i))
-        cut = None
-        for m in range(1, len(meetings)):
-            if _issuer_sort_key(meetings[m][1]) < _issuer_sort_key(meetings[m - 1][1]):
-                resets += 1
-                tail = [x[0] for x in meetings[m:]]
-                head = [x[0] for x in meetings[:m]]
-                if any(head[j:j + len(tail)] == tail for j in range(len(head) - len(tail) + 1)):
-                    repeats += 1
-                else:
-                    cut = meetings[m][2]
-                break
-        if cut is None:
+        reset_at = [m for m in range(1, len(meetings))
+                    if _is_reset(meetings[m - 1][1], meetings[m][1])]
+        if not reset_at:
             kept.extend(sec)
+            continue
+        resets += 1
+        m = reset_at[0]
+        cut = meetings[m][2]
+        if _is_repeat(sec, cut):
+            repeats += 1
+            kept.extend(sec)
+        elif len(reset_at) == 1 and m <= 2:
+            kept.extend(sec[cut:])       # drop only the out-of-order head meetings
+            dropped += cut
         else:
             kept.extend(sec[:cut])
             dropped += len(sec) - cut
@@ -256,6 +282,59 @@ def alias_series(heading: str, aliases: dict[str, str] | None,
     return None, True
 
 
+# -- security identifiers: validated, never repaired ---------------------------
+
+_CUSIP_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ*@#"
+
+
+def cusip_check_digit(body8: str) -> int:
+    """CUSIP check digit of the first 8 characters (mod-10 double-add-double)."""
+    total = 0
+    for i, ch in enumerate(body8):
+        v = _CUSIP_CHARS.index(ch)
+        if i % 2 == 1:
+            v *= 2
+        total += v // 10 + v % 10
+    return (10 - total % 10) % 10
+
+
+def cusip_valid(value: str) -> bool:
+    return (len(value) == 9 and all(c in _CUSIP_CHARS for c in value)
+            and value[8].isdigit() and int(value[8]) == cusip_check_digit(value[:8]))
+
+
+def isin_check_digit(body11: str) -> int:
+    """ISIN check digit (Luhn over the letters-to-digits expansion) of the first 11 chars."""
+    digits = "".join(str(int(c, 36)) for c in body11)
+    total = 0
+    for i, ch in enumerate(reversed(digits)):
+        v = int(ch)
+        if i % 2 == 0:               # the check digit will sit at position 0
+            v *= 2
+        total += v // 10 + v % 10
+    return (10 - total % 10) % 10
+
+
+def isin_valid(value: str) -> bool:
+    return (len(value) == 12 and value[:2].isalpha() and value[:2].isupper() and value.isascii()
+            and value.isalnum() and value[11].isdigit()
+            and int(value[11]) == isin_check_digit(value[:11]))
+
+
+def classify_security_id(raw: str) -> tuple[str, str]:
+    """(cusip, isin) from a printed security id; ('', '') when it is neither. A 9-char value
+    with a valid CUSIP check digit is a cusip; a 12-char value with a valid ISIN check digit
+    is an isin (its embedded cusip is kept only for US/CA ISINs whose 9 chars form a valid
+    CUSIP). Nothing is ever repaired."""
+    v = (raw or "").strip().upper()
+    if cusip_valid(v):
+        return v, ""
+    if isin_valid(v):
+        inner = v[2:11]
+        return (inner if v[:2] in ("US", "CA") and cusip_valid(inner) else ""), v
+    return "", ""
+
+
 # -- ledger rows -------------------------------------------------------------
 
 def to_vote_rows(rows: list[dict], smap: dict[str, str],
@@ -290,8 +369,12 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
         fa = r["for_against_management"]
         # XML meaning: WITH (FOR) / AGAINST management, copied from the printed column.
         rec = {"For": "FOR", "Against": "AGAINST"}.get(fa, "")
+        cusip, isin = "", ""
+        for raw in (r["security_id"], r["isin"]):
+            c, i = classify_security_id(raw)
+            cusip, isin = cusip or c, isin or i
         out.append({
-            "issuer_name": r["issuer_name"], "cusip": r["security_id"], "isin": r["isin"],
+            "issuer_name": r["issuer_name"], "cusip": cusip, "isin": isin,
             "meeting_date": f"{m.group(2)}/{m.group(3)}/{m.group(1)}",
             "vote_description": r["proposal_text"], "category_type": "",
             "vote_source": source, "shares_on_loan": None, "vote_series": sid,
@@ -370,11 +453,16 @@ def record_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
             conn.execute(
                 """INSERT INTO legacy_parse (accession, document, meetings, rows_a, rows_b,
                        agreed, a_only, b_only, disagreement_rate, funds_unmapped,
-                       rows_inserted, parsed_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                       rows_inserted, parsed_at, rows_dropped_disputed,
+                       meetings_dropped_disputed, order_resets, order_repeats,
+                       rows_dropped_order, parser_version)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (acc, name, meetings, st["rows_a"], st["rows_b"], st["agreed"], st["a_only"],
                  st["b_only"], st["disagreement_rate"],
                  repr(sorted(info["funds_unmapped"].items())) if info["funds_unmapped"]
-                 else "", n, now))
+                 else "", n, now, st.get("rows_dropped_disputed"),
+                 st.get("meetings_dropped_disputed"), st.get("order_resets"),
+                 st.get("order_repeats"), st.get("rows_dropped_order"), PARSER_VERSION))
         conn.commit()
     except Exception:
         conn.rollback()

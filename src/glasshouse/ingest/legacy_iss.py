@@ -100,6 +100,10 @@ def with_management(rec: str, vote: str) -> str:
     against, "" = not clear. Never guesses."""
     if rec in _WITH_VALUES and vote == rec:
         return "FOR"
+    # Filers code an abstention as AGAINST management (XML: 14,091 AGAINST vs 8,980 NONE vs
+    # 155 FOR); ABSTAIN against an ABSTAIN rec stays FOR (handled above).
+    if rec in ("FOR", "AGAINST") and vote == "ABSTAIN":
+        return "AGAINST"
     if ((rec == "FOR" and vote in ("AGAINST", "WITHHOLD"))
             or (rec in ("AGAINST", "WITHHOLD") and vote == "FOR")
             or (rec in _FREQ and vote in _FREQ and vote != rec)):
@@ -240,8 +244,9 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
             continue
         rec = (with_management(HOW_VOTED.get(r["rec"], ""), how)
                if r["rec_label"] == "Mgt Rec" else "")
+        cusip, isin = legacy_pe.classify_security_id(r["security_id"])
         out.append({
-            "issuer_name": r["issuer_name"], "cusip": r["security_id"], "isin": None,
+            "issuer_name": r["issuer_name"], "cusip": cusip, "isin": isin,
             "meeting_date": f"{m.group(2)}/{m.group(3)}/{m.group(1)}",
             "vote_description": r["proposal_text"], "category_type": "",
             "vote_source": source, "shares_on_loan": None, "vote_series": sid,

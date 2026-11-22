@@ -214,7 +214,7 @@ def ingest_filings(conn: sqlite3.Connection, institution_id: str, doc_label: str
                    flagged: list[str] | None = None,
                    strip_patterns: list[str] | None = None,
                    page_sequence: bool = False,
-                   accepted_outliers: set[str] | None = None) -> int:
+                   accepted_outliers: list[dict] | None = None) -> int:
     """Extract and record each filing ({accession, filing_date, url, text} or
     a pre-extracted `section`), oldest first. Returns rows added or moved.
 
@@ -222,9 +222,14 @@ def ingest_filings(conn: sqlite3.Connection, institution_id: str, doc_label: str
     than the label's median (rows on file plus this batch) is logged and not
     recorded: it is almost certainly a different document (Wellington's 2023 SAI
     printed the voting guidelines too), and diffing it against its neighbours
-    would report hundreds of sentences "removed". An accession a human has checked
-    and listed in the label's `accepted_outliers` (config, with a note) is recorded
-    anyway and logged as accepted."""
+    would report hundreds of sentences "removed". An edition a human has checked and listed in
+    the label's `accepted_outliers` (config: {accession, sha256}, with a note) is recorded
+    anyway, logged and written as an 'accepted_outlier' capture attempt. The sha256 is the
+    version identity of the reviewed section (`commitments.text_sha256`: sha256 of the text
+    with all whitespace removed), so a changed section under the same accession is not
+    accepted; a bare accession string is never accepted."""
+    accepted = {(str(a.get("accession")), str(a.get("sha256")))
+                for a in accepted_outliers or [] if isinstance(a, dict)}
     cands = []
     for f in sorted(filings, key=lambda f: (f["filing_date"], f["accession"])):
         section = f.get("section")
@@ -246,10 +251,13 @@ def ingest_filings(conn: sqlite3.Connection, institution_id: str, doc_label: str
         size = len(section.encode())
         outlier = bool(median) and (size > OUTLIER_FACTOR * median
                                     or size * OUTLIER_FACTOR < median)
-        if outlier and f["accession"] in (accepted_outliers or set()):
+        text_sha = hashlib.sha256("".join(section.split()).encode()).hexdigest()
+        if outlier and (f["accession"], text_sha) in accepted:
             logger.warning("%s/%s: length outlier %d bytes vs median %.0f in %s accepted "
                            "(reviewed, listed in accepted_outliers)", institution_id,
                            doc_label, size, median, f["accession"])
+            cm.log_attempt(conn, institution_id, doc_label, f["url"], "accepted_outlier",
+                           f"{f['accession']} sha256 {text_sha}: {size} bytes vs median {median:.0f}")
         elif outlier:
             detail = f"length outlier: {size} bytes vs median {median:.0f}"
             logger.warning("%s/%s: %s in %s (%s); NOT recorded, needs a human look "
@@ -321,8 +329,8 @@ def fetch_sai_appendices(conn: sqlite3.Connection, institutions: dict[str, dict]
                 n = ingest_filings(conn, inst_id, label,
                                    [b for b in batch if b["section"] is not None],
                                    cfg["start"], cfg["end"], copies, pages, flagged, patterns, sequence,
-                                   accepted_outliers={str(a) for a in
-                                                      cfg.get("accepted_outliers") or []})
+                                   accepted_outliers=[a for a in cfg.get("accepted_outliers") or []
+                                                      if isinstance(a, dict)])
                 for b in batch:
                     if b["section"] is None:
                         logger.info("%s/%s: no clean section in %s (%s); nothing recorded",

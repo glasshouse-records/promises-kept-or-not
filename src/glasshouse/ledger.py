@@ -138,7 +138,13 @@ CREATE TABLE IF NOT EXISTS legacy_parse (
     disagreement_rate REAL,
     funds_unmapped    TEXT,
     rows_inserted     INTEGER,
-    parsed_at         TEXT
+    parsed_at         TEXT,
+    rows_dropped_disputed     INTEGER,
+    meetings_dropped_disputed INTEGER,
+    order_resets              INTEGER,
+    order_repeats             INTEGER,
+    rows_dropped_order        INTEGER,
+    parser_version            TEXT
 );
 
 CREATE TABLE IF NOT EXISTS enforcement_actions (
@@ -302,7 +308,8 @@ CREATE TABLE IF NOT EXISTS capture_attempts (
     doc_label      TEXT NOT NULL,
     url            TEXT NOT NULL,
     attempted_at   TEXT NOT NULL,   -- ISO-8601, local time with offset
-    outcome        TEXT NOT NULL CHECK (outcome IN ('new_version','unchanged','failed','needs_review')),
+    outcome        TEXT NOT NULL CHECK (outcome IN ('new_version','unchanged','failed','needs_review',
+                                           'accepted_outlier')),
     detail         TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_capture_attempts_doc
@@ -391,6 +398,14 @@ def _migrate(conn: sqlite3.Connection) -> None:
         if col not in vcols:
             conn.execute(f"ALTER TABLE votes ADD COLUMN {col} TEXT")
             conn.commit()
+    # Guard stats + the parser version that produced a legacy filing's rows.
+    lcols = {r[1] for r in conn.execute("PRAGMA table_info(legacy_parse)")}
+    for col, typ in (("rows_dropped_disputed", "INTEGER"), ("meetings_dropped_disputed", "INTEGER"),
+                     ("order_resets", "INTEGER"), ("order_repeats", "INTEGER"),
+                     ("rows_dropped_order", "INTEGER"), ("parser_version", "TEXT")):
+        if col not in lcols:
+            conn.execute(f"ALTER TABLE legacy_parse ADD COLUMN {col} {typ}")
+            conn.commit()
     ecols = {r[1] for r in conn.execute("PRAGMA table_info(enforcement_actions)")}
     if "is_duplicate" not in ecols:
         conn.execute("ALTER TABLE enforcement_actions ADD COLUMN is_duplicate "
@@ -414,7 +429,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
             conn.commit()
     sql = (conn.execute("SELECT sql FROM sqlite_master WHERE name='capture_attempts'")
            .fetchone() or [""])[0] or ""
-    if sql and "needs_review" not in sql:
+    if sql and "accepted_outlier" not in sql:
         # SQLite cannot alter a CHECK: rebuild this operator-internal log table.
         conn.executescript("""
             ALTER TABLE capture_attempts RENAME TO capture_attempts_old;
@@ -422,7 +437,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
                 id INTEGER PRIMARY KEY, institution_id TEXT NOT NULL, doc_label TEXT NOT NULL,
                 url TEXT NOT NULL, attempted_at TEXT NOT NULL,
                 outcome TEXT NOT NULL CHECK (outcome IN
-                    ('new_version','unchanged','failed','needs_review')),
+                    ('new_version','unchanged','failed','needs_review','accepted_outlier')),
                 detail TEXT NOT NULL DEFAULT '');
             INSERT INTO capture_attempts SELECT id, institution_id, doc_label, url,
                 attempted_at, outcome, detail FROM capture_attempts_old;
@@ -651,6 +666,26 @@ def dedupe_enforcement(conn: sqlite3.Connection) -> int:
     return cur.rowcount
 
 
+LEGACY_ACCEPTED_REPORT_TYPES = ("LEGACY_PROXYEDGE", "LEGACY_ISS", "LEGACY_ISSHTML")
+
+
+def legacy_stale_parser_filings(conn: sqlite3.Connection) -> list[tuple]:
+    """(accession, report_type) of accepted legacy filings with no legacy_parse row at the
+    current `legacy_pe.PARSER_VERSION` (an older or NULL version counts as stale). The
+    promotion step must refuse these: re-ingest them first. Not part of `integrity_check`
+    (every filing ingested before the version existed is stale, so it would fail now)."""
+    from .ingest.legacy_pe import PARSER_VERSION
+
+    marks = ",".join("?" * len(LEGACY_ACCEPTED_REPORT_TYPES))
+    rows = conn.execute(
+        f"SELECT f.accession, f.report_type FROM filings f WHERE f.report_type IN ({marks}) "
+        f"AND (NOT EXISTS (SELECT 1 FROM legacy_parse p WHERE p.accession = f.accession) "
+        f"OR EXISTS (SELECT 1 FROM legacy_parse p WHERE p.accession = f.accession "
+        f"AND p.parser_version IS NOT ?)) ORDER BY f.accession",
+        (*LEGACY_ACCEPTED_REPORT_TYPES, PARSER_VERSION)).fetchall()
+    return [tuple(r) for r in rows]
+
+
 def integrity_check(conn: sqlite3.Connection) -> dict[str, list]:
     """Return {check_name: offending rows}. Empty lists everywhere = healthy.
 
@@ -678,6 +713,13 @@ def integrity_check(conn: sqlite3.Connection) -> dict[str, list]:
         "LEFT JOIN filings f ON f.accession = v.accession WHERE f.accession IS NULL"
     ).fetchall()
     problems["votes_orphaned"] = [tuple(r) for r in rows]
+
+    # Legacy rows carry the XML meaning of management_recommendation: FOR / AGAINST / ''.
+    rows = conn.execute(
+        "SELECT id, accession, management_recommendation FROM votes "
+        "WHERE legacy_format IS NOT NULL AND (management_recommendation IS NULL "
+        "OR management_recommendation NOT IN ('FOR','AGAINST',''))").fetchall()
+    problems["legacy_bad_management_recommendation"] = [tuple(r) for r in rows]
 
     # Custody of the archive. A policy snapshot is the ONE artefact here that
     # cannot be re-fetched once its URL rots — three already have — so a missing
