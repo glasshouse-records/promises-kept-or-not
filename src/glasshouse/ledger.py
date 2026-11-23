@@ -69,7 +69,10 @@ def iso_meeting_date(col: str = "meeting_date") -> str:
             f"THEN '20'||substr({rest}, instr({rest},'/')+1)||'-'||"
             f"printf('%02d', {a})||'-'||printf('%02d', {b}) "
             f"ELSE {col} END")
-    return f"(CASE WHEN date({cand}) = ({cand}) THEN ({cand}) ELSE {col} END)"
+    # The candidate is built ONCE per row (bound in an inner query): pasting it three
+    # times made a release datasheet run for hours (2026-11-23).
+    return (f"(SELECT CASE WHEN date(_c) = _c THEN _c ELSE _r END "
+            f"FROM (SELECT {cand} AS _c, {col} AS _r))")
 
 
 ISO_MEETING_DATE = iso_meeting_date()

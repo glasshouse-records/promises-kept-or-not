@@ -222,8 +222,8 @@ def coverage_vote_sql() -> tuple[str, str]:
     votes scanned all 26M lines twice per institution (2026-11-20, >2 h)."""
     shipped = (f"(SELECT * FROM votes {PUBLIC_TABLES['votes']} AND accession IN "
                f"(SELECT accession FROM filings WHERE institution_id = ?))")
-    return (f"SELECT COUNT(DISTINCT v.accession) n, MIN({_ISO}) lo, MAX({_ISO}) hi, "
-            f"COUNT(*) rows FROM {shipped} v",
+    return (f"SELECT COUNT(DISTINCT acc) n, MIN(iso) lo, MAX(iso) hi, COUNT(*) rows "
+            f"FROM (SELECT v.accession AS acc, {_ISO} AS iso FROM {shipped} v)",
             f"SELECT {_KIND_SQL} k, COUNT(*) n FROM {shipped} v GROUP BY k")
 
 
@@ -268,24 +268,29 @@ def coverage(conn: sqlite3.Connection) -> list[dict]:
 UNREADABLE_DATE_SEASON = "date not machine-readable"
 # A meeting date that is not ISO with a real month after normalisation (as filed: YYYYMMDD,
 # day-first, impossible months) is counted under one label, never cut into a fake season.
-_SEASON_SQL = (f"CASE WHEN {_ISO} IS NULL OR {_ISO} = '' THEN 'undated' "
-               f"WHEN NOT ({_ISO} GLOB '[12][0-9][0-9][0-9]-[01][0-9]-[0-3][0-9]' "
-               f"AND substr({_ISO},6,2) BETWEEN '01' AND '12') "
+_SEASON_SQL = ("CASE WHEN iso IS NULL OR iso = '' THEN 'undated' "
+               "WHEN NOT (iso GLOB '[12][0-9][0-9][0-9]-[01][0-9]-[0-3][0-9]' "
+               "AND substr(iso,6,2) BETWEEN '01' AND '12') "
                f"THEN '{UNREADABLE_DATE_SEASON}' "
-               f"WHEN substr({_ISO},6,2) >= '07' THEN substr({_ISO},1,4) || '-' || "
-               f"substr(CAST(substr({_ISO},1,4) + 1 AS TEXT),3,2) "
-               f"ELSE CAST(substr({_ISO},1,4) - 1 AS TEXT) || '-' || substr({_ISO},3,2) END")
+               "WHEN substr(iso,6,2) >= '07' THEN substr(iso,1,4) || '-' || "
+               "substr(CAST(substr(iso,1,4) + 1 AS TEXT),3,2) "
+               "ELSE CAST(substr(iso,1,4) - 1 AS TEXT) || '-' || substr(iso,3,2) END")
+
+
+def season_coverage_sql() -> str:
+    """The season table's query. The date is read once per row (inner query), then cut
+    into seasons; pasting the reading into every branch stalled a release for hours."""
+    return (f"SELECT {_SEASON_SQL} AS season, SUM(lf IS NOT NULL) AS legacy_lines, "
+            f"SUM(lf IS NULL) AS xml_lines FROM (SELECT {_ISO} AS iso, v.legacy_format AS lf "
+            f"FROM votes v {PUBLIC_TABLES['votes'].replace('WHERE ', 'WHERE v.', 1)}) "
+            f"GROUP BY season ORDER BY season")
 
 
 def season_coverage(conn: sqlite3.Connection) -> list[dict]:
     """Shipped vote lines per N-PX season (meetings 1 July to 30 June, e.g. 2022-23 =
     2022-07-01..2023-06-30), split into legacy lines (legacy_format set: 2022-23 text
     filings, two agreeing parsers) and XML lines. Over the same filter the release applies."""
-    rows = conn.execute(
-        f"SELECT {_SEASON_SQL} AS season, SUM(v.legacy_format IS NOT NULL) AS legacy_lines, "
-        f"SUM(v.legacy_format IS NULL) AS xml_lines FROM votes v "
-        f"{PUBLIC_TABLES['votes'].replace('WHERE ', 'WHERE v.', 1)} GROUP BY season "
-        f"ORDER BY season").fetchall()
+    rows = conn.execute(season_coverage_sql()).fetchall()
     return [{"season": r["season"], "legacy_lines": r["legacy_lines"] or 0,
              "xml_lines": r["xml_lines"] or 0} for r in rows]
 
