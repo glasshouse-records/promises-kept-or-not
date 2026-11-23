@@ -85,9 +85,11 @@ def test_day_first_document_is_rejected_whole():
 
 # -- quarantine and mapping ----------------------------------------------------
 
-def test_html_layout_is_quarantined_until_review():
+def test_html_layout_promoted_after_review():
+    # Promoted 2026-11-23 after the review fixes (c637249), a 14-row field-by-field hand
+    # sample and a 54-row fund-attribution check against the filings.
     assert legacy_issueno_html.LEGACY_FORMAT == "issueno_html"
-    assert "issueno_html" not in ledger.PROMOTED_LEGACY_FORMATS
+    assert "issueno_html" in ledger.PROMOTED_LEGACY_FORMATS
 
 
 def test_agreed_rows_map_like_the_text_layout_but_tagged_html():
@@ -125,7 +127,7 @@ def _filing():
                   accession_number=ACC)
 
 
-def test_end_to_end_ingest_report_types_and_quarantine(tmp_path):
+def test_end_to_end_ingest_report_types_and_promotion(tmp_path):
     conn = _conn(tmp_path)
     n = legacy_issueno_html.ingest_filing(conn, _filing(), "ft", "2026-11-23",
                                           {"a_npx.htm": DOC}, HDR)
@@ -135,7 +137,7 @@ def test_end_to_end_ingest_report_types_and_quarantine(tmp_path):
     assert conn.execute("SELECT COUNT(*) FROM votes WHERE legacy_format='issueno_html'"
                         ).fetchone()[0] == 3
     assert conn.execute(f"SELECT COUNT(*) FROM votes WHERE {ledger.NON_LEGACY_VOTE_SQL}"
-                        ).fetchone()[0] == 0
+                        ).fetchone()[0] == 3        # promoted: visible to analysis
     # a text-layout document in the same call is not read by the HTML module
     assert legacy_issueno_html.ingest_filing(conn, _filing(), "ft", "2026-11-23",
                                              {"a": "Agenda Number: 1\n"}, HDR) == 0

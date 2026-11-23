@@ -1,6 +1,8 @@
 """Legacy (July 2022 - June 2023) N-PX votes in the "Issue No." layout exported as HTML
-tables (Putnam, Neuberger Berman). QUARANTINED (legacy_format 'issueno_html', not in
-`ledger.PROMOTED_LEGACY_FORMATS`) until a reviewer pass and a hand sample.
+tables (Putnam, Neuberger Berman). legacy_format 'issueno_html', promoted into
+`ledger.PROMOTED_LEGACY_FORMATS` on 2026-11-23 after a reviewer pass (fixes c637249:
+registrant change ends the fund, <br> is a space, a wrapped description row drops the
+meeting), a 14-row field-by-field hand sample and a 54-row fund-attribution check.
 
 The fields are those of the text layout (`legacy_issueno`); only the reading differs. Two
 parsers written independently from one contract (`legacy_issueno_html_cells`, a tokenizer

@@ -560,7 +560,7 @@ N-PX field voteSource: `ISSUER` (item put on the ballot by the issuer) or `SECUR
 (shareholder-sponsored proposal). Empty where the filer left it blank. `legacy_html` is a
 Glasshouse tag for pre-2024 votes parsed by a single HTML parser; those votes are not
 validated and are NOT in this release. Votes with `votes.legacy_format` set (`proxyedge`,
-`iss_text`, `iss_html`, `issueno`) are 2022-23 text filings read by two agreeing parsers and ARE in this
+`iss_text`, `iss_html`, `issueno`, `issueno_html`) are 2022-23 text filings read by two agreeing parsers and ARE in this
 release (see `votes.legacy_format`).
 
 ### Kinds of vote (`COVERAGE.json` `vote_kinds`, `votes_by_kind`)

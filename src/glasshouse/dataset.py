@@ -93,7 +93,7 @@ DATA_DICTIONARY: dict[str, dict] = {
                                      "printed recommendation and the vote (see METHODOLOGY); FOR, "
                                      "AGAINST or empty",
         "legacy_format": "NULL = a line from an SEC XML N-PX filing. 'proxyedge', 'iss_text', "
-                         "'iss_html' or 'issueno' = a line from a 2022-23 (July 2022 - June 2023) text filing "
+                         "'iss_html', 'issueno' or 'issueno_html' = a line from a 2022-23 (July 2022 - June 2023) text filing "
                          "read by two independent parsers that agreed on it; see METHODOLOGY "
                          "('Legacy N-PX, July 2022 - June 2023'). Such lines have no share counts "
                          "and no category",

@@ -1110,7 +1110,7 @@ def main(argv: list[str] | None = None) -> int:
                             "(Schwab, VanEck, Hartford, Russell; rows both independent parsers "
                             "agree on, gated per filing; tagged issueno, promoted 2026-11-23) "
                             "and its HTML-table export (Putnam, Neuberger Berman; tagged "
-                            "issueno_html and QUARANTINED: not in releases or analysis)")
+                            "issueno_html, promoted 2026-11-23)")
     npx_p.set_defaults(func=cmd_ingest_npx)
     com = ing.add_parser("commitments")
     com.add_argument("--wayback", action="store_true",

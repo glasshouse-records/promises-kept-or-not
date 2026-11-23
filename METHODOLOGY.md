@@ -1018,7 +1018,19 @@ both parsers read it.
   correct, including wrapped descriptions). ISS text printed as Courier HTML paragraphs
   (Morgan Stanley) is converted line for line and read by the ISS text pair; a paragraph
   holding a line break or tab is refused rather than converted.
-- **Columns.** `legacy_format` is `proxyedge`, `iss_text`, `iss_html` or `issueno` (NULL for XML
+- **"Issue No." layout as HTML tables (`legacy_format` `issueno_html`, promoted
+  2026-11-23).** Putnam (Franklin Templeton) and Neuberger Berman export the same layout as
+  HTML tables, one cell per field. Two further parsers, written independently from one
+  contract, read each field by its column position under the printed label; everything
+  after them (agreement gate, guards, Voted-only meetings, vocabularies, security-id
+  checks, header-only fund mapping) is the text layout's. A "Registrant" row ends the
+  current fund; a line break inside a cell is a space; a description wrapped onto a row of
+  its own drops the whole meeting. Neuberger prints no Country of Trade (country is
+  empty). Any date with a first part above 12 in a meeting row rejects the document.
+  Promoted after a skeptical review (which found that both parsers carried a fund across a
+  registrant change; fixed and tested) and a hand check against the filings: 14 of 14
+  stored rows correct field by field, and 54 of 54 under the right fund.
+- **Columns.** `legacy_format` is `proxyedge`, `iss_text`, `iss_html`, `issueno` or `issueno_html` (NULL for XML
   rows). `shares_voted` is NULL: these formats print no share counts.
   `management_recommendation` has the XML meaning: whether THIS vote went with (FOR)
   or against (AGAINST) management, not what management recommended. ProxyEdge prints
