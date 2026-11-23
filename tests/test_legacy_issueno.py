@@ -178,16 +178,17 @@ def test_unmapped_and_policy_section_dropped():
 
 # -- quarantine ---------------------------------------------------------------
 
-def test_quarantined_by_non_legacy_sql(tmp_path):
-    assert "issueno" not in ledger.PROMOTED_LEGACY_FORMATS
+def test_promoted_after_review(tmp_path):
+    # Promoted 2026-11-23 after the reviewer pass (fixes e06dc99) and a 14-row hand sample.
+    assert "issueno" in ledger.PROMOTED_LEGACY_FORMATS
     conn = _conn(tmp_path)
     _ingest(conn)
     n = conn.execute("SELECT COUNT(*) FROM votes WHERE legacy_format='issueno'").fetchone()[0]
     assert n > 0
     assert conn.execute(f"SELECT COUNT(*) FROM votes WHERE {ledger.NON_LEGACY_VOTE_SQL} "
-                        "AND legacy_format='issueno'").fetchone()[0] == 0
+                        "AND legacy_format='issueno'").fetchone()[0] == n
     assert conn.execute(f"SELECT COUNT(*) FROM votes v WHERE {ledger.non_legacy_vote_sql('v')} "
-                        "AND v.legacy_format='issueno'").fetchone()[0] == 0
+                        "AND v.legacy_format='issueno'").fetchone()[0] == n
 
 
 # -- end to end ---------------------------------------------------------------

@@ -38,9 +38,9 @@ column: For/FOR -> 'For', Against -> 'Against', N/A -> NULL (the column ProxyEdg
 Security id is printed '<TYPE> <ID>': CUSIP and CINS -> `cusip` only if `legacy_pe.cusip_valid`;
 ISIN -> `isin` only if `legacy_pe.isin_valid`; SEDOL and invalid values -> ''. Never repaired.
 
-Rows land with `legacy_format = 'issueno'`, shares_voted NULL, category_type ''. 'issueno' is
-NOT in `ledger.PROMOTED_LEGACY_FORMATS`: `NON_LEGACY_VOTE_SQL` excludes the rows until a human
-promotes the format. Filing storage, the gate and `legacy_parse` stats (with parser_version)
+Rows land with `legacy_format = 'issueno'`, shares_voted NULL, category_type ''. 'issueno' was
+promoted into `ledger.PROMOTED_LEGACY_FORMATS` on 2026-11-23 after a reviewer pass (fixes
+e06dc99: unvoted meetings, dates) and a hand sample of stored rows against the filings. Filing storage, the gate and `legacy_parse` stats (with parser_version)
 are `legacy_pe.record_filing`.
 """
 

@@ -1001,7 +1001,7 @@ both parsers read it.
   FUNDS POLICY"). They split one fund's shares across policies, and stored under the
   fund they would look like contradictory votes by one fund. Then: votes outside a closed vocabulary (e.g. "None", "N/A",
   "Take No Action"); unknown sponsors; unparseable meeting dates.
-- **"Issue No." layout (quarantined, opt-in `--legacy-issueno`).** Schwab, VanEck,
+- **"Issue No." layout (opt-in `--legacy-issueno`, promoted 2026-11-23).** Schwab, VanEck,
   Hartford and Russell print a fourth layout (column header "Issue No. Description
   Proponent Mgmt Rec Vote Cast"; Hartford wraps it in HTML, Russell in SGML-table
   markup). Same two-parser/14-field agreement gate, guards and header-only fund mapping
@@ -1009,11 +1009,16 @@ both parsers read it.
   meeting typed as a contest is dropped; only For, Against, Abstain, Withhold, 1/2/3
   Year(s) and TNA votes are kept ("N/A", "Echo Vote" and anything else are dropped);
   proponents Mgmt/MGMT and ShrHoldr map to issuer / security holder and any other (N/A)
-  drops the row. `for_against_management` is the filer's own column (N/A is NULL).
+  drops the row. Only meetings printed "Voted" give votes: every row of an "Unvoted",
+  "Take No Action" or "Echo Vote" meeting is dropped (the vote column of an unvoted meeting
+  holds instructions that were never cast). `for_against_management` is the filer's own column (N/A is NULL).
   Security IDs are kept only if the CUSIP/CINS or ISIN check digit validates (SEDOL is
-  not kept). These rows are NOT promoted: `issueno` is outside
-  `PROMOTED_LEGACY_FORMATS`, so releases and analysis exclude them until a human decides.
-- **Columns.** `legacy_format` is `proxyedge`, `iss_text` or `iss_html` (NULL for XML
+  not kept). Promoted 2026-11-23 after a skeptical review (which found and fixed the
+  unvoted-meeting rule) and a hand check of stored rows against the filings (14 of 14
+  correct, including wrapped descriptions). ISS text printed as Courier HTML paragraphs
+  (Morgan Stanley) is converted line for line and read by the ISS text pair; a paragraph
+  holding a line break or tab is refused rather than converted.
+- **Columns.** `legacy_format` is `proxyedge`, `iss_text`, `iss_html` or `issueno` (NULL for XML
   rows). `shares_voted` is NULL: these formats print no share counts.
   `management_recommendation` has the XML meaning: whether THIS vote went with (FOR)
   or against (AGAINST) management, not what management recommended. ProxyEdge prints
