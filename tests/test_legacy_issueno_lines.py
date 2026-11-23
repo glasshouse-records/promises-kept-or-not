@@ -154,7 +154,9 @@ def _render(words, width, ticker):
 @settings(max_examples=60, deadline=None)
 @given(
     words=st.lists(st.from_regex(r"[A-Za-z]{1,8}", fullmatch=True), min_size=1, max_size=12),
-    width=st.integers(min_value=9, max_value=24),
+    # continuation lines start at column 12 inside a description column that ends at 35
+    # (as in the filings): at most 23 characters, or the line abuts Proponent (unplaceable)
+    width=st.integers(min_value=9, max_value=23),
     ticker=st.sampled_from(["", "MMM", "AB.C"]),
 )
 def test_wrapping_and_ticker_invariance(words, width, ticker):
