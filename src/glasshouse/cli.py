@@ -1108,8 +1108,9 @@ def main(argv: list[str] | None = None) -> int:
     npx_p.add_argument("--legacy-issueno", action="store_true",
                        help="ingest July 2022-June 2023 N-PX in the 'Issue No.' text layout "
                             "(Schwab, VanEck, Hartford, Russell; rows both independent parsers "
-                            "agree on, gated per filing); tagged issueno and QUARANTINED "
-                            "(not promoted into releases or analysis)")
+                            "agree on, gated per filing; tagged issueno, promoted 2026-11-23) "
+                            "and its HTML-table export (Putnam, Neuberger Berman; tagged "
+                            "issueno_html and QUARANTINED: not in releases or analysis)")
     npx_p.set_defaults(func=cmd_ingest_npx)
     com = ing.add_parser("commitments")
     com.add_argument("--wayback", action="store_true",

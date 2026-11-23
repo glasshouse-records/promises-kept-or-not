@@ -204,7 +204,9 @@ def test_stats_shape():
 @given(
     words=st.lists(st.sampled_from(["Elect", "Smith", "Ratify", "Auditor", "Plan", "of", "Pay"]),
                    min_size=1, max_size=8),
-    width=st.integers(min_value=8, max_value=24),
+    # continuation lines start at column 12 inside a description column that ends at 35
+    # (as in the filings): at most 23 characters, or the line abuts Proponent (unplaceable)
+    width=st.integers(min_value=8, max_value=23),
     ticker=st.sampled_from(["", "AB", "XYZ"]),
 )
 def test_wrapping_invariance(words, width, ticker):

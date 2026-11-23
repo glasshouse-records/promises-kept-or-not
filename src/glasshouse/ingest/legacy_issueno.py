@@ -53,6 +53,7 @@ from __future__ import annotations
 import logging
 import re
 import sqlite3
+import sys
 from collections import Counter
 
 from . import legacy_iss, legacy_issueno_blocks, legacy_issueno_lines, legacy_pe
@@ -96,12 +97,13 @@ def day_first_dates(text: str) -> int:
     return sum(1 for m in _VALUE_LINE_DATE.finditer(text) if int(m.group(1)) > 12)
 
 
-def agreed(text: str, parsers=PARSERS) -> tuple[list[dict], dict]:
+def agreed(text: str, parsers=PARSERS, day_first=None) -> tuple[list[dict], dict]:
     """Rows both parsers produced identically (multiset intersection, in parser A's order),
-    after the meeting-level and issuer-order guards, and the agreement stats."""
+    after the meeting-level and issuer-order guards, and the agreement stats. `day_first`
+    counts the document's day-first meeting dates (default: `day_first_dates` on the text)."""
     rows_a = parsers[0].parse(text)
     rows_b = parsers[1].parse(text)
-    n_day_first = day_first_dates(text)
+    n_day_first = (day_first or day_first_dates)(text)
     ca, cb = Counter(map(_key, rows_a)), Counter(map(_key, rows_b))
     common = ca & cb
     left = Counter(common)
@@ -138,8 +140,9 @@ def _security_id(raw: str) -> tuple[str, str]:
 
 def to_vote_rows(rows: list[dict], smap: dict[str, str],
                  aliases: dict[str, str] | None = None,
-                 header_sids: set[str] | None = None) -> tuple[list[dict], dict]:
-    """Agreed rows -> ledger vote dicts, plus drop counters."""
+                 header_sids: set[str] | None = None,
+                 legacy_format: str = LEGACY_FORMAT) -> tuple[list[dict], dict]:
+    """Agreed rows -> ledger vote dicts (tagged `legacy_format`), plus drop counters."""
     out: list[dict] = []
     unmapped: Counter = Counter()
     info = {"contest_rows_dropped": 0, "dropped_vote": 0, "dropped_date": 0,
@@ -181,7 +184,7 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
             "how_voted": how, "shares_voted": None,
             "management_recommendation": legacy_iss.with_management(
                 HOW_VOTED.get(r["rec"], ""), how),
-            "legacy_format": LEGACY_FORMAT,
+            "legacy_format": legacy_format,
             "for_against_management": FOR_AGAINST.get(r["for_against"]),
         })
     info["unmapped"] = dict(unmapped)
@@ -190,18 +193,21 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
 
 def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str | None,
                   today: str, docs: dict[str, str], hdr_text: str,
-                  aliases: dict[tuple[str, str], str] | None = None) -> int:
-    """Parse every 'issueno' document of one filing, gate it, record it. One transaction
-    (no network inside). Returns votes inserted."""
+                  aliases: dict[tuple[str, str], str] | None = None, layout=None) -> int:
+    """Parse every document of one filing in this layout, gate it, record it. One
+    transaction (no network inside). Returns votes inserted. `layout` = a module with
+    LEGACY_FORMAT, REPORT_OK, REPORT_REJECTED, agreed and to_vote_rows (default: this one;
+    legacy_issueno_html passes itself)."""
+    layout = layout or sys.modules[__name__]
     smap = legacy_pe.series_map(hdr_text)
     fa = legacy_pe.filing_aliases(aliases, filing.cik)
     sids = legacy_pe.header_series_ids(hdr_text)
     parsed = []
     for name, text in sorted(docs.items()):
-        if legacy_iss.doc_format(text) != LEGACY_FORMAT:
+        if legacy_iss.doc_format(text) != layout.LEGACY_FORMAT:
             continue
-        rows, st = agreed(text)
-        votes, info = to_vote_rows(rows, smap, fa, sids)
+        rows, st = layout.agreed(text)
+        votes, info = layout.to_vote_rows(rows, smap, fa, sids)
         info["funds_unmapped"] = info["unmapped"]
         parsed.append((name, len(re.findall(r"(?i)meeting\s+date", text)), st, votes, info))
         logger.info("%s %s: agreed=%d emitted=%d unmapped=%d contest=%d vocab=%d",
@@ -209,16 +215,19 @@ def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
                     sum(info["unmapped"].values()), info["contest_rows_dropped"],
                     info["dropped_vote"])
     return legacy_pe.record_filing(conn, filing, institution_id, today, parsed,
-                                   REPORT_OK, REPORT_REJECTED)
+                                   layout.REPORT_OK, layout.REPORT_REJECTED)
 
 
 def ingest_filing_from_sources(conn: sqlite3.Connection, filing: Filing,
-                               institution_id: str | None, today: str) -> int | None:
+                               institution_id: str | None, today: str,
+                               layout=None) -> int | None:
     """Fetch (network/cache, no write lock held) then ingest one filing. Returns None,
-    writing nothing, when the filing is not in the Issue No. layout."""
+    writing nothing, when the filing is not in this layout."""
+    layout = layout or sys.modules[__name__]
     docs, hdr = legacy_pe.load_filing_texts(filing)
-    if legacy_iss.detect_format(docs) != LEGACY_FORMAT:
+    if legacy_iss.detect_format(docs) != layout.LEGACY_FORMAT:
         return None
-    n = ingest_filing(conn, filing, institution_id, today, docs, hdr, legacy_pe.load_aliases())
-    logger.info("ingested %s %s: %d votes", REPORT_OK, filing.accession_number, n)
+    n = ingest_filing(conn, filing, institution_id, today, docs, hdr, legacy_pe.load_aliases(),
+                      layout=layout)
+    logger.info("ingested %s %s: %d votes", layout.REPORT_OK, filing.accession_number, n)
     return n

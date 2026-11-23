@@ -137,6 +137,19 @@ def is_issueno(text: str) -> bool:
     return _ISSUENO_HDR.search(text) is not None
 
 
+# The same header exported as an HTML table (Putnam, Neuberger Berman): each label in its own
+# cell, so at least one cell boundary between consecutive labels.
+_CELL_GAP = r"(?:\s|&#160;|&nbsp;|<[^>]*>)*?<t[dh]\b[^>]*>(?:\s|&#160;|&nbsp;|<[^>]*>)*?"
+_ISSUENO_HTML_HDR = re.compile(
+    rf"Issue{_WS}No\.{_CELL_GAP}Description{_CELL_GAP}Proponent{_CELL_GAP}Mgmt{_WS}Rec"
+    rf"{_CELL_GAP}Vote{_WS}Cast", re.I)
+
+
+def is_issueno_html(text: str) -> bool:
+    """The 'Issue No.' layout as an HTML table (see legacy_issueno_html)."""
+    return _ISSUENO_HTML_HDR.search(text) is not None
+
+
 _ISS_HTML_HDR = re.compile(r"<th\b[^>]*>\s*Proposal No\s*</th>", re.I)
 
 
@@ -178,20 +191,23 @@ def prepare(doc: str) -> str:
 
 def doc_format(text: str) -> str | None:
     """One document's format, checked in order: ISS text (also as Courier HTML), ISS
-    HTML, 'issueno' (legacy "Issue No." layout), ProxyEdge."""
+    HTML, 'issueno' (legacy "Issue No." layout), 'issueno_html' (the same as HTML tables),
+    ProxyEdge."""
     if is_iss_text(text) or courier_html_to_text(text) is not None:
         return "iss"
     if is_iss_html(text):
         return "iss_html"
     if is_issueno(text):
         return "issueno"
+    if is_issueno_html(text):
+        return "issueno_html"
     if "Agenda Number:" in text:
         return "proxyedge"
     return None
 
 
 def detect_format(docs: dict[str, str]) -> str | None:
-    """'iss', 'iss_html', 'issueno', 'proxyedge', or None (none, or a mix we will not guess about)."""
+    """'iss', 'iss_html', 'issueno', 'issueno_html', 'proxyedge', or None (none, or a mix we will not guess about)."""
     found = {f for f in map(doc_format, docs.values()) if f}
     return found.pop() if len(found) == 1 else None
 
