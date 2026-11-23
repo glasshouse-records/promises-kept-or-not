@@ -5,6 +5,7 @@ Adding any filer to Glasshouse = one entry in that file.
 
 from __future__ import annotations
 
+import copy
 import sqlite3
 from pathlib import Path
 
@@ -13,9 +14,22 @@ import yaml
 CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "institutions.yaml"
 
 
+_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)   # libyaml: same result, ~13x faster
+_CACHE: dict[str, tuple[tuple[int, int], dict]] = {}
+
+
 def load(path: Path | str = CONFIG_PATH) -> dict[str, dict]:
-    with open(path) as fh:
-        return yaml.safe_load(fh)["institutions"]
+    """The registry, parsed once per file version (mtime + size) and returned as a fresh
+    copy, so a caller that edits its dict never changes what the next caller sees."""
+    key = str(Path(path).resolve())
+    st = Path(key).stat()
+    stamp = (st.st_mtime_ns, st.st_size)
+    hit = _CACHE.get(key)
+    if hit is None or hit[0] != stamp:
+        with open(key) as fh:
+            hit = (stamp, yaml.load(fh, Loader=_LOADER)["institutions"])
+        _CACHE[key] = hit
+    return copy.deepcopy(hit[1])
 
 
 def sync_to_ledger(conn: sqlite3.Connection, institutions: dict[str, dict] | None = None) -> int:

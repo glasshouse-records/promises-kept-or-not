@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "hypothesis>=6.0", "ruff>=0.6", "semgrep>=1.0"]
+dev = ["pytest>=8.0", "pytest-xdist>=3.5", "hypothesis>=6.0", "ruff>=0.6", "semgrep>=1.0"]
 mcp = ["mcp>=1.0"]
 llm = ["anthropic>=0.40"]
 # Optional: emit researcher-grade typed/columnar Parquet in `glasshouse release`.

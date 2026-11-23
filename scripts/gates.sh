@@ -11,7 +11,7 @@ run() {
 }
 run ruff      .venv/bin/ruff check src/ tests/
 run semgrep   .venv/bin/semgrep --config .semgrep.yml src/ --error --quiet
-run pytest    .venv/bin/pytest -q -x -p no:cacheprovider
+run pytest    .venv/bin/pytest -q -x -p no:cacheprovider -n auto
 run integrity .venv/bin/glasshouse integrity
 if [ "$1" = "--full" ]; then
   out=$(.venv/bin/glasshouse doctor 2>&1)
