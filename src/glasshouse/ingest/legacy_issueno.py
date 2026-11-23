@@ -16,6 +16,10 @@ Fund -> series only through the filing's own SGML header and the reviewed aliase
 (`legacy_iss.series_for`); unmapped headings are dropped and counted; voting-policy sections
 (`legacy_iss.is_policy_section`) are dropped. No fuzzy matching.
 
+Dates: both parsers read MM/DD/YYYY. A document whose meeting value lines hold any date
+with a first part above 12 (so not month-first) is rejected whole (`day_first_dates`,
+disagreement forced to 1): a DD/MM filer's days 1-12 would otherwise be misread by both.
+
 Meeting status: only meetings printed 'Voted' (any case) give votes; every row of an
 'Unvoted' or 'Take No Action' meeting is dropped and counted (`dropped_status`): the vote
 column of an unvoted meeting holds instructions that were never cast.
@@ -81,11 +85,23 @@ def _key(row: dict) -> tuple:
     return tuple(row[k] for k in KEYS)
 
 
+# A meeting's value line carries the security id ('CUSIP 88579Y101') and the meeting date.
+_VALUE_LINE_DATE = re.compile(r"(?i)\b(?:CUSIP|CINS|ISIN|SEDOL)\s+\S+\s+(\d{1,2})/\d{1,2}/\d{4}\b")
+
+
+def day_first_dates(text: str) -> int:
+    """Meeting dates (value lines only) that cannot be month-first: first part > 12. Both
+    parsers read MM/DD, so a DD/MM filer would be misread identically by both for days 1-12;
+    one such date condemns the whole document."""
+    return sum(1 for m in _VALUE_LINE_DATE.finditer(text) if int(m.group(1)) > 12)
+
+
 def agreed(text: str, parsers=PARSERS) -> tuple[list[dict], dict]:
     """Rows both parsers produced identically (multiset intersection, in parser A's order),
     after the meeting-level and issuer-order guards, and the agreement stats."""
     rows_a = parsers[0].parse(text)
     rows_b = parsers[1].parse(text)
+    n_day_first = day_first_dates(text)
     ca, cb = Counter(map(_key, rows_a)), Counter(map(_key, rows_b))
     common = ca & cb
     left = Counter(common)
@@ -98,10 +114,12 @@ def agreed(text: str, parsers=PARSERS) -> tuple[list[dict], dict]:
     n_agreed = sum(common.values())
     a_only, b_only = sum((ca - cb).values()), sum((cb - ca).values())
     out, guard_stats = legacy_pe.guarded(out, rows_a, rows_b, ca, cb, "fund_heading", _key)
+    rate = (a_only + b_only) / max(1, n_agreed + a_only + b_only)
+    if n_day_first:            # the gate rejects the filing: nothing from this document ships
+        out, rate = [], 1.0
     return out, {"rows_a": len(rows_a), "rows_b": len(rows_b), "agreed": n_agreed,
-                 "a_only": a_only, "b_only": b_only,
-                 "disagreement_rate": (a_only + b_only) / max(1, n_agreed + a_only + b_only),
-                 **guard_stats}
+                 "a_only": a_only, "b_only": b_only, "disagreement_rate": rate,
+                 "day_first_dates": n_day_first, **guard_stats}
 
 
 def _security_id(raw: str) -> tuple[str, str]:

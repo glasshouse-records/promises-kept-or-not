@@ -295,3 +295,22 @@ def test_only_voted_meetings_become_votes(status):
 def test_voted_status_any_case_is_kept():
     votes, info = _rows([("Mgmt", "For", "For", "For")], status="VOTED")
     assert len(votes) == 1 and info["dropped_status"] == 0
+
+
+def test_document_with_a_day_first_meeting_date_is_rejected_whole():
+    # Review 2026-11-23: both parsers read MM/DD; a filer printing DD/MM would have every
+    # day-1..12 meeting misread identically by both. One impossible-as-month-first date in a
+    # meeting value line rejects the whole document (no rows; disagreement forced to 1).
+    good = make_doc([("Mgmt", "For", "For", "For")])
+    rows, st = legacy_issueno.agreed(good)
+    assert rows and st["day_first_dates"] == 0
+    bad = good + make_doc([("Mgmt", "For", "For", "For")]).replace("05/09/2023", "25/09/2023")
+    rows, st = legacy_issueno.agreed(bad)
+    assert rows == [] and st["day_first_dates"] == 1 and st["disagreement_rate"] == 1.0
+
+
+def test_dates_inside_proposal_text_do_not_reject():
+    text = make_doc([("Mgmt", "For", "For", "For")]).replace(
+        "Proposal number 1      ", "Accounts 31/12/2022     ")
+    rows, st = legacy_issueno.agreed(text)
+    assert st["day_first_dates"] == 0
