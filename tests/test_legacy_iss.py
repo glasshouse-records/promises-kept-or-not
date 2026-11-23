@@ -466,7 +466,10 @@ HTML = make_html(votes=(("For", "FOR", "Management"), ("Against", "ABSTAIN", "Sh
 def test_detection_order_text_then_html_then_proxyedge():
     assert legacy_iss.is_iss_html(HTML) and not legacy_iss.is_iss_html(BASIC)
     assert legacy_iss.is_iss_html("<TH width='5%'>Proposal No</TH>")
-    assert not legacy_iss.is_iss_html("<td>Proposal No</td>")
+    # Amendment 4 (2026-11-23): Franklin prints the header in <td> cells; over the 677
+    # cached documents this changes detection for Franklin's 7 only
+    assert legacy_iss.is_iss_html("<td>Proposal No</td>")
+    assert not legacy_iss.is_iss_html("<p>Proposal No</p>")
     assert legacy_iss.detect_format({"a": HTML}) == "iss_html"
     assert legacy_iss.detect_format({"a": HTML, "b": HTML}) == "iss_html"
     # a document matching several formats is classified by the order text, html, proxyedge

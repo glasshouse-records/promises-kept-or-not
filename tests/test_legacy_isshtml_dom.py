@@ -153,3 +153,75 @@ def test_signature_ends_fund_and_cover_lines_excluded():
         assert m.parse_stats(t)["funds"] == 1
     t = "<p align='center'>Date of reporting period: x</p><p align='center'>The Registrant Inc</p>"
     assert m.parse_stats(t)["funds"] == 0
+
+
+def _fk():
+    return load("franklin")
+
+
+def _ids(rows):
+    return [(r["issuer_name"], r["proposal_id"], r["ticker"], r["security_id"], r["vote"])
+            for r in rows]
+
+
+def test_amendment4_td_header_two_row_labels_and_marked_page_breaks():
+    rows = m.parse(_fk())
+    assert _ids(rows) == [
+        ("ABBOTT LABORATORIES", "1.1", "ABT", "002824100", "For"),
+        ("ABBOTT LABORATORIES", "1.2", "ABT", "002824100", "Withhold"),
+        ("NEXT CO", "1", "NXT", "123456789", "For"),
+    ]
+    assert rows[0]["proposal_text"] == "Elect Director Robert J. Alpern"
+    assert rows[0]["meeting_date"] == "2023-04-28" and rows[0]["rec_label"] == "Mgt Rec"
+
+
+def test_amendment4_no_continuation_across_unmarked_or_text_gaps():
+    marked = "<!-- PAGEBREAK_START --><p style=\"x\"><hr style=\"y\"/></p><!-- PAGEBREAK_END -->"
+    for gap in ("<hr>", "<p>more</p>", "text", "<!-- PAGEBREAK_START --><p>x</p>",
+                "<!-- PAGEBREAK_START --><p>x</p><br><!-- PAGEBREAK_END -->",
+                "<!-- PAGEBREAK_START -->t<!-- PAGEBREAK_END -->", ""):
+        rows = m.parse(_fk().replace(marked, gap))
+        assert [r["issuer_name"] for r in rows] == ["NEXT CO"], gap
+    # a fund paragraph between the tables also breaks the continuation
+    rows = m.parse(_fk().replace(marked, "<p align='center'>Other Fund</p>"))
+    assert [r["issuer_name"] for r in rows] == ["NEXT CO"]
+    # only the second break unmarked: header continues across the first, rows do not
+    second = _fk().replace(marked, "<hr>", 1)
+    assert [r["proposal_id"] for r in m.parse(second)] == ["1"]
+    third = _fk()
+    k = third.rfind(marked.split("<p")[0], 0, third.index("Elect Director Two"))
+    third = third[:k] + "<hr>" + third[k + len(marked):]
+    assert [r["proposal_id"] for r in m.parse(third)] == ["1.1", "1"]
+
+
+def test_amendment4_missing_security_id_drops_meeting():
+    text = _fk().replace("<tr><td><p>Security ID:&#160;&#160;002824100</p></td></tr>", "")
+    assert [r["issuer_name"] for r in m.parse(text)] == ["NEXT CO"]
+    st_ = m.parse_stats(text)
+    assert st_["reasons"]["incomplete_meeting_header"] == 2
+    assert st_["meeting_reasons"]["incomplete_meeting_header"] == 1
+    no_ticker = _fk().replace("<tr><td colspan=\"5\"><p><font>Ticker:&#160;&#160;ABT</font></p></td></tr>", "")
+    assert [r["issuer_name"] for r in m.parse(no_ticker)] == ["NEXT CO"]
+
+
+def test_amendment4_labels_in_one_cell_and_ticker_value_may_be_empty():
+    text = _fk().replace("Ticker: NXT<br>Security ID: 123456789", "Ticker: <br>Security ID: ")
+    assert _ids(m.parse(text))[-1] == ("NEXT CO", "1", "", "", "For")
+
+
+def test_amendment5_split_row_drops_whole_meeting_only():
+    frag = "<tr><td></td><td><p>rest of text</p></td><td></td><td></td><td></td></tr>"
+    text = _fk().replace(
+        "<tr><td><p>1.2</p>", frag + "<tr><td><p>1.2</p>")  # fragment starts the 2nd table
+    rows = m.parse(text)
+    assert [r["issuer_name"] for r in rows] == ["NEXT CO"]  # 1.1 (before) and 1.2 (after) gone
+    st_ = m.parse_stats(text)
+    assert st_["meeting_reasons"]["split_row"] == 1 and st_["reasons"]["split_row"] == 1
+
+
+def test_amendment5_empty_id_without_pagebreak_unchanged():
+    text = _fk().replace("<!-- PAGEBREAK_START -->", "").replace("<!-- PAGEBREAK_END -->", "")
+    text = text.replace("<tr><td><p>1.2</p>",
+                        "<tr><td></td><td>x</td><td>Management</td><td>For</td><td>For</td></tr>"
+                        "<tr><td><p>1.2</p>")
+    assert "split_row" not in m.parse_stats(text)["reasons"]

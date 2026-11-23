@@ -11,6 +11,7 @@ Precision over recall: anything ambiguous is dropped and counted in
 
 from __future__ import annotations
 
+import bisect
 import datetime as _dt
 import html as _html
 import re
@@ -47,6 +48,11 @@ _WS = re.compile(r"\s+")
 _CENTER = re.compile(
     r"\balign\s*=\s*[\"']?center\b"
     r"|\bstyle\s*=\s*(?:\"[^\"]*|'[^']*)(?<![\w-])text-align\s*:\s*center\b", re.I)
+# Amendment 4: the ONLY thing allowed between </table> and <table to continue state.
+_TABLE_END = re.compile(r"</table\s*>", re.I)
+_PAGEBREAK = re.compile(
+    r"\s*<!-- PAGEBREAK_START -->(?:\s|<p(?=[\s>])[^>]*>|</p\s*>|<hr(?=[\s>/])[^>]*>)*"
+    r"<!-- PAGEBREAK_END -->\s*")
 _ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9.\-()]*")
 _DATE = re.compile(r"([A-Za-z]{3})\s+(\d{1,2})\s*,\s*(\d{4})")
 _WORD = re.compile(r"[^\W\d_]+")
@@ -99,10 +105,16 @@ def _run(text: str) -> tuple[list[dict], Counter, dict]:
     in_table = False
     rec_label = ""                   # "" -> no header in force
     card = ""
+    have: set[str] = set()           # meeting-header labels seen: "t" (Ticker), "s" (Security ID)
+    skip_spacer = False              # first row of a continued table may be a nbsp spacer
+    paged = "PAGEBREAK_START" in text   # amendment 5: split rows only exist in Franklin documents
+    m_start = 0                      # len(rows) when the current meeting began
+    table_ends = [m.end() for m in _TABLE_END.finditer(text)]
 
     def reset_table() -> None:
         nonlocal meeting, rec_label, card
         meeting, rec_label, card = None, "", ""
+        have.clear()
 
     for tok in _TOKEN.finditer(text):
         kind = tok.lastgroup
@@ -126,11 +138,16 @@ def _run(text: str) -> tuple[list[dict], Counter, dict]:
             reset_table()
         elif kind == "table":
             in_table = True
-            reset_table()
+            i = bisect.bisect_right(table_ends, tok.start())
+            cont = i > 0 and _PAGEBREAK.fullmatch(text, table_ends[i - 1], tok.start()) is not None
+            if not cont:
+                reset_table()
+            skip_spacer = cont
         else:
             if not in_table:
                 continue
             cells = _cells(tok[0])
+            spacer, skip_spacer = skip_spacer, False
             if not cells:
                 continue
             tags = {c[0] for c in cells}
@@ -141,18 +158,29 @@ def _run(text: str) -> tuple[list[dict], Counter, dict]:
                     reset_table()
                     n["meetings"] += 1
                     meeting = _meeting(lines, fund, reasons)
+                    m_start = len(rows)
                 elif tag == "td" and (_label(lines, "Ticker") is not None
                                       or _label(lines, "Security ID") is not None):
                     if meeting is not None:
-                        meeting["ticker"] = _label(lines, "Ticker") or ""
-                        meeting["security_id"] = _label(lines, "Security ID") or ""
+                        t, sid = _label(lines, "Ticker"), _label(lines, "Security ID")
+                        if t is not None:
+                            meeting["ticker"] = t
+                            have.add("t")
+                        if sid is not None:
+                            meeting["security_id"] = sid
+                            have.add("s")
                 elif "colspan" in attrs.lower() and "proxy card" in _clean(body).lower():
                     card = _clean(body)
                 continue
-            if tags == {"th"} and len(cells) == 5:
-                texts = [_clean(c[2]) for c in cells]
+            texts = [_clean(c[2]) for c in cells] if len(cells) == 5 else []
+            if spacer and texts and not any(texts):
+                continue                      # amendment 4: spacer row after a page break
+            if texts and (tags == {"th"} or (tags == {"td"} and tuple(texts[:3]) == HEADER)):
                 if tuple(texts[:3]) == HEADER and texts[3] in REC_LABELS and texts[4] == "Vote Cast":
                     rec_label, card = REC_LABELS[texts[3]], ""
+                    if tags == {"td"} and meeting is not None and have != {"t", "s"}:
+                        meeting = None        # amendment 4: Franklin header needs both labels
+                        reasons["incomplete_meeting_header"] += 1
                 else:
                     rec_label, card = "", ""
                     reasons["unrecognised_header"] += 1
@@ -166,7 +194,12 @@ def _run(text: str) -> tuple[list[dict], Counter, dict]:
             if meeting is None:
                 reasons["no_meeting"] += 1
                 continue
-            pid, ptext, sponsor, rec, vote = (_clean(c[2]) for c in cells)
+            pid, ptext, sponsor, rec, vote = texts
+            if paged and not pid:
+                del rows[m_start:]            # amendment 5: a split row voids the whole meeting
+                meeting = None
+                reasons["split_row"] += 1
+                continue
             if not _ID.fullmatch(pid):
                 reasons["bad_proposal_id"] += 1
             elif not ptext:

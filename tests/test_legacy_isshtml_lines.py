@@ -136,3 +136,64 @@ def test_end_report_resets_fund_and_cover_lines_are_not_funds():
         ("First Fund", "ISSUER ONE"), ("Second Fund", "ISSUER TWO")]
     st = p.parse_stats(text)
     assert st["reasons"]["no_fund"] == 2 and st["funds"] == 2
+
+
+# ---- Amendment 4: Franklin Templeton variant (td header, split meeting header, page breaks)
+
+def _frk(name):
+    return p.parse(load(name)), p.parse_stats(load(name))
+
+
+def test_franklin_td_header_and_ticker_secid_one_cell():
+    rows, st = _frk("lines_franklin_basic.htm")
+    assert [(r["proposal_id"], r["vote"]) for r in rows] == [("1.1", "For"), ("1.2", "Against")]
+    r = rows[0]
+    assert (r["issuer_name"], r["ticker"], r["security_id"], r["meeting_date"], r["record_date"],
+            r["meeting_type"], r["fund_heading"], r["rec_label"]) == (
+        "ABBOTT LABS", "ABT", "002824100", "2023-04-28", "2023-03-01", "Annual",
+        "Franklin Fund", "Mgt Rec")
+    assert r["proposal_text"] == "Elect Director A B" and st["dropped"] == 0
+
+
+def test_franklin_ticker_and_security_id_in_two_rows():
+    rows, _ = _frk("lines_franklin_tworows.htm")
+    assert [(r["ticker"], r["security_id"]) for r in rows] == [("ABT", "002824100")]
+
+
+def test_franklin_meeting_header_split_across_marked_page_break():
+    rows, st = _frk("lines_franklin_split_header.htm")
+    assert [(r["issuer_name"], r["ticker"], r["security_id"], r["proposal_id"]) for r in rows] == [
+        ("ABBOTT LABS", "ABT", "002824100", "1")]
+    assert st["dropped"] == 0
+
+
+def test_franklin_proposal_rows_continue_across_marked_page_break():
+    rows, st = _frk("lines_franklin_split_rows.htm")
+    assert [(r["proposal_id"], r["issuer_name"], r["sponsor"], r["rec_label"]) for r in rows] == [
+        ("1", "ABBOTT LABS", "Management", "Mgt Rec"), ("2", "ABBOTT LABS", "Shareholder", "Mgt Rec")]
+    assert st["dropped"] == 0                      # the nbsp spacer row is not a dropped row
+
+
+def test_franklin_no_continuation_across_unmarked_hr_or_text():
+    for name in ("lines_franklin_hr_nocont.htm", "lines_franklin_text_nocont.htm"):
+        rows, st = _frk(name)
+        assert [r["proposal_id"] for r in rows] == ["1"], name
+
+
+def test_franklin_missing_security_id_drops_meeting():
+    rows, st = _frk("lines_franklin_no_secid.htm")
+    assert rows == [] and st["reasons"]["incomplete_meeting_header"] == 1
+
+
+# ---- Amendment 5: a row split by a page break voids its whole meeting
+
+def test_split_row_drops_whole_meeting_next_meeting_unaffected():
+    rows, st = _frk("lines_franklin_split_row.htm")
+    assert [(r["issuer_name"], r["proposal_id"]) for r in rows] == [("SECOND INC", "1")]
+    assert st["reasons"]["split_row"] == 1
+
+
+def test_empty_id_without_pagebreak_keeps_old_behaviour():
+    rows, st = _frk("lines_empty_id_nopb.htm")
+    assert [r["proposal_id"] for r in rows] == ["1"]
+    assert st["reasons"]["bad_proposal_id"] == 1 and st["reasons"]["split_row"] == 0

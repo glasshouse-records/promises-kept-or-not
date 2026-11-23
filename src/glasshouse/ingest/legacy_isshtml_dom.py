@@ -53,8 +53,9 @@ class _Cell:
 
 
 class _Table:
-    def __init__(self):
+    def __init__(self, cont: bool = False):
         self.rows: list[list[_Cell]] = []
+        self.cont = cont  # amendment 4: continues the previous table across a marked page break
 
 
 class _Tree(HTMLParser):
@@ -69,6 +70,26 @@ class _Tree(HTMLParser):
         self.p: list[str] | None = None  # open paragraph text (outside tables)
         self.p_centred = False
         self.skip = 0
+        # Gap between two top-level tables: 0 = not in a clean gap, 1 = just after </table>,
+        # 2 = inside PAGEBREAK_START..END (only p/hr/whitespace allowed), 3 = marked break complete.
+        self.gap = 0
+        self.marked = False  # document has Franklin PAGEBREAK markers (amendment 4 variant)
+
+    def _gap_break(self, tag: str):
+        if self.gap == 2 and tag in ("p", "hr"):
+            return
+        self.gap = 0
+
+    def handle_comment(self, data):
+        mark = data.strip()
+        if mark == "PAGEBREAK_START":
+            self.marked = True
+        if self.gap == 1 and mark == "PAGEBREAK_START":
+            self.gap = 2
+        elif self.gap == 2 and mark == "PAGEBREAK_END":
+            self.gap = 3
+        else:
+            self.gap = 0
 
     def _close_cell(self):
         if self.cell:
@@ -92,6 +113,8 @@ class _Tree(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
+        if self.gap and tag != "table":
+            self._gap_break(tag)
         if tag in ("script", "style"):
             self.skip += 1
         elif tag == "p":
@@ -102,7 +125,8 @@ class _Tree(HTMLParser):
                 self.p, self.p_centred = [], bool(centred)
         elif tag == "table":
             self._close_p()
-            t = _Table()
+            t = _Table(cont=self.gap == 3 and not self.tables)
+            self.gap = 0
             self.events.append(("table", t))
             self.tables.append(t)
             self.row.append(None)
@@ -131,6 +155,8 @@ class _Tree(HTMLParser):
                 self.skip -= 1
 
     def handle_endtag(self, tag):
+        if self.gap:
+            self._gap_break(tag)
         if tag in ("script", "style"):
             self.skip = max(0, self.skip - 1)
         elif tag == "p":
@@ -144,6 +170,7 @@ class _Tree(HTMLParser):
             self.tables.pop()
             self.row.pop()
             self.cell.pop()
+            self.gap = 0 if self.tables else 1
 
     def _text(self, s: str):
         if self.skip:
@@ -154,6 +181,8 @@ class _Tree(HTMLParser):
             self.p.append(" " if s == "\0" else s)
 
     def handle_data(self, data):
+        if self.gap and data.strip():
+            self.gap = 0
         self._text(data)
 
 
@@ -210,6 +239,11 @@ def _run(text: str) -> tuple[list[dict], dict]:
     stats = {"funds": 0, "tables": 0, "meetings": 0, "bad_meetings": 0, "proposal_rows": 0,
              "ignored_colspan_rows": 0}
     fund = ""
+    meeting: dict | None = None
+    meeting_bad = ""          # reason, when the current meeting was dropped
+    rec_label = card = ""
+    seen_ticker = seen_secid = False
+    meeting_start = 0  # len(out) when the current meeting began (for split_row)
     for kind, obj in tree.events:
         if kind == "end":
             fund = ""
@@ -219,20 +253,26 @@ def _run(text: str) -> tuple[list[dict], dict]:
             stats["funds"] += 1
             continue
         stats["tables"] += 1
-        meeting: dict | None = None
-        meeting_bad = ""          # reason, when the current meeting was dropped
-        rec_label = ""
-        card = ""
-        for row in obj.rows:  # type: ignore[attr-defined]
+        if not obj.cont:  # type: ignore[attr-defined]
+            meeting, meeting_bad, rec_label, card = None, "", "", ""
+            seen_ticker = seen_secid = False
+        for ri, row in enumerate(obj.rows):  # type: ignore[attr-defined]
             ths = [c for c in row if c.tag == "th"]
-            if len(row) == 1 and row[0].colspan:
+            texts = tuple(c.text for c in row)
+            lines = row[0].lines if len(row) == 1 else []
+            labelled = any(ln.lower().startswith(("meeting date:", "ticker:", "security id:"))
+                           for ln in lines)
+            if len(row) == 5 and ri == 0 and not any(texts):
+                continue  # amendment 4: spacer row of five empty / &nbsp; cells
+            if len(row) == 1 and (row[0].colspan or labelled):
                 c = row[0]
-                lines = c.lines
                 if any(ln.lower().startswith("meeting date:") for ln in lines):
                     stats["meetings"] += 1
                     meeting, why = _parse_meeting(lines)
+                    meeting_start = len(out)
                     meeting_bad = why
                     rec_label, card = "", ""
+                    seen_ticker = seen_secid = False
                     if meeting is None:
                         stats["bad_meetings"] += 1
                         meeting_reasons[why] += 1
@@ -242,20 +282,33 @@ def _run(text: str) -> tuple[list[dict], dict]:
                             low = ln.lower()
                             if low.startswith("ticker:"):
                                 meeting["ticker"] = _collapse(ln[7:])
+                                seen_ticker = True
                             elif low.startswith("security id:"):
                                 meeting["security_id"] = _collapse(ln[12:])
+                                seen_secid = True
                 elif "proxy card" in c.text.lower():
                     card = c.text
                 else:
                     stats["ignored_colspan_rows"] += 1
+            elif len(row) == 5 and texts[:3] == HEADER and texts[4] == "Vote Cast" \
+                    and texts[3] in REC_LABELS:
+                rec_label, card = REC_LABELS[texts[3]], ""
+                # Only in the Franklin variant: other families print labels in other shapes
+                # (e.g. both on one line) and must keep today's output byte for byte.
+                if tree.marked and meeting is not None and not (seen_ticker and seen_secid):
+                    meeting, meeting_bad = None, "incomplete_meeting_header"
+                    stats["bad_meetings"] += 1
+                    meeting_reasons[meeting_bad] += 1
             elif len(ths) == len(row) and row:
-                texts = tuple(c.text for c in row)
-                if len(texts) == 5 and texts[:3] == HEADER and texts[4] == "Vote Cast" \
-                        and texts[3] in REC_LABELS:
-                    rec_label, card = REC_LABELS[texts[3]], ""
-                else:
-                    rec_label, card = "", ""  # unknown column layout: nothing below is trusted
-                    reasons["bad_header"] += 1
+                rec_label, card = "", ""  # unknown column layout: nothing below is trusted
+                reasons["bad_header"] += 1
+            elif tree.marked and meeting is not None and rec_label and len(row) == 5 \
+                    and all(c.tag == "td" for c in row) and texts[0] == "":
+                # amendment 5: a row split across a page break; drop the whole meeting
+                del out[meeting_start:]
+                meeting, meeting_bad = None, "split_row"
+                stats["bad_meetings"] += 1
+                meeting_reasons[meeting_bad] += 1
             elif len(row) == 5 and all(c.tag == "td" for c in row):
                 stats["proposal_rows"] += 1
                 _row(row, fund, meeting, meeting_bad, rec_label, card, out, reasons)
@@ -300,7 +353,9 @@ def _row(row, fund, meeting, meeting_bad, rec_label, card, out, reasons):
 
 
 def meeting_bad_reason(why: str) -> str:
-    return {"bad_meeting_date": "bad_meeting_date", "": "no_meeting"}.get(why, "bad_meeting")
+    return {"bad_meeting_date": "bad_meeting_date", "": "no_meeting",
+            "incomplete_meeting_header": "incomplete_meeting_header",
+            "split_row": "split_row"}.get(why, "bad_meeting")
 
 
 def parse(text: str) -> list[dict]:

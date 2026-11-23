@@ -233,3 +233,15 @@ def test_description_wrapped_onto_its_own_row_drops_the_meeting():
         + _tr("", "", "", "Climate Lobbying", "", "", "", "", ""))
     assert doc != DOC
     assert legacy_issueno_html.agreed(doc)[0] == []
+
+
+# -- ISS HTML detection: Franklin's td header (Amendment 4) --------------------
+
+def test_franklin_td_header_is_iss_html():
+    franklin = ('<table><tr><td style="x"><p style="y">Proposal No</p></td><td><p>Proposal</p></td>'
+                '<td><p>Proposed By</p></td><td><p>Management Recommendation</p></td>'
+                '<td><p>Vote Cast</p></td></tr></table>')
+    assert legacy_iss.is_iss_html(franklin)
+    assert legacy_iss.doc_format(franklin) == "iss_html"
+    assert legacy_iss.is_iss_html("<table><tr><th>Proposal No</th></tr></table>")
+    assert not legacy_iss.is_iss_html("<p>Proposal No</p>")          # not a cell

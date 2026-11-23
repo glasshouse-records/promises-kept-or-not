@@ -153,7 +153,10 @@ def is_issueno_html(text: str) -> bool:
     return _ISSUENO_HTML_HDR.search(text) is not None
 
 
-_ISS_HTML_HDR = re.compile(r"<th\b[^>]*>\s*Proposal No\s*</th>", re.I)
+# <th>Proposal No</th>, or Franklin's <td><p ...><font ...>Proposal No</font></p></td>
+_ISS_HTML_HDR = re.compile(
+    r"<(t[dh])\b[^>]*>\s*(?:<(?:p|font)\b[^>]*>\s*){0,2}Proposal No\s*"
+    r"(?:</(?:p|font)>\s*){0,2}</\1>", re.I)
 
 
 def is_iss_html(text: str) -> bool:
