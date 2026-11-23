@@ -41,6 +41,7 @@ _TOKEN = re.compile(
   | (?P<cell><t[dh]\b{_ATTRS}>)
   | (?P<hr><hr\b{_ATTRS}>)
   | (?P<table_end></table\b{_ATTRS}>)
+  | (?P<space></?(?:br|div|p|li)\b{_ATTRS}>)
   | (?P<tag></?[a-z!?]{_ATTRS}>)
   | (?P<text>[^<]+|<)
     """,
@@ -68,7 +69,7 @@ _PROP_BASE = frozenset({"issue no.", "description", "proponent", "mgmt rec",
                         "vote cast"})
 _FA_LABELS = ("for/agnst mgmt", "for/against mgmt")
 
-_IDLE, _ISSUER, _H1V, _H3H, _H3V, _PHDR, _PROPS = range(7)
+_IDLE, _ISSUER, _H1V, _H3H, _H3V, _PHDR, _PROPS, _PEND = range(8)
 
 
 def _norm(raw: str) -> str:
@@ -111,6 +112,9 @@ def _rows(text: str):
         if k == "text":
             if parts is not None:
                 parts.append(m.group())
+        elif k == "space":
+            if parts is not None:
+                parts.append(" ")
         elif k == "cell":
             if in_row:
                 close_cell()
@@ -164,6 +168,8 @@ def _scan(text: str):
     fund: str | None = None
     meet: dict = {}
     pos_map: dict[str, int] = {}
+    meet_idx = 0
+    pend = ""
 
     def bad_meeting(reason: str):
         if not meet.get("bad"):
@@ -178,6 +184,21 @@ def _scan(text: str):
             return None
         return {name: by_pos.get(p, "") for name, p in positions.items()}
 
+    def unplace():
+        """A3: drop the whole current meeting, proposals already read included."""
+        nonlocal state
+        if not meet.get("bad"):
+            meet["bad"] = "unplaced_row"
+            st["meetings_dropped"] += 1
+            reasons["meeting:unplaced_row"] += 1
+        removed = len(out) - meet_idx
+        if removed > 0:
+            del out[meet_idx:]
+            st["proposals_emitted"] -= removed
+            st["proposals_dropped"] += removed
+            reasons["unplaced_row"] += removed
+        state = _IDLE
+
     def fail(reason: str):
         nonlocal state
         bad_meeting(reason)
@@ -185,24 +206,39 @@ def _scan(text: str):
 
     for cells, has_hr in _rows(text):
         if has_hr:
+            if state == _PEND:
+                unplace()
             if state in (_H1V, _H3H, _H3V, _PHDR):
                 bad_meeting("separator_inside_header")
             state = _IDLE
             continue
         fv = _fund_value(cells)
         if fv is not None:
+            if state == _PEND:
+                unplace()
             if state in (_H1V, _H3H, _H3V, _PHDR):
                 bad_meeting("fund_heading_inside_header")
             fund = fv or None
             state = _IDLE
             continue
         if cells and _REGISTRANT.match(cells[0][1]):
+            fund = None  # A1: a registrant change ends the fund
+            if state == _PEND:
+                unplace()
             if state in (_H1V, _H3H, _H3V, _PHDR):
                 bad_meeting("registrant_inside_header")
             state = _IDLE
             continue
 
         n = len(cells)
+        if state == _PEND:
+            if n == 0:
+                continue
+            if n == 4 and set(_label_map(cells)) == _H1:
+                meet = {"issuer": pend, "bad": None}
+                state = _ISSUER
+            else:
+                unplace()
         if state == _PROPS:
             if n == 0:
                 state = _IDLE
@@ -256,8 +292,10 @@ def _scan(text: str):
                     "for_against": v["fa"],
                 })
                 continue
-            state = _IDLE  # one-cell row: issuer of the next meeting
-        elif state != _IDLE:
+            pend = cells[0][1]  # A3: a meeting only if the next row is the header
+            state = _PEND
+            continue
+        if state != _IDLE:
             labels = _label_map(cells)
             if state == _ISSUER:
                 if n == 4 and set(labels) == _H1:
@@ -319,6 +357,7 @@ def _scan(text: str):
                                "vote": labels["vote cast"],
                                "fa": labels[fa[0]]}
                     state = _PROPS
+                    meet_idx = len(out)
                     continue
                 fail("no_proposal_header")
                 if n != 1:
@@ -329,6 +368,8 @@ def _scan(text: str):
         else:
             state = _IDLE
 
+    if state == _PEND:
+        unplace()
     if state in (_H1V, _H3H, _H3V, _PHDR):
         bad_meeting("incomplete")
     return out, st, reasons, vocab_seen

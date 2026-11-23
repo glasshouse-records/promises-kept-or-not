@@ -139,7 +139,10 @@ def is_issueno(text: str) -> bool:
 
 # The same header exported as an HTML table (Putnam, Neuberger Berman): each label in its own
 # cell, so at least one cell boundary between consecutive labels.
-_CELL_GAP = r"(?:\s|&#160;|&nbsp;|<[^>]*>)*?<t[dh]\b[^>]*>(?:\s|&#160;|&nbsp;|<[^>]*>)*?"
+_CELL_GAP = r"(?:\s|&#160;|&nbsp;|<(?![tT][dDhH]\b)[^>]*>)*"   # never crosses a cell start
+# One or more cell starts, each preceded by non-cell filler: the pieces cannot overlap, so a
+# failed match is linear (the lazy overlapping form took 21 s on 32,000 empty cells).
+_CELL_GAP = rf"(?:{_CELL_GAP}<t[dh]\b[^>]*>)+{_CELL_GAP}"
 _ISSUENO_HTML_HDR = re.compile(
     rf"Issue{_WS}No\.{_CELL_GAP}Description{_CELL_GAP}Proponent{_CELL_GAP}Mgmt{_WS}Rec"
     rf"{_CELL_GAP}Vote{_WS}Cast", re.I)

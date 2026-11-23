@@ -168,7 +168,44 @@ def test_fund_without_meetings_and_registrant_ignored():
 def test_continuation_row_never_merged():
     cont = _row(["", "", "", "wrapped description text"])
     rows = m.parse(_doc(SEP, _meeting(), cont))
-    assert len(rows) == 1
+    assert rows == []  # superseded by A3: the whole meeting is dropped
+
+
+def test_a1_registrant_row_ends_fund():
+    doc = _doc(SEP, _meeting(issuer="One")) \
+        + "<TABLE>" + _row(["Registrant : Other Trust"]) + SEP + _meeting(issuer="Two") + "</TABLE>"
+    assert [r["issuer_name"] for r in m.parse(doc)] == ["One"]
+    assert m.parse_stats(doc)["reasons"].get("meeting:no_fund") == 1
+    doc2 = doc.replace("</TABLE>", "", 1) + "<TABLE>" + _row(["Fund Name : New"]) \
+        + SEP + _meeting(issuer="Three") + "</TABLE>"
+    assert [(r["issuer_name"], r["fund_heading"]) for r in m.parse(doc2)][-1] == ("Three", "New")
+
+
+def test_a2_br_and_block_elements_are_spaces():
+    props = (("1", "Elect John<BR>Smith", "Mgmt", "For", "For", "For"),
+             ("2", "<div>Approve Plan</div><div>(Amended)</div>", "Mgmt", "For", "For", "For"),
+             ("3", "<p>A</p><li>B</li> <B>Bo</B><font>ld</font>", "Mgmt", "For", "For", "For"))
+    rows = m.parse(_doc(SEP, _meeting(props=props)))
+    assert [r["proposal_text"] for r in rows] == ["Elect John Smith", "Approve Plan (Amended)",
+                                                  "A B Bold"]
+
+
+def test_a3_wrapped_description_row_drops_whole_meeting():
+    good = ("1", "Elect A", "Mgmt", "For", "For", "For")
+    wrapped = _row(["", "", "", "wrapped description text"])
+    doc = _doc(SEP, _meeting(issuer="Bad", props=(good,)) + wrapped
+               + _row(["", "", "3", "Elect C", "", "Mgmt", "For", "For", "For"]),
+               SEP, _meeting(issuer="Good"))
+    rows = m.parse(doc)
+    assert [r["issuer_name"] for r in rows] == ["Good"]
+    s = m.parse_stats(doc)
+    assert s["meetings_dropped"] == 1 and s["proposals_emitted"] == 1
+    assert s["reasons"]["meeting:unplaced_row"] == 1
+
+
+def test_a3_single_cell_row_before_header_starts_new_meeting():
+    doc = _doc(_meeting(issuer="One"), _row([""]), _meeting(issuer="Two"))
+    assert [r["issuer_name"] for r in m.parse(doc)] == ["One", "Two"]
 
 
 # ---------------------------------------------------------------- property

@@ -32,6 +32,8 @@ _ROW_START = re.compile(r"(?i)(?=<tr[\s>/])|(?=</table)")
 _CELL_START = re.compile(r"(?i)<t[dh](?=[\s>/])")
 _ROW_END = re.compile(r"(?i)</tr")
 _TAG = re.compile(r"<!--.*?-->|<[^>]*>", re.S)
+_SPACE_TAG = re.compile(r"(?i)<(?:br|/?(?:div|p|li))(?=[\s>/])[^>]*>")
+_REGISTRANT = re.compile(r"(?i)^registrant\s*:")
 _COLSPAN = re.compile(r"(?i)\bcolspan\s*=\s*[\"']?\s*(\d+)")
 _FUND = re.compile(r"(?i)^fund name\s*:\s*(.*)$")
 _DATE = re.compile(r"^(\d{2})/(\d{2})/(\d{4})$")
@@ -55,6 +57,7 @@ class _Row:
 
 
 def _norm(s: str) -> str:
+    s = _SPACE_TAG.sub(" ", s)  # <br> and block-element edges count as one space
     return " ".join(html.unescape(_TAG.sub("", s)).split())
 
 
@@ -127,6 +130,10 @@ def _label_map(row: _Row, labels: dict, required: set, optional: set = frozenset
     return found
 
 
+def _is_registrant(row: _Row) -> bool:
+    return any(_REGISTRANT.match(t) for _, t in row.cells)
+
+
 def _is_issuer(row: _Row) -> bool:
     return not row.sep and len(row.cells) == 1
 
@@ -150,8 +157,20 @@ def _meeting_date(s: str):
 
 
 def _starts_block(row) -> bool:
-    return row is None or row.sep or not row.cells or _is_issuer(row) \
+    return row is None or row.sep or not row.cells or _is_registrant(row) \
         or _fund_heading(row) is not None
+
+
+def _next_is_ticker_header(rows: list, j: int) -> bool:
+    """Is the next row after rows[j] that has any non-empty cell the Ticker header?"""
+    for k in range(j + 1, len(rows)):
+        nxt = rows[k]
+        if nxt is None or nxt.sep:
+            return False
+        if nxt.cells:
+            return _label_map(nxt, _TICKER_LABELS,
+                              {"ticker", "security_id", "date", "status"}) is not None
+    return False
 
 
 def _meeting_block(rows: list, i: int, fund, stats: dict, out: list) -> int:
@@ -170,7 +189,7 @@ def _meeting_block(rows: list, i: int, fund, stats: dict, out: list) -> int:
         return i + 1
 
     if not fund:
-        return drop("no_fund_heading")
+        return drop("no_fund")
     if len(r) < 6 or any(x is None for x in r):
         return drop("incomplete_header")
     tv = _values(r[2], tcols)
@@ -198,9 +217,27 @@ def _meeting_block(rows: list, i: int, fund, stats: dict, out: list) -> int:
         "country": yv.get("country", ""),
     }
     j = i + 6
+    first = len(out)
     while j < len(rows) and not _starts_block(rows[j]):
-        _proposal_row(rows[j], pcols, base, stats, out)
+        row = rows[j]
+        if _is_issuer(row):
+            if _next_is_ticker_header(rows, j):
+                break
+            # unplaced one-cell row (e.g. wrapped description): drop the whole meeting
+            n = len(out) - first
+            del out[first:]
+            stats["proposals_emitted"] -= n
+            stats["proposals_dropped"] += n
+            stats["reasons"]["unplaced_row"] += n
+            return _unplaced(stats, j)
+        _proposal_row(row, pcols, base, stats, out)
         j += 1
+    return j
+
+
+def _unplaced(stats: dict, j: int) -> int:
+    stats["meetings_dropped"] += 1
+    stats["reasons"]["meeting:unplaced_row"] += 1
     return j
 
 
@@ -243,7 +280,10 @@ def _walk(text: str):
             i += 1
             continue
         heading = _fund_heading(row)
-        if heading is not None:
+        if _is_registrant(row):
+            fund = None   # a registrant change ends the current fund
+            i += 1
+        elif heading is not None:
             fund = heading
             i += 1
         elif _is_issuer(row):

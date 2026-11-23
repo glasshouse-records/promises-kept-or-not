@@ -234,3 +234,67 @@ def test_markup_noise_does_not_change_output(data):
         noisy = re.sub(r"(?i)</tr\s*>", "", noisy)
     assert parse(noisy) == parse(base)
     assert len(parse(base)) == 3
+
+
+# ---------- Amendment 1 regressions ----------
+
+HDR = (row("", "", "<B>Ticker</B>", "<B>Security ID:</B>", "<B>Meeting Date</B>",
+           "<B>Meeting Status</B>"))
+
+
+def test_a1_registrant_row_ends_the_fund():
+    text = doc(fund("F1"), meeting(issuer="A"),
+               row("", "Registrant :", "Other Trust"), meeting(issuer="B"),
+               fund("F2"), meeting(issuer="C"))
+    rows = parse(text)
+    assert [(r["fund_heading"], r["issuer_name"]) for r in rows] == [
+        ("F1", "A"), ("F2", "C")]
+    s = parse_stats(text)
+    assert s["meetings_dropped"] == 1 and s["reasons"]["meeting:no_fund"] == 1
+
+
+def test_a2_br_and_block_tags_count_as_one_space():
+    text = doc(fund("F<BR>G"), meeting(issuer="Acme<br/>Corp", props=[
+        ("1", "Elect John<BR>Smith", "Mgmt", "For", "For", "For"),
+        ("2", "<div>Approve Plan</div><div>(Amended)</div>", "Mgmt", "For", "For", "For"),
+        ("3", "<p>One</p><li>Two</li>", "Mgmt", "For", "For", "For"),
+        ("4", "Ab<b>c</b><font>d</font><span>e</span>", "Mgmt", "For", "For", "For"),
+    ]))
+    rows = parse(text)
+    assert rows[0]["fund_heading"] == "F G" and rows[0]["issuer_name"] == "Acme Corp"
+    assert [r["proposal_text"] for r in rows] == [
+        "Elect John Smith", "Approve Plan (Amended)", "One Two", "Abcde"]
+
+
+def test_a3_wrapped_row_drops_whole_meeting():
+    m = meeting(issuer="One", props=[
+        ("1", "Elect A", "Mgmt", "For", "For", "For")])
+    m += row("", "wrapped continuation of the description")
+    m += row("", "", "2", "Elect B", "Mgmt", "For", "For", "For")
+    text = doc(fund(), m, meeting(issuer="Two"))
+    rows = parse(text)
+    assert [r["issuer_name"] for r in rows] == ["Two"]  # nothing of "One"
+    s = parse_stats(text)
+    assert s["meetings_dropped"] == 1
+    assert s["reasons"]["meeting:unplaced_row"] == 1
+    assert s["proposals_emitted"] == 1
+
+
+def test_a3_one_cell_row_before_header_starts_new_meeting():
+    # empty rows between the issuer row and the header are skipped
+    m1 = meeting(issuer="One")
+    m2 = meeting(issuer="Two")
+    text = doc(fund(), m1, m2.replace(row("", "Two"), row("", "Two") + row("", "")))
+    rows = parse(text)
+    assert [r["issuer_name"] for r in rows] == ["One", "Two"]
+    assert parse_stats(text)["meetings_dropped"] == 0
+
+
+def test_a3_nothing_read_until_next_valid_issuer_and_header():
+    m = meeting(issuer="One")
+    m += row("", "stray")
+    m += row("", "", "9", "Elect Z", "Mgmt", "For", "For", "For")
+    m += row("", "", "10", "Elect Y", "Mgmt", "For", "For", "For")
+    assert parse(doc(fund(), m)) == []
+    # a one-cell row at the very end of a meeting also drops it
+    assert parse(doc(fund(), meeting(issuer="One") + row("", "trailing"))) == []

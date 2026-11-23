@@ -10,8 +10,8 @@ after them is `legacy_issueno`'s, unchanged: multiset agreement over all 14 fiel
 vote and proposer vocabularies, validated security ids, fund -> series only through the
 filing's SGML header and the reviewed aliases.
 
-Day-first dates: the same guard as the text layout, run on the table's text (tags removed,
-entities decoded), so a value row 'CUSIP 901384107 | 13/06/2023' rejects the document whole.
+Day-first dates: any date with a first part above 12 in a table row that holds a security
+id (a meeting value row, whatever its column order) rejects the document whole.
 
 Detection: `legacy_iss.doc_format` returns 'issueno_html' when the column labels sit in
 consecutive table cells. Ingest is opt-in under the same `--legacy-issueno` flag; report
@@ -35,11 +35,21 @@ PARSERS = (legacy_issueno_html_cells, legacy_issueno_html_rows)
 MAX_DISAGREEMENT = legacy_issueno.MAX_DISAGREEMENT
 
 _TAG = re.compile(r"<[^>]*>")
+_ROW_START = re.compile(r"<tr\b", re.I)
+_SECURITY_ID = re.compile(r"(?i)\b(?:CUSIP|CINS|ISIN|SEDOL)\s+\S")
+_DATE = re.compile(r"\b(\d{1,2})/\d{1,2}/\d{4}\b")
 
 
 def day_first_dates(text: str) -> int:
-    """`legacy_issueno.day_first_dates` over the document's text with tags removed."""
-    return legacy_issueno.day_first_dates(html.unescape(_TAG.sub(" ", text)))
+    """Dates whose first part is above 12 in any table row that also holds a security id
+    (a meeting value row), wherever the date cell sits in the row. Rows without a security
+    id (proposal text) are not looked at."""
+    n = 0
+    for row in _ROW_START.split(text):
+        plain = html.unescape(_TAG.sub(" ", row))
+        if _SECURITY_ID.search(plain):
+            n += sum(1 for m in _DATE.finditer(plain) if int(m.group(1)) > 12)
+    return n
 
 
 def agreed(text: str, parsers=None) -> tuple[list[dict], dict]:

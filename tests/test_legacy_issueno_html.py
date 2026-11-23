@@ -179,3 +179,55 @@ def test_npx_dispatch_under_the_issueno_flag_and_reingest(tmp_path, monkeypatch)
     st = _npx_run(conn, monkeypatch, {"a.htm": DOC}, legacy_issueno_text=True,
                   reingest={ACC}, reingest_reason="test")
     assert st["votes"] == 3
+
+
+# -- review 2026-11-23 (#4, #5) -------------------------------------------------
+
+def test_detection_is_fast_on_many_empty_cells():
+    import time
+    bad = "Issue No." + "<td></td>" * 32000 + "Description"
+    t = time.perf_counter()
+    assert not legacy_iss.is_issueno_html(bad)
+    assert time.perf_counter() - t < 1.0
+
+
+def test_day_first_guard_does_not_depend_on_column_order():
+    # date cell BEFORE the security id: the text-layout regex would miss it
+    doc = DOC.replace("<TD>CUSIP 901384107</TD><TD></TD><TD>06/13/2023</TD>",
+                      "<TD>24/05/2023</TD><TD></TD><TD>CUSIP 901384107</TD>")
+    assert doc != DOC
+    assert legacy_issueno_html.day_first_dates(doc) == 1
+
+
+def test_day_first_guard_ignores_dates_in_proposal_text():
+    doc = make_html([("1", "Approve Merger dated 30/06/2023", "Mgmt", "For", "For", "For")])
+    assert legacy_issueno_html.day_first_dates(doc) == 0
+
+
+# -- review 2026-11-23 (#1-#3), end to end through the agreement --------------
+
+def _after_registrant_change():
+    second = make_html([("1", "Elect Zed", "Mgmt", "For", "For", "For")])
+    second = second.split(_tr("", "<B>Fund Name :</B>", f" {FUND}"), 1)[1]
+    return (DOC.replace("</TABLE></BODY></HTML>", "")
+            + _tr("", "<B>Registrant :</B>", " Other Trust") + second)
+
+
+def test_registrant_change_never_carries_the_fund():
+    rows, _ = legacy_issueno_html.agreed(_after_registrant_change())
+    assert [r["proposal_text"] for r in rows] == [r[1] for r in ROWS]   # Zed dropped
+    assert {r["fund_heading"] for r in rows} == {FUND}
+
+
+def test_line_break_inside_a_cell_is_a_space():
+    doc = make_html([("1", "Elect John<BR>Smith", "Mgmt", "For", "For", "For")])
+    assert [r["proposal_text"] for r in legacy_issueno_html.agreed(doc)[0]] == ["Elect John Smith"]
+
+
+def test_description_wrapped_onto_its_own_row_drops_the_meeting():
+    doc = DOC.replace(
+        _tr("", "", "2", "Ratification of Auditor", "", "Mgmt", "For", "Against", "Against"),
+        _tr("", "", "2", "Shareholder Proposal Regarding", "", "Mgmt", "For", "Against", "Against")
+        + _tr("", "", "", "Climate Lobbying", "", "", "", "", ""))
+    assert doc != DOC
+    assert legacy_issueno_html.agreed(doc)[0] == []
