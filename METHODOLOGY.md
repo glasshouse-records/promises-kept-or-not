@@ -979,6 +979,16 @@ both parsers read it.
   section is sorted, only those head meetings are dropped. A run that repeats earlier
   rows of the same section field for field (an as-filed repeat) is kept. The counts
   of every guard, and the parser version, are stored per document in `legacy_parse`.
+- **Franklin Templeton's ISS HTML variant (2026-11-23).** Franklin's own filings print the
+  ISS HTML columns in ordinary table cells and split tables at page breaks marked
+  `<!-- PAGEBREAK_START -->`. Only when nothing but such a marked break lies between two
+  tables does a meeting continue into the next one. A page break can cut a meeting badly:
+  a proposal row split in two (its first half would carry truncated text), the issuer block
+  split before its record date or meeting type, a column header split in two, or a
+  Ticker/Security ID row after the header. Every such meeting is dropped whole, never
+  patched (about 1 meeting in 7 in these filings). Other filers' documents read exactly as
+  before. Checked by a skeptical review and by hand: 15 of 15 parsed rows and 40 of 40
+  stored votes right, including the fund.
 - **`report_type` values for legacy filings** (these are parse verdicts, not N-PX cover
   values): `LEGACY_PROXYEDGE`, `LEGACY_ISS` (ISS text), `LEGACY_ISSHTML` (accepted);
   the same with `_REJECTED` (gate failed, or nothing parsed: see `legacy_parse`);
