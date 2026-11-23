@@ -229,6 +229,28 @@ def _parse_meeting(lines: list[str]):
     }, ""
 
 
+def _a6_reason(row, texts, rec_label, is_first, cont) -> str:
+    """Amendment 6 (PAGEBREAK documents, meeting in force): why this row poisons the meeting."""
+    lines = [ln.lower() for c in row for ln in c.lines]
+    if any(ln.startswith("meeting date:") for ln in lines):
+        return ""  # a new meeting; handled by the normal path
+    full_header = len(row) == 5 and texts[:3] == HEADER and texts[4] == "Vote Cast" \
+        and texts[3] in REC_LABELS
+    rowtext = " ".join(t for t in texts if t).lower()
+    if not rec_label and rowtext.startswith(("record date:", "meeting type:")):
+        return "split_meeting_header"
+    if rec_label and any(ln.startswith(("ticker:", "security id:")) for ln in lines):
+        return "late_label"
+    if not full_header and (
+            (texts and texts[0].lower() in ("proposal", "no"))
+            or any(t.lower() in ("recommendation", "proposed by") for t in texts)):
+        return "split_column_header"
+    if cont and is_first and len(row) < 5 \
+            and not any(ln.startswith(("ticker:", "security id:")) for ln in lines):
+        return "fragment"
+    return ""
+
+
 def _run(text: str) -> tuple[list[dict], dict]:
     tree = _Tree()
     tree.feed(text)
@@ -243,6 +265,7 @@ def _run(text: str) -> tuple[list[dict], dict]:
     meeting_bad = ""          # reason, when the current meeting was dropped
     rec_label = card = ""
     seen_ticker = seen_secid = False
+    marked = tree.marked
     meeting_start = 0  # len(out) when the current meeting began (for split_row)
     for kind, obj in tree.events:
         if kind == "end":
@@ -256,6 +279,7 @@ def _run(text: str) -> tuple[list[dict], dict]:
         if not obj.cont:  # type: ignore[attr-defined]
             meeting, meeting_bad, rec_label, card = None, "", "", ""
             seen_ticker = seen_secid = False
+        first_row = True
         for ri, row in enumerate(obj.rows):  # type: ignore[attr-defined]
             ths = [c for c in row if c.tag == "th"]
             texts = tuple(c.text for c in row)
@@ -264,6 +288,16 @@ def _run(text: str) -> tuple[list[dict], dict]:
                            for ln in lines)
             if len(row) == 5 and ri == 0 and not any(texts):
                 continue  # amendment 4: spacer row of five empty / &nbsp; cells
+            is_first, first_row = first_row, False
+            if marked and meeting is not None:
+                why6 = _a6_reason(row, texts, rec_label, is_first,
+                                  obj.cont)  # type: ignore[attr-defined]
+                if why6:
+                    del out[meeting_start:]
+                    meeting, meeting_bad = None, why6
+                    stats["bad_meetings"] += 1
+                    meeting_reasons[why6] += 1
+                    continue
             if len(row) == 1 and (row[0].colspan or labelled):
                 c = row[0]
                 if any(ln.lower().startswith("meeting date:") for ln in lines):
@@ -295,14 +329,14 @@ def _run(text: str) -> tuple[list[dict], dict]:
                 rec_label, card = REC_LABELS[texts[3]], ""
                 # Only in the Franklin variant: other families print labels in other shapes
                 # (e.g. both on one line) and must keep today's output byte for byte.
-                if tree.marked and meeting is not None and not (seen_ticker and seen_secid):
+                if marked and meeting is not None and not (seen_ticker and seen_secid):
                     meeting, meeting_bad = None, "incomplete_meeting_header"
                     stats["bad_meetings"] += 1
                     meeting_reasons[meeting_bad] += 1
             elif len(ths) == len(row) and row:
                 rec_label, card = "", ""  # unknown column layout: nothing below is trusted
                 reasons["bad_header"] += 1
-            elif tree.marked and meeting is not None and rec_label and len(row) == 5 \
+            elif marked and meeting is not None and rec_label and len(row) == 5 \
                     and all(c.tag == "td" for c in row) and texts[0] == "":
                 # amendment 5: a row split across a page break; drop the whole meeting
                 del out[meeting_start:]
@@ -355,7 +389,9 @@ def _row(row, fund, meeting, meeting_bad, rec_label, card, out, reasons):
 def meeting_bad_reason(why: str) -> str:
     return {"bad_meeting_date": "bad_meeting_date", "": "no_meeting",
             "incomplete_meeting_header": "incomplete_meeting_header",
-            "split_row": "split_row"}.get(why, "bad_meeting")
+            "split_row": "split_row", "split_meeting_header": "split_meeting_header",
+            "late_label": "late_label", "split_column_header": "split_column_header",
+            "fragment": "fragment"}.get(why, "bad_meeting")
 
 
 def parse(text: str) -> list[dict]:

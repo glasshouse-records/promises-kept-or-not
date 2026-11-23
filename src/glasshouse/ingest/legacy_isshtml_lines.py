@@ -109,7 +109,18 @@ def _run(text: str) -> tuple[list[dict], Counter, dict]:
     skip_spacer = False              # first row of a continued table may be a nbsp spacer
     paged = "PAGEBREAK_START" in text   # amendment 5: split rows only exist in Franklin documents
     m_start = 0                      # len(rows) when the current meeting began
+    first_real = False               # amendment 6d: next non-spacer row of a continued table
     table_ends = [m.end() for m in _TABLE_END.finditer(text)]
+
+    def void(reason: str) -> bool:
+        """Amendment 6: drop the WHOLE current meeting (rows before and after); never patch."""
+        nonlocal meeting
+        if meeting is None:
+            return False
+        del rows[m_start:]
+        meeting = None
+        reasons[reason] += 1
+        return True
 
     def reset_table() -> None:
         nonlocal meeting, rec_label, card
@@ -142,7 +153,7 @@ def _run(text: str) -> tuple[list[dict], Counter, dict]:
             cont = i > 0 and _PAGEBREAK.fullmatch(text, table_ends[i - 1], tok.start()) is not None
             if not cont:
                 reset_table()
-            skip_spacer = cont
+            skip_spacer = first_real = cont
         else:
             if not in_table:
                 continue
@@ -151,6 +162,30 @@ def _run(text: str) -> tuple[list[dict], Counter, dict]:
             if not cells:
                 continue
             tags = {c[0] for c in cells}
+            if paged and meeting is not None:
+                ct = [_clean(c[2]) for c in cells]
+                complete_hdr = (len(ct) == 5 and tuple(ct[:3]) == HEADER and ct[3] in REC_LABELS
+                                and ct[4] == "Vote Cast")
+                lo = [t.lower() for t in ct]
+                is_label = any(_label(_lines(c[2]), k) is not None
+                               for c in cells for k in ("Ticker", "Security ID"))
+                first, first_real = first_real, False
+                if first and spacer and len(ct) == 5 and not any(ct):
+                    first_real = True         # spacer: the next row is the first real one
+                elif not rec_label and " ".join(ct).startswith(("Record Date:", "Meeting Type:")):
+                    if void("split_meeting_header"):
+                        continue
+                elif is_label and rec_label:
+                    if void("late_label"):
+                        continue
+                elif not complete_hdr and (lo[0] in ("proposal", "no")
+                                           or "recommendation" in lo or "proposed by" in lo):
+                    if void("split_column_header"):
+                        continue
+                elif (first and len(cells) < 5 and not is_label and not complete_hdr
+                      and not any(_label(_lines(c[2]), "Meeting Date") is not None for c in cells)):
+                    if void("fragment"):
+                        continue
             if len(cells) == 1:
                 tag, attrs, body = cells[0]
                 lines = _lines(body)

@@ -197,3 +197,13 @@ def test_empty_id_without_pagebreak_keeps_old_behaviour():
     rows, st = _frk("lines_empty_id_nopb.htm")
     assert [r["proposal_id"] for r in rows] == ["1"]
     assert st["reasons"]["bad_proposal_id"] == 1 and st["reasons"]["split_row"] == 0
+
+
+# ---- Amendment 6: PAGEBREAK documents drop the whole meeting on page-break damage
+
+def test_a6_damaged_meetings_dropped_next_meeting_read_normally():
+    for name, reason in (("a6a_split_header", "split_meeting_header"), ("a6b_late_label", "late_label"),
+                         ("a6c_split_colhdr", "split_column_header"), ("a6d_fragment", "fragment")):
+        rows, st = _frk(f"lines_{name}.htm")
+        assert [(r["issuer_name"], r["proposal_id"]) for r in rows] == [("SECOND INC", "1")], name
+        assert st["reasons"][reason] == 1, name

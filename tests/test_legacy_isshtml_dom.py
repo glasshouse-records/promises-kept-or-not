@@ -225,3 +225,53 @@ def test_amendment5_empty_id_without_pagebreak_unchanged():
                         "<tr><td></td><td>x</td><td>Management</td><td>For</td><td>For</td></tr>"
                         "<tr><td><p>1.2</p>")
     assert "split_row" not in m.parse_stats(text)["reasons"]
+
+
+def _drops(text, reason):
+    """Abbott's meeting is dropped whole for `reason`; the next meeting reads normally."""
+    assert [r["issuer_name"] for r in m.parse(text)] == ["NEXT CO"], reason
+    st_ = m.parse_stats(text)
+    assert st_["meeting_reasons"][reason] == 1, st_["meeting_reasons"]
+    assert st_["reasons"][reason] >= 1
+
+
+def test_a6a_split_meeting_header():
+    t = _fk().replace("<br><font>Record Date:&#160;&#160;MAR 01, 2023</font><br><font>"
+                      "Meeting Type:&#160;&#160;ANNUAL</font>", "")
+    assert "Record Date:&#160" not in t.split("NEXT CO")[0]
+    t = t.replace("</table>\n<!-- PAGEBREAK_START -->",
+                  "<tr><td colspan=\"5\"><p>Record Date: MAR 01, 2023<br>Meeting Type: ANNUAL"
+                  "</p></td></tr></table>\n<!-- PAGEBREAK_START -->", 1)
+    _drops(t, "split_meeting_header")
+
+
+def test_a6b_late_label_after_column_header():
+    t = _fk().replace("<tr><td><p>1.1</p>", "<tr><td><p>Ticker: ZZZ</p></td></tr><tr><td><p>1.1</p>")
+    _drops(t, "late_label")
+    t = _fk().replace("<tr><td><p>1.2</p>",
+                      "<tr><td><p>Security ID: 999</p></td></tr><tr><td><p>1.2</p>")
+    _drops(t, "late_label")
+
+
+def test_a6c_split_column_header():
+    for stray in ("<td>Proposal</td><td>Vote Cast</td>", "<td>No</td><td>x</td>",
+                  "<td>x</td><td>Proposed By</td>", "<td>x</td><td>Recommendation</td>"):
+        t = _fk().replace("<tr><td><p>1.1</p>", f"<tr>{stray}</tr><tr><td><p>1.1</p>")
+        _drops(t, "split_column_header")
+
+
+def test_a6d_fragment_first_row_of_continued_table():
+    t = _fk().replace("<tr><td><p>1.2</p>", "<tr><td colspan=\"5\"><p>stray</p></td></tr>"
+                      "<tr><td><p>1.2</p>")
+    _drops(t, "fragment")
+    # a fewer-than-5-cell row that is not first in the table, or in a non-continued table, is
+    # not A6d
+    plain = _fk().replace("<tr><td><p>1.1</p>", "<tr><td colspan=\"5\"><p>stray</p></td></tr>"
+                          "<tr><td><p>1.1</p>")
+    assert "fragment" not in m.parse_stats(plain)["meeting_reasons"]
+
+
+def test_amendment6_not_applied_without_pagebreak():
+    t = _fk().replace("<!-- PAGEBREAK_START -->", "").replace("<!-- PAGEBREAK_END -->", "")
+    t = t.replace("<tr><td><p>1.1</p>", "<tr><td><p>Ticker: ZZZ</p></td></tr><tr><td><p>1.1</p>")
+    assert "late_label" not in m.parse_stats(t)["meeting_reasons"]
