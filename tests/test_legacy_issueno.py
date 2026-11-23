@@ -115,7 +115,7 @@ def test_na_and_echo_vote_dropped_and_counted():
     rows, st = legacy_issueno.agreed(ECHO)
     assert rows
     votes, info = legacy_issueno.to_vote_rows(rows, {legacy_pe._norm("Schwab Test Fund"): SID})
-    assert votes == [] and info["dropped_vote"] == len(rows)
+    assert votes == [] and info["dropped_vote"] + info["dropped_status"] == len(rows)
     votes, info = _rows([("Mgmt", "For", "N/A", "N/A"), ("Mgmt", "For", "For", "For")])
     assert len(votes) == 1 and info["dropped_vote"] == 1
 
@@ -280,3 +280,17 @@ def test_npx_reingest_handles_issueno(tmp_path, monkeypatch):
     assert st["votes"] == 13
     assert conn.execute("SELECT COUNT(*) FROM votes WHERE accession=?", (ACC,)).fetchone()[0] == 13
 
+
+
+@pytest.mark.parametrize("status", ["Unvoted", "Take No Action", "Not Voted"])
+def test_only_voted_meetings_become_votes(status):
+    # Review 2026-11-23: VanEck Oil Services ETF / Liberty Energy 04/18/2023 is printed
+    # 'Unvoted' with Withhold/For in the vote column: those instructions were never cast.
+    votes, info = _rows([("Mgmt", "For", "Withhold", "Against"), ("Mgmt", "For", "For", "For")],
+                        status=status)
+    assert votes == [] and info["dropped_status"] == 2
+
+
+def test_voted_status_any_case_is_kept():
+    votes, info = _rows([("Mgmt", "For", "For", "For")], status="VOTED")
+    assert len(votes) == 1 and info["dropped_status"] == 0

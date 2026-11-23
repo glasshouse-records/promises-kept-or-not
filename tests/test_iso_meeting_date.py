@@ -18,9 +18,16 @@ def norm(v):
 
 @pytest.mark.parametrize("raw,want", [
     ("20240425", "2024-04-25"),
-    ("30/07/2023", "2023-07-30"),
-    ("30/11/2024", "2024-11-30"),
-    ("13/1/2024", "2024-01-13"),
+    # first field > 12 is NOT read day-first: the one filing that prints it
+    # (0001135428-24-000121) writes a minute there, so any reading is false
+    ("30/07/2023", "30/07/2023"),
+    ("30/11/2024", "30/11/2024"),
+    ("13/1/2024", "13/1/2024"),
+    # never an ISO-looking non-date: month 00, day beyond the month
+    ("00/24/2024", "00/24/2024"),
+    ("30/02/2024", "30/02/2024"),
+    ("02/30/2024", "02/30/2024"),
+    ("20230230", "20230230"),
     ("06/30/2025", "2025-06-30"),
     ("9/30/2025", "2025-09-30"),
     ("01/23/24", "2024-01-23"),
@@ -49,6 +56,11 @@ def test_roundtrip(d):
     assert norm(f"{d.month}/{d.day}/{d.year}") == iso
     assert norm(f"{d.month:02d}/{d.day:02d}/{d.year}") == iso
     assert norm(d.strftime("%Y%m%d")) == iso
-    if d.day > 12:
-        assert norm(f"{d.day}/{d.month}/{d.year}") == iso
-        assert norm(f"{d.day:02d}/{d.month:02d}/{d.year}") == iso
+    if d.day > 12:      # day-first is never guessed
+        assert norm(f"{d.day:02d}/{d.month:02d}/{d.year}") == f"{d.day:02d}/{d.month:02d}/{d.year}"
+
+
+@given(st.text(alphabet="0123456789/-", max_size=10))
+def test_output_is_a_real_date_or_the_input(raw):
+    out = norm(raw)
+    assert out == raw or _DB.execute("SELECT date(?) = ?", (out, out)).fetchone()[0] == 1

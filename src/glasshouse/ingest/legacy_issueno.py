@@ -16,6 +16,10 @@ Fund -> series only through the filing's own SGML header and the reviewed aliase
 (`legacy_iss.series_for`); unmapped headings are dropped and counted; voting-policy sections
 (`legacy_iss.is_policy_section`) are dropped. No fuzzy matching.
 
+Meeting status: only meetings printed 'Voted' (any case) give votes; every row of an
+'Unvoted' or 'Take No Action' meeting is dropped and counted (`dropped_status`): the vote
+column of an unvoted meeting holds instructions that were never cast.
+
 Proxy contests: EVERY row of a meeting whose meeting_type contains "contest" (any case) is
 dropped and counted (`contest_rows_dropped`).
 
@@ -121,7 +125,8 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
     out: list[dict] = []
     unmapped: Counter = Counter()
     info = {"contest_rows_dropped": 0, "dropped_vote": 0, "dropped_date": 0,
-            "dropped_sponsor": 0, "alias_not_in_header": 0, "policy_section_dropped": 0}
+            "dropped_sponsor": 0, "alias_not_in_header": 0, "policy_section_dropped": 0,
+            "dropped_status": 0}
     for r in rows:
         sid, bad = legacy_iss._series_for(r["fund_heading"], smap, aliases, header_sids)
         info["alias_not_in_header"] += bad
@@ -133,6 +138,9 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
             continue
         if "contest" in (r.get("meeting_type") or "").lower():
             info["contest_rows_dropped"] += 1
+            continue
+        if (r.get("meeting_status") or "").strip().lower() != "voted":
+            info["dropped_status"] += 1      # 'Unvoted', 'Take No Action': nothing was cast
             continue
         source = VOTE_SOURCE.get(r["proponent"])
         if source is None:

@@ -56,3 +56,12 @@ def test_agreed_equals_plain_text_of_same_content():
     rows2, _ = legacy_iss.agreed(plain)
     assert rows == rows2
     assert any(r["vote"] == "Against" for r in rows)
+
+
+def test_refuses_line_breaks_or_tabs_inside_a_paragraph():
+    # Review 2026-11-23: a <BR> or newline/tab inside one <P> would merge two text lines
+    # (or shift a fixed-width column) identically for BOTH parsers: refuse to convert.
+    doc = RAW
+    i = doc.index("Proposal")
+    for bad in ("<BR>", "<br/>", "\t", "\n"):
+        assert legacy_iss.courier_html_to_text(doc[:i] + bad + doc[i:]) is None, repr(bad)

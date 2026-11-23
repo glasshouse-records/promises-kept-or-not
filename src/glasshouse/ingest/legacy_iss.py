@@ -148,6 +148,9 @@ _P_ELEMENT = re.compile(r"<P\b[^>]*Courier New[^>]*>(.*?)</P>", re.I | re.S)
 _TAG = re.compile(r"<[^>]*>")
 
 
+_P_UNSAFE = re.compile(r"<br\b|[\r\n\t]", re.I)
+
+
 def courier_html_to_text(doc: str) -> str | None:
     """ISS "FORM N-Px" text printed as HTML (one Courier New <P> per line, spaces as
     `&nbsp;` mixed with literal spaces) -> the plain text both ISS parsers read: one line
@@ -159,8 +162,9 @@ def courier_html_to_text(doc: str) -> str | None:
         return None
     lines = []
     for m in _P_ELEMENT.finditer(doc):
-        s = html.unescape(_TAG.sub("", m.group(1))).replace("\xa0", " ")
-        lines.append(re.sub(r"[\r\n\t]", " ", s))
+        if _P_UNSAFE.search(m.group(1)):
+            return None        # a break or tab inside one line would merge/shift columns
+        lines.append(html.unescape(_TAG.sub("", m.group(1))).replace("\xa0", " "))
     if not any(_ISS_COLHDR.search(ln) for ln in lines):
         return None
     return "\n".join(lines) + "\n"
