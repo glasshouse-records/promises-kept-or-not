@@ -116,7 +116,10 @@ def test_datasheet_has_season_coverage_and_known_gaps_computed_from_data(conn):
     sheet = dataset.build_datasheet(conn)
     assert "## Coverage by N-PX season" in sheet and "| 2022-23 | 3 | 1 |" in sheet
     assert "## Known gaps" in sheet
-    for needle in ("Fidelity", "Federated", "Issue No.", "Diamond Hill", "Dodge & Cox",
+    # Issue No. (Putnam, Neuberger, Franklin) is parsed since 2026-11-23: not a gap any more.
+    assert "'Issue No.' filings" not in sheet
+    assert "LEGACY_ISSUENO, LEGACY_ISSUENO_HTML" in sheet
+    for needle in ("Fidelity", "Federated", "Templeton VIP", "Diamond Hill", "Dodge & Cox",
                    "unmapped", "Proxy contests", "Vanguard", "share counts", "categor",
                    "same-direction"):
         assert needle in sheet, needle

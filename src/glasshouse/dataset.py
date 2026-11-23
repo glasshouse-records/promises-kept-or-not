@@ -46,7 +46,7 @@ DATA_DICTIONARY: dict[str, dict] = {
                        "FUND NOTICE REPORT, INSTITUTIONAL MANAGER VOTING REPORT); LEGACY_NO_COVER "
                        "= pre-2024 filing with no structured cover, skipped; LEGACY_PARSED = such a "
                        "filing read from HTML (its votes are not shipped); LEGACY_PROXYEDGE, LEGACY_ISS, "
-                       "LEGACY_ISSHTML = 2022-23 text filings read by two agreeing parsers, and "
+                       "LEGACY_ISSHTML, LEGACY_ISSUENO, LEGACY_ISSUENO_HTML = 2022-23 text filings read by two agreeing parsers, and "
                        "the same with _REJECTED when the agreement gate failed or nothing "
                        "parsed (votes quarantined, not shipped; see METHODOLOGY.md); NULL for 13-F and "
                        "N-PORT filings",
@@ -306,8 +306,9 @@ def known_gaps(conn: sqlite3.Connection) -> list[str]:
         "SUM(IFNULL(funds_unmapped,'') != '') u FROM legacy_parse").fetchone()
     return [
         "Layouts not parsed, so those filings contribute no 2022-23 lines: Fidelity's own "
-        "tables, the Federated flat table, Neuberger Berman / Franklin 'Issue No.' filings, "
-        "Diamond Hill and Dodge & Cox.",
+        "tables, the Federated flat table, a Templeton VIP variant, single-fund ISS filings "
+        "that print no fund heading, Diamond Hill and Dodge & Cox. Filings that print the "
+        "ticker and security id on one line are parsed with an empty `cusip`.",
         f"Fund headings that could not be mapped to a fund series are dropped ({p['u'] or 0} of "
         f"{p['n'] or 0} parsed legacy documents had unmapped headings).",
         f"Lines the two parsers disputed, or that broke the row-order guard, are dropped "
