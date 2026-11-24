@@ -161,3 +161,22 @@ def test_voting_record_states_the_weighting_actually_present(both):
 
 def test_director_tools_do_not_claim_share_weighting_unconditionally():
     assert "share-weighted" not in " ".join(engine.Engine._DIRECTOR_CAVEATS)
+
+
+def test_voting_record_year_tally_is_split_by_weight_basis(both):
+    """ROADMAP h4: alpha 2024 has an XML (share-weighted) FOR and a legacy-format
+    (line-weighted) AGAINST on the same company/meeting. The year's pooled tally
+    stays as it was; each basis is also tallied on its own."""
+    _, mixed = both
+    r = mixed.voting_record("alpha", query="climate")["result"]
+    y = r["by_year"][2024]
+    assert (y["for"], y["against"], y["proposals"]) == (1, 1, 2)       # pooled, unchanged
+    assert set(y["by_weight_basis"]) == {"lines", "shares"}
+    assert (y["by_weight_basis"]["lines"]["against"], y["by_weight_basis"]["lines"]["for"]) == (1, 0)
+    assert (y["by_weight_basis"]["shares"]["for"], y["by_weight_basis"]["shares"]["against"]) == (1, 0)
+    assert y["by_weight_basis"]["lines"]["support_rate"] == 0.0
+    assert y["by_weight_basis"]["shares"]["support_rate"] == 1.0
+    assert set(r["by_year"][2023]["by_weight_basis"]) == {"lines"}
+    # sub-tallies always sum to the pooled tally
+    for t in [r["overall"], *r["by_year"].values()]:
+        assert sum(b["proposals"] for b in t["by_weight_basis"].values()) == t["proposals"]

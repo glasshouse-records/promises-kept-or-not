@@ -1005,7 +1005,16 @@ class Engine:
                 "accession": r["accession"], "source_url": r["source_url"]}
 
     @staticmethod
-    def _tally(rows) -> dict:
+    def _tally(rows, split_basis: bool = False) -> dict:
+        if split_basis:
+            out = Engine._tally(rows)
+            by_basis = defaultdict(list)
+            for r in rows:
+                by_basis[r["weight_basis"]].append(r)
+            # pooled keys unchanged; line- and share-weighted decisions also tallied apart
+            out["by_weight_basis"] = {b: Engine._tally(rs) for b, rs in sorted(
+                by_basis.items(), key=lambda kv: kv[0] or "")}
+            return out
         t = defaultdict(int)
         for r in rows:
             t[r["position"]] += r["n"]
@@ -1381,8 +1390,8 @@ class Engine:
                                  company=company, include_rollback=include_rollback,
                                  since=since, until=until, adviser=adviser)
         rows = self.db.execute(
-            f"SELECT p.year, p.position, COUNT(*) n FROM proposals p {join} WHERE {w} "
-            "GROUP BY p.year, p.position", p).fetchall()
+            f"SELECT p.year, p.position, p.weight_basis, COUNT(*) n FROM proposals p {join} "
+            f"WHERE {w} GROUP BY p.year, p.position, p.weight_basis", p).fetchall()
         years = defaultdict(list)
         for r in rows:
             years[r["year"]].append(r)
@@ -1394,8 +1403,8 @@ class Engine:
                                             company=company, since=since, until=until,
                                             include_rollback=include_rollback,
                                             adviser=adviser),
-                    {"overall": self._tally(rows),
-                     "by_year": {y: self._tally(rs) for y, rs in sorted(years.items(),
+                    {"overall": self._tally(rows, True),
+                     "by_year": {y: self._tally(rs, True) for y, rs in sorted(years.items(),
                                  key=lambda kv: kv[0] or 0)},
                      "against_management": {
                          "count": mr["agm"] or 0, "of": mr["decided"] or 0}},
