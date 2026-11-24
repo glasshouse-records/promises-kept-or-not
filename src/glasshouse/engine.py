@@ -1027,6 +1027,26 @@ class Engine:
                 "one share counts like one holding a million. Compare within one basis, or "
                 "narrow with since=/until=."]
 
+    def _weighting(self, table: str, alias: str, join: str, w: str, p: list) -> list[str]:
+        """What weights the positions in THESE rows, stated from the rows themselves:
+        share-weighted only for `shares` decisions, line-weighted for `lines` (2022-23
+        legacy) and `xml-no-shares` ones; both, never pooled, when mixed."""
+        bases = {r["b"] for r in self.db.execute(
+            f"SELECT DISTINCT {alias}.weight_basis b FROM {table} {alias} {join} WHERE {w}", p)}
+        out = []
+        if "shares" in bases:
+            out.append("Share-weighted decisions: SPLIT means the minority side carried at "
+                       "least 5% of the shares voted.")
+        if bases - {"shares"}:
+            out.append("Line-weighted decisions (2022-23 legacy filings, or XML lines that "
+                       "filed no share counts): no share counts exist, each fund line counts "
+                       "once, and SPLIT means the minority side carried at least 5% of the "
+                       "lines.")
+        if len(out) == 2:
+            out.append("Both weightings are present in this result: positions are not "
+                       "comparable across them (each decision carries its `weight_basis`).")
+        return out
+
     # -- 1. orientation
     def coverage(self) -> dict:
         """What the record contains and where it stops. Read this first."""
@@ -1374,8 +1394,8 @@ class Engine:
                     [*self._pooled(institution, adviser),
                      *self._basis("proposals", "p", join, w, p),
                      "Counts are proposals, not fund ballot lines.",
-                     "Position is share-weighted: SPLIT means the minority side carried at "
-                     "least 5% of the shares voted. Use fund_votes() to see which funds.",
+                     *self._weighting("proposals", "p", join, w, p),
+                     "Use fund_votes() to see which funds.",
                      "`since`/`until` take ISO dates for periods finer than a year.",
                      "`none` includes duplicate cards from contested meetings; it does not "
                      "affect the support rate.",
@@ -1686,7 +1706,7 @@ class Engine:
     _DIRECTOR_CAVEATS = [
         "Covers management's nominees only (N-PX source ISSUER, category DIRECTOR "
         "ELECTIONS). Dissident nominees in contested elections are in proposals().",
-        "`opposed` = AGAINST or WITHHOLD, share-weighted across the funds on file. "
+        "`opposed` = AGAINST or WITHHOLD, weighted across the funds on file as stated below. "
         "ABSTAIN is counted separately, though in some markets it is the only way to "
         "oppose a nominee, and in US plurality elections withhold vs abstain is a filer's "
         "coding choice in N-PX that the filings do not define: ABSTAIN may be how a filer "
@@ -1701,6 +1721,10 @@ class Engine:
         "(US, US,CA or non-US) or company=.",
         "Year-to-year change can reflect which companies the funds held.",
         LEGACY_UNCATEGORISED]
+
+    def _dcaveats(self, w: str, p: list) -> list[str]:
+        """The director caveats plus the weighting actually present in these rows."""
+        return [*self._DIRECTOR_CAVEATS, *self._weighting("director_votes", "d", "", w, p)]
 
     def _dtotal(self, w: str, p: list, table="director_votes") -> dict:
         years = self._dyears(w, p, table)
@@ -1743,7 +1767,7 @@ class Engine:
         out = {"overall": self._dtally(self._dtotal(w, p)),
                "by_year": {y: self._dtally(t) for y, t in
                            sorted(years.items(), key=lambda kv: kv[0] or 0)}}
-        caveats = [*self._pooled(institution, adviser), *self._DIRECTOR_CAVEATS,
+        caveats = [*self._pooled(institution, adviser), *self._dcaveats(w, p),
                    *self._basis("director_votes", "d", "", w, p),
                    *self._coding_shift({y: (t["ABSTAIN"], t["AGAINST"] + t["ABSTAIN"])
                                         for y, t in years.items()})]
@@ -1835,7 +1859,7 @@ class Engine:
                                      "against": r["n_against"], "other": r["n_other"]},
                       "accession": r["accession"], "source_url": r["source_url"]}
                      for r in rows],
-                    [*self._pooled(institution, adviser), *self._DIRECTOR_CAVEATS,
+                    [*self._pooled(institution, adviser), *self._dcaveats(w, p),
                      *self._basis("director_votes", "d", "", w, p),
                      f"At most {limit} rows; raise limit= for more.",
                      *self._dexcluded(country, institution=institution, company=company,
@@ -1897,7 +1921,7 @@ class Engine:
                      "withheld votes as ABSTAIN shows a low `opposition_rate`: compare "
                      "managers on `non_support_rate` when their `abstain` counts differ.",
                      "Each manager's figures cover only the shared meetings IT voted at.",
-                     *self._DIRECTOR_CAVEATS,
+                     *self._dcaveats(w, p),
                      *self._dexcluded(country, only_used_by_peers=True, company=company,
                                       year=year, since=since, until=until)])
 
@@ -1976,7 +2000,10 @@ class Engine:
                      "filed none drops out of the panel.",
                      "The companies are constant; the nominees and the funds holding "
                      "them are not.",
-                     *self._DIRECTOR_CAVEATS, *excluded])
+                     *self._dcaveats(
+                         f"d.institution_id=? AND d.cusip != ''{cw}{aw} AND ({ors_w})",
+                         [iid, *cp, *ap, *[x for span in spans for x in span]]),
+                     *excluded])
 
     def fund_votes(self, proposal_id: int, adviser=None) -> dict:
         """The individual fund lines behind one position: which fund series voted

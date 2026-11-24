@@ -133,3 +133,31 @@ def test_xml_group_without_share_counts_is_not_a_legacy_basis():
     assert engine._weight_basis(legacy) == "lines"
     assert engine._weight_basis(xml_shares) == "shares"
     assert engine._weight_basis(xml_no_shares) == "xml-no-shares"
+
+
+def _weighting(env):
+    return [c for c in env["caveats"] if "weighted decisions" in c or "Position is share" in c
+            or "Both weightings" in c]
+
+
+def test_voting_record_states_the_weighting_actually_present(both):
+    xml, mixed = both
+    # only line-weighted decisions (2022-23): no share-weighted claim
+    lines = _weighting(mixed.voting_record("alpha", query="climate", until="2023-12-31"))
+    assert lines and all("Share-weighted" not in c for c in lines)
+    assert any("Line-weighted" in c and "no share counts" in c for c in lines)
+    # only share-weighted decisions
+    sh = _weighting(mixed.voting_record("alpha", query="climate", since="2024-06-01"))
+    assert any("Share-weighted" in c for c in sh)
+    assert all("Line-weighted" not in c for c in sh)
+    # mixed: both stated, and flagged as not comparable
+    both_ = _weighting(mixed.voting_record("alpha", query="climate"))
+    assert any("Share-weighted" in c for c in both_)
+    assert any("Line-weighted" in c for c in both_)
+    assert any("not comparable" in c for c in both_)
+    assert any("Share-weighted" in c for c in
+               _weighting(xml.voting_record("alpha", query="climate")))
+
+
+def test_director_tools_do_not_claim_share_weighting_unconditionally():
+    assert "share-weighted" not in " ".join(engine.Engine._DIRECTOR_CAVEATS)
