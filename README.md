@@ -20,85 +20,114 @@ The `findings` table is empty: no claim has passed human review. Drafts in
 
 ## What is in it
 
-Figures below are from the release `v2026-11-20.2` (its `DATASHEET.md` and
+Figures below are from the release `v2026-11-23` (its `DATASHEET.md` and
 `COVERAGE.json` are authoritative). Counts drift; the commands print current ones.
-The latest release, `v2026-11-23`, is larger: 48,230,383 vote lines from 64
-institutions, 11,165,549 of them from the 2022-23 voting year read from text and HTML
-N-PX filings (`votes.legacy_format` set), and 441 policy versions; its DATASHEET has
-the full figures.
 
 | Layer | Table(s) | What it holds, honestly |
 |---|---|---|
-| Archived policy versions | `commitments`, `policy_versions` | 343 captures of 38 managers' proxy-voting documents, 269 distinct text versions (102 from Wayback, 36 our own fetch, 131 printed in fund SAIs on EDGAR). Hashes, dates, URLs; no policy text. Dated by the capture day, or for SAI-printed text by the SAI's filing date (text was public by then). 119 of the 138 non-SAI versions also carry the date the manager's own software wrote the file. Gaps exist. |
-| Proxy votes | `votes`, `fund_series`, `voting_advisers`, `voting_scope_notes` | US-registered funds only, from N-PX. Votes from the N-PX voting years July 2023 to June 2026 (three N-PX seasons, named 2024, 2025, 2026: July to June, named by end year). 26,397,066 vote lines after removing duplicates and lines restated by an amended filing. A few filings list meetings shortly before July 2023, kept as filed. Only the funds on file, not whole firms. |
-| Director votes (DERIVED) | `director_decisions` | 2,406,590 rows: one per director-nominee item per manager and adviser. Rebuilt from `votes` by `glasshouse engine build`. |
-| Shareholder proposals (DERIVED) | `proposal_decisions` | 134,360 rows: one per (manager, adviser, company, meeting, proposal). Same rebuild. Other management items (auditors, pay) are in `votes` but not here. |
+| Archived policy versions | `commitments`, `policy_versions` | 533 captures of proxy-voting documents of 61 institutions, 441 distinct text versions (144 from Wayback, 100 our own fetch, 197 printed in fund SAIs on EDGAR). Hashes, dates, URLs; no policy text. Dated by the capture day, or for SAI-printed text by the SAI's filing date (text was public by then). 179 of the 244 non-SAI versions also carry the date the manager's own software wrote the file. Gaps exist. |
+| Proxy votes | `votes`, `fund_series`, `voting_advisers`, `voting_scope_notes` | US-registered funds only, from N-PX. 48,230,383 vote lines from 64 institutions, de-duplicated (`is_duplicate = 0`). 37,064,834 come from SEC XML N-PX; 37,060,017 of those have meetings in the three seasons July 2023 to June 2026 (2023-24, 2024-25, 2025-26; July to June). 11,165,549 are 2022-23 lines read from text and HTML N-PX filings by two agreeing parsers (`votes.legacy_format` set; 11,158,041 meetings in 2022-23, 7,508 in 2021-22). Those legacy lines are partial (some layouts are not parsed; see the DATASHEET "Known gaps"), carry no share counts and no vote category, and their decisions are line-weighted, not share-weighted; do not compare their rates with 2023-26. Only the funds on file, not whole firms. |
+| Director votes (DERIVED) | `director_decisions` | 4,931,301 rows: one per director-nominee item per manager and adviser. Rebuilt from `votes` by `glasshouse engine build`. 2022-23 meetings are not in it (legacy lines have no category). |
+| Say-on-pay (DERIVED) | `pay_decisions` | 416,500 rows: one per say-on-pay item per manager and adviser, approval and frequency items (`kind`; frequency items are not for/against). Same rebuild. |
+| Shareholder proposals (DERIVED) | `proposal_decisions` | 320,149 rows: one per (manager, adviser, company, meeting, proposal), including 2022-23 (line-weighted, `weight_basis`). Same rebuild. Other management items (auditors, capital structure) are in `votes` but not here. |
 | Holdings | `holdings` | 580,106 rows from 13-F (long US equity only) and two N-PORT filings. Mostly one quarter (2026-03-31). BlackRock also has 2023-06-30 to 2024-06-30; Vanguard 2025-09-30 to 2026-03-31. A snapshot, not a time series. |
 | Enforcement record | `enforcement_actions` | 14,887 rows. 12,533 are OFAC sanctions designations (names on a list, not findings about any manager). 236 are curated snapshots. 489 are `unverified`. 30 are `allegation` (dockets). Each row has a `resolution_type` from a closed list. |
 | Findings | `findings` | 0 rows. |
 
-Fidelity votes with meeting dates 2020-07-01 to 2023-06-30 (53,859 lines, parsed
-from legacy HTML) are in the working ledger only: unvalidated, not in the release.
+Votes parsed by a single HTML parser (`vote_source = legacy_html`, for example
+Fidelity meetings dated 2020-07-01 to 2023-06-30) are unvalidated and are in the working
+ledger only, not in the release. Fidelity's 2022-23 lines that two parsers agreed on
+(`legacy_format = iss_html`) are in the release; Fidelity's own 2022-23 table layout is
+not parsed, so Fidelity's 2022-23 record there is incomplete.
 
 ### Who is covered
 
-Run `glasshouse ask coverage` for the live table. Snapshot below (release
-v2026-11-17 plus `ask coverage`). "Pay only" means the filing holds say-on-pay
-votes and no director or shareholder-proposal votes. "Registrants" is how many
-fund trusts are on file, often a small part of a large manager.
+Run `glasshouse ask coverage` for the live table. The table below is every
+institution in the release `v2026-11-23`, largest by vote lines first: vote lines,
+dates and kinds are the DATASHEET's coverage table (shipped rows), policy versions are
+`COVERAGE.json`'s count, registrants and adviser groups come from `ask coverage` on
+the ledger that built the release. "Pay only" means the shipped votes are say-on-pay
+only (no director or shareholder-proposal votes). "Registrants" is how many fund
+trusts are on file, often a small part of a large manager. Vote dates include the
+partial 2022-23 legacy lines; vote lines of different eras are not comparable
+(`votes.legacy_format`). "Not split" = one adviser group or none keyed.
 
-| Manager | Adviser groups (`adviser_key`) | Seasons | Votes held | Registrants | Policy versions | Scope notes (short) |
-|---|---|---|---|---|---|---|
-| BlackRock | BIS, BAIS, UNRESOLVED | 2024-26 | all kinds | 4 | 13: 12 of the BIS principles + 1 of the BAIS guidelines (from 2019-08-06) | BIS/BAIS split from 2025-01-01; 10 series cannot be placed (UNRESOLVED), incl. iShares Core S&P 500, whose shareholders choose BIS or a third-party policy from 2025 |
-| Vanguard | VANGUARD, VPM, VCM, EXTERNAL | 2024-26 | all kinds | 5 | 8 (from 2022-01-17) | Teams split 2026-01-12; four pre-split editions (2022, 2023, 2024, 2025) cover 2022 to 2026-01-11 |
-| State Street | none keyed | 2024-26 | all kinds | 4 | 7 (from 2020-09-29) | 3 SPDR Nuveen muni ETFs may follow Nuveen's policy |
-| Fidelity | GEODE, unlabelled | 2024-26 | all kinds | 7 | 10: 6 FMR (from 2023-04-16) + 1 Geode website copy + 3 Geode SAI-printed (from 2024-04-24) | 55 index series (Concord Street, Salem Street, VIP II) keyed GEODE from 2025-07-01, where the series' own SAI gives only Geode's voting policy; all other lines unlabelled, never paired with a policy |
-| JPMorgan | none keyed | 2024-26 | all kinds | 2 | 6 (from 2021-01-25) | |
-| Goldman Sachs | none keyed | 2024-26 | all kinds | 2 | 2 (from 2022-10-31) | |
-| BNY | none keyed | 2024-26 | all kinds | 2 | 1 (2025-07-18) | Sub-advised funds vote under the sub-adviser's own rules |
-| Invesco | none keyed | 2024-26 | all kinds | 1 | 2 (from 2024-02-24) | One trust only; sub-adviser policies not checked |
-| T. Rowe Price | TRPA, TRPIM | 2024-26 | all kinds | 4 | 12 (from 2023-01-30) | 4 registrants, 5 fund series: 3 registrants (1 series each) TRPA-voted; the 4th (CIK 793347) holds 2 series, Capital Appreciation and Capital Appreciation and Income, both TRPIM-voted |
-| Franklin Templeton | FRANKLIN, PUTNAM, unlabelled | 2024-26 | all kinds | 15: 2 FRANKLIN (Custodian Funds, ETF Trust) + 13 PUTNAM (Funds Trust, Investment Funds, Variable Trust, ETF Trust, Asset Allocation Funds, High Yield, Large Cap Value, Convertible Securities, Focused International Equity, International Equity, Global Health Care, George Putnam Balanced, Diversified Income) | 9: 2 Franklin Equity Group (from 2026-06-26) + 2 Putnam website PDFs (March 2021 edition via Wayback 2021-10-28, March 2025 edition live) + 5 Putnam procedures printed in the Putnam Variable Trust SAI (2023-04-28 to 2026-10-01; the 2026-04-20 version differs from 2025-04-28 in layout only) | Putnam (acquired 2024-01-01) votes every series under Putnam's procedures (Trustees delegated to Putnam Management); each registrant keyed PUTNAM from its own earliest SAI of that wording (2021-05-20 to 2024-02-26; before 2023-03 the Trustees directed the votes, so earlier meetings are unlabelled); no series EXTERNAL; Putnam's institutional-manager N-PX not ingested (overlaps the fund tables) |
-| Deutsche Bank (DWS) | DIMA | 2024-26 | all kinds | 3 | 2 (from 2026-06-27) | One archived letter is DWS Investment GmbH's, not the US trusts' adviser |
-| Northern Trust | none keyed | 2024-26 | all kinds | 1 | 4 (from 2024-05-14) | Multi-manager series use outside sub-advisers |
-| Charles Schwab Trust | none keyed | 2024-26 | all kinds | 2 | 0 | No policy archived |
-| Capital Group (American Funds) | none keyed | 2024-26 | all kinds | 37 (34 file votes) | 2 (from 2025-04-05) | CRMC votes all 37 trusts (American Funds and Capital Group ETFs); its equity divisions are not separated in the filings |
-| Dimensional | DFA, DFA_SOCIAL, DFA_SUSTAINABILITY | 2024-26 | all kinds | 5 (3 trusts + 2 master funds) | 14: 2 Standard + 2 Social/Sustainability website copies + 10 printed in a fund SAI (Standard from 2023-02-28, Social/Sustainability from 2024-02-28) | Master funds (CIK 896162, 896163) added: the feeder SAIs say the Advisor votes for them; 5 Social and 10 Sustainability series (incl. 4 ETFs) keyed to their own guideline text from the SAI that split them (2024-02-28), never paired with the Standard text; 2025 and 2026 reports of two trusts stop at exactly 500,000 records in the SEC file itself: counts are lower bounds |
-| Wellington (via Hartford Funds) | WELLINGTON, unlabelled | 2024-26 | all kinds | 3 Hartford trusts | 5: 2 website copies (2026-11-17) + 3 SAI-printed (from 2023-04-13) | Wellington has no fund trust of its own; 45 Hartford series whose SAI names Wellington as sole sub-adviser are keyed WELLINGTON from 2025-07-01; Schroders-advised series, funds of funds and earlier meetings stay unlabelled |
-| Parametric (via Eaton Vance) | PARAMETRIC, unlabelled | 2024-26 | all kinds | 2 Eaton Vance trusts | 4 printed in a fund SAI: 3 of Parametric's own text (from 2023-10-26) + 1 MSIM-policy copy keyed PARAMETRIC_MSIM (2026-04-28) | Parametric has no fund trust of its own; 6 series whose SAI names Parametric as sub-adviser with voting delegated to it are keyed PARAMETRIC from 2024-11-01 to 2025-07-01; Eaton Vance-voted series, Morgan Stanley ETF Trust, Eaton Vance Series/Investment/Variable Trusts and Series Fund, Calvert and Innovator ETFs (adviser votes, reviewed 2026-11-18) stay unlabelled; its website blocks honest clients, so no website policy copy |
-| Morgan Stanley Investment Management | MSIM, unlabelled | 2024-26 | all kinds | 8 registrants (Institutional Fund Trust, Institutional Fund Inc, Variable Insurance Fund, Europe Opportunity, Insight, ETF Trust, 2 closed-end) | 4 (from 2023-04-28, text printed in a fund SAI) | MSIM votes every series under its Equity Proxy Voting Policy per each registrant's SAI / N-CSR; keyed from the earliest filing read (2023-01-27 to 2023-04-28; closed-end 2023-03-10); the ETF Trust is keyed per series from 2023-10-07 (13 Eaton Vance and Parametric ETFs) and its six Calvert ETFs, which follow Calvert's own policy, stay unlabelled; 387,712 votes (2024-26 N-PX); morganstanley.com blocks honest clients, so the policy is the text printed in a fund SAI |
-| Columbia Threadneedle | CMIA, unlabelled | 2024-26 | all kinds | 10 Columbia registrants (6 trusts, 2 variable-insurance trusts, 2 closed-end funds) | 7: 1 website copy (2026-11-18) + 6 printed in a fund SAI (from 2023-02-27) | Columbia Management Investment Advisers votes every series, sub-advised included, per each trust's SAI; keyed from each trust's earliest SAI read (2023-03-01 to 2023-08-01); Pyrford International Stock Fund stays EXTERNAL until 2026-04-30; Variable Insurance Trust keyed from 2023-05-01, closed-end Tri-Continental and Seligman Premium Technology from 2023-03-03, Variable Series Trust (Wanger Advisors Trust until 2025, Columbia Wanger voted) only from 2026-05-01; archived policy is the Corporate Governance Guidelines (the document with the voting stances) |
-| Nuveen / TIAA | NUVEEN, unlabelled | 2024-26 | all kinds | 6 trusts | 4 (from 2023-10-27, text printed in a fund SAI) | Nuveen Investment Trust, II, III (Nuveen Asset Management), TIAA-CREF Funds and Life Funds (Teachers Advisors) and College Retirement Equities Fund (TIAA-CREF Investment Management) vote under the Nuveen Proxy Voting Policies; keyed from each trust's earliest SAI read (2023-03-01 to 2023-12-29); the Winslow-sub-advised series stays EXTERNAL; muni closed-end funds not covered; nuveen.com blocks honest clients, so the policy is the text printed in a fund SAI |
-| MFS | MFS, unlabelled | 2024-26 | all kinds | 24 registrants (Series Trusts I-XIII, XV-XVII, 3 Variable Insurance Trusts, Massachusetts Investors Trust and Growth Stock Fund, Active ETF Trust, 2 closed-end bond funds) | 6: 2 website copies (live 2026-11-18; Wayback capture of 2022-08-08 shows the 1 February 2020 edition) + 4 printed in the Series Trust I SAI (1 January 2023 to 2026, from 2022-12-28) | MFS votes every series under its own policy per each SAI / N-CSR, no outside sub-adviser named; keyed from the earliest SAI read (2022-01-28 to 2022-12-29; ETF trust 2025-06-27; closed-end 2023-01-19); 316,510 votes (2024-26 N-PX); municipal and money-market trusts not ingested (no equity votes) |
-| American Century Investments | AMERICAN_CENTURY, unlabelled | 2024-26 | all kinds | 9 registrants (Mutual Funds, Capital Portfolios, Growth Funds, World Mutual Funds, Strategic Asset Allocations, Quantitative Equity Funds, Variable Portfolios, Investment Trust, ETF Trust incl. Avantis) | 10 distinct text versions: 6 website (the policy body of the page, read from 'American Century Investment Management, Inc. (the Advisor)' to 'Electronic records will be kept of all votes made'; 9 captures: live 2026-11-18, edition 'Last Revised: June 2025', plus 8 Wayback captures 2022-06-25 to 2024-04-23, several differing only in page navigation or trademark spacing) + 4 printed in the Mutual Funds SAI (2022-02-28 to 2026-02-27) | American Century Investment Management votes every series per each SAI, Nomura-sub-advised series included; keyed from each trust's earliest SAI read (2022-02-28 to 2022-12-29); 1,664,486 votes (2024-26 N-PX); bond, municipal and fund-of-funds trusts and the institutional-manager filers not ingested |
-| Janus Henderson | JANUS_HENDERSON, unlabelled | 2024-26 | all kinds | 3 registrants (Janus Investment Fund, Janus Aspen Series, Janus Detroit Street Trust ETFs) | 9: 4 website PDFs ('Last Review Date' March 2021, March 2022, February 2025, July 2026; Wayback captures 2021-06-15 to 2025-08-27 plus live 2026-11-18) + 5 printed in the Janus Investment Fund SAI (March 2023 to July 2026, from 2023-10-27) | Janus Henderson Investors US LLC votes every series per each SAI; Intech (its own policy) voted the Intech Managed Volatility funds until 2022-04-05 and Janus Aspen U.S. Low Volatility until 2023, before the dated window, so no series is EXTERNAL; keyed from each trust's first SAI read with the Adviser alone voting (2022-02-28 to 2023-04-28); 105,138 votes (2024-26 N-PX); Clayton Street Trust (fund of funds) and the institutional-manager reports not ingested |
-| AllianceBernstein | ALLIANCEBERNSTEIN, unlabelled | 2024-26 | all kinds | 20 registrants (AB Cap Fund, Core Opportunities, Discovery Growth, Equity Income, Large Cap Growth, Relative Value, Sustainable Global and International Thematic, Global Risk Allocation, Global Real Estate, Institutional Funds, Portfolios, Trust, Variable Products Series Fund, Active ETFs, Bond, Global Bond, High Income, Global High Income closed-end, Bernstein Fund) | 12: 8 website PDFs (editions March 2021, August 2021, March 2022, March 2023, September 2023, August 2024, May 2025 from Wayback captures 2021-05-14 to 2025-07-05, October 2025 live 2026-11-18) + 4 printed in the AB Large Cap Growth Fund SAI (2022-10-28 to 2026-10-28) | AllianceBernstein L.P. votes every series per each SAI (the Bernstein Fund, the former Sanford C. Bernstein Fund, prints the same policy), no sub-adviser votes, so no series is EXTERNAL; keyed from each registrant's earliest SAI read (2022-01-28 to 2023-02-14; the closed-end fund from its N-CSR); 280,310 votes (2024-26 N-PX); notice-only registrants (Corporate Shares, Fixed Income Shares, municipal funds, Multi-Manager Alternative, Bernstein Fund II) not ingested |
-| Federated Hermes | FEDERATED_HERMES, HERMES_HIML, unlabelled | 2024-26 | all kinds | 15 registrants (Equity Funds, Income Securities Trust, Strategic Dividend Growth, Global Allocation, World Investment Series, Managed Pool Series, MDT Series, Index Trust, Insurance Series, ETF Trust, High Yield Trust, Fixed Income Securities, Institutional Trust, Adviser Series, Sustainable High Yield Bond) | 7: 2 website PDF editions (April 2020 from the Wayback capture of 2020-12-02, January 2024 live 2026-11-18) + 5 printed in the Global Allocation Fund SAI (2022-01-27 to 2026-01-27) | The Federated advisers vote every series per each SAI, except series sub-advised by Hermes Investment Management Limited (own policy, not archived: key HERMES_HIML, never paired with text); keyed from each trust's earliest SAI read (2022-01-26 to 2022-12-27; Adviser Series per series); 218,065 votes (2024-26 N-PX); money-market, municipal, Core Trust and notice-only registrants not ingested |
-| Neuberger Berman | NEUBERGER_BERMAN, EXTERNAL, unlabelled | 2024-26 | all kinds | 9 registrants (Equity Funds, Advisers Management Trust, Alternative Funds, ETF Trust, Next Generation Connectivity, Energy Infrastructure & Income, High Yield Strategies, Real Estate Securities Income, Private Markets Access) | 10: 5 website PDF versions (editions January 2022, February 2023, March 2024, February 2025 and a 'Neuberger' re-issue, from Wayback captures 2022-07-26 to 2026-05-11; nb.com answers honest clients with a bot challenge, so no live copy) + 5 printed in the Advisers Management Trust SAI (2022-04-20 to 2026-04-15) | NBIA votes every series per each SAI / N-CSR Item 7 except the Absolute Return Multi-Manager Fund (Subadvisers vote) and the Greater China Equity Fund (Green Court), kept EXTERNAL; keyed from each registrant's earliest SAI or N-CSR read (2022-01-05 to 2022-12-15); 84,839 votes (2024-26 N-PX); municipal, NB Crossroads / Private Markets, trust-company and manager-level reports not ingested |
-| Allspring | ALLSPRING, unlabelled | 2024-26 | all kinds | 8 registrants (Funds Trust, Master Trust, Variable Trust, Exchange-Traded Funds Trust, Global Dividend Opportunity, Income Opportunities, Multi-Sector Income, Utilities & High Income) | 12: 7 website versions (approvals November 2021 to 10 February 2026; Wayback captures 2022-05-26 to 2026-07-16 plus the live page) + 5 printed in the Allspring Variable Trust SAI (2022-04-25 to 2026-04-23) | Allspring Funds Management votes every series under the Allspring policy (Board delegation in each SAI; sub-advisers only give input, so no series is EXTERNAL); keyed from each registrant's earliest SAI read (2022-01-25 to 2024-12-02); master portfolios carry the votes, feeders none; 149,791 votes (2024-25 N-PX); the 2026 N-PX is pending a re-ingest; Wells Fargo & Company is a separate institution |
-| Lord Abbett | LORD_ABBETT, unlabelled | 2024-26 | all kinds | 10 registrants (Affiliated Fund, Bond-Debenture, Developing Growth, Mid Cap Stock, Global Fund, Research Fund, Trust I, Series Fund, Securities Trust, Investment Trust) | 10: 4 website PDF versions (March 2021 edition via Wayback 2022-05-17, March 2026 edition via Wayback 2026-06-07, the live re-issue, and one truncated Wayback stub, id 249, that is unreadable) + 6 printed in the Affiliated Fund SAI (2021-02-23 to 2026-02-25) | Lord Abbett votes every series under its Proxy Voting Policy (Board delegation in each SAI; no series is EXTERNAL); keyed from each registrant's earliest SAI read (2021-02-23 to 2021-11-22); 69,926 votes (2024-26 N-PX, is_duplicate = 0); the manager's own institutional-manager N-PX (overlaps the fund tables) and seven notice-only registrants are not ingested |
-| Principal | PRINCIPAL, SPECTRUM, ORIGIN, EXTERNAL, UNRESOLVED, unlabelled | 2024-26 | all kinds | 4 registrants (Principal Funds, Variable Contracts Funds, Exchange-Traded Funds, Real Asset Fund) | 14: 4 website PDF versions (the live February 2026 edition and Wayback captures of 2025-04-15, 2025-05-30 and 2025-07-06, one of which has no text layer) + 10 printed in the Exchange-Traded Funds SAI (2021-04-26 to 2026-06-30) | Principal Global Investors votes every series it manages itself under the Principal Asset Management policy (Board delegation in each SAI); 13 series with an unaffiliated sub-adviser kept EXTERNAL, Spectrum and Origin series keyed with their own policies; keyed from each registrant's earliest SAI read (2021-02-24 to 2021-04-28); the interval Real Asset Fund is ingested unkeyed; 416,823 votes (2024-26 N-PX, is_duplicate = 0); the manager's and Principal Real Estate Investors' institutional-manager N-PX (overlap the fund tables) and the ALPS-advised Real Estate Income Fund are not ingested |
-| PGIM | JENNISON, PGIM_QUANT, PGIM_INC, EXTERNAL, UNRESOLVED, unlabelled | 2024-26 | all kinds | 34 registrants (PGIM Investments LLC trusts: Prudential Investment Portfolios 2-9, 12, 16, 18 and Inc. 10, 14, 15, 17, Jennison Blend / Mid-Cap Growth / Natural Resources / Small Co, World Fund, Sector Funds, Short-Term Corporate Bond, Global Total Return, Target Portfolio Trust, PGIM ETF Trust, PGIM Rock ETF Trust, Prudential Series Fund, Advanced Series Trust, 5 closed-end / interval funds) | 17: 1 website PDF (Jennison Proxy Voting Policy and Procedures, February 2026, jennison.com) + 16 printed in an SAI Appendix I (Jennison 6, PGIM Quantitative Solutions 5, PGIM, Inc. 5; 2021-06-28 to 2026-10-29) | no registrant has one voter: the Board delegates to PGIM Investments, which delegates to each series' subadviser (own policy), so every series is keyed from its trust's Form N-CEN (2023-2026): Jennison, PGIM Quantitative Solutions, or PGIM, Inc. (Fixed Income, Real Estate) alone; any unaffiliated subadviser EXTERNAL (most of Advanced Series Trust and Prudential Series Fund); two PGIM voters or a subadviser change UNRESOLVED; funds of funds unlabelled; 1,034,699 votes (2024-26 N-PX, is_duplicate = 0); no stand-alone PGIM Quantitative Solutions / PGIM, Inc. policy is published (SAI description only); 13-F, institutional-manager and private-fund N-PX not ingested |
-| Victory Capital | VICTORY, AMUNDI_US, EXTERNAL, UNRESOLVED, unlabelled | 2024-26 | all kinds | 29 registrants (Victory Portfolios, II, III [formerly USAA Mutual Funds Trust], IV, Variable Insurance Funds, II; 20 Pioneer open-end trusts and 3 Pioneer closed-end funds) | 21: 5 website memos (vcm.com Proxy Voting Guidelines 2022-2026, live and Wayback) + Victory's H-12 policy as printed in a Pioneer closed-end N-CSR (2025) + 13 printed in the Victory Portfolios II SAI (2021-2026) + 2 editions of Amundi US's policy printed in the Pioneer Fund SAI (2021, 2023) | every Victory SAI delegates voting to the Adviser (VICTORY from each registrant's earliest SAI read, 2021-02-05 to 2021-09-28); series with a sub-adviser that an SAI says votes (6 USAA-trust series, SailingStone, Park Avenue to 2023-12-31) EXTERNAL; the Pioneer funds are AMUNDI_US to 2025-03-31 (Amundi US's own policy, never VICTORY) and UNRESOLVED from the 2025-04-01 combination until the registrant's first Victory SAI / N-CSR (14,003 votes); 637,837 votes (2024-26 N-PX, is_duplicate = 0); Victory's full policy (H-12) was removed from vcm.com (404), only the annual guidelines memo is public; municipal, money-market and interval Pioneer funds, the institutional-manager N-PX and 13-F not ingested |
-| Thrivent | THRIVENT, EXTERNAL, UNRESOLVED, unlabelled | 2024-26 | all kinds | 4 registrants (Thrivent Series Fund, Mutual Funds, Core Funds, ETF Trust) | 6: Thrivent's Proxy Voting Policies and Procedures summary as printed in the Thrivent Mutual Funds SAI (2021-2026, each a wording change) | every Thrivent SAI delegates voting to the Adviser (THRIVENT from each registrant's earliest SAI read, 2021-02-26 to 2022-10-03); series with a subadviser an SAI says votes (Goldman Sachs Asset Management, Aberdeen, BlackRock; to 2023-04-30) EXTERNAL, UNRESOLVED where SAI and N-CEN disagree; 693,860 votes (2024-26 N-PX, is_duplicate = 0, all THRIVENT); Thrivent publishes no stand-alone policy (guidelines on request), only the SAI summary is archived; Cash Management Trust, Church Loan fund, the institutional-manager N-PX and 13-F not ingested |
-| Dodge & Cox | DODGE_COX, unlabelled | 2024-26 | all kinds | 1 registrant (Dodge & Cox Funds, 7 series) | 9: the Dodge & Cox Funds Proxy Voting Policies and Procedures (dodgeandcox.com PDF, 3 versions 2022-2026) and as printed in Appendix B of the multi-fund SAI (6 versions 2021-2026, each a wording change) | every SAI says the Funds authorised Dodge & Cox to vote under its own policy and no N-CEN names a sub-adviser (DODGE_COX from the earliest SAI read, 2021-01-08); 25,757 votes (2024-26 N-PX, is_duplicate = 0); the institutional-manager N-PX, the legacy-HTML N-PX before 2024 and 13-F not ingested |
-| First Trust | FIRST_TRUST_ISS, FIRST_TRUST, EXTERNAL, unlabelled | 2024-26 | all kinds | 12 registrants (First Trust Exchange-Traded Fund I-VIII, AlphaDEX I-II, Series Fund, Variable Insurance Trust) | 6: the SAI-printed voting statement under each key (ISS-guidelines era 2 versions 2021-2023, First Trust-guidelines era 2025) and Exhibit B, First Trust Advisors' own Proxy Voting Guidelines / Policies and Procedures (3 versions 2023-2025) | every SAI says the Board delegated voting to First Trust (ISS executes); FIRST_TRUST_ISS while the SAI says First Trust adopted ISS's guidelines, FIRST_TRUST once the SAI attaches First Trust's own policy (2022-09 to 2023-04, per trust); 18 series whose own SAI delegates to a sub-adviser are EXTERNAL; 674,170 votes (2024-26 N-PX, is_duplicate = 0); closed-end funds, FT Vest series funds and the institutional-manager N-PX not ingested |
-| VanEck | VANECK, unlabelled | 2024-26 | all kinds | 3 registrants (VanEck ETF Trust, VanEck Funds, VanEck VIP Trust) | 1: Appendix A VanEck Proxy Voting Policies as printed in the VIP Trust SAI (2021-04-28, unchanged to 2026) | every SAI says votes follow the Adviser's own policy (Glass Lewis executes, VanEck may depart from its guidelines), so VANECK from the earliest 2021 SAI; no series exception; 108,669 votes (2024-26 N-PX, is_duplicate = 0); closed-end fund, institutional-manager N-PX and legacy-HTML N-PX not ingested |
-| WisdomTree | EXTERNAL, unlabelled | 2024-26 | all kinds | 2 registrants (WisdomTree Trust, WisdomTree Digital Trust) | none: every SAI delegates voting to each series' unaffiliated sub-adviser (Mellon, Voya IM, Newton, Insight) under its own policy, so WisdomTree has no policy of its own | both trusts keyed EXTERNAL from the earliest SAI read (117 series, all sub-advised per Form N-CEN); 917,066 votes (2024-26 N-PX, is_duplicate = 0); wisdomtree.com answers 403 (documented); Ethereum Trust and legacy-HTML N-PX not ingested |
-| Global X | GLOBAL_X, GLOBAL_X_CATHOLIC, GLOBAL_X_ESG, unlabelled | 2024-26 | all kinds | 1 registrant (Global X Funds) | 1: Parts I and II of the SAI Proxy Voting statement as printed in the Global X Funds SAIs (2021-01-04, unchanged to 2026) | every SAI says voting is delegated to the Adviser under its own Proxy Voting Policies (Glass Lewis executes), so GLOBAL_X from the earliest SAI read; 16 series under an unprinted Catholic/ESG addendum keyed GLOBAL_X_CATHOLIC / GLOBAL_X_ESG (no policy text); 374,527 votes (2024-26 N-PX, is_duplicate = 0); globalxetfs.com answers 429 (documented); closed-end fund, foreign-manager and legacy-HTML N-PX not ingested |
-| ProShares | PROSHARES, unlabelled | 2024-26 | all kinds | 2 registrants (ProShares Trust, ProFunds) | 3: Appendix C as printed in the ProShares Trust SAIs (2021-01-15, unchanged to 2026) and the short form on proshares.com (1 version) and profunds.com (2 versions) | both trusts' SAIs attach one joint ProShare Advisors / ProFund Advisors written policy (ISS executes), so one key PROSHARES from the earliest 2021 SAI read; 1,000,718 votes (2024-26 N-PX, is_duplicate = 0); Access One Trust and legacy-HTML N-PX not ingested |
-| Parnassus | PARNASSUS, unlabelled | 2024-26 | all kinds | 2 registrants (Parnassus Funds, Parnassus Funds II) | 12: the proxy voting policy annex as printed in the SAI of each trust (Funds 7 versions, Funds II 5, 2021-2026, each a rewrite) | every SAI says Parnassus does not delegate proxy voting (ISS is voting agent only) and no N-CEN names a sub-adviser, so PARNASSUS from the earliest SAI read (2021-04-30); 10,596 votes (2024-26 N-PX, non-duplicate); no website label (JavaScript page, no policy link) |
-| Domini | DOMINI, unlabelled | 2024-26 | all kinds | 1 registrant (Domini Investment Trust) | 7: the Proxy Voting Guidelines PDF on domini.com (1 version, as of 2025-11-30) and Appendix B as printed in the SAI (6 filings 2021-2026, 5 distinct versions; 2022 is a declared reprint) | the Board delegates voting to Domini; the sub-advisers (SSGA FM, Wellington) have no voting authority in the SAI, so DOMINI from the earliest SAI read (2021-11-24); 26,168 votes (2024-26 N-PX, non-duplicate); the Impact Bond Fund files notice reports only |
-| Voya | VOYA, unlabelled | 2024-26 | all kinds | 14 registrants (Investors Trust, Partners, Equity Trust, Mutual Funds, Variable Products Trust, Variable Funds, Balanced Portfolio, Funds Trust, 6 closed-end funds) | 5: Appendix B 'Voya Funds' proxy voting policy as printed in the Investors Trust SAI (Sept 2020 to Feb 2025, each a wording change); the May 2026 edition awaits a human decision (length guard) | the Board delegates voting to Voya Investments, sub-advisers only recommend and no Sub-Adviser-Voted Fund is named, so VOYA from each registrant's earliest SAI (N-CSR for closed-end funds) read; 380,281 votes (2024-26 N-PX, non-duplicate); Balanced Portfolio ended (reorganised) |
-| New York Life Investments | NYLIM, MACKAY_SHIELDS, NYL_INVESTORS, CANDRIAM, INDEXIQ, AUSBIL, EXTERNAL, UNRESOLVED (per series) | 2024-26 | all kinds | 6 registrants (NYLIM Funds, Funds Trust, VP Funds Trust, ETF Trust, Active ETF Trust, CBRE Global Infrastructure Megatrends Term Fund) | 21 versions in 8 labels: NYLIM, NYL Investors and IndexIQ PDFs (IndexIQ via Wayback), the Manager's policy as printed in 3 SAIs, MacKay Shields summary; each version a wording change | the Manager delegates fund by fund, so each series is keyed by the voter the SAI names (affiliates under their own policy, unaffiliated sub-advisers EXTERNAL, unsettled UNRESOLVED); ETF Trust INDEXIQ until 2024-08-26, then NYLIM; 295,893 votes (2024-26 N-PX, non-duplicate) |
-| UBS | none keyed | 2024-26 | pay only | 1 | 2 (from 2024-06-11) | Combined report for several UBS entities |
-| BNP Paribas AM | none keyed | 2024-26 | pay only | 1 | 4 (from 2024-04-21) | Ex-AXA IM votes may not follow the archived policy |
-| Bank of America | none | 2024-26 | pay only, 30 lines | 1 | 0 | Not a fund manager; holdings and enforcement only |
+| Institution (as named in the DATASHEET) | Vote lines shipped | Vote dates | Kinds | Registrants on file | Adviser groups (`adviser_key`) | Policy versions |
+|---|--:|---|---|--:|---|--:|
+| BlackRock Inc. | 5,911,545 | 2022-07-01 to 2026-06-30 | all kinds | 11 | BAIS, BIS, UNRESOLVED, unlabelled | 13 |
+| The Vanguard Group, Inc. | 5,739,743 | 2022-07-01 to 2026-06-30 | all kinds | 14 | EXTERNAL, UNRESOLVED, VANGUARD, VCM, VPM, unlabelled | 8 |
+| Dimensional Fund Advisors LP | 4,147,555 | 2022-07-01 to 2026-06-30 | all kinds | 5 | DFA, DFA_SOCIAL, DFA_SUSTAINABILITY | 16 |
+| Fidelity Investments (FMR LLC) | 3,984,292 | 2022-07-01 to 2026-06-30 | all kinds | 20 | GEODE, unlabelled | 10 |
+| State Street Corporation | 3,057,653 | 2022-07-01 to 2026-06-30 | all kinds | 4 | not split | 7 |
+| American Century Investments (American Century Investment Management, Inc.) | 1,643,635 | 2023-07-01 to 2026-06-30 | all kinds | 9 | not split | 10 |
+| Invesco Ltd. | 1,539,197 | 2022-07-01 to 2026-06-30 | all kinds | 10 | INVESCO, unlabelled | 2 |
+| John Hancock (John Hancock Investment Management LLC, Manulife) and its subadvisers | 1,459,558 | 2022-07-01 to 2026-06-30 | all kinds | 14 | EXTERNAL, MANULIFE_IM, UNRESOLVED, unlabelled | 3 |
+| Nuveen (Nuveen Asset Management, LLC; Nuveen Fund Advisors, LLC; TIAA-CREF Investment Management, LLC; Teachers Advisors, LLC) | 1,419,781 | 2022-07-01 to 2026-06-30 | all kinds | 6 | EXTERNAL, NUVEEN, unlabelled | 4 |
+| PGIM (Prudential Financial: PGIM Investments LLC and its subadvisers) | 1,371,296 | 2021-07-01 to 2026-06-30 | all kinds | 34 | EXTERNAL, JENNISON, PGIM_INC, PGIM_QUANT, UNRESOLVED, unlabelled | 17 |
+| ProShares (ProShare Advisors LLC) | 1,300,132 | 2022-07-01 to 2026-06-30 | all kinds | 2 | not split | 4 |
+| WisdomTree (WisdomTree Asset Management, Inc.) | 1,188,355 | 2022-07-01 to 2026-06-30 | all kinds | 2 | not split | 0 |
+| Franklin Resources Inc. (Franklin Templeton) | 1,072,064 | 2022-07-01 to 2026-06-30 | all kinds | 23 | FRANKLIN, PUTNAM, UNRESOLVED, unlabelled | 8 |
+| Thrivent (Thrivent Asset Management, LLC; Thrivent Financial for Lutherans) | 941,998 | 2022-07-01 to 2026-06-30 | all kinds | 4 | EXTERNAL, THRIVENT, UNRESOLVED | 6 |
+| JPMorgan Chase & Co. | 876,159 | 2022-07-01 to 2026-06-30 | all kinds | 7 | not split | 6 |
+| Victory Capital (Victory Capital Management Inc., with the Pioneer funds acquired from Amundi US) | 856,347 | 2022-07-01 to 2026-06-30 | all kinds | 29 | AMUNDI_US, EXTERNAL, UNRESOLVED, VICTORY | 13 |
+| First Trust (First Trust Advisors L.P.) | 818,076 | 2022-07-01 to 2026-06-30 | all kinds | 12 | EXTERNAL, FIRST_TRUST, FIRST_TRUST_ISS | 6 |
+| Morgan Stanley | 803,775 | 2022-07-01 to 2026-06-30 | all kinds | 16 | CALVERT, MSIM, unlabelled | 9 |
+| Guggenheim Investments | 699,620 | 2022-07-01 to 2026-06-30 | all kinds | 5 | GUGGENHEIM, GUGGENHEIM_GPIM | 6 |
+| Russell Investments (Russell Investment Management, LLC) | 634,401 | 2022-07-01 to 2026-06-30 | all kinds | 3 | not split | 3 |
+| Principal (Principal Global Investors, LLC / Principal Asset Management) | 621,566 | 2022-07-01 to 2026-06-30 | all kinds | 4 | EXTERNAL, ORIGIN, PRINCIPAL, SPECTRUM, UNRESOLVED, unlabelled | 14 |
+| Columbia Threadneedle Investments (Columbia Management Investment Advisers, LLC; Ameriprise Financial) | 611,834 | 2022-07-01 to 2026-06-30 | all kinds | 11 | CMIA, EXTERNAL, unlabelled | 8 |
+| T. Rowe Price (group: TRPA advisory + TRPIM 13-F filer) | 585,916 | 2022-07-01 to 2026-06-30 | all kinds | 23 | TRPA, TRPIM, UNRESOLVED, unlabelled | 11 |
+| Capital Group (Capital Research and Management Company) | 490,867 | 2022-07-01 to 2026-06-30 | all kinds | 38 | not split | 2 |
+| Voya (Voya Investments, LLC / Voya Investment Management) | 490,816 | 2022-07-01 to 2026-06-30 | all kinds | 14 | not split | 6 |
+| Northern Trust Corporation | 472,052 | 2022-07-01 to 2026-06-30 | all kinds | 1 | not split | 4 |
+| MFS Investment Management (Massachusetts Financial Services Company) | 412,692 | 2022-07-01 to 2026-06-30 | all kinds | 24 | MFS, unlabelled | 6 |
+| AQR Capital Management | 411,232 | 2022-07-01 to 2026-06-30 | all kinds | 1 | not split | 8 |
+| New York Life Investments (New York Life Investment Management LLC) and its subadvisers | 410,693 | 2022-07-05 to 2026-06-30 | all kinds | 6 | AUSBIL, CANDRIAM, EXTERNAL, INDEXIQ, MACKAY_SHIELDS, NYLIM, NYL_INVESTORS, UNRESOLVED, unlabelled | 17 |
+| AllianceBernstein (AllianceBernstein L.P.) | 383,402 | 2022-07-01 to 2026-06-30 | all kinds | 20 | ALLIANCEBERNSTEIN, unlabelled | 12 |
+| Global X (Global X Management Company LLC) | 374,527 | 2023-07-03 to 2026-06-30 | all kinds | 1 | GLOBAL_X, GLOBAL_X_CATHOLIC, GLOBAL_X_ESG, UNRESOLVED | 1 |
+| Goldman Sachs Group Inc. | 345,331 | 2022-07-01 to 2026-06-30 | all kinds | 3 | UNRESOLVED, unlabelled | 2 |
+| Allspring Global Investments (Allspring Funds Management, LLC) | 308,330 | 2022-07-01 to 2026-06-30 | all kinds | 8 | not split | 12 |
+| GMO (Grantham, Mayo, Van Otterloo & Co.) | 257,616 | 2022-07-01 to 2026-06-30 | all kinds | 1 | not split | 14 |
+| Wellington Management Group LLP | 235,903 | 2022-07-07 to 2026-06-30 | all kinds | 3 | WELLINGTON, unlabelled | 5 |
+| Pacer Advisors | 233,620 | 2022-07-05 to 2026-06-30 | all kinds | 1 | EXTERNAL, PACER | 1 |
+| Natixis Investment Managers (Natixis Advisors) US funds | 229,319 | 2022-07-01 to 2026-06-30 | all kinds | 7 | HARRIS_ASSOCIATES, LOOMIS_SAYLES, UNRESOLVED, unlabelled | 1 |
+| Federated Hermes (Federated Hermes, Inc.) | 218,020 | 2023-04-27 to 2026-06-30 | all kinds | 15 | FEDERATED_HERMES, HERMES_HIML | 7 |
+| GQG Partners | 208,219 | — | all kinds | 1 | GQG, UNDATED, unlabelled | 6 |
+| Parametric Portfolio Associates LLC | 178,340 | 2023-07-03 to 2026-06-30 | all kinds | 2 | PARAMETRIC, PARAMETRIC_MSIM, unlabelled | 4 |
+| Lazard (Lazard Asset Management LLC) | 154,082 | 2022-07-01 to 2026-06-30 | all kinds | 4 | not split | 13 |
+| Janus Henderson Investors (Janus Henderson Investors US LLC) | 146,571 | 2022-07-01 to 2026-06-30 | all kinds | 3 | JANUS_HENDERSON, unlabelled | 9 |
+| VanEck (Van Eck Associates Corporation) | 144,753 | 2022-07-01 to 2026-06-30 | all kinds | 3 | VANECK | 1 |
+| Neuberger Berman (Neuberger Berman Investment Advisers LLC) | 107,661 | 2022-07-05 to 2026-06-30 | all kinds | 9 | EXTERNAL, NEUBERGER_BERMAN, unlabelled | 10 |
+| Lord Abbett (Lord, Abbett & Co. LLC) | 92,635 | 2022-07-06 to 2026-06-30 | all kinds | 10 | not split | 9 |
+| Virtus Investment Partners | 87,311 | 2022-07-06 to 2026-06-30 | all kinds | 5 | EXTERNAL, KAR, UNRESOLVED, unlabelled | 1 |
+| Charles Schwab Trust Company | 66,779 | 2022-07-07 to 2026-06-30 | all kinds | 2 | not split | 0 |
+| Deutsche Bank AG | 56,257 | 2022-07-11 to 2026-06-30 | all kinds | 3 | DIMA | 2 |
+| First Eagle Investment Management | 47,253 | 2022-07-06 to 2026-06-30 | all kinds | 3 | not split | 1 |
+| Calamos (Calamos Advisors LLC) | 41,870 | 2022-07-25 to 2026-06-30 | all kinds | 11 | CALAMOS, CALAMOS_SUSTAINABLE, UNRESOLVED | 10 |
+| Domini Impact Investments | 39,104 | 2022-07-05 to 2026-06-29 | all kinds | 1 | not split | 6 |
+| Artisan Partners (Artisan Partners Limited Partnership) | 38,481 | 2022-07-01 to 2026-06-30 | all kinds | 1 | not split | 13 |
+| Baron Capital / BAMCO (Baron Funds) | 37,722 | 2022-07-04 to 2026-06-30 | all kinds | 3 | not split | 1 |
+| Brown Advisory | 34,772 | 2022-07-01 to 2026-06-30 | all kinds | 1 | BROWN_ADVISORY, EXTERNAL, UNRESOLVED | 10 |
+| Thornburg Investment Management | 32,356 | 2022-07-04 to 2026-06-30 | all kinds | 3 | not split | 4 |
+| Cohen & Steers (Cohen & Steers Capital Management, Inc.) | 30,912 | 2022-07-06 to 2026-06-30 | all kinds | 17 | not split | 13 |
+| UBS Group AG | 29,255 | 2023-07-05 to 2026-06-30 | pay only | 1 | not split | 2 |
+| Dodge & Cox | 25,228 | 2023-07-03 to 2026-06-30 | all kinds | 1 | not split | 9 |
+| Harris Associates / Oakmark Funds | 23,252 | 2022-07-19 to 2026-06-29 | all kinds | 2 | not split | 8 |
+| Bank of New York Mellon Corp | 18,593 | 2022-07-07 to 2026-06-30 | all kinds | 2 | not split | 1 |
+| Diamond Hill Capital Management | 13,658 | 2023-07-17 to 2026-06-30 | all kinds | 1 | not split | 5 |
+| Parnassus Investments | 13,101 | 2022-07-12 to 2026-06-30 | all kinds | 2 | not split | 7 |
+| BNP Paribas Asset Management Holding S.A. | 3,270 | 2023-07-05 to 2026-06-30 | pay only | 1 | not split | 4 |
+| Bank of America Corporation | 30 | 2023-09-14 to 2026-06-17 | pay only | — | not split | 0 |
+| Citigroup Inc. | 0 | — | no votes | — | — | 0 |
+| Allianz Asset Management GmbH (PIMCO) | 0 | — | no votes | — | — | 0 |
+| Wells Fargo & Company | 0 | — | no votes | — | — | 0 |
 
 Citigroup, Allianz (PIMCO) and Wells Fargo have holdings and
-enforcement rows but no votes or policy versions. "None keyed": the registry
-records no adviser keys, so nothing is split. "From" is the first capture date;
-votes before it have no archived policy. Full notes: `facts/voting_scope_notes.csv`.
+enforcement rows but no votes or policy versions. Votes before an institution's first archived policy capture have no archived policy. For three
+institutions `COVERAGE.json` counts fewer versions than the shipped `policy_versions`
+table holds rows (Lazard 13 against 14, New York Life 17 against 21, Parnassus 7
+against 12); the 441 total is the table's row count. Per-institution scope notes
+(who votes which series, what is not ingested): `facts/voting_scope_notes.csv`.
 
 ## Three things to know before comparing a policy with votes
 
@@ -107,8 +136,8 @@ can have funds voted by different advisers under different policies. Group by
 `adviser_key` (a column of `proposal_decisions`, `director_decisions` and `votes`;
 `voting_advisers` holds the rules it is resolved from). Example from this record, Vanguard
 director items from meetings in 2026, non-support (against or abstain) in the
-release: VCM 7.4%, VPM 3.1%, the EXTERNAL fund 1.6%, and the pre-split VANGUARD
-key (2026-01-01 to 01-11) 19.0% on 195 items. Pooled, the figure is 6.1%, and it
+release v2026-11-23: VCM 7.4%, VPM 5.9%, EXTERNAL 3.0%, unlabelled 3.5%, UNRESOLVED 2.5%,
+and the pre-split VANGUARD key (2026-01-01 to 01-11) 19.0% on 220 items. Pooled, the figure is 6.4%, and it
 describes no one's policy. `UNRESOLVED`, `EXTERNAL`, `UNDATED` and `unlabelled`
 are never comparable with any policy.
 
@@ -134,11 +163,12 @@ company runs. Never sum `shares_voted` without `is_duplicate = 0` (the release
 
 ## Quickstart A: the release bundle (about ten minutes)
 
-No network needed once you hold the bundle; it is not downloadable yet. Nothing
+No network needed once you hold the bundle. Download it from Zenodo
+([doi:10.5281/zenodo.24486060](https://doi.org/10.5281/zenodo.24486060), release 2026-11-23). Nothing
 here assumes any library is installed. Check the files with the shell alone:
 
 ```sh
-cd data/releases/v2026-11-20.2
+cd data/releases/v2026-11-23
 shasum -a 256 -c MANIFEST.sha256 | grep -vc OK   # Linux: sha256sum -c ... ; prints 0 when every file is OK
 ```
 
@@ -152,8 +182,9 @@ pip install duckdb pyarrow        # SQL; or: pip install pandas pyarrow
 pip install pyarrow               # the pyarrow-only alternative below needs nothing else
 ```
 
-Director decisions grouped by `adviser_key` (this exact query was run, with
-duckdb 2.0.0):
+Director decisions grouped by `adviser_key`. The SQL is the same ratio as the pyarrow
+script below; the figures shown were produced by that script on the v2026-11-23 bundle
+(pyarrow 24.0.0), and the SQL was not re-run for this release:
 
 ```sql
 SELECT coalesce(adviser_key, 'ALL (pooled)') AS adviser_key,
@@ -165,15 +196,17 @@ WHERE institution_id = 'vanguard' AND meeting_date >= '2026-01-01'
 GROUP BY ROLLUP(adviser_key) ORDER BY items;
 ```
 ```
- VANGUARD     195  19.0
- EXTERNAL    1172   1.6
- VPM        33607   3.1
- VCM        77876   7.4
- ALL (pooled) 112850  6.1
+ VANGUARD      220  19.0
+ unlabelled   3699   3.5
+ UNRESOLVED   4295   2.5
+ EXTERNAL     9917   3.0
+ VPM         41073   5.9
+ VCM         78066   7.4
+ ALL (pooled) 137270  6.4
 ```
 
 Paste it into the DuckDB shell, or pass it to `duckdb.sql("""...""").show()` in Python.
-The same numbers with pyarrow only (run in the bundle directory; run with pyarrow 26.0.1):
+The same numbers with pyarrow only (run in the bundle directory; run with pyarrow 24.0.0):
 
 ```python
 import pyarrow as pa
@@ -230,7 +263,7 @@ Restore and build were timed on the maintainer's laptop into an empty
   shareholder proposals: 1,368 matching restored, 1,417 in the full ledger).
   Every other number in those results matched; ids (`proposal_id`) differ because
   they are not stable across rebuilds.
-- **Policy text is not in the bundle.** The 89 policy captures are restored with their
+- **Policy text is not in the bundle.** The policy captures (89 in the v2026-11-17 bundle that was timed here; 533 in v2026-11-23) are restored with their
   URLs, hashes and Wayback timestamps, but the engine has no policy sentences:
   `policy_search` and `policy_diff` return nothing and say so. Re-fetch the public
   wording with `glasshouse ingest commitments --wayback`, then `glasshouse engine
@@ -287,8 +320,8 @@ quotations not in the archived text, and words that assert motive or wrongdoing.
 - Every ledger row has `source_url` and `retrieval_date`, or links by `accession` to a
   `filings` row that has them (that is how `votes` and `holdings` carry theirs). Enforcement rows have a
   `resolution_type` from a closed list; dockets are `allegation`, doubt is `unverified`.
-- N-PX as filed repeats vote lines. 793,769 of 10,733,655 ledger vote lines are
-  flagged `is_duplicate`; the release keeps only the rest.
+- N-PX as filed repeats vote lines. Lines flagged `is_duplicate` stay in the working
+  ledger; the release keeps only the rest.
 - Quarantine: name-level joins are leads. Nothing reaches `findings` without a
   human decision and a note. LLM output never enters ledger facts. Free public
   sources only; blocked ones are documented, not bypassed.
