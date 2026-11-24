@@ -325,6 +325,28 @@ def test_rollback_wording_the_shared_detector_misses():
     assert not engine.is_rollback("Report on Climate Risks to Retirement Plan Beneficiaries")
 
 
+def test_anti_dei_rollback_wording_is_flagged_and_pro_diversity_is_not():
+    """ROADMAP h3: Colgate 2026-05-08 'Remove DEI from Board Candidate Considerations'
+    sat in board-diversity unflagged, so BIS voting AGAINST read as voting against
+    diversity. Texts are real titles from the live engine."""
+    for anti in ("Stockholder proposal entitled \"Remove DEI from Board Candidate Considerations.\"",
+                 "REMOVE DEI FROM BOARD CANDIDATE CONSIDERATIONS",
+                 "Consider Abolishing DEI Policies, Programs, Departments, and Goals",
+                 "Shareholder Proposal Regarding Abolishing DEI Policies, Department, and Goals",
+                 "Shareholder Proposal Regarding Eliminating DEI Goals from Compensation Inducements",
+                 "Shareholder Proposal Regarding Cost Benefit Analysis of DEI Programs",
+                 "SHAREHOLDER PROPOSAL REGARDING A REPORT ON DEI RISKS IN FEDERAL CONTRACTING"):
+        assert engine.is_rollback(anti), anti
+    for pro in ("Designate Board Committee to Oversee DEI Strategy",
+                "Shareholder Proposal Regarding Report on DEI Initiatives",
+                "Report on Board Diversity",
+                "Remove Supermajority Vote Requirement to Improve Board Diversity",
+                "Adopt a Policy to Include Diverse Candidates in Director Searches",
+                "Report on Eliminating the Gender Pay Gap",
+                "Slate Submitted by Banca Monte Dei Paschi di Siena SpA"):
+        assert not engine.is_rollback(pro), pro
+
+
 def test_fund_votes_shows_each_series_behind_a_position(eng):
     pid = eng.proposals(institution="alpha", year=2024)["result"]["shown"][0]["proposal_id"]
     r = eng.fund_votes(pid)["result"]

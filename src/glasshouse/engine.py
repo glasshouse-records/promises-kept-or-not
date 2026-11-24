@@ -214,6 +214,13 @@ def position_from_shares(for_: float, against: float, n_abstain: int) -> str:
 _ROLLBACK_EXTRA = re.compile(
     r"\b(remove|drop|rescind|revisit|reconsider|eliminate)\b.{0,70}"
     r"\b(emissions?|ghg|greenhouse|climate|net[\s-]?zero|decarboni[sz]ation)\b", re.IGNORECASE)
+# Anti-DEI rollback wording the shared detector misses (ROADMAP h3). Scoped to the
+# DEI acronym / "diversity, equity" so a pro-diversity title never matches.
+_DEI = r"(?:\bd\.?e\.?i\b\.?|diversity[,\s]+equity)"
+_ROLLBACK_DEI = re.compile(
+    r"\b(?:remov\w*|abolish\w*|eliminat\w*|end(?:ing)?|cease|ceasing|rescind\w*)\b[^.]{0,40}?"
+    + _DEI + r"|cost[\s-]?benefit\s+analysis\s+of\s+" + _DEI
+    + r"|" + _DEI + r"\s+risks?\b", re.IGNORECASE)
 _NOT_ROLLBACK = re.compile(
     r"\bclimate\b.{0,25}\brisks?\b.{0,25}\b(retirement|401|pension|beneficiar)", re.IGNORECASE)
 
@@ -225,7 +232,8 @@ def is_rollback(description: str) -> bool:
     if _NOT_ROLLBACK.search(description or ""):
         return False
     return bool(proposal_is_oppositional(description or "")
-                or _ROLLBACK_EXTRA.search(description or ""))
+                or _ROLLBACK_EXTRA.search(description or "")
+                or _ROLLBACK_DEI.search(description or ""))
 
 
 def _iso(value, name: str) -> str | None:
