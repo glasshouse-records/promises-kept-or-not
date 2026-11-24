@@ -27,6 +27,8 @@ Tick with the date and one line of result.
     - drop a whole meeting when any of its rows is a_only/b_only, instead of keeping its agreed rows.
   - [x] (f) 2026-11-24 published: Zenodo version 2026-11-23, doi:10.5281/zenodo.24486060 (48,230,383 votes, 11,165,549 legacy 2022-23; files' MD5 on Zenodo match the local upload). DOI recorded in README, CITATION.cff, DATA-PAPER, HANDOVER.
   - [x] (g) DONE 2026-11-24: README 'What is in it' and 'Who is covered' tables (now one sourced table from DATASHEET + COVERAGE.json + ask coverage; prose scope notes live in facts/voting_scope_notes.csv), Quickstart A and DATA-PAPER figures now quote v2026-11-23.
+  - [ ] (h) 2026-11-24: desk verify against the v2026-11-23 engine: 1 of 6 drafts still VERIFIED (ubs-policy-2026); the other 5 fail on figures that grew with coverage (registrant counts 4 -> 11-20, Fidelity votes now from 2022-07, more nominees) plus 2 selector errors (KeyError 'fidelity', ambiguous vanguard). Re-run each with investigative-journalist on the new data; they stay unpublished leads.
+  - [ ] (i) COVERAGE.json policy-version undercount fixed in code (6741ecc, CORRECTIONS.md); ships corrected in the next release.
 - [x] 2026-11-17 `country=` on the director tools (country that issued the ISIN); Vanguard Jan–Jun 2026 splits sum to the overall 79,430.
 - [x] 2026-11-17 `country=` with a code no item carries now explains itself (GB, not UK).
 - [x] 2026-11-17 T. Rowe Price advisers verified from each fund's 485BPOS (filed 2026-02-25): three funds are TRPA-voted; Capital Appreciation (CIK 793347) is TRPIM-voted. TRPIM's own guidelines now captured.
