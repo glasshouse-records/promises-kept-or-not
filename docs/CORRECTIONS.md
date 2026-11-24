@@ -4,6 +4,31 @@ Every error found in a published release is recorded here: what was wrong, which
 releases carry it, how big it is, and which release fixes it. Published files on
 Zenodo cannot be changed, so earlier versions stay as they were; use the latest.
 
+## 2026-11-24: COVERAGE.json undercounted policy versions
+
+**What was wrong.** In release 2026-11-23 (doi:10.5281/zenodo.24486060),
+`COVERAGE.json` (and the coverage table in the datasheet built from it) gave a
+`policy_versions` figure per institution that was too low for three institutions.
+The coverage count treated two archived policy labels of one institution as one
+version when their text was identical; `facts/policy_versions.csv` keeps one row per
+(label, text), as documented. Per-institution figures summed to 431 in
+`COVERAGE.json` against 441 rows in the file.
+
+| Institution | `COVERAGE.json` | rows in `facts/policy_versions.csv` |
+|---|--:|--:|
+| Lazard | 13 | 14 |
+| New York Life | 17 | 21 |
+| Parnassus | 7 | 12 |
+
+**Effect.** `facts/policy_versions.csv` itself was correct and complete; only the
+coverage figure for those three institutions was low. `policies_self_dated`
+used the same counting key and may be understated for the same reason; it was
+not re-checked per institution. No other file is affected.
+
+**Fix.** Coverage now counts over the same key as the shipped file (label and
+text), pinned by a test that compares it with the shipped rows. The next release
+carries the corrected figures; published Zenodo files are not changed.
+
 ## 2026-11-19: votes restated by an N-PX/A shipped twice
 
 **What was wrong.** When a fund files an amended N-PX (N-PX/A) that restates

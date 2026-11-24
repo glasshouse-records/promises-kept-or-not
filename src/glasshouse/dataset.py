@@ -227,6 +227,16 @@ def coverage_vote_sql() -> tuple[str, str]:
             f"SELECT {_KIND_SQL} k, COUNT(*) n FROM {shipped} v GROUP BY k")
 
 
+def _versions_per_label(conn: sqlite3.Connection, where: str, params: tuple) -> int:
+    """Distinct (doc_label, text identity) among live commitments: the key of the
+    shipped policy_versions rows. distinct_versions alone merges labels."""
+    labels = [r[0] for r in conn.execute(
+        f"SELECT DISTINCT doc_label FROM commitments WHERE superseded=0 AND ({where})",
+        params)]
+    return sum(len(distinct_versions(conn, f"({where}) AND doc_label=?", (*params, lb)))
+               for lb in labels)
+
+
 def coverage(conn: sqlite3.Connection) -> list[dict]:
     """Honest per-institution coverage of the rows that SHIP. Every vote figure
     is computed over publish.PUBLIC_TABLES['votes'] (the very filter the release
@@ -243,15 +253,18 @@ def coverage(conn: sqlite3.Connection) -> list[dict]:
             "WHERE f.institution_id=?", (inst["id"],)).fetchone()[0]
         # Version identity is the policy TEXT (shared helper): counting distinct
         # bytes published 63 "versions" where the archive holds 51.
-        docs = len(distinct_versions(conn, "institution_id=?", (inst["id"],)))
+        # The shipped policy_versions file keeps one row per (doc_label, text), so
+        # the count is over that same key: two labels with identical text are two
+        # rows there (v2026-11-23 counted them once: Lazard 13 vs 14).
+        docs = _versions_per_label(conn, "institution_id=?", (inst["id"],))
         # How many of this institution's archived policies carry a date written
         # by ITS OWN software. That is the only dating evidence in the corpus
         # that is not ours or the Internet Archive's, so a consumer deciding how
         # far to trust our timeline needs to see it per institution.
         # Counted over the SAME identity as policy_versions. Counting captures
         # here instead published "7 self-dated of 5 versions".
-        dated = len(distinct_versions(
-            conn, "institution_id=? AND doc_created_at != ''", (inst["id"],)))
+        dated = _versions_per_label(
+            conn, "institution_id=? AND doc_created_at != ''", (inst["id"],))
         if not (npx["n"] or hold or docs):
             continue  # registered but not yet ingested — omit from coverage
         rows.append({
