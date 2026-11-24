@@ -11,8 +11,8 @@ On top sit an evidence engine (`glasshouse ask`, cited queries) and a checker
 (`glasshouse desk verify`, which re-runs every claim in a draft). The dataset is
 the product.
 
-**Status, 2026-11-20:** published. Data: Zenodo,
-[doi:10.5281/zenodo.24405538](https://doi.org/10.5281/zenodo.24405538) (latest version, 2026-11-20.2;
+**Status, 2026-11-24:** published. Data: Zenodo,
+[doi:10.5281/zenodo.24486060](https://doi.org/10.5281/zenodo.24486060) (latest version, 2026-11-23;
 all versions: [10.5281/zenodo.24321606](https://doi.org/10.5281/zenodo.24321606)).
 Code: <https://github.com/glasshouse-records/promises-kept-or-not>.
 The `findings` table is empty: no claim has passed human review. Drafts in
@@ -22,6 +22,10 @@ The `findings` table is empty: no claim has passed human review. Drafts in
 
 Figures below are from the release `v2026-11-20.2` (its `DATASHEET.md` and
 `COVERAGE.json` are authoritative). Counts drift; the commands print current ones.
+The latest release, `v2026-11-23`, is larger: 48,230,383 vote lines from 64
+institutions, 11,165,549 of them from the 2022-23 voting year read from text and HTML
+N-PX filings (`votes.legacy_format` set), and 441 policy versions; its DATASHEET has
+the full figures.
 
 | Layer | Table(s) | What it holds, honestly |
 |---|---|---|
@@ -311,8 +315,8 @@ quotations not in the archived text, and words that assert motive or wrongdoing.
 Cite the version you used:
 
 > Glasshouse (2026). *Glasshouse — institutional accountability evidence dataset
-> (say vs. do)*, version 2026-11-20.2 [Data set]. Zenodo.
-> https://doi.org/10.5281/zenodo.24405538
+> (say vs. do)*, version 2026-11-23 [Data set]. Zenodo.
+> https://doi.org/10.5281/zenodo.24486060
 
 To refer to the dataset in general (every version), use
 https://doi.org/10.5281/zenodo.24321606. The bundle's `DATASHEET.md` records the

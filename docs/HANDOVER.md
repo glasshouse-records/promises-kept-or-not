@@ -19,7 +19,10 @@ doi:10.5281/zenodo.24376068;
 version 2026-11-20, adding First Trust and Dodge & Cox and correcting 290 Morgan Stanley
 lines counted twice, doi:10.5281/zenodo.24384338;
 version 2026-11-20.2, adding VanEck, WisdomTree, Global X and ProShares,
-doi:10.5281/zenodo.24405538) and the code at
+doi:10.5281/zenodo.24405538;
+version 2026-11-23, adding the 2022-23 voting year (11,165,549 lines read from text and
+HTML N-PX by two agreeing parsers) and 23 further institutions, 48,230,383 vote lines in
+all, doi:10.5281/zenodo.24486060) and the code at
 https://github.com/glasshouse-records/promises-kept-or-not, both credited to
 "Glasshouse". Nothing else has been sent or shown to anyone; the drafts below
 are still private.
