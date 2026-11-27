@@ -43,6 +43,21 @@
   - Lower-case values, bare digits, "Unknown", "Againt", "Took No Action" and "Non-Voting" are dropped.
   - Fidelity's HTML prefixes fund names with "VOTE SUMMARY REPORT", so those sections stay unmapped (dropped). Fidelity is read by the older `npx_legacy` parser, which has no second parser yet.
 
+## ISS HTML contract amendment 7 (2026-11-27): Ticker and Security ID on one line
+
+Fidelity-style ISS HTML (17 filings, e.g. 0000035315-23-000529, 0000024238-23-000039) prints
+both labels in ONE line of the meeting-header cell:
+`TICKER:&#xa0;&#xa0;3660&#xa0;&#xa0;&#xa0;&#xa0;&#xa0;&#xa0;SECURITY ID:&#xa0;&#xa0;88557W101`.
+Both parsers read the ticker as everything after `TICKER:` (`3660 SECURITY ID: 88557W101`) and
+no security id, so 1,028,013 shipped lines carry an empty cusip (no false value: the
+security-id validation rejected nothing it was given; the id was simply never read).
+7a. In a meeting-header cell line, the labels `Ticker:` and `Security ID:` (any case) may both
+    occur; a label's value is the text after it up to the start of the other label on the same
+    line, or to the end of the line, whitespace (including no-break spaces) collapsed and
+    stripped. Either order. A label occurring twice in one line rejects that meeting (counted).
+7b. Nothing else changes: values are still validated downstream (a valid CUSIP/CINS -> cusip,
+    a valid ISIN -> isin, else '').
+
 ## ProxyEdge contract amendment PE-I (2026-11-27): capital I printed as lower-case i
 
 JPMorgan Exchange-Traded Fund Trust's 2022-23 N-PX (0001438934-23-000406, 10,991
