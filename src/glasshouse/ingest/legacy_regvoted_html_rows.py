@@ -27,6 +27,10 @@ _BR = re.compile(r"<br\s*/?>", re.I)
 _TAG = re.compile(r"<[^>]*>")
 _WS = re.compile(r"\s+")
 _ID = re.compile(r"^\d+(?:\.\d+)*(?:\.?[A-Za-z])?\.?$")
+_ROMAN = re.compile(r"^(?:XXX|XX?(?:IX|IV|V?I{0,3})|IX|IV|V?I{1,3}|V)$", re.I)
+_SECTION = re.compile(r"^(?:AGM|EGM)(?=.)")
+_GLUED = re.compile(r"^\d[\d.]*[A-Za-z]")
+_LETTER_DOT_DIGITS = re.compile(r"^[A-Za-z]{1,2}\.\d[\d.]*$")
 _DATE = re.compile(r"^(\d{1,2})-([A-Za-z]{3})-(\d{2})$")
 
 HEADER = ("Proposal", "Proposed by", "Mgt. Position", "Registrant Voted")
@@ -90,6 +94,25 @@ def _label_value(vals: list[str], label: str, stop: str | None = None) -> str:
     return ""
 
 
+def _bad_id_token(piece: str) -> bool:
+    """HR8: does the text start with an id-like token H6(a) does not accept?"""
+    toks = piece.split()
+    if not toks:
+        return False
+    tok = toks[0]
+    if tok in ("AGM", "EGM") and len(toks) > 1:
+        tok = toks[1]
+    tok = _SECTION.sub("", tok)
+    if _ID.match(tok):
+        return False
+    if tok[-1] in ".)":
+        body = tok.rstrip(".)")
+        if body and (_ROMAN.match(body) or (body.isalpha() and len(body) <= 2)
+                     or (re.fullmatch(r"[A-Za-z0-9.]+", body) and any(c.isdigit() for c in body))):
+            return True
+    return bool(_GLUED.match(tok) or _LETTER_DOT_DIGITS.match(tok))
+
+
 def _parse_date(s: str) -> str | None:
     m = _DATE.match(s)
     if not m:
@@ -120,6 +143,7 @@ def _run(text: str) -> tuple[list[dict], Counter]:
     new_ident: tuple[str, str, str] | None = None
     pend_issuer: str | None = None
     meeting: dict | None = None
+    skip = False                                # HR6: skipping a page-split proposal's tail
     prev_kind = "other"                         # 'secid' | 'close' | 'header' | 'other'
 
     def drop_open(m: dict) -> None:
@@ -155,19 +179,34 @@ def _run(text: str) -> tuple[list[dict], Counter]:
         kind = "other"
         first = vals[0]
 
+        if skip and i not in headings:
+            nxt_sec = len(vals) == 1 and i + 1 < len(rows) and rows[i + 1][0].startswith("Security ID:")
+            if (nxt_sec or first.startswith("Meeting Date:")
+                    or (len(vals) >= 2 and _ID.match(first) and vals[1] not in _COLUMN_VALUES)):
+                skip = False
+
         if i in headings:
-            if meeting is not None:
-                drop_open(meeting)
             pend_issuer = None
+            skip = False
             if headings[i] == fund:
                 kind = "header"
+                if meeting is not None and not meeting["dead"] and meeting["open"] is not None:
+                    skip = True
+                if meeting is not None:
+                    drop_open(meeting)
             else:
                 if meeting is not None:
                     finalize(meeting)
                 meeting, ident, new_ident = None, None, None
                 fund = headings[i]
+        elif len(vals) == 1 and i + 1 in headings:
+            continue                                # the repeated fund-heading row itself
         elif fund is None:
             stats["row_before_header"] += 1
+        elif skip:
+            stats["row_skipped_page_split"] += 1
+            if _is_column_row(vals):
+                skip = False
         elif (len(vals) == 1 and i + 1 < len(rows)
               and rows[i + 1][0].startswith("Security ID:")):
             if meeting is not None:
@@ -229,6 +268,10 @@ def _run(text: str) -> tuple[list[dict], Counter]:
             stats["row_in_dropped_meeting"] += 1
         else:
             is_col = _is_column_row(vals)
+            if not is_col and vals[-1].startswith("Voted"):
+                kill("drop_meeting_voted_not_column")
+                prev_kind = kind
+                continue
             starts = (len(vals) >= 2 and _ID.match(first) is not None
                       and vals[1] not in _COLUMN_VALUES)
             if starts:
@@ -245,6 +288,9 @@ def _run(text: str) -> tuple[list[dict], Counter]:
                         meeting["open"] = {"id": "", "text": []}
             if not meeting["dead"]:
                 cur = meeting["open"]
+                if not cur["text"] and pieces and _bad_id_token(pieces[0]):
+                    kill("drop_meeting_bad_id_token")
+            if not meeting["dead"]:
                 cur["text"].extend(pieces)
                 if is_col:
                     text = _WS.sub(" ", " ".join(cur["text"])).strip()

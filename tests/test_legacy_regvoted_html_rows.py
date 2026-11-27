@@ -160,7 +160,7 @@ def test_non_column_rows():
     # en dash vote, truncated proponent: not column rows -> unclosed
     html = doc(issuer(), tr("1", "a", "Management", "For", "Voted – For"),
                tr("2", "b", "Management", "For", "Voted - For"))
-    assert [r["proposal_id"] for r in P.parse(html)] == ["2"]
+    assert P.parse(html) == []  # HR7: a "Voted" last value that is no column row drops the meeting
     html = doc(issuer(), tr("1", "a", "Sharehold", "For", "Voted - For"))
     assert P.parse(html) == []
 
@@ -264,3 +264,42 @@ def test_hr5_empty_security_id_kept():
     html = doc(tr("<b>FOO</b>"), tr("Security ID:"), tr("Meeting Date: 01-Jan-23"), prop("1", "x"))
     r = P.parse(html)
     assert len(r) == 1 and r[0]["security_id"] == ""
+
+
+# ---- amendments HR6-HR8 ----------------------------------------------------
+
+def test_hr6_page_split_proposal_emits_nothing():
+    html = doc(issuer(), tr("1", "Elect Jane"), "</table><table>" + HEAD,
+               tr("Doe tail"), tr("Management", "For", "Voted - For"))
+    s = P.parse_stats(html)
+    assert P.parse(html) == []
+    assert s["drop_proposal_unclosed"] == 1 and s["row_skipped_page_split"] == 2
+
+
+def test_hr6_skip_ends_early_at_id_row_and_closed_proposal_header_is_plain():
+    html = doc(issuer(), tr("1", "Elect Jane"), HEAD, tr("tail"), prop("2", "b"))
+    assert [r["proposal_id"] for r in P.parse(html)] == ["2"]
+    html = doc(issuer(), prop("1", "a"), HEAD, tr("Wrapped"), tr("more", "Management", "For", "Voted - For"))
+    assert [r["proposal_text"] for r in P.parse(html)] == ["a", "Wrapped more"]
+
+
+def test_hr7_voted_not_column_drops_meeting():
+    html = doc(issuer(), prop("1", "a"), prop("2", "b", rec="Two Years"), prop("3", "c"))
+    assert P.parse(html) == []
+    assert P.parse_stats(html)["drop_meeting_voted_not_column"] == 1
+
+
+def test_hr8_bad_id_tokens_drop_meeting():
+    for bad in ("O1. Approve", "12.14Approve", "I. Accounts", "1a) x", "S4. y", "E.23 z"):
+        html = doc(issuer(), prop("1", "ok"), tr(bad, "Management", "For", "Voted - For"))
+        assert P.parse(html) == [], bad
+    assert P.parse_stats(html)["drop_meeting_bad_id_token"] == 1
+    html = doc(issuer(), tr("1", "I. Accounts", "Management", "For", "Voted - For"))
+    assert P.parse(html) == []
+
+
+def test_hr8_good_ids_still_fine():
+    html = doc(issuer(), tr("1.a Approve", "Management", "For", "Voted - For"),
+               tr("1.a", "Approve it", "Management", "For", "Voted - For"))
+    r = P.parse(html)
+    assert len(r) == 2 and r[1]["proposal_id"] == "1.a"
