@@ -4,11 +4,12 @@ A fund can print two different agenda items with identical text at one meeting (
 Funds 04/26/2023: 56 sub-fund copies of one item; 'Instructions if Meeting is Held on Second
 Call' as items 4 and 33). Without the number, dedupe and the engine merged them."""
 
-from glasshouse import ledger
-from glasshouse.ingest import legacy_iss, legacy_issueno, legacy_pe
 import test_legacy_iss as ti
 import test_legacy_issueno as tn
 import test_legacy_pe as tp
+
+from glasshouse import ledger
+from glasshouse.ingest import legacy_issueno, legacy_pe
 
 
 def _filing(c, acc, form="N-PX", date="2023-08-24", cik="1"):

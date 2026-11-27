@@ -485,7 +485,10 @@ def _grouped(led: sqlite3.Connection, which: str,
 
     Lines are read in ledger id order, so group ids are deterministic. Promoted 2022-23
     legacy lines (`legacy_format` set: line-weighted, no share counts) never share a group
-    with XML lines: the era is part of the group key. Each group records `weight_basis`."""
+    with XML lines: the era is part of the group key. Each group records `weight_basis`.
+    Legacy groups also key on the printed item number (`votes.proposal_number`), so two items
+    with identical text at one meeting are two decisions; the XML key is unchanged, so XML
+    group ids do not move."""
     iso = iso_meeting_date("v.meeting_date")
     groups: dict[tuple, dict] = {}
     legacy: dict[tuple, list] = {}   # the pre-adviser group key -> advisers seen
@@ -493,7 +496,8 @@ def _grouped(led: sqlite3.Connection, which: str,
         f"""SELECT v.id, f.institution_id AS iid, v.issuer_name, v.cusip, v.isin, {iso} AS md,
                    v.vote_description AS d, v.category_type, v.how_voted, v.shares_voted,
                    v.management_recommendation AS mr, v.accession, f.source_url, f.cik AS fcik,
-                   v.vote_series AS vseries, (v.legacy_format IS NOT NULL) AS is_legacy
+                   v.vote_series AS vseries, (v.legacy_format IS NOT NULL) AS is_legacy,
+                   v.proposal_number AS pnum
             FROM votes v JOIN filings f ON f.accession = v.accession
             WHERE v.is_duplicate = 0 AND {which} AND {NON_LEGACY_VOTE_SQL}
               AND f.institution_id IS NOT NULL
@@ -505,9 +509,11 @@ def _grouped(led: sqlite3.Connection, which: str,
         era = "legacy" if v["is_legacy"] else "xml"
         key = (v["iid"], adv, (v["cusip"] or "").strip().upper() or v["issuer_name"], v["md"],
                norm(v["d"]), era)
+        if era == "legacy":     # printed item number: identical-text items stay distinct;
+            key += ((v["pnum"] or "").strip(),)    # the XML key (and its ids) is unchanged
         g = groups.get(key)
         if g is None:
-            lk = (v["iid"], key[2], key[3], key[4], era)
+            lk = (v["iid"], key[2], key[3], key[4], era, *key[6:])
             seen_adv = legacy.setdefault(lk, [])
             seen_adv.append(adv)
             g = groups[key] = {"row": v, "adviser": adv, "era": era,
@@ -2043,6 +2049,11 @@ class Engine:
         iso = iso_meeting_date("v.meeting_date")
         lines = []
         names: dict[str, str | None] = {}
+        # a legacy decision is one printed item: read its number off its first line
+        first = self.ledger.execute(
+            "SELECT legacy_format IS NOT NULL, proposal_number FROM votes WHERE id=?",
+            (r["vote_id"],)).fetchone()
+        is_legacy, item_no = bool(first and first[0]), ((first[1] if first else "") or "").strip()
 
         def series_name(sid):
             """Name of the series from the most recent filing that names it."""
@@ -2058,7 +2069,7 @@ class Engine:
 
         for v in self.ledger.execute(
             f"""SELECT v.vote_series, v.how_voted, v.shares_voted, v.vote_description,
-                       v.accession, f.cik, f.source_url
+                       v.accession, f.cik, f.source_url, v.proposal_number AS pnum
                 FROM votes v JOIN filings f ON f.accession = v.accession
                 WHERE f.institution_id=? AND v.is_duplicate=0 AND {NON_LEGACY_VOTE_SQL}
                   AND v.vote_source='SECURITY HOLDER' AND {iso}=?
@@ -2068,6 +2079,8 @@ class Engine:
                                              v["vote_series"], r["meeting_date"])
                                  or UNLABELLED) != r["adviser"]:
                 continue                       # another adviser's fund, another policy
+            if is_legacy and (v["pnum"] or "").strip() != item_no:
+                continue                       # another printed item with the same text
             if norm(v["vote_description"]) == norm(r["description"]):
                 lines.append({"fund_series": v["vote_series"],
                               "fund_series_name": series_name(v["vote_series"]),
