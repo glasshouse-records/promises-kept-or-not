@@ -119,3 +119,18 @@ CUSIP/CINS -> cusip, a valid ISIN -> isin, else ''; fund -> series only through 
 header and reviewed aliases; legacy_format 'regvoted', report types LEGACY_REGVOTED(_REJECTED);
 quarantined (not in PROMOTED_LEGACY_FORMATS) until review and a hand sample.
 GQG's HTML-table rendering of the same columns is a later variant, not covered here.
+
+### Registrant Voted amendment R1 (2026-11-27)
+
+From the first run on the real document (2,166 "Meeting Date:" lines have no issuer above):
+1. A `Meeting Date:` line NOT directly below a `Security ID:` line starts a new meeting of
+   the SAME issuer_name, security_id and ticker as the previous meeting of the current fund
+   (another meeting of that company, e.g. Constellation Brands 19-Jul-22 then 09-Nov-22, or
+   a meeting continuing after a page break). With no previous meeting in the current fund
+   it is dropped (counted). A page-break header (same fund heading + column header) between
+   them does not matter.
+2. A proposal_id is followed by ONE or more spaces (the page has ` 10 Shareholder ...`).
+3. A line of digits only (a page number) is ignored and counted, never drops a meeting.
+4. Vote: `Voted - X` becomes X only when X is For, Against, Abstain, Withhold, Withheld,
+   1 Year, 2 Years or 3 Years; every other vote string stays verbatim (`Voted - Split`).
+5. Proposal lines under a fund heading with no meeting yet are dropped (counted).
