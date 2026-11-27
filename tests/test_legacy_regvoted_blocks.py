@@ -192,3 +192,31 @@ def test_cut_inside_the_vote_field_is_unaligned_not_guessed():
     body = MEET + " 1  Elect A                                  Management     For     Voted - For\n"
     assert parse(doc(body)) == []
     assert parse_stats(doc(body))["dropped_unaligned_line"] == 1
+
+
+def test_r1_bare_meeting_date_starts_new_meeting_of_same_issuer():
+    bare = " Meeting Date: 09-Nov-22           Meeting Type: Special\n"
+    text = doc(MEET + ROW + bare + ROW.replace("Jane Doe", "John Roe"))
+    rows = parse(text)
+    assert [(r["issuer_name"], r["ticker"], r["security_id"], r["meeting_date"], r["meeting_type"],
+             r["proposal_text"]) for r in rows] == [
+        ("ACME CORP.", "ACME", "00287Y109", "05/05/2023", "Annual", "Elect Jane Doe"),
+        ("ACME CORP.", "ACME", "00287Y109", "11/09/2022", "Special", "Elect John Roe")]
+    assert parse_stats(text)["meetings"] == 2
+
+
+def test_r1_bare_meeting_date_survives_page_break_and_needs_a_previous_meeting():
+    bare = " Meeting Date: 09-Nov-22           Meeting Type: Special\n"
+    text = doc(MEET + ROW) + "\n7\n\n" + doc(bare + ROW)
+    assert [r["meeting_date"] for r in parse(text)] == ["05/05/2023", "11/09/2022"]
+    first = doc(bare + ROW)
+    assert parse(first) == []
+    assert parse_stats(first)["dropped_bare_meeting_without_previous"] == 1
+    other_fund = doc(MEET + ROW, "Fund A") + doc(bare + ROW, "Fund B")
+    assert [r["fund_heading"] for r in parse(other_fund)] == ["Fund A"]
+
+
+def test_r1_orphan_proposal_lines_dropped_and_counted():
+    text = doc(ROW + MEET + ROW)
+    assert len(parse(text)) == 1
+    assert parse_stats(text)["orphan_lines_before_first_meeting"] == 1

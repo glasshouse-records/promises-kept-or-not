@@ -126,13 +126,10 @@ def _date(s: str) -> str | None:
     return f"{mon:02d}/{day:02d}/20{m.group(3)}"
 
 
-def _meeting(heading: str, block: list[tuple[str, tuple[int, int, int]]], stats: Counter) -> list[dict]:
-    issuer = block[0][0].strip()
-    sec = _SECURITY.match(block[1][0])
-    if not issuer or not sec:
-        stats["dropped_bad_security_line"] += 1
-        return []
-    rest = [(ln, o) for ln, o in block[2:] if ln.strip()]
+def _meeting(heading: str, ident: tuple[str, str, str], rest: list[tuple[str, tuple[int, int, int]]],
+             stats: Counter) -> list[dict]:
+    """`rest` = the block's non-blank lines from the `Meeting Date:` line on."""
+    issuer, sid, tick = ident
     mt = _MEETING.match(rest[0][0]) if rest else None
     if not mt:
         stats["dropped_no_meeting_date"] += 1
@@ -148,7 +145,7 @@ def _meeting(heading: str, block: list[tuple[str, tuple[int, int, int]]], stats:
         return []
     base = {
         "fund_heading": heading, "issuer_name": issuer,
-        "ticker": sec.group("tick") or "", "security_id": sec.group("sid") or "",
+        "ticker": tick, "security_id": sid,
         "meeting_date": date, "meeting_status": "", "meeting_type": mtype, "country": "",
         "for_against": "",
     }
@@ -209,15 +206,45 @@ def _run(text: str) -> tuple[list[dict], Counter]:
         if not heading or _PAGE_NUMBER.match(heading):
             stats["dropped_bad_heading"] += 1
             continue
-        starts = [i for i, (ln, _) in enumerate(items) if _SECURITY.match(ln) or ln.lstrip().startswith("Security ID:")]
-        if any(ln.strip() for ln, _ in items[: (starts[0] - 1 if starts else len(items))]):
-            stats["orphan_lines_before_first_meeting"] += 1
-        for n, k in enumerate(starts):
-            if k == 0 or not items[k - 1][0].strip():
-                stats["dropped_no_issuer"] += 1
+        starts: list[tuple[int, int, str]] = []  # (first line of block, Meeting Date index, kind)
+        prev_sid = -2
+        last_nb = -1
+        for i, (ln, _) in enumerate(items):
+            if not ln.strip():
                 continue
-            stop = starts[n + 1] - 1 if n + 1 < len(starts) else len(items)
-            rows.extend(_meeting(heading, items[k - 1:stop], stats))
+            if ln.lstrip().startswith("Security ID:"):
+                prev_sid = i
+                starts.append((i - 1, -1, "sid"))
+            elif _MEETING.match(ln) and last_nb != prev_sid:
+                starts.append((i, i, "bare"))
+            last_nb = i
+        first = starts[0][0] if starts else len(items)
+        orphans = [ln for ln, _ in items[:max(first, 0)] if ln.strip() and not _PAGE_NUMBER.match(ln.strip())]
+        if orphans:
+            stats["orphan_lines_before_first_meeting"] += len(orphans)
+        ident = None  # (issuer, security_id, ticker) of the previous meeting of this fund
+        for n, (k, _, kind) in enumerate(starts):
+            stop = starts[n + 1][0] if n + 1 < len(starts) else len(items)
+            if kind == "sid":
+                sk = k + 1
+                if k < 0 or not items[k][0].strip():
+                    stats["dropped_no_issuer"] += 1
+                    ident = None
+                    continue
+                sec = _SECURITY.match(items[sk][0])
+                issuer = items[k][0].strip()
+                if not sec or not issuer:
+                    stats["dropped_bad_security_line"] += 1
+                    ident = None
+                    continue
+                ident = (issuer, sec.group("sid") or "", sec.group("tick") or "")
+                lines = [(ln, o) for ln, o in items[sk + 1:stop] if ln.strip()]
+            else:
+                if ident is None:
+                    stats["dropped_bare_meeting_without_previous"] += 1
+                    continue
+                lines = [(ln, o) for ln, o in items[k:stop] if ln.strip()]
+            rows.extend(_meeting(heading, ident, lines, stats))
     return rows, stats
 
 
