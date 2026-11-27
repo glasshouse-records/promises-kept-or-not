@@ -332,3 +332,50 @@ HR8. A proposal whose text (first text piece) starts with an id-like token the H
      (`O1.`, `S4.`, `1)`, `1a)`, `E.23`, `I.`); or digits and dots glued to a letter
      (`12.14Approve`, `4.113Re-election`, `9.c9`). Section labels (`AGM`, `EGM`) glued onto
      such proposals go with them.
+
+## Contract: Federated flat table (2026-11-27)
+
+Federated Hermes' 2022-23 N-PX (18 filings, 17 with rows, e.g. 0001623632-23-001073
+`fis1150-form.htm`, 0001683863-23-006023) print ONE HTML table row per vote, every field in a
+labelled column. Header row (cell values exactly, in this order; 15 columns, or the first 14
+without `Logical Ballot Status` in 0001623632-23-001079 and -001125):
+`Issuer Name | Country | Meeting Date | Meeting Type | Record Date | Ticker | Security ID |
+Symbol Type | Ballot Issue Number | Proposal Text | Proponent | Mgmt Reco | Vote Cast |
+Fund Name | Logical Ballot Status`.
+
+Two parsers written independently from this contract (`legacy_fedflat_cells`: html.parser
+tokenizer; `legacy_fedflat_rows`: regular expressions over the markup) expose
+`parse(text) -> list[dict]` with exactly the 14 keys of `legacy_issueno.KEYS`, in the value
+forms below, and `parse_stats(text) -> Counter`. Rules:
+
+F1. Cell value: tags removed, entities unescaped once, U+00A0 as space, whitespace collapsed,
+    stripped. A header row is a `<tr>` whose cell values are exactly one of the two label
+    lists above; it is in force until the next header row. Before any header, rows are
+    ignored (counted).
+F2. A data row has exactly as many cells as the header in force; any other row is ignored
+    (counted) unless it has a non-empty cell, in which case it is dropped (counted). Fields
+    are read by the header's label, never by position across headers.
+F3. Field checks (a row failing ANY check is dropped, counted; nothing is repaired):
+    Meeting Date `M/D/YYYY` (1-2 digit month and day, real calendar date, month first);
+    Proponent in {Mgmt, ShrHoldr, Management, Shareholder, N/A}; Mgmt Reco in {For,
+    Against, Abstain, Withhold, None, N/A, 1 Year, 2 Years, 3 Years, One Year, Three Years};
+    Vote Cast in {For, Against, Abstain, Withhold, TNA, Do Not Vote, N/A, 1 Year, 2 Years,
+    3 Years, One Year}; Logical Ballot Status (15-column header) in {Voted, Take No Action};
+    Symbol Type in {CUSIP, CINS} (any case); Issuer Name, Fund Name, Proposal Text non-empty.
+F4. Output values: fund_heading = Fund Name; issuer_name = Issuer Name; ticker = Ticker;
+    security_id = `<SYMBOL TYPE upper-cased> <Security ID>` (e.g. `CUSIP 45174J509`);
+    meeting_date = ISO `YYYY-MM-DD`; meeting_type, country as printed; proposal_id = Ballot
+    Issue Number as printed; proposal_text as printed; proponent, rec, vote as printed;
+    for_against ''. meeting_status = Logical Ballot Status as printed (15 columns); with
+    the 14-column header it is `Take No Action` when Vote Cast is `TNA`, else `Voted` (in the
+    15-column filings every `TNA` vote has that status and no other vote does: 1,640 / 0 of
+    66,557 rows).
+F5. A document holding any Meeting Date whose first part is above 12 is rejected whole
+    (counted): month-first cannot be confirmed.
+F6. Record Date is not output. Proxy contests and Take-No-Action meetings are dropped
+    downstream (legacy_issueno: meeting_type containing "contest"; meeting_status not Voted).
+
+Downstream: wrapper `legacy_fedflat` (legacy_format 'fedflat', report types
+LEGACY_FEDFLAT(_REJECTED)) maps Management -> Mgmt, Shareholder -> ShrHoldr, One Year -> 1 Year,
+Three Years -> 3 Years, then `legacy_issueno.to_vote_rows` (agreement, guards, 0.5% gate,
+header-only fund mapping, validated security ids). Quarantined until review and a hand sample.
