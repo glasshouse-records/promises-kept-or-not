@@ -188,8 +188,10 @@ parsers agree, so the gate cannot see it. R1.1 is narrowed:
 1. A `Meeting Date:` line not directly below a `Security ID:` line (nearest non-blank line)
    inherits the previous meeting's identity ONLY when the nearest non-blank line above it is
    (a) a column line (R3.1) that closed a proposal of that previous meeting, or (b) the
-   column header line of a repeated page header. In the real document all 2,166 such lines
-   are one of these (2,001 + 5 after a column line, 160 after a page header).
+   column header line of a repeated page header. In the real document 2,001 such lines follow
+   a column line and 160 a page header; 5 follow a `... Thank You  Non-Voting  Non-Voting`
+   note, which is not an R3.1 column line (no proponent), so those meetings are dropped
+   (with R5.3 chains: 101 rows in blocks; the gate keeps only rows both parsers read).
 2. Otherwise the meeting it starts is dropped whole (counted), whatever follows.
 3. A dropped meeting leaves no identity to inherit: a later bare `Meeting Date:` with no new
    ` Security ID:` meeting in between is dropped too (counted).
