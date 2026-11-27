@@ -230,11 +230,51 @@ def test_named_legacy_reingest_never_deletes_xml_votes(conn, monkeypatch):
     assert _votes(conn, "XML") == 1
 
 
-def test_named_legacy_parsed_stays_skipped(conn, monkeypatch):
-    _record(conn, "LEGACY_PARSED")
-    st = _run(conn, monkeypatch, {"a": BASIC}, [ACC],
-              legacy=True, legacy_iss_text=True, legacy_proxyedge=True)
-    assert st["skipped"] == 1 and _votes(conn) == 1
+def _record_single_parser(conn):
+    """A LEGACY_PARSED record: rows of the old single HTML parser (vote_source legacy_html,
+    legacy_format NULL), quarantined from every release."""
+    conn.execute("""INSERT INTO filings (accession, cik, institution_id, form_type, filing_date,
+                    period_of_report, report_type, source_url, retrieval_date)
+                    VALUES (?,?,?,?,?,?,?,?,?)""",
+                 (ACC, CIK, "vg", "N-PX", "2023-08-30", "2023-06-30", "LEGACY_PARSED",
+                  "https://www.sec.gov/x", "2026-01-01"))
+    conn.executemany("INSERT INTO votes (accession, issuer_name, how_voted, vote_source, "
+                     "meeting_date) VALUES (?,'OLD','FOR','legacy_html','01/01/2023')",
+                     [(ACC,), (ACC,)])
+    conn.commit()
+
+
+def test_legacy_parsed_is_skipped_unless_named(conn, monkeypatch):
+    _record_single_parser(conn)
+    _run(conn, monkeypatch, {"a": BASIC}, [], legacy=True, legacy_iss_text=True,
+         legacy_proxyedge=True)
+    assert _votes(conn) == 2
+    assert conn.execute("SELECT report_type FROM filings").fetchone()[0] == "LEGACY_PARSED"
+
+
+def test_legacy_parsed_needs_a_two_parser_flag(conn, monkeypatch):
+    _record_single_parser(conn)
+    st = _run(conn, monkeypatch, {"a": BASIC}, [ACC], legacy=True)
+    assert st["skipped"] == 1 and _votes(conn) == 2
+
+
+def test_named_legacy_parsed_is_replaced_by_the_two_parser_reading(conn, monkeypatch):
+    """2026-11-27: three Fidelity filings (26,135 single-parser rows, never released) are in
+    the ISS HTML layout both agreeing parsers read; a named re-ingest upgrades them and the
+    single-parser rows go, so nothing is counted twice."""
+    _record_single_parser(conn)
+    st = _run(conn, monkeypatch, {"a": BASIC}, [ACC], legacy_iss_text=True)
+    assert st["filings"] == 1 and _votes(conn) == 21
+    assert conn.execute("SELECT COUNT(*) FROM votes WHERE vote_source='legacy_html'"
+                        ).fetchone()[0] == 0
+    assert conn.execute("SELECT report_type FROM filings").fetchone()[0] == "LEGACY_ISS"
+
+
+def test_legacy_parsed_in_another_format_keeps_its_rows(conn, monkeypatch):
+    _record_single_parser(conn)
+    _run(conn, monkeypatch, {"a": "nothing"}, [ACC], legacy_iss_text=True)
+    assert _votes(conn) == 2
+    assert conn.execute("SELECT report_type FROM filings").fetchone()[0] == "LEGACY_PARSED"
 
 
 def test_named_legacy_no_cover_takes_the_upgrade_path_under_a_legacy_flag(conn, monkeypatch):

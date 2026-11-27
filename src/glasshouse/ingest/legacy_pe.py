@@ -511,6 +511,9 @@ def record_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
         if prior:
             conn.execute("DELETE FROM votes WHERE accession = ? AND legacy_format IS NOT NULL",
                          (acc,))
+            if prior[0] == "LEGACY_PARSED":   # the old single-parser reading, never released
+                conn.execute("DELETE FROM votes WHERE accession = ? AND legacy_format IS NULL "
+                             "AND vote_source = 'legacy_html'", (acc,))
             conn.execute("DELETE FROM filings WHERE accession = ?", (acc,))
         conn.execute(
             """INSERT INTO filings (accession, cik, institution_id, form_type, filing_date,

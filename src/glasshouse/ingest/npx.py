@@ -270,13 +270,16 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                 # are never touched: it deletes only legacy_format IS NOT NULL votes)
                 _reingest_legacy(conn, filing, institution_id, today, fam, stats)
                 continue
-            if rt == "LEGACY_NO_COVER" and filing.accession_number in reingest:
+            if (rt in ("LEGACY_NO_COVER", "LEGACY_PARSED")
+                    and filing.accession_number in reingest):
+                # LEGACY_PARSED (old single-parser rows, never released) is upgraded only
+                # when named and only by a two-parser format; record_filing drops its rows
                 if legacy_proxyedge or legacy_iss_text or legacy_issueno_flag:
                     pass       # falls to the same upgrade_no_cover path a plain legacy run takes
                 else:
-                    logger.warning("%s is LEGACY_NO_COVER: skipped — re-ingesting it needs one of "
+                    logger.warning("%s is %s: skipped — re-ingesting it needs one of "
                                    "--legacy-proxyedge/--legacy-iss/--legacy-issueno",
-                                   filing.accession_number)
+                                   filing.accession_number, rt)
                     stats["skipped"] += 1
                     continue
             elif rt.startswith("LEGACY_"):
@@ -289,8 +292,11 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
         if exists and not replace:
             # legacy mode may upgrade a filing previously skipped as
             # LEGACY_NO_COVER (no votes attached) — reprocess it. Otherwise skip.
-            if ((legacy or legacy_proxyedge or legacy_iss_text or legacy_issueno_flag)
-                    and exists[0] == "LEGACY_NO_COVER"):
+            if (((legacy or legacy_proxyedge or legacy_iss_text or legacy_issueno_flag)
+                    and exists[0] == "LEGACY_NO_COVER")
+                    or ((legacy_proxyedge or legacy_iss_text or legacy_issueno_flag)
+                        and exists[0] == "LEGACY_PARSED"
+                        and filing.accession_number in reingest)):
                 upgrade_no_cover = True    # its record is replaced only if it is ingested below
             else:
                 stats["skipped"] += 1
