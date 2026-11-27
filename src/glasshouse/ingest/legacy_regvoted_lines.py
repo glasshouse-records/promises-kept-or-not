@@ -138,6 +138,7 @@ def _run(text: str) -> tuple[list[dict], Counter]:
     ident: tuple[str, str, str] | None = None  # issuer, security id, ticker of the fund's last meeting
     meet: _Meeting | None = None
     prev_ne: int | None = None  # index of the last non-empty line
+    last_col: int | None = None  # index of the line that last closed a proposal (R5.1a)
     i = 0
     while i < n:
         line = L[i]
@@ -184,8 +185,14 @@ def _run(text: str) -> tuple[list[dict], Counter]:
         if _MEETING.match(line) and not (meet is not None and meet.stage == "date"):
             # R1: a Meeting Date line not below a Security ID line is another meeting of the
             # same issuer (identity of the fund's previous meeting), else it is dropped
+            # R5: only straight after a column line that closed a proposal of the previous
+            # meeting, or after a repeated page header; a dropped meeting leaves no identity
+            inherit = ident is not None and cur_prev is not None and (
+                _COLHDR.match(L[cur_prev])
+                or (cur_prev == last_col and meet is not None and not meet.bad))
             close(meet)
-            if ident is None:
+            if not inherit:
+                ident = None
                 meet = _Meeting(fund, "")
                 spoil(meet, "meeting_date_without_issuer")
             else:
@@ -234,9 +241,13 @@ def _run(text: str) -> tuple[list[dict], Counter]:
             stats["note_line_ignored"] += 1
             i += 1
             continue
-        elif meet.blocks and meet.blocks[-1]["ncols"] >= 1 and _CONTINUATION.match(line) \
-                and not _COLS.match(line.strip()):
+        elif meet.blocks and meet.blocks[-1]["ncols"] >= 1 \
+                and not _COLS.match(line.strip()) \
+                and (_CONTINUATION.match(line) or nxt is None or not _PROPOSAL.match(L[nxt])):
             # R4: a proposal is closed once its column line is read; what follows is a note
+            # (an unindented one too, unless a proposal follows it: that stray line still
+            # drops the meeting, rule 8). R5: such a note, e.g. an issuer line with no
+            # Security ID line, makes the next bare Meeting Date unable to inherit.
             stats["note_after_proposal"] += 1
             i += 1
             continue
@@ -250,6 +261,7 @@ def _run(text: str) -> tuple[list[dict], Counter]:
         c = _COLS.match(body)
         if c:
             block["ncols"] += 1
+            last_col = i
             block["cols"] = (c.group("prop"), c.group("rec"), c.group("vote").strip())
             body = c.group("head").strip()
         if body:

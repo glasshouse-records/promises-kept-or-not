@@ -298,3 +298,42 @@ def test_r4_page_break_note_after_closed_proposal_is_not_text():
     assert rows[1]["proposal_text"] == (
         "To Approve and Adopt the Agency Share Purchase Plan of the Company with the Amended Terms")
     assert m.parse_stats(text)["note_after_proposal"] == 3
+
+
+ALPHA = ("ALPHA CORP", " Security ID: 037833100  Ticker: AAA",
+         " Meeting Date: 19-Jul-22   Meeting Type: Annual",
+         " 1  Elect Alice    Management  For  Voted - For")
+BETA_DATE = " Meeting Date: 20-Jul-22   Meeting Type: Annual"
+BETA_P = " 1  Approve Merger With Gamma   Management  For  Voted - Against"
+
+
+def test_r5_issuer_without_security_id_does_not_inherit_previous_identity():
+    text = _doc(*ALPHA, "BETA CORP", BETA_DATE, BETA_P)
+    rows = m.parse(text)
+    assert [(r["issuer_name"], r["proposal_text"]) for r in rows] == [
+        ("ALPHA CORP", "Elect Alice")]
+    assert m.parse_stats(text)["meeting_date_without_issuer"] >= 1
+
+
+def test_r5_wrong_case_security_id_line_is_not_a_security_id():
+    text = _doc(*ALPHA, "BETA CORP", " Security Id: 999999999  Ticker: BBB", BETA_DATE, BETA_P)
+    rows = m.parse(text)
+    assert [r["issuer_name"] for r in rows] == ["ALPHA CORP"]
+
+
+def test_r5_dropped_meeting_leaves_no_identity_for_later_bare_date():
+    text = _doc(*ALPHA, "BETA CORP", BETA_DATE, BETA_P,
+                " Meeting Date: 21-Jul-22   Meeting Type: Annual", BETA_P)
+    rows = m.parse(text)
+    assert [r["issuer_name"] for r in rows] == ["ALPHA CORP"]
+    assert m.parse_stats(text)["meeting_date_without_issuer"] >= 2
+
+
+def test_r5_bare_date_after_column_line_and_after_page_header_still_inherits():
+    hdr = ("                    Global X Test ETF",
+           " Proposal                                                Proposed by Mgt. Position Registrant Voted")
+    text = _doc(*ALPHA, " Meeting Date: 20-Jul-22   Meeting Type: Annual", BETA_P,
+                *hdr, " Meeting Date: 21-Jul-22   Meeting Type: Annual", BETA_P)
+    rows = m.parse(text)
+    assert [(r["issuer_name"], r["meeting_date"]) for r in rows] == [
+        ("ALPHA CORP", "07/19/2022"), ("ALPHA CORP", "07/20/2022"), ("ALPHA CORP", "07/21/2022")]
