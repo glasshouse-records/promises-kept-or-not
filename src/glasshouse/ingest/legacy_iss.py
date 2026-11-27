@@ -153,6 +153,17 @@ def is_issueno_html(text: str) -> bool:
     return _ISSUENO_HTML_HDR.search(text) is not None
 
 
+# Global X's "Registrant Voted" text layout (see legacy_regvoted); tags allowed between words.
+_RV_WS = r"(?:\s|&nbsp;|&#160;|\xa0|<[^>]*>)+"
+_REGVOTED_HDR = re.compile(
+    rf"Proposal{_RV_WS}Proposed{_RV_WS}by{_RV_WS}Mgt\.{_RV_WS}Position{_RV_WS}Registrant"
+    rf"{_RV_WS}Voted", re.I)
+
+
+def is_regvoted(text: str) -> bool:
+    return _REGVOTED_HDR.search(text) is not None
+
+
 # <th>Proposal No</th>, or Franklin's <td><p ...><font ...>Proposal No</font></p></td>
 _ISS_HTML_HDR = re.compile(
     r"<(t[dh])\b[^>]*>\s*(?:<(?:p|font)\b[^>]*>\s*){0,2}Proposal No\s*"
@@ -198,7 +209,7 @@ def prepare(doc: str) -> str:
 def doc_format(text: str) -> str | None:
     """One document's format, checked in order: ISS text (also as Courier HTML), ISS
     HTML, 'issueno' (legacy "Issue No." layout), 'issueno_html' (the same as HTML tables),
-    ProxyEdge."""
+    'regvoted' ("Registrant Voted" text), ProxyEdge."""
     if is_iss_text(text) or courier_html_to_text(text) is not None:
         return "iss"
     if is_iss_html(text):
@@ -207,13 +218,15 @@ def doc_format(text: str) -> str | None:
         return "issueno"
     if is_issueno_html(text):
         return "issueno_html"
+    if is_regvoted(text):
+        return "regvoted"
     if "Agenda Number:" in text:
         return "proxyedge"
     return None
 
 
 def detect_format(docs: dict[str, str]) -> str | None:
-    """'iss', 'iss_html', 'issueno', 'issueno_html', 'proxyedge', or None (none, or a mix we will not guess about)."""
+    """'iss', 'iss_html', 'issueno', 'issueno_html', 'regvoted', 'proxyedge', or None (none, or a mix we will not guess about)."""
     found = {f for f in map(doc_format, docs.values()) if f}
     return found.pop() if len(found) == 1 else None
 
