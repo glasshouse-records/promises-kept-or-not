@@ -29,6 +29,9 @@ ID_RE = re.compile(r"\d+(?:\.(?:\d+|[A-Za-z]))*[A-Za-z]?\.?")
 MONTHS = {m: i for i, m in enumerate(
     ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"), 1)}
 FURNITURE_RE = re.compile(r"Page\s*\|\s*\d+|Page\s+\d+|\d+")
+ROMAN_RE = re.compile(r"X{0,2}(?:IX|IV|V?I{0,3})")
+GLUED_RE = re.compile(r"\d[\d.]*[A-Za-z]")
+LABELS = {"AGM", "EGM"}
 DATE_RE = re.compile(r"(\d{1,2})-([A-Za-z]{3})-(\d{2})")
 
 
@@ -182,6 +185,27 @@ def _date_with_type(i, vals):
     return d, mt, i
 
 
+def _id_like(piece: str) -> bool:
+    """HR8: the text starts with an id-like token the H6(a) pattern does not accept."""
+    toks = piece.split()
+    while toks and toks[0] in LABELS:
+        toks = toks[1:]
+    if not toks:
+        return False
+    t = toks[0]
+    if t[-1] in ".)":
+        core = t[:-1]
+        if core and re.fullmatch(r"[A-Za-z0-9.]+", core) and (
+                (ROMAN_RE.fullmatch(core) and core)
+                or len(core.replace(".", "")) <= 2 and re.search(r"[A-Za-z]", core)
+                or (re.search(r"\d", core) and re.search(r"[A-Za-z]", core))
+                or (t[-1] == ")" and core.isdigit())):
+            return True
+    if re.fullmatch(r"[A-Za-z]{1,2}\.\d[\d.]*", t):  # E.23
+        return True
+    return bool(GLUED_RE.match(t)) and not ID_RE.fullmatch(t)
+
+
 def _run(text: str) -> tuple[list[dict], Counter]:
     st: Counter = Counter()
     tok = _Tok()
@@ -238,6 +262,7 @@ def _run(text: str) -> tuple[list[dict], Counter]:
 
     fund = None
     cur: _Meeting | None = None
+    skipping = False  # HR6: after a header that dropped an open proposal
     inherit_ok = False  # the previous row closed a proposal, or was a repeated header
     i = 0
     while i < n:
@@ -253,17 +278,21 @@ def _run(text: str) -> tuple[list[dict], Counter]:
                 return [], st
             if prev[0] == fund and cur is not None:
                 if not cur.dropped:
+                    if cur.open is not None:
+                        skipping = True
                     drop_open(cur)
                 inherit_ok = True
             else:
                 finalize(cur)
-                cur, fund, inherit_ok = None, prev[0], False
+                cur, fund, inherit_ok, skipping = None, prev[0], False, False
             i += 1
             continue
         if fund is None:
             st["row_before_header"] += 1
             i += 1
             continue
+        if skipping and (is_date(i) or (len(v) == 1 and is_sec(i + 1))):
+            skipping = False
         # issuer row + Security ID row (+ Meeting Date row)
         if len(v) == 1 and is_sec(i + 1):
             finalize(cur)
@@ -331,6 +360,18 @@ def _run(text: str) -> tuple[list[dict], Counter]:
         col = _is_col(v)
         body = v[:-3] if col else v
         id_start = bool(ID_RE.fullmatch(v[0])) and len(v) > 1 and v[1] not in ANY_COL
+        if skipping and not id_start:
+            st["row_skipped_after_header"] += 1
+            inherit_ok = False
+            skipping = not col
+            i += 1
+            continue
+        skipping = False
+        if not col and v[-1].startswith("Voted"):
+            kill(cur, "meeting_dropped_unlisted_vote")  # HR7
+            inherit_ok = False
+            i += 1
+            continue
         if id_start:
             drop_open(cur)
             cur.open = [v[0].rstrip("."), list(body[1:])]
@@ -350,6 +391,11 @@ def _run(text: str) -> tuple[list[dict], Counter]:
             ptext = _clean(" ".join(pieces))
             if not ptext:
                 st["proposal_empty_text"] += 1
+            elif _id_like(ptext):
+                kill(cur, "meeting_dropped_id_like_text")  # HR8
+                inherit_ok = False
+                i += 1
+                continue
             else:
                 vote = v[-1]
                 if vote.startswith("Voted - "):

@@ -213,3 +213,48 @@ def test_hr5_empty_security_id_kept():
     r = c.parse(doc(tr("Foo"), tr("Security ID:"), tr("Meeting Date: 01-Jan-23"),
                     prop("1", "A")))
     assert len(r) == 1 and r[0]["security_id"] == ""
+
+
+# ---- amendments HR6-HR8 ----
+
+def test_hr6_open_proposal_then_header_skips_through_next_column_row():
+    d = doc(*ABB, tr("1", "Approve the head"), tr("<b>Democracy International Fund</b>"), HDR,
+            tr("tail of the text"), tr("more", "Management", "For", "Voted - For"),
+            prop("2", "B"))
+    r = c.parse(d)
+    assert [x["proposal_text"] for x in r] == ["B"]
+    s = c.parse_stats(d)
+    assert s["proposal_unclosed"] == 1 and s["row_skipped_after_header"] == 2
+
+
+def test_hr6_skip_ends_early_on_id_row_date_row_issuer():
+    base = [*ABB, tr("1", "head"), tr("<b>Democracy International Fund</b>"), HDR,
+            tr("tail")]
+    r = c.parse(doc(*base, prop("2", "B")))
+    assert [x["proposal_text"] for x in r] == ["B"]
+    r = c.parse(doc(*base, tr("Meeting Date: 02-Jan-23"), prop("1", "C")))
+    assert r == []  # bare date after an unclosed proposal is dropped (H4)
+    r = c.parse(doc(*base, tr("Foo"), tr("Security ID: X1"), tr("Meeting Date: 03-Jan-23"),
+                    prop("1", "D")))
+    assert [x["proposal_text"] for x in r] == ["D"]
+
+
+def test_hr7_unlisted_voted_row_drops_meeting():
+    d = doc(*ABB, prop("1", "A"), prop("2", "B", rec="Two Years"))
+    assert c.parse(d) == []
+    assert c.parse_stats(d)["meeting_dropped_unlisted_vote"] == 1
+
+
+def test_hr8_id_like_text_drops_meeting():
+    for text in ("O1. Approve", "12.14Approve", "I. Accounts", "S4. Elect", "1) Elect",
+                 "1a) Elect", "E.23 Elect", "4.113Re-election", "9.c9 Elect",
+                 "AGM O1. Approve", "No. Approve"):
+        d = doc(*ABB, prop("1", "Fine"), tr(text, "Management", "For", "Voted - For"))
+        assert c.parse(d) == [], text
+        assert c.parse_stats(d)["meeting_dropped_id_like_text"] == 1, text
+
+
+def test_hr8_normal_ids_and_text_kept():
+    d = doc(*ABB, prop("1.a", "Approve"), prop("2", "Elect Director Smith Jr."),
+            tr("Approve the Accounts.", "Management", "For", "Voted - For"))
+    assert len(c.parse(d)) == 3
