@@ -147,3 +147,23 @@ data/research/regvoted_disagreements.txt):
    security_id is the text between `Security ID:` and `Ticker:`, stripped.
 3. Any other difference must be resolved from the contract text, never by copying the
    other parser's output; a case the contract does not decide drops the meeting.
+
+### Registrant Voted amendment R3 (2026-11-27)
+
+After R2 the parsers still differ on about 130 meetings, all cases the contract left open:
+1. Right-hand columns are read from the END of the proposal block's column line with closed
+   lists, at least one space between fields (columns are often squeezed:
+   `Management   For Voted - For`):
+   vote = one of `Voted - For|Against|Abstain|Withhold|Withheld|Split|1 Year|2 Years|3 Years`,
+   `Voted -Abstain`, `Voted -- For`, `Voted`, `Take No Action`, `Non-Voting` (longest match);
+   rec = one of `For`, `Against`, `Abstain`, `Withhold`, `None`, `N/A`, `1 Year`, `2 Years`,
+   `3 Years`; proponent = one of `Management`, `Shareholder`, `N/A`. Header offsets are not
+   used for these three fields. A column line that does not end in vote + rec + proponent in
+   that order is not a column line (rule 5 applies). Text before them is proposal text.
+2. Unnumbered lines that carry no columns and come after `Meeting Date:` but before the
+   meeting's first proposal (e.g. `Please Note That the Company Notice ...`) are ignored and
+   counted; they never become proposal text or a proposal.
+3. Blank lines may separate the issuer line from ` Security ID:`; "directly above" means the
+   nearest non-blank line.
+4. proposal_id also takes three-part forms (`3.1.1`). Ids like `O.1` / `S.1` stay outside the
+   contract (meeting dropped).
