@@ -178,3 +178,19 @@ A Revision ... Thank You Non-Voting" appended; its vote was right, its text was 
    are notes: ignored and counted, never proposal text, never a proposal.
 2. proposal_text: the proposal's text pieces joined with single spaces, internal runs of
    whitespace collapsed to one space, stripped.
+
+### Registrant Voted amendment R5 (2026-11-27)
+
+Review found that R1 + R4 together can give one company's votes to the previous one: an
+issuer line followed by a missing or malformed Security ID line (`BETA CORP` then a bare
+`Meeting Date:`) is read as an R4 note, and the bare date then inherits ALPHA's identity. Both
+parsers agree, so the gate cannot see it. R1.1 is narrowed:
+1. A `Meeting Date:` line not directly below a `Security ID:` line (nearest non-blank line)
+   inherits the previous meeting's identity ONLY when the nearest non-blank line above it is
+   (a) a column line (R3.1) that closed a proposal of that previous meeting, or (b) the
+   column header line of a repeated page header. In the real document all 2,166 such lines
+   are one of these (2,001 + 5 after a column line, 160 after a page header).
+2. Otherwise the meeting it starts is dropped whole (counted), whatever follows.
+3. A dropped meeting leaves no identity to inherit: a later bare `Meeting Date:` with no new
+   ` Security ID:` meeting in between is dropped too (counted).
+4. Matching stays as printed: `Security ID:` exactly (a ` Security Id:` line is not one).
