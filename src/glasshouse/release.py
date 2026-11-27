@@ -675,11 +675,18 @@ def _derived_extra(pkg: dict, datasheet: str, notes: dict) -> str:
     return datasheet.replace(marker2, "\n".join(doc) + "\n" + CODE_LISTS_MD + "\n" + marker2, 1)
 
 
-def build_release(conn: sqlite3.Connection, root: Path | str | None = None,
-                  version: str | None = None, with_parquet: bool = True,
-                  with_sqlite: bool = False, no_derived: bool = False,
-                  engine_path: Path | str | None = None,
-                  institutions: dict | None = None) -> dict:
+def build_release(*args, **kwargs) -> dict:
+    """`_build_release` with the git state read once, when the build starts (a commit
+    made during a long build must not be stamped on it)."""
+    with dataset.pinned_git_state():
+        return _build_release(*args, **kwargs)
+
+
+def _build_release(conn: sqlite3.Connection, root: Path | str | None = None,
+                   version: str | None = None, with_parquet: bool = True,
+                   with_sqlite: bool = False, no_derived: bool = False,
+                   engine_path: Path | str | None = None,
+                   institutions: dict | None = None) -> dict:
     """Build a complete, verifiable, self-describing release bundle. Returns a
     summary dict; the bundle on disk is the deliverable.
 

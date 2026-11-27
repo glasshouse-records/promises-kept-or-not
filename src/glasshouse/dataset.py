@@ -14,6 +14,7 @@ out of sync with reality. Bundled alongside the public snapshot by
 
 from __future__ import annotations
 
+import contextlib
 import sqlite3
 import subprocess
 from datetime import date
@@ -365,10 +366,25 @@ def _counts(conn: sqlite3.Connection) -> dict[str, int]:
     return out
 
 
+_PINNED_GIT: dict | None = None
+
+
+@contextlib.contextmanager
+def pinned_git_state():
+    """Read the git state ONCE, now, and use it for every descriptor built inside the block:
+    a long build is stamped with the commit whose code it runs, not one made meanwhile."""
+    global _PINNED_GIT
+    prev, _PINNED_GIT = _PINNED_GIT, git_state()
+    try:
+        yield _PINNED_GIT
+    finally:
+        _PINNED_GIT = prev
+
+
 def build_datapackage(conn: sqlite3.Connection) -> dict:
     """Frictionless-style descriptor so the dataset is machine-self-describing."""
     counts = _counts(conn)
-    git = git_state()
+    git = _PINNED_GIT or git_state()
     resources = []
     for table, fields in DATA_DICTIONARY.items():
         resources.append({

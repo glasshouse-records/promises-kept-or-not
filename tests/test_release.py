@@ -608,3 +608,18 @@ def test_policy_versions_docs_name_sai_filing_dates():
     assert "filing date" in cols["captured"]
     assert "SAI" in cols["captured"]
     assert "live fetch" not in cols["wayback_timestamp"] or "SAI" in cols["wayback_timestamp"]
+
+
+def test_git_state_is_pinned_when_the_build_starts(conn, tmp_path, monkeypatch):
+    # A commit made while a long build runs must not be stamped on a bundle built by the
+    # code checked out at the start (2026-11-27: the build read HEAD only at the end).
+    from glasshouse import dataset
+    states = iter([{"commit": "a" * 40, "dirty": False}])
+    monkeypatch.setattr(dataset, "git_state",
+                        lambda *a: next(states, {"commit": "b" * 40, "dirty": True}))
+    release.build_release(conn, root=tmp_path, version="d5", with_parquet=False)
+    d = tmp_path / "vd5"
+    pkg = json.loads((d / "datapackage.json").read_text())
+    assert pkg["git"] == {"commit": "a" * 40, "dirty": False}
+    assert "dirty" not in (d / "DATASHEET.md").read_text().split("\n")[2]
+    assert "working tree was dirty" not in (d / "README.md").read_text()
