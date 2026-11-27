@@ -32,14 +32,10 @@ _MEETING = re.compile(r"^\s*Meeting Date:\s*(?P<date>\S+)\s+Meeting Type:(?P<typ
 _DATE = re.compile(r"^(\d{2})-([A-Za-z]{3})-(\d{2})$")
 _MONTHS = {m: i + 1 for i, m in enumerate(
     ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))}
-_PROPOSAL = re.compile(r"^ ?(?P<id>\d+(?:\.\d+|\.?[A-Za-z])?) +(?=\S)")
+_PROPOSAL = re.compile(r"^ ?(?P<id>\d+(?:\.\d+(?:\.\d+)?|\.?[A-Za-z])?) +(?=\S)")
 _PAGE_NUMBER = re.compile(r"^\d{1,4}$")
 _VOTED = re.compile(r"^Voted - (?P<v>\S.*)$")
 _CAST = frozenset({"For", "Against", "Abstain", "Withhold", "Withheld", "1 Year", "2 Years", "3 Years"})
-# A proponent word may overrun its column start by this many characters when the proposal text
-# above it is too long; the cut is then moved to the start of that word.
-_OVERRUN = 3
-_DRIFT = 8
 
 KEYS = ("fund_heading", "issuer_name", "ticker", "security_id", "meeting_date",
         "meeting_status", "meeting_type", "country", "proposal_id", "proposal_text",
@@ -91,58 +87,22 @@ def _sections(lines: list[str]) -> list[tuple[str | None, list[tuple[str, tuple[
     return sections
 
 
-def _cols(line: str, offs: tuple[int, int, int]):
-    """None (no columns), 'bad' (cannot be placed), or (text_end, proponent, rec, vote)."""
-    got = _cols_cut(line, offs)
-    return _cols_gaps(line, offs) or got if got == "bad" else got
+_VOTE = (r"Voted - For|Voted - Against|Voted - Abstain|Voted - Withhold|Voted - Withheld|Voted - Split|"
+         r"Voted - 1 Year|Voted - 2 Years|Voted - 3 Years|Voted -Abstain|Voted -- For|Voted|"
+         r"Take No Action|Non-Voting")
+_COLS = re.compile(
+    r"(?:^|\s)(?P<prop>Management|Shareholder|N/A)\s+"
+    r"(?P<rec>For|Against|Abstain|Withhold|None|N/A|1 Year|2 Years|3 Years)\s+"
+    rf"(?P<vote>{_VOTE})$")
 
 
-def _cols_gaps(line: str, offs: tuple[int, int, int]):
-    """Drift fallback: from the proponent word on, exactly three fields separated by runs of
-    2+ spaces, each starting within `_DRIFT` characters of its header offset."""
-    c1 = offs[0]
-    if len(line) <= c1:
+def _cols(line: str):
+    """None (not a column line) or (text_end, proponent, rec, vote), read from the END of the
+    line with closed lists (R3); header offsets are not used."""
+    m = _COLS.search(line)
+    if not m:
         return None
-    s = c1
-    if not line[c1 - 1].isspace() and not line[c1].isspace():  # a word straddles the cut
-        while s > 0 and not line[s - 1].isspace():
-            s -= 1
-        if c1 - s > _OVERRUN:
-            return None
-    else:
-        while s < len(line) and line[s].isspace():
-            s += 1
-        if s - c1 > _DRIFT:
-            return None
-    fields = [(s + m.start(), m.group()) for m in re.finditer(r"\S+(?: \S+)*", line[s:])]
-    if len(fields) != 3 or any(abs(st - o) > _DRIFT for (st, _), o in zip(fields, offs)):
-        return None
-    return s, fields[0][1], fields[1][1], fields[2][1]
-
-
-def _cols_cut(line: str, offs: tuple[int, int, int]):
-    c1, c2, c3 = offs
-    if len(line.rstrip()) <= c1:
-        return None
-    if not line[c1 - 1].isspace() and not line[c1].isspace():  # inside a word
-        s = c1
-        while s > 0 and not line[s - 1].isspace():
-            s -= 1
-        if c1 - s > _OVERRUN:
-            return "bad"
-        c1 = s
-    for c in (c2, c3):
-        if c >= len(line) or (not line[c - 1].isspace() and not line[c].isspace()):
-            return "bad"
-    prop, rec, vote = line[c1:c2].strip(), line[c2:c3].strip(), line[c3:].strip()
-    if not (prop or rec or vote):
-        return None
-    if not (prop and rec and vote):
-        return "bad"
-    # a cut that fell inside a multi-word field leaves wide gaps or a fragment: never guess
-    if "  " in prop or "  " in rec or not vote[0].isalnum():
-        return "bad"
-    return c1, prop, rec, vote
+    return m.start("prop"), m.group("prop"), m.group("rec"), m.group("vote")
 
 
 def _vote(v: str) -> str:
@@ -186,7 +146,7 @@ def _meeting(heading: str, ident: tuple[str, str, str], rest: list[tuple[str, tu
     }
     props: list[dict] = []
     cur: dict | None = None
-    for ln, offs in rest:
+    for ln, _offs in rest:
         if ln == ln.strip() and _PAGE_NUMBER.match(ln):
             stats["page_number_line"] += 1
             continue
@@ -195,18 +155,18 @@ def _meeting(heading: str, ident: tuple[str, str, str], rest: list[tuple[str, tu
             cur = {"id": m.group("id"), "texts": [], "cols": []}
             props.append(cur)
             start = m.end()
+        elif cur is None and not _cols(ln):
+            stats["ignored_preamble_line"] += 1  # R3: note line before the first proposal
+            continue
         elif cur is not None and ln[:2].isspace():
             start = 0
         else:
             stats["dropped_unrecognised_line"] += 1
             return []
-        cols = _cols(ln, offs)
-        if cols == "bad":
-            stats["dropped_unaligned_line"] += 1
-            return []
+        cols = _cols(ln)
         end = cols[0] if cols else len(ln)
         if end < start:
-            stats["dropped_unaligned_line"] += 1
+            stats["dropped_unrecognised_line"] += 1
             return []
         piece = ln[start:end].strip()
         if piece:
@@ -241,7 +201,7 @@ def _run(text: str) -> tuple[list[dict], Counter]:
         if not heading or _PAGE_NUMBER.match(heading):
             stats["dropped_bad_heading"] += 1
             continue
-        starts: list[tuple[int, int, str]] = []  # (first line of block, Meeting Date index, kind)
+        starts: list[tuple[int, int, str]] = []  # (first line of block, Security ID / Meeting Date index, kind)
         prev_sid = -2
         last_nb = -1
         for i, (ln, _) in enumerate(items):
@@ -249,7 +209,7 @@ def _run(text: str) -> tuple[list[dict], Counter]:
                 continue
             if ln.lstrip().startswith("Security ID:"):
                 prev_sid = i
-                starts.append((i - 1, -1, "sid"))
+                starts.append((last_nb, i, "sid"))
             elif _MEETING.match(ln) and last_nb != prev_sid:
                 starts.append((i, i, "bare"))
             last_nb = i
@@ -258,11 +218,10 @@ def _run(text: str) -> tuple[list[dict], Counter]:
         if orphans:
             stats["orphan_lines_before_first_meeting"] += len(orphans)
         ident = None  # (issuer, security_id, ticker) of the previous meeting of this fund
-        for n, (k, _, kind) in enumerate(starts):
+        for n, (k, sk, kind) in enumerate(starts):
             stop = starts[n + 1][0] if n + 1 < len(starts) else len(items)
             if kind == "sid":
-                sk = k + 1
-                if k < 0 or not items[k][0].strip():
+                if k < 0:
                     stats["dropped_no_issuer"] += 1
                     ident = None
                     continue

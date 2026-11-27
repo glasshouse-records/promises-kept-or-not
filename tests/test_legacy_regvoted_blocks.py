@@ -187,13 +187,6 @@ def test_no_input_and_text_without_fund_sections():
     assert parse("Non-Voting Funds\nGlobal X Foo ETF\nno votes\n") == []
 
 
-def test_cut_inside_the_vote_field_is_unaligned_not_guessed():
-    # the vote column starts left of the header's offset, so its cut lands inside 'Voted - For'
-    body = MEET + " 1  Elect A                                  Management     For     Voted - For\n"
-    assert parse(doc(body)) == []
-    assert parse_stats(doc(body))["dropped_unaligned_line"] == 1
-
-
 def test_r1_bare_meeting_date_starts_new_meeting_of_same_issuer():
     bare = " Meeting Date: 09-Nov-22           Meeting Type: Special\n"
     text = doc(MEET + ROW + bare + ROW.replace("Jane Doe", "John Roe"))
@@ -246,16 +239,62 @@ def test_r2_drifted_columns_with_wide_gaps_are_read_by_their_own_gaps():
         ("Frequency of Advisory Vote on Executive Compensation", "Management", "1 Year", "1 Year")]
 
 
-def test_r2_squeezed_single_space_columns_stay_dropped():
-    # real Daimler Truck line: 'For' and 'Voted - For' share one space, so the contract cannot
-    # place the rec/vote boundary without a vocabulary: dropped, never guessed
+def test_r3_squeezed_columns_are_read_from_the_end_of_the_line():
+    # real Daimler Truck / Regeneron lines: fields one space apart, offsets meaningless
     body = MEET + (
         " 1  Issuance of A Shares\n"
-        "      2024 AGM                                                         Management   For Voted - For\n")
+        "      2024 AGM                                                         Management   For Voted - For\n"
+        " 2  Elect Joseph L. Goldstein                    Management  For     Voted - Against\n"
+        " 3  Short text Shareholder N/A Voted -Abstain\n"
+        " 4  Anything Management 1 Year Take No Action\n"
+        " 5  Note N/A N/A Non-Voting\n"
+        " 6  Odd Management For Voted - Split\n")
+    rows = parse(doc(body))
+    assert [(r["proposal_id"], r["proposal_text"], r["proponent"], r["rec"], r["vote"]) for r in rows] == [
+        ("1", "Issuance of A Shares 2024 AGM", "Management", "For", "For"),
+        ("2", "Elect Joseph L. Goldstein", "Management", "For", "Against"),
+        ("3", "Short text", "Shareholder", "N/A", "Voted -Abstain"),
+        ("4", "Anything", "Management", "1 Year", "Take No Action"),
+        ("5", "Note", "N/A", "N/A", "Non-Voting"),
+        ("6", "Odd", "Management", "For", "Voted - Split")]
+
+
+def test_r3_line_not_ending_in_vote_rec_proponent_is_not_a_column_line():
+    body = MEET + (
+        " 1  Elect A Management For\n"
+        " 2  Elect B                                             Management     Maybe        Voted - For\n")
+    text = doc(body)
+    assert parse(text) == []
+    assert parse_stats(text)["dropped_no_columns"] == 2
+
+
+def test_r3_text_naming_management_does_not_confuse_the_right_anchor():
+    body = MEET + " 1  Elect Management Nominee Jane Doe     Management  For  Voted - For\n"
+    r = parse(doc(body))[0]
+    assert r["proposal_text"] == "Elect Management Nominee Jane Doe"
+    assert (r["proponent"], r["rec"], r["vote"]) == ("Management", "For", "For")
+
+
+def test_r3_note_lines_before_first_proposal_are_ignored_and_counted():
+    body = MEET + (
+        "     Please Note That the Company Notice and Proxy Form\n"
+        "       are Available by Clicking-on the Url Links:-\n"
+        "       22/ 0808/2022080800994.pdf                           Non-Voting\n" + ROW)
+    text = doc(body)
+    rows = parse(text)
+    assert [(r["proposal_id"], r["proposal_text"]) for r in rows] == [("1", "Elect Jane Doe")]
+    assert parse_stats(text)["ignored_preamble_line"] == 3
+
+
+def test_r3_blank_lines_between_issuer_and_security_id_allowed():
+    m = "ACME CORP.\n\n\n Security ID: 00287Y109  Ticker: ACME\n Meeting Date: 05-May-23           Meeting Type: Annual\n"
+    text = doc(MEET + ROW + m + ROW)
+    rows = parse(text)
+    assert [r["issuer_name"] for r in rows] == ["ACME CORP.", "ACME CORP."]
+
+
+def test_r3_three_part_ids_and_outside_forms():
+    body = MEET + " 3.1.1 Elect Jang                                        Management     For          Voted - For\n"
+    assert parse(doc(body))[0]["proposal_id"] == "3.1.1"
+    body = MEET + " O.1 Elect Jang                                         Management     For          Voted - For\n"
     assert parse(doc(body)) == []
-
-
-def test_issuer_must_be_directly_above_security_id():
-    m = "ACME CORP.\n\n Security ID: 00287Y109  Ticker: ACME\n Meeting Date: 05-May-23           Meeting Type: Annual\n"
-    assert parse(doc(m + ROW)) == []
-    assert parse_stats(doc(m + ROW))["dropped_no_issuer"] == 1
