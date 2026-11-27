@@ -1105,7 +1105,9 @@ both parsers read it.
   on XML lines): a fund can print two different items with identical text at one meeting
   (Principal Funds 04/26/2023 prints one item 56 times, once per sub-fund; 'Instructions if
   Meeting is Held on Second Call' appears as items 4 and 33), and the number keeps them apart in
-  de-duplication, N-PX/A supersession and the engine's decision groups. `shares_voted` is NULL:
+  de-duplication, N-PX/A supersession and the engine's decision groups. It is also NULL where
+  the filing prints no number (23,772 'regvoted_html' lines, mostly SEI's 0001135428-23-000229):
+  there identical-text items cannot be told apart and are treated as before. `shares_voted` is NULL:
   these formats print no share counts.
   `management_recommendation` has the XML meaning: whether THIS vote went with (FOR)
   or against (AGAINST) management, not what management recommended. ProxyEdge prints

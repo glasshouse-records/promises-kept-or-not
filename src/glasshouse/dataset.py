@@ -101,7 +101,8 @@ DATA_DICTIONARY: dict[str, dict] = {
         "for_against_management": "ProxyEdge's printed For/Against Management column, as printed; "
                                   "NULL except on 'proxyedge' legacy rows",
         "proposal_number": "printed item number, 2022-23 legacy lines only (NULL on XML lines); "
-                           "distinct items with identical text at one meeting are kept apart by it",
+                           "distinct items with identical text at one meeting are kept apart by it; "
+                           "NULL too where the filing prints none",
         "is_duplicate": "1 = as-filed duplicate of another line; always 0 in the release, "
                         "which excludes duplicates"},
     "holdings": {"_": "13-F / N-PORT holdings (full USD). No source_url or retrieval_date: "
