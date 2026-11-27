@@ -16,7 +16,12 @@ from datetime import datetime
 
 from .legacy_issueno import KEYS
 
-_EVENT = re.compile(r"<(/?)table\b[^>]*>|<tr\b[^>]*>(.*?)</tr\s*>", re.I | re.S)
+_EVENT = re.compile(
+    r"<(?P<close>/?)table\b[^>]*>"
+    r"|<tr\b[^>]*>(?P<tr>.*?)</tr\s*>"
+    r"|<(?P<tag>div|p)\b[^>]*>(?P<leaf>(?:(?!<(?:div|p|table)\b).)*?)</(?P=tag)\s*>",
+    re.I | re.S)
+_FURNITURE = re.compile(r"^(?:Page \| \d+|Page \d+|\d+)$")
 _CELL = re.compile(r"<t[dh]\b[^>]*>(.*?)(?:</t[dh]\s*>|(?=<t[dh]\b)|$)", re.I | re.S)
 _BR = re.compile(r"<br\s*/?>", re.I)
 _TAG = re.compile(r"<[^>]*>")
@@ -39,18 +44,27 @@ def _cell_value(raw: str) -> str:
     return _WS.sub(" ", html.unescape(s).replace("\xa0", " ")).strip()
 
 
-def _read_rows(text: str) -> list[tuple[list[str], bool]]:
-    """Non-ignored rows as (values, starts_new_table)."""
-    out: list[tuple[list[str], bool]] = []
-    boundary = False
+def _read_rows(text: str, stats: Counter) -> list[list[str]]:
+    """HR1: one stream of non-ignored rows (table rows, plus leaf div/p outside tables)."""
+    out: list[list[str]] = []
+    depth = 0
     for m in _EVENT.finditer(text):
-        if m.group(2) is None:
-            boundary = True
+        if m.group("tr") is not None:
+            vals = [v for v in (_cell_value(c) for c in _CELL.findall(m.group("tr"))) if v]
+        elif m.group("leaf") is not None:
+            if depth > 0:
+                continue
+            v = _cell_value(m.group("leaf"))
+            vals = [v] if v else []
+        else:
+            depth = max(0, depth + (-1 if m.group("close") else 1))
             continue
-        vals = [v for v in (_cell_value(c) for c in _CELL.findall(m.group(2))) if v]
-        if vals:
-            out.append((vals, boundary))
-            boundary = False
+        if not vals:
+            continue
+        if len(vals) == 1 and _FURNITURE.match(vals[0]):
+            stats["page_furniture"] += 1
+            continue
+        out.append(vals)
     return out
 
 
@@ -89,17 +103,17 @@ def _parse_date(s: str) -> str | None:
 
 def _run(text: str) -> tuple[list[dict], Counter]:
     stats: Counter = Counter()
-    rows = _read_rows(text)
+    rows = _read_rows(text, stats)
     out: list[dict] = []
 
     # H2: heading of every column header row, precomputed; a bad one rejects the doc.
     headings: dict[int, str] = {}
-    for i, (vals, _) in enumerate(rows):
+    for i, vals in enumerate(rows):
         if tuple(vals) == HEADER:
-            if i == 0 or len(rows[i - 1][0]) != 1:
+            if i == 0 or len(rows[i - 1]) != 1:
                 stats["doc_rejected"] += 1
                 return [], stats
-            headings[i] = rows[i - 1][0][0]
+            headings[i] = rows[i - 1][0]
 
     fund: str | None = None
     ident: tuple[str, str, str] | None = None   # identity a bare Meeting Date may inherit
@@ -137,9 +151,7 @@ def _run(text: str) -> tuple[list[dict], Counter]:
         ident = None
         stats[reason] += 1
 
-    for i, (vals, new_table) in enumerate(rows):
-        if new_table and meeting is not None:
-            drop_open(meeting)
+    for i, vals in enumerate(rows):
         kind = "other"
         first = vals[0]
 
@@ -157,7 +169,7 @@ def _run(text: str) -> tuple[list[dict], Counter]:
         elif fund is None:
             stats["row_before_header"] += 1
         elif (len(vals) == 1 and i + 1 < len(rows)
-              and rows[i + 1][0][0].startswith("Security ID:")):
+              and rows[i + 1][0].startswith("Security ID:")):
             if meeting is not None:
                 finalize(meeting)
             meeting, ident, new_ident = None, None, None
@@ -178,6 +190,14 @@ def _run(text: str) -> tuple[list[dict], Counter]:
                 new_ident = (pend_issuer, sid.strip(), tick.strip())
                 pend_issuer = None
                 kind = "secid"
+        elif (len(vals) == 1 and prev_kind == "secid" and new_ident is not None
+              and first.startswith("Ticker:")):
+            new_ident = (new_ident[0], new_ident[1], first[len("Ticker:"):].strip())
+            kind = "secid"
+        elif (len(vals) == 1 and prev_kind == "date" and meeting is not None
+              and not meeting["dead"] and first.startswith("Meeting Type:")):
+            meeting["meeting_type"] = first[len("Meeting Type:"):].strip()
+            kind = "date"
         elif first.startswith("Meeting Date:"):
             pend_issuer = None
             ok = True
@@ -202,6 +222,7 @@ def _run(text: str) -> tuple[list[dict], Counter]:
                     meeting = {"dead": False, "open": None, "props": [], "pids": set(),
                                "meeting_type": _label_value(vals, "Meeting Type:"),
                                "date": date}
+                    kind = "date"
         elif meeting is None:
             stats["row_outside_meeting"] += 1
         elif meeting["dead"]:

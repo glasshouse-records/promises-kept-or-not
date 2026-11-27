@@ -196,3 +196,71 @@ def test_two_fund_headings_same_doc():
     head2 = HEAD.replace("Democracy International Fund", "Other Fund")
     html = doc(issuer(), prop("1", "a"), "</table><table>" + head2, issuer("B", "S2", "B"), prop("1", "b"))
     assert [r["fund_heading"] for r in P.parse(html)] == ["Democracy International Fund", "Other Fund"]
+
+
+# ---- amendments HR1-HR5 ----------------------------------------------------
+
+def divs(*vals):
+    return "".join(f"<div style='x'>{v}</div>" for v in vals)
+
+
+def test_hr1_div_rows_between_tables_and_p_heading():
+    colhdr = tr("Proposal", "Proposed by", "Mgt. Position", "Registrant Voted")
+    html = ("<html><p>Some Fund</p><table>" + colhdr + "</table>"
+            + divs("ABB LTD.", "Security ID: 000375204", "Ticker: ABBN", "Meeting Date: 07-Sep-22",
+                   "Meeting Type: Extraordinary Shareholders")
+            + "<table>" + prop("1", "Approve") + "</table></html>")
+    r = P.parse(html)
+    assert len(r) == 1
+    assert (r[0]["fund_heading"], r[0]["issuer_name"], r[0]["security_id"], r[0]["ticker"],
+            r[0]["meeting_type"], r[0]["meeting_date"]) == (
+        "Some Fund", "ABB LTD.", "000375204", "ABBN", "Extraordinary Shareholders", "09/07/2022")
+
+
+def test_hr1_nested_div_and_div_in_table_not_rows():
+    html = doc(issuer(), "<div><div>Outer text</div></div>", prop("1", "a"))
+    # nested: only the leaf counts, and it is outside a table
+    assert len(P.parse(html)) == 1
+    inside = doc(issuer(), tr("1", "Elect"), "<tr><td><div>Jane</div></td></tr>",
+                 tr("Management", "For", "Voted - For"))
+    assert P.parse(inside)[0]["proposal_text"] == "Elect Jane"
+
+
+def test_hr2_proposal_continues_across_tables():
+    html = doc(issuer(), tr("1", "Elect Jane"), "</table><table>", tr("Doe", "Management", "For", "Voted - For"))
+    r = P.parse(html)
+    assert len(r) == 1 and r[0]["proposal_text"] == "Elect Jane Doe"
+    assert P.parse_stats(html)["drop_proposal_unclosed"] == 0
+
+
+def test_hr3_ticker_and_meeting_type_rows():
+    html = doc(tr("<b>FOO</b>"), tr("Security ID: S1"), tr("Ticker: FOO"),
+               tr("Meeting Date: 01-Jan-23"), tr("Meeting Type: Annual"), prop("1", "x"))
+    r = P.parse(html)[0]
+    assert (r["ticker"], r["meeting_type"], r["proposal_text"]) == ("FOO", "Annual", "x")
+
+
+def test_hr3_meeting_type_row_not_directly_after_date_is_text():
+    html = doc(issuer(), prop("1", "a"), tr("Meeting Type: Annual"), tr("Management", "For", "Voted - For"))
+    r = P.parse(html)
+    assert r[1]["proposal_text"] == "Meeting Type: Annual" and r[1]["meeting_type"] == "Extraordinary Shareholders"
+
+
+def test_hr4_page_furniture_ignored():
+    html = doc(issuer(), tr("1", "Elect"), tr("Page | 3"), tr("Page 4"), tr("12"),
+               tr("Jane", "Management", "For", "Voted - For"))
+    s = P.parse_stats(html)
+    r = P.parse(html)
+    assert r[0]["proposal_text"] == "Elect Jane" and s["page_furniture"] == 3
+
+
+def test_hr4_furniture_does_not_break_adjacency():
+    html = doc(tr("<b>FOO</b>"), tr("Page 2"), tr("Security ID: S1"), tr("Page 3"),
+               tr("Meeting Date: 01-Jan-23"), prop("1", "x"))
+    assert len(P.parse(html)) == 1
+
+
+def test_hr5_empty_security_id_kept():
+    html = doc(tr("<b>FOO</b>"), tr("Security ID:"), tr("Meeting Date: 01-Jan-23"), prop("1", "x"))
+    r = P.parse(html)
+    assert len(r) == 1 and r[0]["security_id"] == ""
