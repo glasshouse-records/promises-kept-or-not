@@ -120,11 +120,12 @@ def test_constants_and_quarantine():
     assert legacy_regvoted.LEGACY_FORMAT == "regvoted"
     assert legacy_regvoted.REPORT_OK == "LEGACY_REGVOTED"
     assert legacy_regvoted.REPORT_REJECTED == "LEGACY_REGVOTED_REJECTED"
-    assert "regvoted" not in ledger.PROMOTED_LEGACY_FORMATS
-    assert "regvoted" not in ledger.NON_LEGACY_VOTE_SQL
+    # Promoted 2026-11-27 after review (fix: amendment R5) and hand samples against the filing.
+    assert "regvoted" in ledger.PROMOTED_LEGACY_FORMATS
+    assert "'regvoted'" in ledger.NON_LEGACY_VOTE_SQL
 
 
-def test_regvoted_votes_are_excluded_from_shipped_votes(tmp_path):
+def test_regvoted_votes_are_shipped_after_promotion(tmp_path):
     c = ledger.connect(tmp_path / "t.db")
     c.execute("INSERT INTO institutions (id, display_name) VALUES ('x','X')")
     c.execute("INSERT INTO filings (accession, cik, institution_id, form_type, source_url, "
@@ -136,7 +137,7 @@ def test_regvoted_votes_are_excluded_from_shipped_votes(tmp_path):
                   "'legacy_text',?,0)", (fmt,))
     got = c.execute(f"SELECT legacy_format FROM votes WHERE {ledger.NON_LEGACY_VOTE_SQL}"
                     ).fetchall()
-    assert [g[0] for g in got] == ["issueno"]
+    assert sorted(g[0] for g in got) == ["issueno", "regvoted"]
 
 
 def test_npx_dispatches_the_format(monkeypatch):

@@ -1065,7 +1065,20 @@ both parsers read it.
   Promoted after a skeptical review (which found that both parsers carried a fund across a
   registrant change; fixed and tested) and a hand check against the filings: 14 of 14
   stored rows correct field by field, and 54 of 54 under the right fund.
-- **Columns.** `legacy_format` is `proxyedge`, `iss_text`, `iss_html`, `issueno` or `issueno_html` (NULL for XML
+- **"Registrant Voted" layout (`legacy_format` `regvoted`, promoted 2026-11-27).** Global X
+  prints `Proposal / Proposed by / Mgt. Position / Registrant Voted` in plain text: issuer line,
+  ` Security ID:` (bare CUSIP/CINS or ISIN, typed by length and check-digit validated, never
+  repaired), `Meeting Date:` (DD-Mon-YY), then proposals ending in proponent, recommendation and
+  `Voted - X`. Two parsers written independently from one contract (amendments R1-R5) read it;
+  only rows both read identically are kept, through the same gate, guards and header-only fund
+  mapping as the "Issue No." layout. "Take No Action" and "Non-Voting" rows (agenda notes) are
+  dropped and counted, as in the ISS layouts. A `Meeting Date:` line with no issuer above it
+  continues the previous company only directly after one of its proposals or a repeated page
+  header; anything else drops the meeting (review found both parsers could otherwise give one
+  company's votes to the one before). One filing (0001135428-23-000255), 97,562 lines.
+  Promoted after that review and hand checks: 18 stored rows field by field and one split vote
+  (Visa 2023 independent-chair proposal) under the right fund in all 6 funds.
+- **Columns.** `legacy_format` is `proxyedge`, `iss_text`, `iss_html`, `issueno`, `issueno_html` or `regvoted` (NULL for XML
   rows). `shares_voted` is NULL: these formats print no share counts.
   `management_recommendation` has the XML meaning: whether THIS vote went with (FOR)
   or against (AGAINST) management, not what management recommended. ProxyEdge prints

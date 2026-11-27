@@ -1,7 +1,8 @@
 """Legacy (July 2022 - June 2023) N-PX votes in the "Registrant Voted" text layout (Global X:
 `Proposal  Proposed by  Mgt. Position  Registrant Voted`, inside <pre> blocks). legacy_format
-'regvoted', QUARANTINED: not in `ledger.PROMOTED_LEGACY_FORMATS` until a reviewer pass and a
-hand sample. Contract: docs/research/legacy-npx.md ("Registrant Voted" text layout).
+'regvoted', promoted into `ledger.PROMOTED_LEGACY_FORMATS` on 2026-11-27 after a reviewer pass
+(fix: contract amendment R5, a bare Meeting Date inherits an issuer only after a column line or
+page header) and hand samples against the filing (18 rows field by field, 6 funds of one split vote). Contract: docs/research/legacy-npx.md ("Registrant Voted" text layout).
 
 Two parsers written independently from that contract (`legacy_regvoted_blocks`,
 `legacy_regvoted_lines`) read each document; everything after them is `legacy_issueno`'s,
