@@ -26,6 +26,7 @@ class Filing:
     period_of_report: str | None
     accession_number: str
     primary_document: str = ""
+    period_note: str = ""   # set only when the header period was overridden (legacy_period)
 
     @property
     def accession_clean(self) -> str:

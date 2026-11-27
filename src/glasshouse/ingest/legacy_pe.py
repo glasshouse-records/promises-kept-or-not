@@ -487,11 +487,12 @@ def record_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
             conn.execute("DELETE FROM filings WHERE accession = ?", (acc,))
         conn.execute(
             """INSERT INTO filings (accession, cik, institution_id, form_type, filing_date,
-                                    period_of_report, report_type, source_url, retrieval_date)
-               VALUES (?,?,?,?,?,?,?,?,?)""",
+                                    period_of_report, report_type, source_url, retrieval_date,
+                                    notes)
+               VALUES (?,?,?,?,?,?,?,?,?,?)""",
             (acc, filing.cik, institution_id, filing.form_type, filing.filing_date,
              filing.period_of_report, report_ok if accepted else report_rejected,
-             filing.directory_url, today))
+             filing.directory_url, today, filing.period_note or None))
         inserted = 0
         for name, meetings, st, votes, info in parsed:
             n = 0

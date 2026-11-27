@@ -979,6 +979,17 @@ both parsers read it.
   section is sorted, only those head meetings are dropped. A run that repeats earlier
   rows of the same section field for field (an as-filed repeat) is kept. The counts
   of every guard, and the parser version, are stored per document in `legacy_parse`.
+- **Wrong header period (2026-11-27).** Only filings whose EDGAR header period is
+  2023-06-30 were read, but some filers print a wrong period in the header (JPMorgan's
+  0001438934-23-000406 says 2022-06-30 for a July 2022 - June 2023 report). A
+  filed-2023-07-01..2024-06-30 filing with another header period counts as a 2022-23
+  report only if BOTH (1) its document states a reporting period of July 1, 2022 through
+  June 30, 2023 (any common phrasing: month names or numeric dates, "through", "to" or a
+  dash) and (2) at least 99% of its parseable meeting dates fall in 2022-07-01..2023-06-30
+  and none fall after it. Otherwise it is skipped: late refilings of 2021-22 and earlier
+  fail both. An accepted filing's period is stored as 2023-06-30 and `filings.notes` keeps
+  the header value and the evidence. Rule: `ingest/legacy_period.py`. Mapping rules are
+  untouched: funds that do not map to the filing's own header series stay dropped.
 - **Franklin Templeton's ISS HTML variant (2026-11-23).** Franklin's own filings print the
   ISS HTML columns in ordinary table cells and split tables at page breaks marked
   `<!-- PAGEBREAK_START -->`. Only when nothing but such a marked break lies between two

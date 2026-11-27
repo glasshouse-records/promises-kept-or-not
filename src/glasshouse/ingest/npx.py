@@ -25,7 +25,7 @@ from pathlib import Path
 from lxml import etree
 
 from .. import http, ledger
-from . import legacy_iss, legacy_issueno, legacy_issueno_html, legacy_pe
+from . import legacy_iss, legacy_issueno, legacy_issueno_html, legacy_pe, legacy_period
 from .edgar import Filing, filing_directory, list_filings
 
 logger = logging.getLogger(__name__)
@@ -303,10 +303,21 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                 stats["skipped"] += 1
                 continue
             if legacy_proxyedge or legacy_iss_text or legacy_issueno_flag:
-                if not legacy_pe.is_candidate(filing):
-                    stats["skipped"] += 1
-                    continue
                 try:
+                    if not legacy_pe.is_candidate(filing):
+                        # wrong header period: a 2022-23 report only if the document says
+                        # so AND its meeting dates agree (see legacy_period)
+                        if not legacy_period.in_filing_window(filing):
+                            stats["skipped"] += 1
+                            continue
+                        res = legacy_period.resolve(
+                            filing, legacy_pe.load_filing_texts(filing)[0])
+                        if not res.accepted:
+                            stats["skipped"] += 1
+                            continue
+                        filing = res.filing
+                        logger.info("header period overridden for %s: %s",
+                                    filing.accession_number, filing.period_note)
                     # no write lock across network or parse: record_filing replaces any
                     # prior (LEGACY_NO_COVER) filings row inside its own transaction
                     fmt = legacy_iss.detect_format(legacy_pe.load_filing_texts(filing)[0])
