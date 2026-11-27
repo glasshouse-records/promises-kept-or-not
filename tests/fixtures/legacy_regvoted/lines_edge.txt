@@ -1,0 +1,31 @@
+                                Global X Aging Population ETF
+Proposal                                                Proposed by Mgt. Position Registrant Voted
+ACME CORP
+ Security ID:  Ticker: ACM
+ Meeting Date: 28-Jul-22           Meeting Type: Special
+ 1   Reverse Stock Split                                 Management     For          Voted - For
+ 2   Directors' Report                                   Management     For
+ 3   Opening                                             Management     For          Voted - For
+BAD DATE CO
+ Security ID: 111111111  Ticker: BAD
+ Meeting Date: 31-Feb-23           Meeting Type: Annual
+ 1   Elect A                                             Management     For          Voted - For
+STRAY CO
+ Security ID: 222222222  Ticker: STY
+ Meeting Date: 01-Mar-23           Meeting Type: Annual
+ 1   Elect A                                             Management     For          Voted - For
+this line fits no rule
+ 2   Elect B                                             Management     For          Voted - For
+DOUBLE CO
+ Security ID: 333333333  Ticker: DBL
+ Meeting Date: 01-Mar-23           Meeting Type: Proxy Contest
+ 1   Elect A                                             Management     For          Voted - For
+LAST CO
+ Security ID: 444444444  Ticker: LST
+ Meeting Date: 02-Mar-23           Meeting Type: Annual
+ 1.A Elect A                                             Management     For          Voted - For
+ 2   Elect B                                             Management     For          Voted - Voted
+ 1.B Elect C                                             Shareholder    Against      Voted - For
+
+SIGNATURES
+        Pursuant to the requirements of the Investment Company Act of 1940, the registrant has duly caused
