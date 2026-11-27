@@ -206,11 +206,25 @@ def prepare(doc: str) -> str:
     return doc if converted is None else converted
 
 
+# Federated's flat table: these header labels, each alone in its own cell, in this order.
+_FEDFLAT_LABELS = ("Ballot Issue Number", "Proposal Text", "Proponent", "Mgmt Reco",
+                   "Vote Cast", "Fund Name")
+_CELL_GAP = r"\s*(?:</[^>]+>\s*)*</t[dh]>\s*<t[dh]\b[^>]*>\s*(?:<[^/>][^>]*>\s*)*"
+_IN_LABEL = r"(?:\s|<[^>]*>)+"       # a label's words may sit in separate <p> or <b> tags
+_FEDFLAT_HDR = re.compile(r"(?i)" + _CELL_GAP.join(
+    _IN_LABEL.join(map(re.escape, lb.split())) for lb in _FEDFLAT_LABELS)
+                         + r"\s*(?:</[^>]+>\s*)*</t[dh]>")
+
+
+def is_fedflat(text: str) -> bool:
+    return "Reco" in text and _FEDFLAT_HDR.search(text) is not None
+
+
 def doc_format(text: str) -> str | None:
     """One document's format, checked in order: ISS text (also as Courier HTML), ISS
     HTML, 'issueno' (legacy "Issue No." layout), 'issueno_html' (the same as HTML tables),
     'regvoted' ("Registrant Voted" text), 'regvoted_html' (the same as HTML tables),
-    ProxyEdge."""
+    'fedflat' (Federated's one-row-per-vote table), ProxyEdge."""
     if is_iss_text(text) or courier_html_to_text(text) is not None:
         return "iss"
     if is_iss_html(text):
@@ -222,13 +236,15 @@ def doc_format(text: str) -> str | None:
     m = _REGVOTED_HDR.search(text)
     if m:      # the same header words; in table cells it is the HTML-table rendering
         return "regvoted_html" if "</td" in m.group(0).lower() else "regvoted"
+    if is_fedflat(text):
+        return "fedflat"
     if "Agenda Number:" in text:
         return "proxyedge"
     return None
 
 
 def detect_format(docs: dict[str, str]) -> str | None:
-    """'iss', 'iss_html', 'issueno', 'issueno_html', 'regvoted', 'regvoted_html', 'proxyedge', or None (none, or a mix we will not guess about)."""
+    """'iss', 'iss_html', 'issueno', 'issueno_html', 'regvoted', 'regvoted_html', 'fedflat', 'proxyedge', or None (none, or a mix we will not guess about)."""
     found = {f for f in map(doc_format, docs.values()) if f}
     return found.pop() if len(found) == 1 else None
 

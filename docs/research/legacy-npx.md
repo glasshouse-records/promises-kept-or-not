@@ -379,3 +379,17 @@ Downstream: wrapper `legacy_fedflat` (legacy_format 'fedflat', report types
 LEGACY_FEDFLAT(_REJECTED)) maps Management -> Mgmt, Shareholder -> ShrHoldr, One Year -> 1 Year,
 Three Years -> 3 Years, then `legacy_issueno.to_vote_rows` (agreement, guards, 0.5% gate,
 header-only fund mapping, validated security ids). Quarantined until review and a hand sample.
+
+Wrapper notes (2026-11-27, after the first real-data run):
+- Both parsers agree on all 90,017 rows of the 17 documents (16 + 001081, whose header labels
+  are split across `<p>` tags inside each cell; detection allows tags between a label's
+  words). Detection matches only these 17 of the 677 cached legacy documents.
+- No issuer-order guard (`legacy_pe.guarded(order=False)`): the fund is a cell on every row,
+  so an issuer-order reset cannot mean a missed fund heading. 0001623632-23-001146 prints its
+  alphabetical runs in reverse page order and the guard dropped 677 of 764 good rows.
+  The disputed-meeting guard still applies.
+- TNA, Do Not Vote and N/A votes, and N/A proponents (non-voting meeting notes), map to '' and
+  are dropped and counted; a rec of None or N/A leaves the recommendation empty.
+- A row missing one source cell shifts left; it still has the header's cell count when the
+  trailing Logical Ballot Status is empty. Any such shift puts a recommendation or vote into
+  Proponent or a fund name into Vote Cast, so F3 drops it (48 rows in 001067).

@@ -26,6 +26,7 @@ from lxml import etree
 
 from .. import http, ledger
 from . import (
+    legacy_fedflat,
     legacy_iss,
     legacy_issueno,
     legacy_issueno_html,
@@ -257,10 +258,12 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                    else "regvoted" if rt in ("LEGACY_REGVOTED", "LEGACY_REGVOTED_REJECTED")
                    else "regvoted_html" if rt in ("LEGACY_REGVOTED_HTML",
                                                   "LEGACY_REGVOTED_HTML_REJECTED")
+                   else "fedflat" if rt in ("LEGACY_FEDFLAT", "LEGACY_FEDFLAT_REJECTED")
                    else None)
             if (reingest and fam == "iss" and legacy_iss_text) or \
                     (reingest and fam == "proxyedge" and legacy_proxyedge) or \
-                    (reingest and fam in ("issueno", "issueno_html", "regvoted", "regvoted_html")
+                    (reingest and fam in ("issueno", "issueno_html", "regvoted", "regvoted_html",
+                                          "fedflat")
                      and legacy_issueno_flag):
                 # a named legacy filing re-parsed under its own format's flag; the record
                 # is replaced in one transaction by legacy_pe.record_filing (XML rows
@@ -360,6 +363,9 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                             conn, filing, institution_id, today)
                     elif fmt == "regvoted_html" and legacy_issueno_flag:
                         n = legacy_regvoted_html.ingest_filing_from_sources(
+                            conn, filing, institution_id, today)
+                    elif fmt == "fedflat" and legacy_issueno_flag:
+                        n = legacy_fedflat.ingest_filing_from_sources(
                             conn, filing, institution_id, today)
                     else:                   # neither format (or not the one asked for)
                         stats["no_format"] = stats.get("no_format", 0) + 1
@@ -512,6 +518,8 @@ def _reingest_legacy(conn: sqlite3.Connection, filing: Filing, institution_id: s
         elif fam == "regvoted_html" and fmt == "regvoted_html":
             n = legacy_regvoted_html.ingest_filing_from_sources(conn, filing, institution_id,
                                                                 today)
+        elif fam == "fedflat" and fmt == "fedflat":
+            n = legacy_fedflat.ingest_filing_from_sources(conn, filing, institution_id, today)
         else:
             stats["no_format"] = stats.get("no_format", 0) + 1
             return

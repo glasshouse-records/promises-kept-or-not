@@ -146,13 +146,19 @@ def order_guard(rows: list[dict], fund_field: str) -> tuple[list[dict], dict]:
 
 
 def guarded(out: list[dict], rows_a: list[dict], rows_b: list[dict], ca: Counter,
-            cb: Counter, fund_field: str, keyfn=None) -> tuple[list[dict], dict]:
-    """Both guards over the multiset-intersection rows; returns rows and the new stats."""
+            cb: Counter, fund_field: str, keyfn=None,
+            order: bool = True) -> tuple[list[dict], dict]:
+    """Both guards over the multiset-intersection rows; returns rows and the new stats.
+    `order=False` skips the issuer-order guard, for layouts that print the fund on every row
+    (nothing is inherited from a heading, so an order reset cannot mean a missed one)."""
     keyfn = keyfn or _key
     by_key = {keyfn(r): r for r in rows_b} | {keyfn(r): r for r in rows_a}
     disputed = [by_key[k] for k in [*(ca - cb), *(cb - ca)]]
     out, s1 = drop_disputed_meetings(out, disputed)
-    out, s2 = order_guard(out, fund_field)
+    if order:
+        out, s2 = order_guard(out, fund_field)
+    else:
+        s2 = {"order_resets": 0, "order_repeats": 0, "rows_dropped_order": 0}
     st = {**s1, **s2}
     if s1["meetings_dropped_disputed"]:
         logger.info("disputed meetings dropped=%d rows=%d", s1["meetings_dropped_disputed"],

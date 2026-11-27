@@ -97,7 +97,8 @@ def day_first_dates(text: str) -> int:
     return sum(1 for m in _VALUE_LINE_DATE.finditer(text) if int(m.group(1)) > 12)
 
 
-def agreed(text: str, parsers=PARSERS, day_first=None) -> tuple[list[dict], dict]:
+def agreed(text: str, parsers=PARSERS, day_first=None,
+           order_guard: bool = True) -> tuple[list[dict], dict]:
     """Rows both parsers produced identically (multiset intersection, in parser A's order),
     after the meeting-level and issuer-order guards, and the agreement stats. `day_first`
     counts the document's day-first meeting dates (default: `day_first_dates` on the text)."""
@@ -115,7 +116,8 @@ def agreed(text: str, parsers=PARSERS, day_first=None) -> tuple[list[dict], dict
             out.append(r)
     n_agreed = sum(common.values())
     a_only, b_only = sum((ca - cb).values()), sum((cb - ca).values())
-    out, guard_stats = legacy_pe.guarded(out, rows_a, rows_b, ca, cb, "fund_heading", _key)
+    out, guard_stats = legacy_pe.guarded(out, rows_a, rows_b, ca, cb, "fund_heading", _key,
+                                         order=order_guard)
     rate = (a_only + b_only) / max(1, n_agreed + a_only + b_only)
     if n_day_first:            # the gate rejects the filing: nothing from this document ships
         out, rate = [], 1.0
