@@ -234,6 +234,12 @@ def _run(text: str) -> tuple[list[dict], Counter]:
             stats["note_line_ignored"] += 1
             i += 1
             continue
+        elif meet.blocks and meet.blocks[-1]["ncols"] >= 1 and _CONTINUATION.match(line) \
+                and not _COLS.match(line.strip()):
+            # R4: a proposal is closed once its column line is read; what follows is a note
+            stats["note_after_proposal"] += 1
+            i += 1
+            continue
         elif _CONTINUATION.match(line) and meet.blocks:
             block = meet.blocks[-1]
             body = line.strip()

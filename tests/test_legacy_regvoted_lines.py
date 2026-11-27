@@ -258,8 +258,9 @@ def test_r3_notes_before_first_proposal_ignored_and_counted():
         P, "    Late note after a proposal",
     )
     (r,) = m.parse(text)
-    assert r["proposal_text"] == "Reclassification of Common Stock Late note after a proposal"
+    assert r["proposal_text"] == "Reclassification of Common Stock"  # R4: closed proposal
     assert m.parse_stats(text)["note_line_ignored"] == 2
+    assert m.parse_stats(text)["note_after_proposal"] == 1
 
 
 def test_r3_blank_line_between_issuer_and_security_id():
@@ -273,3 +274,27 @@ def test_r3_three_part_ids_but_not_o1_s1():
     text = _one(" O.1   Elect A     Management   For Voted - For")
     assert m.parse(text) == []
     assert m.parse_stats(text)["meeting_unplaced_line"] == 1
+
+
+def test_r4_page_break_note_after_closed_proposal_is_not_text():
+    # real excerpt: AIA GROUP LTD 18-May-23 proposal 12, then a page break and a note
+    text = _doc(
+        "AIA GROUP LTD", " Security ID: Y002A1105  Ticker: 1299",
+        " Meeting Date: 18-May-23           Meeting Type: Annual",
+        " 11 To Approve and Adopt the Employee Share Purchase",
+        "      Plan of the Company with the Amended Terms         Management     Against      Voted - Against",
+        " 12 To Approve and Adopt the Agency Share Purchase Plan",
+        "      of the Company with the Amended Terms              Management     Against      Voted - Against",
+        "", "726", "",
+        "                    Global X Test ETF",
+        "                           Sub-Adviser: Mirae Asset Global Investments",
+        " Proposal                                                 Proposed by Mgt. Position Registrant Voted",
+        "    19 Apr 2023: Please Note That This is A Revision",
+        "      Due to Modification Of-comment. If You Have Already",
+        "      Thank You                                           Non-Voting",
+    )
+    rows = m.parse(text)
+    assert [r["proposal_id"] for r in rows] == ["11", "12"]
+    assert rows[1]["proposal_text"] == (
+        "To Approve and Adopt the Agency Share Purchase Plan of the Company with the Amended Terms")
+    assert m.parse_stats(text)["note_after_proposal"] == 3
