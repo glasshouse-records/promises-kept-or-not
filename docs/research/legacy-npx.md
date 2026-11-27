@@ -61,3 +61,61 @@ sections. Amendment, applied by each parser's own builder without reading the ot
 4. Word/HTML style fragment lines (containing `mso-`, `font-family`, `&quot;`,
    `height:` or `justify;`) are never fund headings, issuers or proposal text.
 5. Everything else, including the per-filing 0.5% agreement gate, is unchanged.
+
+## Contract: "Registrant Voted" text layout (2026-11-27)
+
+Global X Funds' 2022-23 N-PX (0001135428-23-000255, `glx-npx.htm`) prints, inside
+`<pre>` blocks of an HTML file, per fund:
+
+    <centred fund name>
+     Proposal                                  Proposed by Mgt. Position Registrant Voted
+    ABBVIE INC.
+     Security ID: 00287Y109  Ticker: ABBV
+     Meeting Date: 05-May-23           Meeting Type: Annual
+     1  Elect Robert J. Alpern                 Management     For          Voted - For
+     8  Shareholder Proposal Regarding Report on Political
+          Expenditures and Values Congruency   Shareholder    Against      Voted - Against
+
+Two parsers (`legacy_regvoted_blocks`: splits the document into fund sections and meeting
+blocks, then slices columns by the column header's character offsets; `legacy_regvoted_lines`:
+a line-by-line regex state machine) each expose `parse(text: str) -> list[dict]` with exactly
+the 14 keys of `legacy_issueno.KEYS`, and `parse_stats(text) -> Counter` of drops. Rules:
+
+1. Text: HTML tags removed, entities unescaped, lines kept. Only text inside the fund
+   sections counts; the leading "Non-Voting Funds" list yields nothing.
+2. fund_heading: the non-empty line immediately above a column-header line
+   (`Proposal  Proposed by  Mgt. Position  Registrant Voted`, any spacing), stripped. The
+   header repeats after page breaks; a repeat with the SAME heading continues the current
+   fund (and the current meeting, if proposal lines follow before a new issuer); a
+   different heading starts a new fund.
+3. issuer_name: the line directly above ` Security ID:`, stripped, as printed.
+   security_id: the token after `Security ID:` ('' if none); ticker: the token after
+   `Ticker:` ('' if none). Both as printed (validation is downstream).
+4. meeting_date from `Meeting Date: DD-Mon-YY` -> `MM/DD/20YY`; an unreadable date drops the
+   meeting. meeting_type: text after `Meeting Type:`, stripped. country '', meeting_status ''.
+5. Proposal line: optional leading space, proposal_id token (`1`, `1.1`, `1A`, `1.A`), two or
+   more spaces, text. Unnumbered indented lines continue the open proposal's text (joined
+   with one space). The three right-hand columns (proponent, rec, vote) are read from the
+   ONE line of the proposal block that carries them; a block with none, or with them on two
+   lines, is dropped (counted).
+6. proponent as printed (`Management`, `Shareholder`, other); rec as printed
+   (`For`, `Against`, `Abstain`, `Withhold`, `1 Year`, `N/A`, ...); for_against ''.
+   vote as printed after stripping a leading `Voted - ` only when exactly that
+   (`Voted - For` -> `For`); `Take No Action` -> `Take No Action`; anything else
+   (`Non-Voting`, `Voted - Split`, `Voted -Abstain`, `Voted -- For`, bare `Voted`) is kept
+   verbatim so the downstream vocabulary drops it.
+7. Proxy contests: a meeting in which any proposal_id occurs twice (a second card printed
+   after the first, numbering restarting) is dropped whole and counted; so is any meeting
+   whose meeting_type contains "contest" (any case).
+8. Nothing is guessed: a line that fits no rule inside a meeting drops that meeting
+   (counted), never a silent skip.
+
+Downstream (wrapper `legacy_regvoted`, mirroring `legacy_issueno_html`): multiset agreement
+over all 14 keys, `legacy_pe.guarded`, the 0.5% per-filing gate; vote vocabulary For ->
+FOR, Against -> AGAINST, Abstain -> ABSTAIN, Withheld/Withhold -> WITHHOLD, 1 Year / 2 Years /
+3 Years -> 1 YEAR / 2 YEARS / 3 YEARS, Take No Action -> TNA, else dropped; proponent
+Management -> ISSUER, Shareholder -> SECURITY HOLDER, else dropped; security id: a valid
+CUSIP/CINS -> cusip, a valid ISIN -> isin, else ''; fund -> series only through the SGML
+header and reviewed aliases; legacy_format 'regvoted', report types LEGACY_REGVOTED(_REJECTED);
+quarantined (not in PROMOTED_LEGACY_FORMATS) until review and a hand sample.
+GQG's HTML-table rendering of the same columns is a later variant, not covered here.
