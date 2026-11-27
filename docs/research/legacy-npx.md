@@ -278,3 +278,23 @@ LEGACY_REGVOTED_HTML(_REJECTED)) uses the text wrapper's `translate` plus: propo
 `Issuer` -> Management; vote/rec `One Year` -> `1 Year`, `Three Years` -> `3 Years`; `Did
 Not Vote`, `Do Not Vote`, `Undetermined`, `None`, `N/A` dropped as in the text layout.
 Quarantined until review and a hand sample.
+
+### Registrant Voted HTML amendment HR1-HR5 (2026-11-27)
+
+From the first run of both parsers (they agree exactly on 7 of the 8 files they read; 9 of
+17 files gave nothing because the contract only read `<tr>` rows):
+HR1. Row stream. The document is read as ONE stream of rows in document order: every `<tr>`
+     of every table (as H1), AND every `<div>` or `<p>` element that is NOT inside a table
+     and contains no `<div>`, `<p>` or `<table>` of its own, as a row with ONE value (its
+     text per H1; empty -> ignored). 0001135428-23-000144 prints issuer, `Security ID:`,
+     `Ticker:`, `Meeting Date:` and `Meeting Type:` as such divs between tables, and
+     0001135428-23-000166 prints the fund heading as a `<p>` above each table.
+HR2. Table boundaries are not breaks: a proposal or meeting continues across `</table>`
+     ... `<table>` (H6's "end of the table" is replaced by "end of the document").
+HR3. A one-value row exactly `Ticker: X` directly after the Security ID row sets ticker; a
+     one-value row exactly `Meeting Type: X` directly after the Meeting Date row sets
+     meeting_type. They are part of those rows, not proposals.
+HR4. Page furniture is ignored (counted) wherever it occurs: a one-value row matching
+     `Page | N`, `Page N`, or digits only. It never becomes or continues a proposal.
+HR5. An empty Security ID (`Security ID:` with nothing after it) gives security_id '' and
+     the meeting is KEPT (as the text layout: '' if none); validation is downstream.
