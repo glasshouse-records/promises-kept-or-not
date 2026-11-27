@@ -393,3 +393,60 @@ Wrapper notes (2026-11-27, after the first real-data run):
 - A row missing one source cell shifts left; it still has the header's cell count when the
   trailing Logical Ballot Status is empty. Any such shift puts a recommendation or vote into
   Proponent or a fund name into Vote Cast, so F3 drops it (48 rows in 001067).
+
+## Contract: Dodge & Cox table (2026-11-27)
+
+Dodge & Cox Funds (CIK 0000029440) file one 2022-23 N-PX per fund series, 7 filings
+0001193125-23-219201/205/206/207/209/210/214; 209 (Income) and 210 (Global Bond) say the fund
+held no votable positions. Each document is HTML: a cover, then the fund's name, then per
+meeting an issuer-name paragraph, a meeting-header table and a proposals table. Rows are
+read from `<tr>` elements; a cell's text is its markup with tags removed, entities decoded
+(`&nbsp;` and U+00A0 are spaces, `&#146;` is a right single quote), whitespace collapsed and
+trimmed; cells that are then empty are ignored when counting a row's cells. Text outside
+tables is read in blocks: the text between `<p>`, `<br>`, `<div>` boundaries, cleaned the
+same way, empty blocks ignored.
+
+D1. Fund heading: the document's fund heading is the LAST non-empty text block before the
+    first meeting's issuer block (i.e. the second-to-last text block before the first table
+    containing the label `Ticker:`), and it must start with `Dodge & Cox ` and end with
+    `Fund`; otherwise the document yields no rows (counted `no_fund_heading`). One heading
+    per document; every row carries it.
+D2. Meeting header: a table containing the cell `Ticker:` opens a meeting. Its label cells
+    `Ticker:`, `Security ID:`, `Meeting Date:`, `Meeting Type:`, `Record Date:` each take the
+    next non-empty cell as value, unless that next cell is itself one of these labels or
+    absent (value ''). A label appearing twice, or `Ticker:`/`Security ID:`/`Meeting Date:`
+    missing, drops the meeting (counted `bad_meeting_header`).
+D3. Issuer name: the last non-empty text block before the meeting-header table that is not
+    a page marker (`Page <digits>`). Empty -> meeting dropped (`no_issuer`).
+D4. Meeting date `MON DD, YYYY` (three-letter English month, upper case; day 1-2 digits)
+    -> ISO `YYYY-MM-DD`; anything else drops the meeting (`bad_meeting_date`).
+D5. Proposals: rows of the tables after the meeting header and before the next meeting
+    header (or the end of the document's tables; the signature table that holds
+    `(Registrant)` ends the last meeting and yields nothing). The column-header row
+    `# | Proposal | Mgt Rec | Vote Cast | Sponsor` (after cleaning; `Vote Cast` may be
+    written with a non-breaking space) is skipped. A proposal row has exactly 5 non-empty
+    cells: number, text, recommendation, vote, sponsor.
+D6. Continuation: a row whose ONLY non-empty cell is in the text column (the # cell empty,
+    recommendation/vote/sponsor cells empty) appends its text, with one space, to the
+    previous proposal row OF THE SAME MEETING. With no previous proposal in that meeting the
+    whole meeting is dropped (`orphan_continuation`). Any other row shape inside a meeting's
+    proposal tables (not 5 cells, not a continuation, not the column header) drops the whole
+    meeting (`bad_row`).
+D7. Closed lists; a proposal row outside them is dropped and counted, never repaired:
+    number `[0-9A-Za-z.]+`; recommendation in {For, Against, None, One Year, Three Years};
+    vote in {For, Against, Abstain, Did Not Vote, None, One Year, Three Years}; sponsor in
+    {Management, Shareholder}. (The filings print 4 rows with recommendation `Three`; they
+    are dropped as `bad_rec`.)
+D8. Output per kept proposal row (KEYS of `legacy_issueno`): fund_heading (D1),
+    issuer_name (D3), ticker, security_id as printed (bare, no type), meeting_date ISO,
+    meeting_status '', meeting_type as printed, country '', proposal_id = the number,
+    proposal_text (with continuations), proponent = sponsor, rec, vote as printed,
+    for_against ''. Two identical proposal texts in one meeting are kept (both rows; the
+    number keeps them apart).
+D9. A document with no `Ticker:` table yields []. Row order = document order.
+
+Downstream: wrapper `legacy_dodgecox` (legacy_format 'dodgecox', report types
+LEGACY_DODGECOX(_REJECTED)) maps Management -> Mgmt, Shareholder -> ShrHoldr, One Year -> 1
+Year, Three Years -> 3 Years, sets meeting_status Voted, drops None / Did Not Vote votes and
+types the bare security id by length (9 CUSIP, 12 ISIN), then `legacy_issueno.to_vote_rows`.
+Quarantined until review and a hand sample.
