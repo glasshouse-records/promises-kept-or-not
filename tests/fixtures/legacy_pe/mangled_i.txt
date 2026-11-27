@@ -1,0 +1,57 @@
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black"
+height:15.75pt"
+JPMorgan Active China ETF
+--------------------------------------------------------------------------------------------------------------------------
+ AiER EYE HOSPiTAL GROUP CO LTD                                                              Agenda Number:  717129628
+--------------------------------------------------------------------------------------------------------------------------
+        Security:  Y0029J108
+    Meeting Type:  AGM
+    Meeting Date:  30-May-2023
+          Ticker:
+            iSiN:  CNE100000GR6
+--------------------------------------------------------------------------------------------------------------------------
+
+Prop.# Proposal                                                  Proposal      Proposal Vote                  For/Against
+                                                                 Type                                         Management
+
+1      APPROVE ANNUAL REPORT AND SUMMARY                         Mgmt          For                            For
+
+2      APPROVE REPORT OF THE BOARD OF DiRECTORS                  Mgmt          For                            For
+
+3      APPROVE REPORT OF THE BOARD OF SUPERViSORS                Mgmt          For                            For
+
+4      APPROVE FiNANCiAL STATEMENTS                              Mgmt          For                            For
+
+5      APPROVE EQUiTY DiSTRiBUTiON PLAN                          Mgmt          For                            For
+
+6      APPROVE APPOiNTMENT OF AUDiTOR                            Mgmt          For                            For
+
+7      APPROVE SOCiAL RESPONSiBiLiTY REPORT                      Mgmt          For                            For
+
+8      APPROVE REMUNERATiON OF DiRECTORS                         Mgmt          For                            For
+
+9      APPROVE REMUNERATiON OF SUPERViSORS                       Mgmt          For                            For
+
+10     APPROVE APPLiCATiON OF CREDiT LiNES                       Mgmt          For                            For
+
+11     APPROVE AMENDMENTS TO ARTiCLES OF                         Mgmt          Against                        Against
+       ASSOCiATiON
+
+--------------------------------------------------------------------------------------------------------------------------
+ ANGEL YEAST CO LTD                                                                          Agenda Number:  716871353
+--------------------------------------------------------------------------------------------------------------------------
+        Security:  Y3746S104
+    Meeting Type:  AGM
+    Meeting Date:  20-Apr-2023
+          Ticker:
+            iSiN:  CNE0000014G0
+--------------------------------------------------------------------------------------------------------------------------
+
+Prop.# Proposal                                                  Proposal      Proposal Vote                  For/Against
+                                                                 Type                                         Management
+
+1      2022 WORK REPORT OF THE BOARD OF DiRECTORS                Mgmt          For                            For
+mso-padding-alt:0in 0in 0in 0in"
+
+2      2022 WORK REPORT OF THE SUPERViSORY                       Mgmt          For                            For
+       COMMiTTEE

@@ -55,11 +55,37 @@ _MONTHS = {m: i + 1 for i, m in enumerate(
     ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"])}
 _DASH = re.compile(r"^-{20,}\s*$")
 _AGENDA = re.compile(r"^\s*(.*?)\s*Agenda Number:\s*(.*?)\s*$")
-_LABEL = re.compile(r"^\s*(Security|Meeting Type|Meeting Date|Ticker|ISIN):(.*)$")
+_LABEL = re.compile(r"^\s*([A-Za-z][A-Za-z ]*?):(.*)$")
+_LABEL_WORDS = ("Security", "Meeting Type", "Meeting Date", "Ticker", "ISIN")
+_IDENT_LABELS = frozenset({"Security", "Ticker", "ISIN"})
+# Word/HTML style fragments that some filings leave between sections (amendment PE-I).
+_STYLE_MARKS = ("mso-", "font-family", "&quot;", "height:", "justify;")
 _DATE = re.compile(r"^(\d{2})-([A-Z][a-z]{2})-(\d{4})$")
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.\-]*\)?$")
 _HEADER_RE = re.compile(r"^Prop\.#\s+Proposal\s+Proposal\s+Proposal Vote\s+For/Against\s*$")
 _HEADER2_RE = re.compile(r"^\s+Type\s+Management\s*$")
+
+
+def _ci(s: str) -> str:
+    """PE-I: some filings print every capital I as a lower-case i; compare labels with
+    i standing for I.  Used on label / column-header words only, never on free text."""
+    return s.replace("i", "I")
+
+
+def _label(line: str) -> tuple[str, str] | None:
+    """(canonical label, value) for a header-block label line, else None."""
+    m = _LABEL.match(line)
+    if not m:
+        return None
+    word = " ".join(m.group(1).split())
+    for canon in _LABEL_WORDS:
+        if _ci(word) == _ci(canon):
+            return canon, m.group(2)
+    return None
+
+
+def _is_style(line: str) -> bool:
+    return any(k in line for k in _STYLE_MARKS)
 
 
 def _iso_date(s: str) -> str:
@@ -118,9 +144,12 @@ def _run(text: str, out: list[dict] | None) -> dict:
         line = lines[i]
         # fund heading: text line directly followed by a dash line
         if (i + 1 < n and line.strip() and not _is_dash(line) and _is_dash(lines[i + 1])
-                and not _LABEL.match(line) and "Agenda Number:" not in line):
+                and not _label(line) and "Agenda Number:" not in line):
             nxt = lines[i + 2] if i + 2 < n else ""
-            if "Agenda Number:" in nxt or "held no voting" in nxt:
+            if _is_style(line):
+                fund = None  # a style fragment is never a heading
+                st["unknown_headings"] += 1
+            elif "Agenda Number:" in nxt or "held no voting" in nxt:
                 fund = _norm(line)
             else:
                 fund = None  # unknown structure: never attribute votes to a stale fund
@@ -149,16 +178,21 @@ def _meeting(lines: list[str], i: int, fund: str | None, st: dict,
     st["meetings_seen"] += 1
     m = _AGENDA.match(lines[i])
     issuer = _norm(m.group(1)) if m else ""
+    if _is_style(lines[i]):
+        issuer = ""
     agenda = _norm(m.group(2)) if m else ""
     j = i + 2
     labels: dict[str, str] = {}
     dup = False
     while j < n and not _is_dash(lines[j]):
-        lm = _LABEL.match(lines[j])
+        lm = _label(lines[j])
         if lm:
-            if lm.group(1) in labels:
+            if lm[0] in labels:
                 dup = True
-            labels[lm.group(1)] = _norm(lm.group(2))
+            val = _norm(lm[1])
+            labels[lm[0]] = val.upper() if lm[0] in _IDENT_LABELS else val
+        elif _is_style(lines[j]):
+            pass  # style fragment: not part of the header block
         elif lines[j].strip():
             dup = True  # unexpected line inside the header block
         j += 1
@@ -201,7 +235,7 @@ def _meeting(lines: list[str], i: int, fund: str | None, st: dict,
         line = lines[j]
         if _is_dash(line):
             break
-        if not line.strip():
+        if not line.strip() or (_is_style(line) and not (j + 1 < n and _is_dash(lines[j + 1]))):
             j += 1
             continue
         if j + 1 < n and _is_dash(lines[j + 1]) and line[:1] != " ":

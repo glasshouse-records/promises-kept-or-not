@@ -217,3 +217,54 @@ def test_amend1_no_vote_and_split_dropped_ids_literal():
     d = _doc(_row("2)", "A", "Mgmt", "No vote", "") + _row("3.", "B", "Mgmt", "Split 50% For 50% Against", "Split")
              + _row("4.", "C", "Mgmt", "For", "For"))
     assert [r["proposal_id"] for r in pe.parse(d)] == ["4."]
+
+
+# -- amendment PE-I: capital I printed as lower-case i ------------------------
+
+def test_pe_i_mangled_capital_i_document():
+    text = (FIX / "mangled_i.txt").read_text()
+    rows = pe.parse(text)
+    stats = pe.parse_stats(text)
+    assert len(rows) == 13 and stats["meetings_seen"] == 2 and stats["meetings_dropped"] == 0
+    assert {r["fund_name"] for r in rows} == {"JPMorgan Active China ETF"}
+    first = rows[0]
+    assert first["issuer_name"] == "AiER EYE HOSPiTAL GROUP CO LTD"  # kept as printed
+    assert first["isin"] == "CNE100000GR6" and first["security_id"] == "Y0029J108"
+    assert first["meeting_date"] == "2023-05-30" and first["meeting_type"] == "AGM"
+    texts = {r["proposal_text"] for r in rows}
+    assert "APPROVE REPORT OF THE BOARD OF DiRECTORS" in texts
+    assert "2022 WORK REPORT OF THE SUPERViSORY COMMiTTEE" in texts
+    from glasshouse.ingest.legacy_pe import classify_security_id
+    assert classify_security_id(first["security_id"]) == ("Y0029J108", "")
+    assert classify_security_id(first["isin"]) == ("", "CNE100000GR6")
+    for r in rows:
+        for k in ("security_id", "isin", "ticker"):
+            assert r[k] == r[k].upper()
+        blob = " ".join(str(v) for v in r.values())
+        assert not any(m in blob for m in ("mso-", "font-family", "&quot;", "height:", "justify;"))
+
+
+def test_pe_i_identifiers_uppercased_and_labels_only_i_tolerant():
+    doc = _doc(_row("1", "ELECT A DiRECTOR", "Mgmt", "For", "For"))
+    doc = doc.replace("ISIN:  US0001112220", "iSiN:  us0001112220").replace(
+        "Ticker:  ACM", "Ticker:  acm")
+    r = pe.parse(doc)
+    assert len(r) == 1
+    assert (r[0]["isin"], r[0]["ticker"]) == ("US0001112220", "ACM")
+    assert r[0]["proposal_text"] == "ELECT A DiRECTOR"
+    # no other label tolerance: a misspelt label makes the header block ambiguous
+    bad = _doc(_row("1", "X", "Mgmt", "For", "For")).replace("ISIN:", "ISN:")
+    assert pe.parse(bad) == []
+
+
+def test_pe_i_style_fragment_never_heading_issuer_or_proposal():
+    frag = 'font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:&quot;X&quot;"'
+    doc = _doc(_row("1", "ELECT A DIRECTOR", "Mgmt", "For", "For")
+               + frag + "\n" + _row("2", "RATIFY AUDITOR", "Mgmt", "For", "For"))
+    doc = frag + "\n" + doc
+    rows = pe.parse(doc)
+    assert [r["proposal_text"] for r in rows] == ["ELECT A DIRECTOR", "RATIFY AUDITOR"]
+    assert {r["fund_name"] for r in rows} == {"Test Fund"}
+    # a style fragment directly above a dash line is not a heading: the meeting is dropped
+    doc2 = doc.replace("Test Fund\n", frag + "\n", 1)
+    assert pe.parse(doc2) == []
