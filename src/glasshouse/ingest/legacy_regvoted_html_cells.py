@@ -28,6 +28,7 @@ ANY_COL = VOTES | RECS | PROPS
 ID_RE = re.compile(r"\d+(?:\.(?:\d+|[A-Za-z]))*[A-Za-z]?\.?")
 MONTHS = {m: i for i, m in enumerate(
     ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"), 1)}
+FURNITURE_RE = re.compile(r"Page\s*\|\s*\d+|Page\s+\d+|\d+")
 DATE_RE = re.compile(r"(\d{1,2})-([A-Za-z]{3})-(\d{2})")
 
 
@@ -36,16 +37,17 @@ def _clean(s: str) -> str:
 
 
 class _Tok(HTMLParser):
-    """Collects (table_index, [non-empty cell values]) for every <tr> of every <table>."""
+    """One stream of rows in document order: every <tr>, plus every leaf <div>/<p> outside
+    a table as a one-value row (HR1). Rows are lists of non-empty cell values."""
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.rows: list[tuple[int, list[str]]] = []
-        self.table = 0
+        self.rows: list[list[str]] = []
         self.depth = 0
         self.row: list[str] | None = None
         self.cell: list[str] | None = None
         self.skip = 0
+        self.blocks: list[dict] = []  # open div/p outside tables
 
     def _end_cell(self):
         if self.cell is not None and self.row is not None:
@@ -57,16 +59,31 @@ class _Tok(HTMLParser):
     def _end_row(self):
         self._end_cell()
         if self.row:
-            self.rows.append((self.table, self.row))
+            self.rows.append(self.row)
         self.row = None
+
+    def _pop_block(self):
+        b = self.blocks.pop()
+        if not b["child"]:
+            v = _clean("".join(b["text"]))
+            if v:
+                self.rows.append([v])
 
     def handle_starttag(self, tag, attrs):
         if tag in ("script", "style"):
             self.skip += 1
+        elif tag in ("div", "p") and not self.depth:
+            if self.blocks and self.blocks[-1]["tag"] == "p":
+                self._pop_block()  # an unclosed <p> ends at the next block
+            if self.blocks:
+                self.blocks[-1]["child"] = True
+            self.blocks.append({"tag": tag, "child": False, "text": []})
         elif tag == "table":
+            if not self.depth:
+                for b in self.blocks:
+                    b["child"] = True
             self._end_row()
             self.depth += 1
-            self.table += 1
         elif tag == "tr" and self.depth:
             self._end_row()
             self.row = []
@@ -77,22 +94,33 @@ class _Tok(HTMLParser):
     def handle_endtag(self, tag):
         if tag in ("script", "style"):
             self.skip = max(0, self.skip - 1)
+        elif tag in ("div", "p") and not self.depth:
+            if tag == "div":
+                while self.blocks and self.blocks[-1]["tag"] == "p":
+                    self._pop_block()
+            if self.blocks and self.blocks[-1]["tag"] == tag:
+                self._pop_block()
         elif tag == "table":
             self._end_row()
             self.depth = max(0, self.depth - 1)
-            self.table += 1
         elif tag == "tr":
             self._end_row()
         elif tag in ("td", "th"):
             self._end_cell()
 
     def handle_data(self, data):
-        if self.cell is not None and not self.skip:
+        if self.skip:
+            return
+        if self.cell is not None:
             self.cell.append(data)
+        elif self.blocks and not self.depth:
+            self.blocks[-1]["text"].append(data)
 
     def close(self):
         super().close()
         self._end_row()
+        while self.blocks:
+            self._pop_block()
 
 
 def _is_col(v: list[str]) -> bool:
@@ -139,17 +167,37 @@ def _security(v: list[str]):
     return rest.strip(), ticker.strip()
 
 
+def _date_with_type(i, vals):
+    """Meeting Date row at i (+ HR3 'Meeting Type: X' row after it) -> (date, type, next index).
+    type is None on a conflict between the two."""
+    d, mt = _date_row(vals(i))
+    i += 1
+    tv = vals(i)
+    if len(tv) == 1 and tv[0].startswith("Meeting Type:"):
+        t2 = tv[0][len("Meeting Type:"):].strip()
+        if mt and t2 and t2 != mt:
+            return d, None, i + 1
+        mt = mt or t2
+        i += 1
+    return d, mt, i
+
+
 def _run(text: str) -> tuple[list[dict], Counter]:
     st: Counter = Counter()
     tok = _Tok()
     tok.feed(text)
     tok.close()
-    rows = tok.rows
+    rows = []
+    for r in tok.rows:
+        if len(r) == 1 and FURNITURE_RE.fullmatch(r[0]):
+            st["page_furniture"] += 1  # HR4
+        else:
+            rows.append(r)
     n = len(rows)
     out: list[dict] = []
 
     def vals(i):
-        return rows[i][1] if 0 <= i < n else []
+        return rows[i] if 0 <= i < n else []
 
     def is_header(i):
         return vals(i) == HEADER
@@ -191,13 +239,9 @@ def _run(text: str) -> tuple[list[dict], Counter]:
     fund = None
     cur: _Meeting | None = None
     inherit_ok = False  # the previous row closed a proposal, or was a repeated header
-    last_table = None
     i = 0
     while i < n:
-        table, v = rows[i]
-        if last_table is not None and table != last_table and cur is not None and not cur.dropped:
-            drop_open(cur)
-        last_table = table
+        v = rows[i]
         # heading row: a one-value row directly before the column header (handled there)
         if len(v) == 1 and is_header(i + 1):
             i += 1
@@ -225,21 +269,34 @@ def _run(text: str) -> tuple[list[dict], Counter]:
             finalize(cur)
             sec, ticker = _security(vals(i + 1))
             inherit_ok = False
-            if not sec:
-                # DECISION: an empty Security ID is not an identity; drop the meeting.
+            j = i + 2
+            tv = vals(j)
+            if len(tv) == 1 and tv[0].startswith("Ticker:"):  # HR3
+                t2 = tv[0][len("Ticker:"):].strip()
+                if ticker and t2 and t2 != ticker:
+                    ticker = None  # DECISION: conflicting tickers drop the meeting
+                elif t2:
+                    ticker = t2
+                j += 1
+            if ticker is None:
                 cur = _Meeting(fund, dropped=True)
-                st["meeting_dropped_no_security_id"] += 1
-                i += 2
-            elif not is_date(i + 2):
+                st["meeting_dropped_ticker_conflict"] += 1
+                i = j
+            elif not is_date(j):
                 cur = _Meeting(fund, dropped=True)
                 st["meeting_dropped_no_date_row"] += 1
-                i += 2
+                i = j
             else:
-                d, mt = _date_row(vals(i + 2))
-                cur = _Meeting(fund, v[0], sec, ticker, d or "", mt, dropped=d is None)
-                if d is None:
+                d, mt, j = _date_with_type(j, vals)
+                if mt is None:
+                    cur = _Meeting(fund, dropped=True)
+                    st["meeting_dropped_type_conflict"] += 1
+                elif d is None:
+                    cur = _Meeting(fund, dropped=True)
                     st["meeting_dropped_bad_date"] += 1
-                i += 3
+                else:
+                    cur = _Meeting(fund, v[0], sec, ticker, d, mt)
+                i = j
             continue
         if is_sec(i):
             if cur is not None and not cur.dropped:
@@ -252,7 +309,9 @@ def _run(text: str) -> tuple[list[dict], Counter]:
         if is_date(i):
             prev = cur
             finalize(prev)
-            d, mt = _date_row(v)
+            d, mt, j = _date_with_type(i, vals)
+            if mt is None:
+                d = None
             if prev is None or prev.dropped or not inherit_ok:
                 cur = _Meeting(fund, dropped=True)
                 st["meeting_dropped_bare_date"] += 1
@@ -262,7 +321,7 @@ def _run(text: str) -> tuple[list[dict], Counter]:
             else:
                 cur = _Meeting(fund, prev.issuer, prev.sec, prev.ticker, d, mt)
             inherit_ok = False
-            i += 1
+            i = j
             continue
         if cur is None or cur.dropped:
             st["row_outside_live_meeting"] += 1

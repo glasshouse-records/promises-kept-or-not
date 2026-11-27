@@ -151,3 +151,65 @@ def test_entities_and_nbsp():
 def test_bad_date_drops_meeting():
     d = doc(tr("Foo"), tr("Security ID: X1"), tr("Meeting Date: 31-Feb-23"), prop("1", "A"))
     assert c.parse(d) == []
+
+
+# ---- amendments HR1-HR5 ----
+
+def div(x):
+    return f"<div>{x}</div>"
+
+
+def test_hr1_div_rows_between_tables():
+    d = ("<body><p><b>Fund Z</b></p><table>" + HDR + "</table>" + div("<b>ABB LTD.</b>")
+         + div("<i>Security ID: 000375204</i>") + div("Ticker: ABBN")
+         + div("Meeting Date: 07-Sep-22") + div("Meeting Type: Extraordinary")
+         + "<table>" + prop("1", "A") + "</table></body>")
+    r = c.parse(d)
+    assert len(r) == 1
+    assert (r[0]["fund_heading"], r[0]["issuer_name"], r[0]["security_id"], r[0]["ticker"],
+            r[0]["meeting_type"], r[0]["meeting_date"]) == (
+        "Fund Z", "ABB LTD.", "000375204", "ABBN", "Extraordinary", "09/07/2022")
+
+
+def test_hr1_wrapper_div_and_div_in_table_are_not_rows():
+    d = ("<p>Fund Z</p><table>" + HDR + "</table><div>" + div("Foo") + div("Security ID: X1")
+         + div("Meeting Date: 01-Jan-23") + "</div><table>"
+         + tr("<div>1</div>", "<div>Approve A</div>", "Management", "For", "Voted - For")
+         + "</table>")
+    r = c.parse(d)
+    assert [(x["issuer_name"], x["proposal_text"]) for x in r] == [("Foo", "Approve A")]
+
+
+def test_hr1_unclosed_p():
+    d = "<p>Fund Z</p><table>" + HDR + "".join(ABB) + prop("1", "A") + "</table>"
+    assert len(c.parse(d)) == 1
+
+
+def test_hr2_tables_are_not_breaks():
+    d = ("<table>" + tr("<b>F</b>") + HDR + "".join(ABB) + tr("1", "Approve")
+         + "</table><table>" + tr("of things", "Management", "For", "Voted - For") + "</table>")
+    r = c.parse(d)
+    assert [x["proposal_text"] for x in r] == ["Approve of things"]
+
+
+def test_hr3_ticker_and_type_rows():
+    d = doc(tr("Foo"), tr("Security ID: X1"), tr("Ticker: FOO"), tr("Meeting Date: 01-Jan-23"),
+            tr("Meeting Type: Annual"), prop("1", "A"), tr("Meeting Date: 02-Jan-23"),
+            tr("Meeting Type: Special"), prop("1", "B"))
+    r = c.parse(d)
+    assert [(x["ticker"], x["meeting_type"]) for x in r] == [("FOO", "Annual"),
+                                                              ("FOO", "Special")]
+
+
+def test_hr4_page_furniture_ignored():
+    d = doc(*ABB, tr("1", "Approve"), tr("Page | 3"), tr("Page 4"), tr("5"),
+            tr("of things", "Management", "For", "Voted - For"))
+    r = c.parse(d)
+    assert r[0]["proposal_text"] == "Approve of things"
+    assert c.parse_stats(d)["page_furniture"] == 3
+
+
+def test_hr5_empty_security_id_kept():
+    r = c.parse(doc(tr("Foo"), tr("Security ID:"), tr("Meeting Date: 01-Jan-23"),
+                    prop("1", "A")))
+    assert len(r) == 1 and r[0]["security_id"] == ""
