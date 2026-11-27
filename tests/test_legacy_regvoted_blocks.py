@@ -220,3 +220,42 @@ def test_r1_orphan_proposal_lines_dropped_and_counted():
     text = doc(ROW + MEET + ROW)
     assert len(parse(text)) == 1
     assert parse_stats(text)["orphan_lines_before_first_meeting"] == 1
+
+
+def test_r2_sub_adviser_line_between_heading_and_header_is_ignored():
+    text = ("                    Global X Emerging Markets ETF\n"
+            "          Sub-Adviser: Mirae Asset Global Investments\n" + HDR + "\n" + MEET + ROW)
+    rows = parse(text)
+    assert [r["fund_heading"] for r in rows] == ["Global X Emerging Markets ETF"]
+
+
+def test_r2_ticker_may_follow_security_id_without_space():
+    m = "ACME CORP.\n Security ID: J6384J101Ticker: 3993\n Meeting Date: 05-May-23           Meeting Type: Annual\n"
+    r = parse(doc(m + ROW))[0]
+    assert (r["security_id"], r["ticker"]) == ("J6384J101", "3993")
+
+
+def test_r2_drifted_columns_with_wide_gaps_are_read_by_their_own_gaps():
+    # real Regeneron lines: proponent/rec/vote shifted left of the header offsets
+    body = MEET + (
+        " 1  Elect Joseph L. Goldstein                            Management  For     Voted - Against\n"
+        " 2  Frequency of Advisory Vote on Executive Compensation Management  1 Year  Voted - 1 Year\n")
+    rows = parse(doc(body))
+    assert [(r["proposal_text"], r["proponent"], r["rec"], r["vote"]) for r in rows] == [
+        ("Elect Joseph L. Goldstein", "Management", "For", "Against"),
+        ("Frequency of Advisory Vote on Executive Compensation", "Management", "1 Year", "1 Year")]
+
+
+def test_r2_squeezed_single_space_columns_stay_dropped():
+    # real Daimler Truck line: 'For' and 'Voted - For' share one space, so the contract cannot
+    # place the rec/vote boundary without a vocabulary: dropped, never guessed
+    body = MEET + (
+        " 1  Issuance of A Shares\n"
+        "      2024 AGM                                                         Management   For Voted - For\n")
+    assert parse(doc(body)) == []
+
+
+def test_issuer_must_be_directly_above_security_id():
+    m = "ACME CORP.\n\n Security ID: 00287Y109  Ticker: ACME\n Meeting Date: 05-May-23           Meeting Type: Annual\n"
+    assert parse(doc(m + ROW)) == []
+    assert parse_stats(doc(m + ROW))["dropped_no_issuer"] == 1

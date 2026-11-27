@@ -26,7 +26,8 @@ _TAG = re.compile(r"<[^>]*>")
 _COMMENT = re.compile(r"<!--.*?-->", re.S)
 _HEADER = re.compile(
     r"^\s*Proposal\s+(?P<p>Proposed\s+by)\s+(?P<m>Mgt\.\s+Position)\s+(?P<r>Registrant\s+Voted)\s*$", re.I)
-_SECURITY = re.compile(r"^\s*Security ID:\s*(?P<sid>(?!Ticker:)\S+)?\s*(?:Ticker:\s*(?P<tick>\S+)?)?\s*$")
+_SECURITY = re.compile(r"^\s*Security ID:(?P<sid>.*?)(?:Ticker:\s*(?P<tick>\S+)?)?\s*$")
+_SUB_ADVISER = re.compile(r"^\s*Sub-Adviser:")
 _MEETING = re.compile(r"^\s*Meeting Date:\s*(?P<date>\S+)\s+Meeting Type:(?P<type>.*)$")
 _DATE = re.compile(r"^(\d{2})-([A-Za-z]{3})-(\d{2})$")
 _MONTHS = {m: i + 1 for i, m in enumerate(
@@ -38,6 +39,7 @@ _CAST = frozenset({"For", "Against", "Abstain", "Withhold", "Withheld", "1 Year"
 # A proponent word may overrun its column start by this many characters when the proposal text
 # above it is too long; the cut is then moved to the start of that word.
 _OVERRUN = 3
+_DRIFT = 8
 
 KEYS = ("fund_heading", "issuer_name", "ticker", "security_id", "meeting_date",
         "meeting_status", "meeting_type", "country", "proposal_id", "proposal_text",
@@ -57,15 +59,20 @@ def _sections(lines: list[str]) -> list[tuple[str | None, list[tuple[str, tuple[
     heading_at: dict[int, int | None] = {}
     consumed: set[int] = set()
     prev = None
+    subs: list[int] = []  # Sub-Adviser lines since the last real line (R2: ignored)
     for i, ln in enumerate(lines):
         m = _HEADER.match(ln)
         if m:
+            consumed.update(subs)
             headers[i] = (m.start("p"), m.start("m"), m.start("r"))
             heading_at[i] = prev
             if prev is not None:
                 consumed.add(prev)
-        if ln.strip():
+        if _SUB_ADVISER.match(ln):
+            subs.append(i)
+        elif ln.strip():
             prev = i
+            subs = []
     sections: list[tuple[str | None, list]] = []
     cur_head: str | None = None
     offs = None
@@ -86,6 +93,34 @@ def _sections(lines: list[str]) -> list[tuple[str | None, list[tuple[str, tuple[
 
 def _cols(line: str, offs: tuple[int, int, int]):
     """None (no columns), 'bad' (cannot be placed), or (text_end, proponent, rec, vote)."""
+    got = _cols_cut(line, offs)
+    return _cols_gaps(line, offs) or got if got == "bad" else got
+
+
+def _cols_gaps(line: str, offs: tuple[int, int, int]):
+    """Drift fallback: from the proponent word on, exactly three fields separated by runs of
+    2+ spaces, each starting within `_DRIFT` characters of its header offset."""
+    c1 = offs[0]
+    if len(line) <= c1:
+        return None
+    s = c1
+    if not line[c1 - 1].isspace() and not line[c1].isspace():  # a word straddles the cut
+        while s > 0 and not line[s - 1].isspace():
+            s -= 1
+        if c1 - s > _OVERRUN:
+            return None
+    else:
+        while s < len(line) and line[s].isspace():
+            s += 1
+        if s - c1 > _DRIFT:
+            return None
+    fields = [(s + m.start(), m.group()) for m in re.finditer(r"\S+(?: \S+)*", line[s:])]
+    if len(fields) != 3 or any(abs(st - o) > _DRIFT for (st, _), o in zip(fields, offs)):
+        return None
+    return s, fields[0][1], fields[1][1], fields[2][1]
+
+
+def _cols_cut(line: str, offs: tuple[int, int, int]):
     c1, c2, c3 = offs
     if len(line.rstrip()) <= c1:
         return None
@@ -237,7 +272,7 @@ def _run(text: str) -> tuple[list[dict], Counter]:
                     stats["dropped_bad_security_line"] += 1
                     ident = None
                     continue
-                ident = (issuer, sec.group("sid") or "", sec.group("tick") or "")
+                ident = (issuer, sec.group("sid").strip(), sec.group("tick") or "")
                 lines = [(ln, o) for ln, o in items[sk + 1:stop] if ln.strip()]
             else:
                 if ident is None:
