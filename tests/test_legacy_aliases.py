@@ -230,14 +230,20 @@ def test_named_legacy_reingest_never_deletes_xml_votes(conn, monkeypatch):
     assert _votes(conn, "XML") == 1
 
 
-def test_named_legacy_no_cover_and_parsed_stay_skipped(conn, monkeypatch):
-    for rt in ("LEGACY_NO_COVER", "LEGACY_PARSED"):
-        conn.execute("DELETE FROM votes")
-        conn.execute("DELETE FROM filings")
-        _record(conn, rt)
-        st = _run(conn, monkeypatch, {"a": BASIC}, [ACC],
-                  legacy=True, legacy_iss_text=True, legacy_proxyedge=True)
-        assert st["skipped"] == 1 and _votes(conn) == 1
+def test_named_legacy_parsed_stays_skipped(conn, monkeypatch):
+    _record(conn, "LEGACY_PARSED")
+    st = _run(conn, monkeypatch, {"a": BASIC}, [ACC],
+              legacy=True, legacy_iss_text=True, legacy_proxyedge=True)
+    assert st["skipped"] == 1 and _votes(conn) == 1
+
+
+def test_named_legacy_no_cover_takes_the_upgrade_path_under_a_legacy_flag(conn, monkeypatch):
+    """Was asserted skipped (the (b4)(4) bug); a plain legacy run upgrades it, so must this."""
+    _record(conn, "LEGACY_NO_COVER")
+    st = _run(conn, monkeypatch, {"a": BASIC}, [ACC], legacy_iss_text=True)
+    assert st["skipped"] == 0 and st["filings"] == 1
+    assert conn.execute("SELECT report_type FROM filings WHERE accession=?",
+                        (ACC,)).fetchone()[0] != "LEGACY_NO_COVER"
 
 
 def test_reingest_with_a_wrong_format_keeps_the_old_rows(conn, monkeypatch):

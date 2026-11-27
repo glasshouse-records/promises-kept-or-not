@@ -147,3 +147,24 @@ def test_failed_reingest_keeps_the_old_votes(world):
     state["fail"] = True
     npx.ingest_npx(conn, "1", reingest={_filing(1).accession_number}, reingest_reason="x")
     assert _votes(conn) == before
+
+
+def _stub_no_cover(conn, acc):
+    conn.execute("DELETE FROM votes WHERE accession=?", (acc,))
+    conn.execute("UPDATE filings SET report_type='LEGACY_NO_COVER', partial=0 WHERE accession=?",
+                 (acc,))
+    conn.commit()
+
+
+def test_reingest_of_a_named_no_cover_filing_without_a_legacy_flag_warns_and_skips(world, caplog):
+    conn, state = world
+    state["fail"] = False
+    npx.ingest_npx(conn, "1")
+    a1 = _filing(1).accession_number
+    _stub_no_cover(conn, a1)
+    with caplog.at_level("WARNING"):
+        stats = npx.ingest_npx(conn, "1", reingest={a1}, reingest_reason="x")
+    assert stats["filings"] == 0
+    assert conn.execute("SELECT report_type FROM filings WHERE accession=?",
+                        (a1,)).fetchone()[0] == "LEGACY_NO_COVER"
+    assert any(a1 in r.message and "LEGACY_NO_COVER" in r.message for r in caplog.records)

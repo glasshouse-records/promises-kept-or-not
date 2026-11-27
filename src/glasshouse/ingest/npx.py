@@ -255,10 +255,20 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                 # are never touched: it deletes only legacy_format IS NOT NULL votes)
                 _reingest_legacy(conn, filing, institution_id, today, fam, stats)
                 continue
-            if rt.startswith("LEGACY_"):
+            if rt == "LEGACY_NO_COVER" and filing.accession_number in reingest:
+                if legacy_proxyedge or legacy_iss_text or legacy_issueno_flag:
+                    pass       # falls to the same upgrade_no_cover path a plain legacy run takes
+                else:
+                    logger.warning("%s is LEGACY_NO_COVER: skipped — re-ingesting it needs one of "
+                                   "--legacy-proxyedge/--legacy-iss/--legacy-issueno",
+                                   filing.accession_number)
+                    stats["skipped"] += 1
+                    continue
+            elif rt.startswith("LEGACY_"):
                 stats["skipped"] += 1          # other legacy filings are not replaced here
                 continue
-            replace = True
+            else:
+                replace = True
         elif reingest and not exists:
             continue
         if exists and not replace:
