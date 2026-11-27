@@ -167,3 +167,14 @@ After R2 the parsers still differ on about 130 meetings, all cases the contract 
    nearest non-blank line.
 4. proposal_id also takes three-part forms (`3.1.1`). Ids like `O.1` / `S.1` stay outside the
    contract (meeting dropped).
+
+### Registrant Voted amendment R4 (2026-11-27)
+
+After R3 the parsers differ on 0.17%, but both glue page-break notes onto the previous
+proposal (AIA GROUP LTD 18-May-23 proposal 12 got "... 19 Apr 2023: Please Note That This is
+A Revision ... Thank You Non-Voting" appended; its vote was right, its text was not):
+1. A proposal is CLOSED once its column line has been read. Unnumbered lines that follow a
+   closed proposal (before the next proposal id, issuer, `Meeting Date:` or fund section)
+   are notes: ignored and counted, never proposal text, never a proposal.
+2. proposal_text: the proposal's text pieces joined with single spaces, internal runs of
+   whitespace collapsed to one space, stripped.
