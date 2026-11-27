@@ -324,3 +324,42 @@ def test_r4_second_column_line_after_a_closed_proposal_is_not_a_note():
     text = doc(body)
     assert parse(text) == []
     assert parse_stats(text)["dropped_columns_on_two_lines"] == 1
+
+
+R5_BODY = (
+    "ALPHA CORP\n Security ID: 037833100  Ticker: AAA\n Meeting Date: 19-Jul-22   Meeting Type: Annual\n"
+    " 1  Elect Alice                                          Management     For          Voted - For\n"
+    "BETA CORP\n{mid}"
+    " Meeting Date: 20-Jul-22   Meeting Type: Annual\n"
+    " 1  Approve Merger With Gamma                            Management     For          Voted - Against\n")
+
+
+def test_r5_issuer_without_security_line_does_not_inherit_previous_identity():
+    rows = parse(doc(R5_BODY.format(mid="")))
+    assert [r["issuer_name"] for r in rows] == ["ALPHA CORP"]
+    assert not [r for r in rows if "Gamma" in r["proposal_text"]]
+
+
+def test_r5_wrong_case_security_id_is_not_a_security_line():
+    rows = parse(doc(R5_BODY.format(mid=" Security Id: 999999999  Ticker: BBB\n")))
+    assert [r["issuer_name"] for r in rows] == ["ALPHA CORP"]
+
+
+def test_r5_dropped_meeting_leaves_no_identity_for_a_further_bare_date():
+    body = R5_BODY.format(mid="") + (
+        " Meeting Date: 21-Jul-22   Meeting Type: Annual\n"
+        " 1  Elect Bob                                            Management     For          Voted - For\n")
+    rows = parse(doc(body))
+    assert [r["issuer_name"] for r in rows] == ["ALPHA CORP"]
+    assert parse_stats(doc(body))["dropped_bare_meeting_not_after_column_line"] == 1
+    assert parse_stats(doc(body))["dropped_bare_meeting_without_previous"] == 1
+
+
+def test_r5_bare_date_after_column_line_or_page_header_still_inherits():
+    again = " Meeting Date: 09-Nov-22   Meeting Type: Special\n" + ROW
+    rows = parse(doc(MEET + ROW + again))
+    assert [r["meeting_date"] for r in rows] == ["05/05/2023", "11/09/2022"]
+    assert {r["issuer_name"] for r in rows} == {"ACME CORP."}
+    paged = MEET + ROW + "\n                    Global X Test ETF\n" + HDR + "\n" + again
+    rows = parse(doc(paged))
+    assert [r["meeting_date"] for r in rows] == ["05/05/2023", "11/09/2022"]

@@ -49,6 +49,9 @@ def to_lines(text: str) -> list[str]:
     return [ln.rstrip() for ln in text.split("\n")]
 
 
+_HDR_MARK = "\x00column-header"
+
+
 def _sections(lines: list[str]) -> list[tuple[str | None, list[tuple[str, tuple[int, int, int]]]]]:
     """(heading, [(line, header offsets)]) per fund; lines before the first header are dropped."""
     headers: dict[int, tuple[int, int, int]] = {}
@@ -80,6 +83,7 @@ def _sections(lines: list[str]) -> list[tuple[str | None, list[tuple[str, tuple[
                 sections.append((head, []))
                 cur_head = head
             offs = headers[i]
+            sections[-1][1].append((_HDR_MARK, offs))  # R5: where a repeated page header sat
             continue
         if offs is None or i in consumed:
             continue
@@ -196,6 +200,11 @@ def _meeting(heading: str, ident: tuple[str, str, str], rest: list[tuple[str, tu
     return rows
 
 
+def _eligible(items, prev_nb: dict[int, int], after_hdr: set[int], sk: int) -> bool:
+    """R5.1: may the bare Meeting Date at items[sk] inherit the previous meeting's identity?"""
+    return sk in after_hdr or (prev_nb[sk] >= 0 and _cols(items[prev_nb[sk]][0]) is not None)
+
+
 def _run(text: str) -> tuple[list[dict], Counter]:
     stats: Counter = Counter()
     rows: list[dict] = []
@@ -204,12 +213,27 @@ def _run(text: str) -> tuple[list[dict], Counter]:
         if not heading or _PAGE_NUMBER.match(heading):
             stats["dropped_bad_heading"] += 1
             continue
+        raw = items
+        items = []
+        after_hdr: set[int] = set()  # R5: bare dates whose nearest non-blank line above is a page header
+        hdr_seen = False
+        for ln, o in raw:
+            if ln == _HDR_MARK:
+                hdr_seen = True
+                continue
+            if ln.strip():
+                if hdr_seen and _MEETING.match(ln):
+                    after_hdr.add(len(items))
+                hdr_seen = False
+            items.append((ln, o))
         starts: list[tuple[int, int, str]] = []  # (first line of block, Security ID / Meeting Date index, kind)
         prev_sid = -2
         last_nb = -1
+        prev_nb: dict[int, int] = {}  # index of a non-blank line -> index of the non-blank line above it
         for i, (ln, _) in enumerate(items):
             if not ln.strip():
                 continue
+            prev_nb[i] = last_nb
             if ln.lstrip().startswith("Security ID:"):
                 prev_sid = i
                 starts.append((last_nb, i, "sid"))
@@ -240,8 +264,22 @@ def _run(text: str) -> tuple[list[dict], Counter]:
                 if ident is None:
                     stats["dropped_bare_meeting_without_previous"] += 1
                     continue
+                if not _eligible(items, prev_nb, after_hdr, sk):
+                    stats["dropped_bare_meeting_not_after_column_line"] += 1  # R5.2
+                    ident = None  # R5.3
+                    continue
                 lines = [(ln, o) for ln, o in items[k:stop] if ln.strip()]
-            rows.extend(_meeting(heading, ident, lines, stats))
+            if n + 1 < len(starts) and starts[n + 1][2] == "bare" and not _eligible(items, prev_nb, after_hdr, starts[n + 1][1]):
+                # R5: the lines between this block's last proposal and an undated block's bare date
+                # (its issuer line, a malformed Security ID line) are that block's, not notes of ours.
+                while lines and not _cols(lines[-1][0]) and not _PROPOSAL.match(lines[-1][0]):
+                    lines.pop()
+                    stats["ignored_note_line"] += 1
+            before = stats["meetings"]
+            got = _meeting(heading, ident, lines, stats)
+            if stats["meetings"] == before:
+                ident = None  # R5.3: a dropped meeting leaves no identity to inherit
+            rows.extend(got)
     return rows, stats
 
 
