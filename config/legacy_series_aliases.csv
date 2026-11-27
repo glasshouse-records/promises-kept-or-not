@@ -781,3 +781,53 @@ registrant_cik,heading,series_id,rule,note
 0000824036,RIF International Developed Markets Fund,S000006865,brand_prefix,header name 'International Developed Markets Fund' in 0001193125-23-224005: Russell Investment Company/Funds 'RIC '/'RIF ' prefix; reviewed 2026-11-23 (round 5)
 0000824036,RIF U.S. Small Cap Equity Fund,S000006864,brand_prefix,header name 'U.S. Small Cap Equity Fund' in 0001193125-23-224005: Russell Investment Company/Funds 'RIC '/'RIF ' prefix; reviewed 2026-11-23 (round 5)
 0000824036,RIF U.S. Strategic Equity Fund,S000006863,brand_prefix,header name 'U.S. Strategic Equity Fund' in 0001193125-23-224005: Russell Investment Company/Funds 'RIC '/'RIF ' prefix; reviewed 2026-11-23 (round 5)
+0000100334,Balanced,S000006192,short_name_fund_suffix,header name 'BALANCED FUND' in 0000100334-23-000052; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000100334,Growth,S000006205,short_name_fund_suffix,header name 'GROWTH FUND' in 0000100334-23-000052; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000100334,Heritage,S000006206,short_name_fund_suffix,header name 'HERITAGE FUND' in 0000100334-23-000052; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000100334,Select,S000006194,short_name_fund_suffix,header name 'SELECT FUND' in 0000100334-23-000052; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000100334,Small Cap Growth,S000006193,short_name_fund_suffix,header name 'SMALL CAP GROWTH FUND' in 0000100334-23-000052; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000100334,Sustainable Equity,S000006203,short_name_fund_suffix,header name 'SUSTAINABLE EQUITY FUND' in 0000100334-23-000052; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000100334,Ultra,S000006195,short_name_fund_suffix,header name 'ULTRA FUND' in 0000100334-23-000052; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000814680,VP Balanced,S000006707,short_name_fund_suffix,header name 'VP BALANCED FUND' in 0000814680-23-000099; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000814680,VP Capital Appreciation,S000006710,short_name_fund_suffix,header name 'VP CAPITAL APPRECIATION FUND' in 0000814680-23-000099; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000814680,VP Disciplined Core Value,S000006713,short_name_fund_suffix,header name 'VP DISCIPLINED CORE VALUE FUND' in 0000814680-23-000099; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000814680,VP Growth,S000006712,short_name_fund_suffix,header name 'VP GROWTH FUND' in 0000814680-23-000099; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000814680,VP International,S000006714,short_name_fund_suffix,header name 'VP INTERNATIONAL FUND' in 0000814680-23-000099; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000814680,VP Large Company Value,S000006715,short_name_fund_suffix,header name 'VP LARGE COMPANY VALUE FUND' in 0000814680-23-000099; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000814680,VP Mid Cap Value,S000006716,short_name_fund_suffix,header name 'VP MID CAP VALUE FUND' in 0000814680-23-000099; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000814680,VP Ultra,S000006717,short_name_fund_suffix,header name 'VP ULTRA FUND' in 0000814680-23-000099; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000814680,VP Value,S000006708,short_name_fund_suffix,header name 'VP VALUE FUND' in 0000814680-23-000099; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000827060,Disciplined Core Value,S000005979,short_name_fund_suffix,header name 'DISCIPLINED CORE VALUE FUND' in 0000827060-23-000074; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000827060,Disciplined Growth,S000005976,short_name_fund_suffix,header name 'DISCIPLINED GROWTH FUND' in 0000827060-23-000074; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000827060,Equity Growth,S000005977,short_name_fund_suffix,header name 'EQUITY GROWTH FUND' in 0000827060-23-000074; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000827060,Global Gold,S000005978,short_name_fund_suffix,header name 'GLOBAL GOLD FUND' in 0000827060-23-000074; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000827060,Small Company,S000005981,short_name_fund_suffix,header name 'SMALL COMPANY FUND' in 0000827060-23-000074; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000827060,Utilities,S000005982,short_name_fund_suffix,header name 'UTILITIES FUND' in 0000827060-23-000074; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000872825,Emerging Markets,S000006602,short_name_fund_suffix,header name 'EMERGING MARKETS FUND' in 0000872825-23-000068; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000872825,Emerging Markets Small Cap,S000053102,short_name_fund_suffix,header name 'EMERGING MARKETS SMALL CAP FUND' in 0000872825-23-000068; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000872825,Focused Global Growth,S000006603,short_name_fund_suffix,header name 'FOCUSED GLOBAL GROWTH FUND' in 0000872825-23-000068; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000872825,Focused International Growth,S000053101,short_name_fund_suffix,header name 'FOCUSED INTERNATIONAL GROWTH FUND' in 0000872825-23-000068; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000872825,Global Small Cap,S000053103,short_name_fund_suffix,header name 'GLOBAL SMALL CAP FUND' in 0000872825-23-000068; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000872825,International Growth,S000006605,short_name_fund_suffix,header name 'INTERNATIONAL GROWTH FUND' in 0000872825-23-000068; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000872825,International Opportunities,S000006606,short_name_fund_suffix,header name 'INTERNATIONAL OPPORTUNITIES FUND' in 0000872825-23-000068; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000872825,International Small-Mid Cap,S000048405,short_name_fund_suffix,header name 'INTERNATIONAL SMALL-MID CAP FUND' in 0000872825-23-000068; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000872825,International Value,S000006610,short_name_fund_suffix,header name 'INTERNATIONAL VALUE FUND' in 0000872825-23-000068; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000872825,Non-U.S. Intrinsic Value,S000063513,short_name_fund_suffix,header name 'NON-U.S. INTRINSIC VALUE FUND' in 0000872825-23-000068; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000908186,Equity Income,S000005776,short_name_fund_suffix,header name 'EQUITY INCOME FUND' in 0000908186-23-000061; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000908186,Focused Large Cap Value,S000005778,short_name_fund_suffix,header name 'FOCUSED LARGE CAP VALUE FUND' in 0000908186-23-000061; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000908186,Global Real Estate,S000031879,short_name_fund_suffix,header name 'GLOBAL REAL ESTATE FUND' in 0000908186-23-000061; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000908186,Mid Cap Value,S000005779,short_name_fund_suffix,header name 'MID CAP VALUE FUND' in 0000908186-23-000061; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000908186,Real Estate,S000005780,short_name_fund_suffix,header name 'REAL ESTATE FUND' in 0000908186-23-000061; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000908186,Small Cap Dividend,S000075489,short_name_fund_suffix,header name 'Small Cap Dividend Fund' in 0000908186-23-000061; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000908186,Small Cap Value,S000005781,short_name_fund_suffix,header name 'SMALL CAP VALUE FUND' in 0000908186-23-000061; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000908186,Value,S000005782,short_name_fund_suffix,header name 'VALUE FUND' in 0000908186-23-000061; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000908406,High Income,S000058290,short_name_fund_suffix,header name 'HIGH INCOME FUND' in 0000908406-23-000110; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000924211,Strategic Allocation: Aggressive,S000005931,short_name_fund_suffix,header name 'STRATEGIC ALLOCATION: AGGRESSIVE FUND' in 0000924211-23-000004; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000924211,Strategic Allocation: Conservative,S000005933,short_name_fund_suffix,header name 'STRATEGIC ALLOCATION: CONSERVATIVE FUND' in 0000924211-23-000004; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0000924211,Strategic Allocation: Moderate,S000005932,short_name_fund_suffix,header name 'STRATEGIC ALLOCATION: MODERATE FUND' in 0000924211-23-000004; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0001353176,Focused Dynamic Growth,S000012177,short_name_fund_suffix,header name 'FOCUSED DYNAMIC GROWTH FUND' in 0001353176-23-000005; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0001710607,Avantis Emerging Markets Equity,S000066462,short_name_fund_suffix,header name 'Avantis Emerging Markets Equity Fund' in 0001710607-23-000209; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0001710607,Avantis International Equity,S000066463,short_name_fund_suffix,header name 'Avantis International Equity Fund' in 0001710607-23-000209; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0001710607,Avantis International Small Cap Value,S000066455,short_name_fund_suffix,header name 'Avantis International Small Cap Value Fund' in 0001710607-23-000209; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0001710607,Avantis U.S. Equity,S000066460,short_name_fund_suffix,header name 'Avantis U.S. Equity Fund' in 0001710607-23-000209; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
+0001710607,Avantis U.S. Small Cap Value,S000066461,short_name_fund_suffix,header name 'Avantis U.S. Small Cap Value Fund' in 0001710607-23-000209; heading + ' Fund' equals exactly one header series; reviewed 2026-11-27
