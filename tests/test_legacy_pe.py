@@ -115,7 +115,7 @@ def test_to_vote_rows_maps_every_field():
                  "category_type": "", "vote_source": "ISSUER", "shares_on_loan": None,
                  "vote_series": "S000001447", "how_voted": "FOR", "shares_voted": None,
                  "management_recommendation": "FOR", "legacy_format": "proxyedge",
-                 "for_against_management": "For"}
+                 "for_against_management": "For", "proposal_number": "1"}
     assert info["funds_unmapped"] == {}
 
 
@@ -284,10 +284,10 @@ def test_dedupe_marks_two_identical_legacy_rows_once(conn):
     _ingest(conn)
     conn.execute("INSERT INTO votes (accession, issuer_name, cusip, isin, meeting_date, "
                  "vote_description, category_type, vote_source, vote_series, how_voted, "
-                 "management_recommendation, legacy_format, for_against_management) "
-                 "SELECT accession, issuer_name, cusip, isin, meeting_date, vote_description, "
+                 "management_recommendation, legacy_format, for_against_management, "
+                 "proposal_number) SELECT accession, issuer_name, cusip, isin, meeting_date, vote_description, "
                  "category_type, vote_source, vote_series, how_voted, management_recommendation, "
-                 "legacy_format, for_against_management FROM votes ORDER BY id LIMIT 1")
+                 "legacy_format, for_against_management, proposal_number FROM votes ORDER BY id LIMIT 1")
     conn.commit()
     ledger.dedupe_votes(conn)
     assert conn.execute("SELECT COUNT(*) FROM votes WHERE is_duplicate=1").fetchone()[0] == 1

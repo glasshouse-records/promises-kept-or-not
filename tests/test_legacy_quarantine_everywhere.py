@@ -99,7 +99,7 @@ ALLOW = [
     ("ledger.py", "SELECT MIN(v.id) FROM votes v"),          # dedupe: must see every row
     ("ledger.py", "SELECT COALESCE(MAX(id), 0) FROM votes"),  # id watermark for dedupe/integrity
     ("ledger.py", "SELECT COUNT(*) FROM votes v JOIN filings f"),  # integrity checks
-    ("ledger.py", "vote_series FROM votes WHERE is_duplicate = 0 AND accession IN"),  # integrity
+    ("ledger.py", "FROM votes WHERE is_duplicate = 0 AND accession IN"),  # integrity
     ("ledger.py", "SELECT v.id, v.accession FROM votes v"),   # integrity / dedupe
     ("engine.py", "SELECT MAX(id) FROM votes"),               # index watermark vs ledger growth
     ("release.py", "SELECT MAX(id) FROM votes"),              # release watermark

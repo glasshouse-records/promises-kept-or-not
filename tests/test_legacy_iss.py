@@ -221,7 +221,7 @@ def test_to_vote_rows_maps_every_field():
                  "category_type": "", "vote_source": "ISSUER", "shares_on_loan": None,
                  "vote_series": SID, "how_voted": "FOR", "shares_voted": None,
                  "management_recommendation": "FOR", "legacy_format": "iss_text",
-                 "for_against_management": None}
+                 "for_against_management": None, "proposal_number": "1"}
     assert info["unmapped"] == {} and info["contest_rows_dropped"] == 0
 
 

@@ -451,6 +451,7 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
             "vote_source": source, "shares_on_loan": None, "vote_series": sid,
             "how_voted": how, "shares_voted": None, "management_recommendation": rec,
             "legacy_format": "proxyedge", "for_against_management": fa,
+            "proposal_number": (r.get("proposal_id") or "").strip() or None,
         })
     info["funds_unmapped"] = dict(unmapped)
     return out, info
@@ -459,11 +460,11 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
 _INSERT = """INSERT INTO votes
     (accession, issuer_name, cusip, isin, meeting_date, vote_description, category_type,
      vote_source, shares_on_loan, vote_series, how_voted, shares_voted,
-     management_recommendation, legacy_format, for_against_management)
+     management_recommendation, legacy_format, for_against_management, proposal_number)
     VALUES (:accession,:issuer_name,:cusip,:isin,:meeting_date,:vote_description,
             :category_type,:vote_source,:shares_on_loan,:vote_series,:how_voted,
             :shares_voted,:management_recommendation,:legacy_format,
-            :for_against_management)"""
+            :for_against_management,:proposal_number)"""
 
 
 def is_candidate(filing: Filing) -> bool:
@@ -523,7 +524,7 @@ def record_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
         for name, meetings, st, votes, info in parsed:
             n = 0
             if accepted:
-                conn.executemany(_INSERT, [{**v, "accession": acc} for v in votes])
+                conn.executemany(_INSERT, [{"proposal_number": None, **v, "accession": acc} for v in votes])
                 n = len(votes)
             inserted += n
             conn.execute(

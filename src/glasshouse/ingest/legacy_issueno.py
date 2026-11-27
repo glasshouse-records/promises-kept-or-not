@@ -190,6 +190,7 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
                 HOW_VOTED.get(r["rec"], ""), how),
             "legacy_format": legacy_format,
             "for_against_management": FOR_AGAINST.get(r["for_against"]),
+            "proposal_number": (r.get("proposal_id") or "").strip() or None,
         })
     info["unmapped"] = dict(unmapped)
     return out, info

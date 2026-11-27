@@ -414,7 +414,9 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.commit()
     # Legacy (2022-23) ProxyEdge text votes: NULL for XML votes, 'proxyedge' for these.
     # for_against_management is the document's own For/Against-Management column, raw.
-    for col in ("legacy_format", "for_against_management"):
+    # proposal_number: the printed item number of a legacy line (NULL for XML), so distinct items
+    # with identical text stay apart in dedupe and the engine.
+    for col in ("legacy_format", "for_against_management", "proposal_number"):
         if col not in vcols:
             conn.execute(f"ALTER TABLE votes ADD COLUMN {col} TEXT")
             conn.commit()
@@ -532,7 +534,8 @@ def dedupe_votes(conn: sqlite3.Connection, ciks: list[str] | None = None) -> int
                {where}
                GROUP BY f.cik, f.period_of_report, v.issuer_name, v.cusip,
                         v.meeting_date, v.vote_description, v.vote_series,
-                        v.how_voted, v.shares_voted)""", args + args)
+                        v.how_voted, v.shares_voted, COALESCE(v.proposal_number, ''))""",
+                     args + args)
     marked = cur.rowcount + _supersede_amended(conn, ciks)
     from datetime import datetime
     top = conn.execute("SELECT COALESCE(MAX(id), 0) FROM votes").fetchone()[0]
@@ -576,7 +579,7 @@ def _supersede_amended(conn: sqlite3.Connection, ciks: list[str] | None) -> int:
         amended = {acc for acc, form in filings if form == "N-PX/A"}
         rows = conn.execute(
             f"SELECT id, accession, issuer_name, cusip, meeting_date, vote_description, "
-            f"vote_series FROM votes WHERE is_duplicate = 0 AND accession IN "
+            f"vote_series, COALESCE(proposal_number, '') FROM votes WHERE is_duplicate = 0 AND accession IN "
             f"({','.join('?' * len(rank))})", list(rank)).fetchall()
         latest: dict[tuple, int] = {}
         for r in rows:

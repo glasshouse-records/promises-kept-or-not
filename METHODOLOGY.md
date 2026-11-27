@@ -1101,7 +1101,12 @@ both parsers read it.
   `Issuer` is read as a management item. 17 filings, 67,701 lines; both parsers agree on every
   row. Promoted after that review and a 16-row hand sample against the filings.
 - **Columns.** `legacy_format` is `proxyedge`, `iss_text`, `iss_html`, `issueno`, `issueno_html`, `regvoted` or `regvoted_html` (NULL for XML
-  rows). `shares_voted` is NULL: these formats print no share counts.
+  rows). `proposal_number` is the item number as printed (2022-23 legacy lines only; NULL
+  on XML lines): a fund can print two different items with identical text at one meeting
+  (Principal Funds 04/26/2023 prints one item 56 times, once per sub-fund; 'Instructions if
+  Meeting is Held on Second Call' appears as items 4 and 33), and the number keeps them apart in
+  de-duplication, N-PX/A supersession and the engine's decision groups. `shares_voted` is NULL:
+  these formats print no share counts.
   `management_recommendation` has the XML meaning: whether THIS vote went with (FOR)
   or against (AGAINST) management, not what management recommended. ProxyEdge prints
   it ("For"/"Against" Management) and it is copied. In the ISS layouts it is computed
