@@ -24,8 +24,9 @@ KEYS = ("fund_heading", "issuer_name", "ticker", "security_id", "meeting_date",
 
 _TAG = re.compile(r"</?[A-Za-z!][^<>]*>")
 _COLHDR = re.compile(r"^\s*Proposal\s+Proposed\s+by\s+Mgt\.?\s+Position\s+Registrant\s+Voted\s*$", re.I)
+_SUBADV = re.compile(r"^\s*Sub-Adviser:")
 _SECID_LINE = re.compile(r"^\s*Security ID:")
-_SECID = re.compile(r"^\s*Security ID:\s*(?P<sid>(?!Ticker:)\S*)(?:\s+Ticker:\s*(?P<tk>\S*))?\s*$")
+_SECID = re.compile(r"^\s*Security ID:\s*(?P<sid>\S*?)\s*(?:Ticker:\s*(?P<tk>\S*))?\s*$")
 _MEETING = re.compile(r"^\s*Meeting Date:\s*(?P<d>\S*)(?:\s+Meeting Type:\s*(?P<t>.*?))?\s*$")
 _DATE = re.compile(r"^(\d{1,2})-([A-Za-z]{3})-(\d{2})$")
 _PAGE_NO = re.compile(r"^\d{1,4}$")
@@ -35,13 +36,17 @@ _ID = r"\d+(?:\.[0-9A-Za-z]+)*[A-Za-z]?"
 # widest id of the page: "10 Shareholder ..." has ONE space in the real filing (36k lines).
 _PROPOSAL = re.compile(rf"^ ?(?P<id>{_ID})\s+(?P<rest>\S.*)$")
 _CONTINUATION = re.compile(r"^ {2,}\S")
-# Right-hand columns, anchored at the end of the line. The proponent is one of the
-# known words, or any one token set off from the text by two or more spaces.
+# Right-hand columns (R3.1): read from the END of the line with closed lists, one or
+# more spaces between fields; anything else is not a column line.
+_VOTE_RE = (
+    r"Voted - (?:For|Against|Abstain|Withhold|Withheld|Split|1 Year|2 Years|3 Years)"
+    r"|Voted -Abstain|Voted -- For|Voted|Take No Action|Non-Voting"
+)
 _COLS = re.compile(
     r"^(?P<head>.*?)(?:(?<=\s)|^)"
-    r"(?:(?P<prop>Management|Shareholder|N/A)|(?<=\s\s)(?P<prop2>\S+))"
-    r"\s+(?P<rec>\S+(?: Years?)?)\s+"
-    r"(?P<vote>Voted\b.*|Take No Action|Non-Voting)$"
+    r"(?P<prop>Management|Shareholder|N/A)\s+"
+    r"(?P<rec>For|Against|Abstain|Withhold|None|N/A|1 Year|2 Years|3 Years)\s+"
+    rf"(?P<vote>{_VOTE_RE})$"
 )
 
 
@@ -66,7 +71,7 @@ def _date(s: str) -> str | None:
 
 # 'Voted - X' loses its prefix only when X is a real vote; 'Voted - Split' and the
 # malformed spellings ('Voted -Abstain', 'Voted -- For', bare 'Voted') stay verbatim.
-_VOTED = {"For", "Against", "Abstain", "Withhold", "Withheld", "N/A",
+_VOTED = {"For", "Against", "Abstain", "Withhold", "Withheld",
           "1 Year", "2 Years", "3 Years"}
 
 
@@ -149,7 +154,13 @@ def _run(text: str) -> tuple[list[dict], Counter]:
             i += 1
             continue
         nxt = next_nonempty(i)
-        if nxt is not None and _COLHDR.match(L[nxt]):
+        if _SUBADV.match(line) and nxt is not None and _COLHDR.match(L[nxt]):
+            i += 1  # R2: the sub-adviser line between heading and header is ignored
+            continue
+        hn = nxt
+        while hn is not None and _SUBADV.match(L[hn]):
+            hn = next_nonempty(hn)
+        if hn is not None and _COLHDR.match(L[hn]):
             if line.strip() != fund:
                 close(meet)
                 meet = None
@@ -218,6 +229,11 @@ def _run(text: str) -> tuple[list[dict], Counter]:
             block = {"id": p.group("id"), "text": [], "cols": None, "ncols": 0}
             meet.blocks.append(block)
             body = p.group("rest")
+        elif not meet.blocks and not _COLS.match(line):
+            # R3.2: unnumbered notes between Meeting Date and the first proposal
+            stats["note_line_ignored"] += 1
+            i += 1
+            continue
         elif _CONTINUATION.match(line) and meet.blocks:
             block = meet.blocks[-1]
             body = line.strip()
@@ -228,7 +244,7 @@ def _run(text: str) -> tuple[list[dict], Counter]:
         c = _COLS.match(body)
         if c:
             block["ncols"] += 1
-            block["cols"] = (c.group("prop") or c.group("prop2"), c.group("rec"), c.group("vote").strip())
+            block["cols"] = (c.group("prop"), c.group("rec"), c.group("vote").strip())
             body = c.group("head").strip()
         if body:
             block["text"].append(" ".join(body.split()))

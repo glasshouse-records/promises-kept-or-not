@@ -113,11 +113,10 @@ def test_edge_cases_and_stats():
     assert [r["proposal_id"] for r in acme] == ["1", "3"]
     assert (acme[0]["security_id"], acme[0]["ticker"]) == ("", "ACM")
     last = by["LAST CO"]
-    assert [r["proposal_id"] for r in last] == ["1.A", "2", "1.B"]
-    assert last[1]["vote"] == "Voted - Voted"
-    assert last[2]["proponent"] == "Shareholder"
+    assert [r["proposal_id"] for r in last] == ["1.A", "1.B"]
+    assert last[1]["proponent"] == "Shareholder"
     s = m.parse_stats(text)
-    assert s["proposal_without_columns"] == 1
+    assert s["proposal_without_columns"] == 2  # ACME 2 (no vote) and LAST 2 (Voted - Voted)
     assert s["meeting_bad_date"] == 1
     assert s["meeting_unplaced_line"] == 1
     assert s["meeting_contest"] == 1
@@ -193,3 +192,84 @@ def test_r1_proposals_before_any_meeting_dropped_and_counted():
     text = _doc(P, P.replace(" 1 ", " 2 "))
     assert m.parse(text) == []
     assert m.parse_stats(text)["proposal_without_meeting"] == 2
+
+
+def test_r2_sub_adviser_line_is_not_the_heading():
+    text = (
+        "                    Global X Emerging Markets ETF\n"
+        "          Sub-Adviser: Mirae Asset Global Investments\n"
+        " Proposal                                                Proposed by Mgt. Position Registrant Voted\n"
+        "ACME CORP\n Security ID: 111111111  Ticker: ACM\n"
+        " Meeting Date: 19-Jul-22           Meeting Type: Annual\n" + P + "\n"
+        "6\n"
+        "                    Global X Emerging Markets ETF\n"
+        "          Sub-Adviser: Mirae Asset Global Investments\n"
+        " Proposal                                                Proposed by Mgt. Position Registrant Voted\n"
+        " 2   Another                                              Management     For          Voted - For\n"
+    )
+    rows = m.parse(text)
+    assert [r["fund_heading"] for r in rows] == ["Global X Emerging Markets ETF"] * 2
+    assert [r["proposal_id"] for r in rows] == ["1", "2"]  # repeat header continued the meeting
+
+
+def test_r2_ticker_glued_to_security_id():
+    text = _doc(
+        "PKSHA TECHNOLOGY INC.", " Security ID: J6384J101Ticker: 3993",
+        " Meeting Date: 23-Dec-22           Meeting Type: Annual", P,
+    )
+    (r,) = m.parse(text)
+    assert (r["security_id"], r["ticker"]) == ("J6384J101", "3993")
+
+
+def _one(body_line, issuer_gap=""):
+    return _doc(
+        "ACME CORP", issuer_gap + " Security ID: 1  Ticker: A",
+        " Meeting Date: 23-Dec-22           Meeting Type: Annual", body_line,
+    )
+
+
+def test_r3_squeezed_columns_closed_lists():
+    rows = m.parse(_one(" 1   Elect A     Management   For Voted - For"))
+    assert [(r["proposal_text"], r["proponent"], r["rec"], r["vote"]) for r in rows] == [
+        ("Elect A", "Management", "For", "For")]
+    r = m.parse(_one(" 1   Frequency Management 1 Year Voted - 1 Year"))[0]
+    assert (r["rec"], r["vote"]) == ("1 Year", "1 Year")
+    r = m.parse(_one(" 1   Opening     N/A    None   Non-Voting"))[0]
+    assert (r["proponent"], r["rec"], r["vote"]) == ("N/A", "None", "Non-Voting")
+    r = m.parse(_one(" 1   X     Shareholder    Against   Voted -- For"))[0]
+    assert r["vote"] == "Voted -- For"
+
+
+def test_r3_open_vocabulary_is_not_a_column_line():
+    # unknown proponent: not columns, so the proposal has none and is dropped
+    text = _one(" 1   Elect A     Chairman   For   Voted - For")
+    assert m.parse(text) == []
+    assert m.parse_stats(text)["proposal_without_columns"] == 1
+    # 'Voted - N/A' is outside the closed vote list
+    assert m.parse(_one(" 1   X   Management   For   Voted - N/A")) == []
+
+
+def test_r3_notes_before_first_proposal_ignored_and_counted():
+    text = _doc(
+        "ACME CORP", " Security ID: 1  Ticker: A",
+        " Meeting Date: 23-Dec-22           Meeting Type: Annual",
+        "    Please Note That the Company Notice and Proxy Form",
+        "      are available.",
+        P, "    Late note after a proposal",
+    )
+    (r,) = m.parse(text)
+    assert r["proposal_text"] == "Reclassification of Common Stock Late note after a proposal"
+    assert m.parse_stats(text)["note_line_ignored"] == 2
+
+
+def test_r3_blank_line_between_issuer_and_security_id():
+    (r,) = m.parse(_one(P, issuer_gap="\n"))
+    assert r["issuer_name"] == "ACME CORP"
+
+
+def test_r3_three_part_ids_but_not_o1_s1():
+    (r,) = m.parse(_one(" 3.1.1   Elect A     Management   For Voted - For"))
+    assert r["proposal_id"] == "3.1.1"
+    text = _one(" O.1   Elect A     Management   For Voted - For")
+    assert m.parse(text) == []
+    assert m.parse_stats(text)["meeting_unplaced_line"] == 1
