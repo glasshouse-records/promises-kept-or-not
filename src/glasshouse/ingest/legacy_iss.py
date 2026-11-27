@@ -181,6 +181,30 @@ _TAG = re.compile(r"<[^>]*>")
 _P_UNSAFE = re.compile(r"<br\b|[\r\n\t]", re.I)
 
 
+_DIV_ELEMENT = re.compile(r"<div\b[^>]*Courier New[^>]*>(.*?)</div>", re.I | re.S)
+_DIV_BLANK = re.compile(r"\s*<br\s*/?>\s*", re.I)
+_DIV_UNSAFE = re.compile(r"<(?:br|div|p|table|tr|td)\b|\t", re.I)
+
+
+def _courier_div_lines(doc: str) -> list[str] | None:
+    """Pioneer / Victory Capital print the same ISS text as one Courier New <div> per line,
+    with the source wrapped INSIDE lines ('Ticker:&#160;\\n      ADBE'). Rendered as HTML:
+    a run of literal whitespace is ONE space, a non-breaking space is one space; a div
+    holding only <br> is a blank line. Any other tag that could break or merge a line ->
+    None (the document is left alone)."""
+    lines = []
+    for m in _DIV_ELEMENT.finditer(doc):
+        body = m.group(1)
+        if _DIV_BLANK.fullmatch(body):
+            lines.append("")
+            continue
+        if _DIV_UNSAFE.search(body):
+            return None
+        text = re.sub(r"[ \r\n]+", " ", _TAG.sub("", body))
+        lines.append(html.unescape(text).replace("\xa0", " ").rstrip())
+    return lines
+
+
 def courier_html_to_text(doc: str) -> str | None:
     """ISS "FORM N-Px" text printed as HTML (one Courier New <P> per line, spaces as
     `&nbsp;` mixed with literal spaces) -> the plain text both ISS parsers read: one line
@@ -188,8 +212,13 @@ def courier_html_to_text(doc: str) -> str | None:
     space; literal spaces are kept, so fixed-width columns survive). None unless the ISS
     column header is absent from the raw document but present, on a single line, after
     conversion (so plain ISS text, other HTML and anything else are never touched)."""
-    if is_iss_text(doc) or "<P" not in doc:
+    if is_iss_text(doc):
         return None
+    if not re.search(r"<P\b[^>]*Courier New", doc, re.I):
+        lines = _courier_div_lines(doc) if "<div" in doc.lower() else None
+        if not lines or not any(_ISS_COLHDR.search(ln) for ln in lines):
+            return None
+        return "\n".join(lines) + "\n"
     lines = []
     for m in _P_ELEMENT.finditer(doc):
         if _P_UNSAFE.search(m.group(1)):

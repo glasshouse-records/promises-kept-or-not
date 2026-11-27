@@ -65,3 +65,40 @@ def test_refuses_line_breaks_or_tabs_inside_a_paragraph():
     i = doc.index("Proposal")
     for bad in ("<BR>", "<br/>", "\t", "\n"):
         assert legacy_iss.courier_html_to_text(doc[:i] + bad + doc[i:]) is None, repr(bad)
+
+
+# -- Courier <div> lines (Pioneer / Victory Capital, e.g. 0001102598-23-000050) ----------
+
+_D = ("<div style=\"font-family: 'Courier New',Courier,monospace; color: rgb(0, 0, 0);\">"
+      "{}</div>\n    ")
+DIV_DOC = "<html><body>" + "".join(_D.format(x) for x in (
+    "================ Pioneer Fund ================",
+    "<br>\n    ",
+    "ADOBE\n      INC.",
+    "Ticker:&#160;\n      ADBE&#160; &#160; Security ID: 00724F101",
+    "Meeting\n      Date: APR 20, 2023&#160; &#160; Meeting Type: Annual",
+    "Record\n      Date: FEB 21, 2023",
+    "#&#160;\n      &#160;&#160; Proposal&#160; &#160; &#160; &#160; &#160; &#160; Mgt Rec&#160; "
+    "&#160; Vote Cast&#160; &#160; Sponsor",
+    "1a&#160;\n      &#160; Elect Director Amy Banse&#160; &#160; &#160;&#160; For&#160; "
+    "&#160; &#160;&#160; For&#160; &#160; &#160; &#160; &#160; Management",
+)) + "</body></html>"
+
+
+def test_courier_div_lines_convert_with_html_whitespace_rules():
+    text = legacy_iss.courier_html_to_text(DIV_DOC)
+    assert text is not None
+    lines = text.split("\n")
+    assert lines[1] == ""                                # a <div><br></div> is a blank line
+    assert lines[2] == "ADOBE INC."                      # source wrapping is one space
+    assert "Ticker:" in lines[3] and "00724F101" in lines[3]
+    assert legacy_iss.is_iss_text(text)
+
+
+def test_courier_div_with_a_break_inside_text_is_refused():
+    bad = DIV_DOC.replace("ADOBE\n      INC.", "ADOBE<br>INC.")
+    assert legacy_iss.courier_html_to_text(bad) is None
+
+
+def test_div_documents_without_the_iss_header_are_left_alone():
+    assert legacy_iss.courier_html_to_text(DIV_DOC.replace("Vote Cast", "Vote")) is None
