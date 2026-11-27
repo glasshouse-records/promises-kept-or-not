@@ -197,3 +197,84 @@ parsers agree, so the gate cannot see it. R1.1 is narrowed:
 3. A dropped meeting leaves no identity to inherit: a later bare `Meeting Date:` with no new
    ` Security ID:` meeting in between is dropped too (counted).
 4. Matching stays as printed: `Security ID:` exactly (a ` Security Id:` line is not one).
+
+## Contract: "Registrant Voted" HTML-table layout (2026-11-27)
+
+The same columns as the text layout above, printed as HTML tables by SEI for The Advisors'
+Inner Circle Fund III (CIK 1593547; GQG and other advisers' series), one N-PX per fund
+(17 cached filings, 0001135428-23-000144 ... -000235, e.g. `democracy-npx2023.htm`):
+
+    <tr><td colspan=3><b>Democracy International Fund</b></td>...</tr>
+    <tr><td colspan=2><b>Proposal</b></td><td></td><td><b>Proposed by</b></td><td><b>Mgt. Position</b></td><td><b>Registrant Voted</b></td></tr>
+    <tr><td colspan=2><b>ABB LTD.</b></td>...</tr>
+    <tr><td colspan=2><i>Security ID: H0010V101</i></td><td><i>Ticker: ABBN</i></td>...</tr>
+    <tr><td colspan=2>Meeting Date: 07-Sep-22</td><td colspan=2>Meeting Type: Extraordinary Shareholders</td>...</tr>
+    <tr><td>1</td><td colspan=2>Approve Spin-Off of Accelleron Industries AG</td><td>Management</td><td>For</td><td>Voted - For</td></tr>
+
+Two parsers, written independently from this contract (`legacy_regvoted_html_cells`: an
+html.parser tokenizer building rows of cells; `legacy_regvoted_html_rows`: regex over
+`<tr>`/`<td>` markup), each expose `parse(text) -> list[dict]` with exactly the 14 keys of
+`legacy_issueno.KEYS`, the same value forms as the text layout (so the text wrapper's
+`translate` applies unchanged), and `parse_stats(text) -> Counter` of drops. Rules:
+
+H1. Rows and cells. Only `<tr>` rows of `<table>`s count. A cell's value: tags removed,
+    entities unescaped (once), `&nbsp;`/U+00A0 as a space, whitespace runs collapsed to one
+    space, stripped. A row's VALUES are its non-empty cell values in order; a row with none
+    is ignored. Cell positions and colspans are NOT used (they vary between filings and
+    within one: the same proposal row has 5 or 6 cells).
+H2. Column header row: values exactly `Proposal`, `Proposed by`, `Mgt. Position`,
+    `Registrant Voted`. fund_heading = the values of the nearest preceding non-ignored row
+    when it has exactly ONE value, joined as printed; otherwise the document is rejected
+    (nothing parsed). The header repeats after page breaks: the same heading continues the
+    current fund (and meeting), a different one starts a new fund.
+H3. Issuer row: a row with exactly one value, immediately followed (next non-ignored row)
+    by a Security ID row. issuer_name = that value. Security ID row: first value starts with
+    `Security ID:` (exact case). security_id = text after `Security ID:` up to `Ticker:` (or
+    the end of the value), stripped; ticker = text after `Ticker:`, found in the same value
+    or in the row's second value, stripped; '' if absent. As printed (two SEDOLs
+    `B44DPG3 BD5CMH2` stay as printed; validation is downstream).
+H4. Meeting Date row: first value starts with `Meeting Date:` (exact; `Meeting for ADR
+    Holders` or `Meeting of Board ...` are NOT meeting rows). meeting_date `DD-Mon-YY` ->
+    `MM/DD/20YY`; unreadable drops the meeting. meeting_type = text after `Meeting Type:`
+    in the same or the second value, stripped, '' if absent. country '', meeting_status ''.
+    A Meeting Date row that does not directly follow a Security ID row continues the
+    previous meeting's issuer/security_id/ticker ONLY if the row before it closed a
+    proposal (H6) of that previous meeting, or is a repeated column header (H2); otherwise
+    the meeting is dropped, and a dropped meeting leaves no identity for a later bare
+    Meeting Date (text amendments R1 and R5).
+H5. Column values (closed lists, read from the END of a row's values): vote = one of
+    `Voted - For|Against|Abstain|Withheld|Withhold|Split|1 Year|One Year|2 Years|3 Years|
+    Three Years`, `Did Not Vote`, `Do Not Vote`, `Take No Action`, `Non-Voting`; rec = one
+    of `For`, `Against`, `Abstain`, `Withhold`, `None`, `N/A`, `1 Year`, `One Year`,
+    `2 Years`, `3 Years`, `Three Years`, `Undetermined`, `Non-Voting`; proponent = one of
+    `Management`, `Issuer`, `Shareholder`, `N/A`, `Non-Voting`. A row whose last three
+    values are vote, rec, proponent from these lists (in that order from the end) is a
+    COLUMN row; anything else is not (a row ending in e.g. `Sharehold` or `W` is not a
+    column row).
+H6. Proposals. Inside a meeting (after its Meeting Date row), rows are read in order:
+    (a) a row whose first value is a proposal id (`1`, `12`, `1.1`, `1a`, `1.A`, `2.a`,
+        `3.1.1`; letters any case; optional trailing `.` removed) AND has a second value
+        that is not a column value starts a new proposal with that id; the id is not text.
+    (b) any other row continues the OPEN proposal (one started and not yet closed); with
+        no open proposal it starts a new proposal with proposal_id ''.
+    The values between the id (if any) and the column values are text pieces. A column
+    row CLOSES the proposal: proponent, rec, vote are its last three values. A proposal
+    not closed when the next proposal, issuer, Meeting Date, column header or the end of
+    the table starts is dropped (counted). proposal_text = text pieces joined with one
+    space, whitespace collapsed, stripped; empty text drops the proposal.
+H7. Values as printed: proponent, rec as printed; vote: `Voted - X` -> X (`Voted - One
+    Year` -> `One Year`), `Voted – For` (en dash) is not in the list (not a column row);
+    `Did Not Vote`, `Do Not Vote`, `Take No Action`, `Non-Voting` kept verbatim
+    (downstream drops them). for_against ''.
+H8. Proxy contests: a meeting is dropped whole (counted) if its meeting_type contains
+    `contest` (any case), or a non-empty proposal_id occurs twice in it, or any of its
+    proposal texts contains `Dissident` or `Management Nominee` (any case), or two of its
+    proposals have identical text (unnumbered filings cannot show a repeated id).
+H9. Nothing is guessed: a row inside a meeting that fits no rule (e.g. a column row with
+    no open proposal and no text) drops that meeting (counted).
+
+Downstream: a wrapper `legacy_regvoted_html` (legacy_format 'regvoted_html', report types
+LEGACY_REGVOTED_HTML(_REJECTED)) uses the text wrapper's `translate` plus: proponent
+`Issuer` -> Management; vote/rec `One Year` -> `1 Year`, `Three Years` -> `3 Years`; `Did
+Not Vote`, `Do Not Vote`, `Undetermined`, `None`, `N/A` dropped as in the text layout.
+Quarantined until review and a hand sample.
