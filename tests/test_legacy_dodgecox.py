@@ -93,7 +93,10 @@ def test_constants_and_quarantine():
     assert legacy_dodgecox.LEGACY_FORMAT == "dodgecox"
     assert legacy_dodgecox.REPORT_OK == "LEGACY_DODGECOX"
     assert legacy_dodgecox.REPORT_REJECTED == "LEGACY_DODGECOX_REJECTED"
-    assert "dodgecox" not in ledger.PROMOTED_LEGACY_FORMATS
+    # Promoted 2026-11-27 after review (no blockers) and a 12-row hand sample (plus the
+    # reviewer's 12) against the filings.
+    assert "dodgecox" in ledger.PROMOTED_LEGACY_FORMATS
+    assert "'dodgecox'" in ledger.NON_LEGACY_VOTE_SQL
     assert "LEGACY_DODGECOX" in ledger.LEGACY_ACCEPTED_REPORT_TYPES
 
 

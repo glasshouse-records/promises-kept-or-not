@@ -34,13 +34,13 @@ def test_helper_alias_and_constant_agree():
     assert ledger.non_legacy_vote_sql() == ledger.NON_LEGACY_VOTE_SQL
     assert ledger.non_legacy_vote_sql("v") == (
         "IFNULL(v.vote_source,'') != 'legacy_html' AND "
-        "(v.legacy_format IS NULL OR v.legacy_format IN ('proxyedge','iss_text','iss_html','issueno','issueno_html','regvoted','regvoted_html','fedflat'))")
+        "(v.legacy_format IS NULL OR v.legacy_format IN ('proxyedge','iss_text','iss_html','issueno','issueno_html','regvoted','regvoted_html','fedflat','dodgecox'))")
 
 
 def test_promoted_formats_constant():
     assert ledger.PROMOTED_LEGACY_FORMATS == ("proxyedge", "iss_text", "iss_html", "issueno",
                                               "issueno_html", "regvoted", "regvoted_html",
-                                              "fedflat")
+                                              "fedflat", "dodgecox")
 
 
 def _count(c):

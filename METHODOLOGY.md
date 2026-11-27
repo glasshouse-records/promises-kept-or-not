@@ -1113,7 +1113,21 @@ both parsers read it.
   and N/A votes and N/A (non-voting note) proponents are dropped. 17 filings, 84,418 lines
   (69,909 after dedupe: two are N-PX/A restatements); both parsers agree on every row.
   Promoted after review (no blockers) and a 12-row hand sample against the filings.
-- **Columns.** `legacy_format` is `proxyedge`, `iss_text`, `iss_html`, `issueno`, `issueno_html`, `regvoted`, `regvoted_html` or `fedflat` (NULL for XML
+- **Dodge & Cox's table (`legacy_format` `dodgecox`, promoted 2026-11-27).** Dodge & Cox Funds
+  file one N-PX per fund: per meeting an issuer paragraph, a header table (Ticker, Security ID,
+  Meeting Date, Meeting Type, Record Date) and a proposals table `# | Proposal | Mgt Rec |
+  Vote Cast | Sponsor`. Two parsers written independently from one contract (rules D1-D9)
+  agree on all 8,420 rows of the 5 filings with votes (Income and Global Bond report none).
+  A text-only row continues the proposal above it (7 such rows, all genuine wraps); a row
+  outside the closed lists is dropped (4 rows printed with recommendation `Three` and a
+  garbled text). 'None' and 'Did Not Vote' votes are dropped; a 'None' recommendation leaves
+  the recommendation empty while the vote is kept (75 rows). The Stock and Balanced funds
+  print one Alphabet item (1i) three times in one meeting with Abstain, Against and For: all
+  three are kept as printed, so that item is a split vote. Grupo Televisa and Micro Focus
+  each print two meetings with the same security, date and type; identical rows across them
+  are marked duplicates (7 lines). 8,113 lines (8,106 after dedupe). Promoted after review
+  (no blockers) and a 12-row hand sample against the filings.
+- **Columns.** `legacy_format` is `proxyedge`, `iss_text`, `iss_html`, `issueno`, `issueno_html`, `regvoted`, `regvoted_html`, `fedflat` or `dodgecox` (NULL for XML
   rows). `proposal_number` is the item number as printed (2022-23 legacy lines only; NULL
   on XML lines): a fund can print two different items with identical text at one meeting
   (Principal Funds 04/26/2023 prints one item 56 times, once per sub-fund; 'Instructions if

@@ -1,8 +1,8 @@
 """Legacy (July 2022 - June 2023) N-PX votes in Dodge & Cox's table: one N-PX per fund, per
 meeting an issuer paragraph, a header table (Ticker, Security ID, Meeting Date, Meeting
 Type, Record Date) and a proposals table `# | Proposal | Mgt Rec | Vote Cast | Sponsor`.
-legacy_format 'dodgecox', quarantined (not in `ledger.PROMOTED_LEGACY_FORMATS`) until a
-reviewer pass and a hand sample. Contract: docs/research/legacy-npx.md ("Contract: Dodge &
+legacy_format 'dodgecox', promoted into `ledger.PROMOTED_LEGACY_FORMATS` on 2026-11-27 after a
+reviewer pass (no blockers) and a 12-row hand sample. Contract: docs/research/legacy-npx.md ("Contract: Dodge &
 Cox table", rules D1-D9).
 
 Two parsers written independently from that contract (`legacy_dodgecox_dom`, an html.parser
