@@ -6,7 +6,7 @@ from glasshouse import engine, ledger
 DESC = "Instructions if Meeting is Held on Second Call"
 
 
-def _build(tmp_path):
+def _build(tmp_path, xml_same_day=False):
     led = tmp_path / "l.db"
     c = ledger.connect(led)
     c.execute("INSERT INTO institutions (id, display_name) VALUES ('alpha','Alpha')")
@@ -26,6 +26,8 @@ def _build(tmp_path):
     vote("33", "AGAINST", series="S2")
     vote(None, "FOR", fmt=None, date="05/01/2024")        # XML: NULL number, one group
     vote(None, "AGAINST", fmt=None, date="05/01/2024", series="S2")
+    if xml_same_day:                                     # an XML line at the legacy meeting
+        vote(None, "ABSTAIN", fmt=None, series="S3")
     c.commit()
     c.close()
     out = tmp_path / "e.db"
@@ -50,3 +52,10 @@ def test_fund_votes_for_a_legacy_item_returns_only_that_item(tmp_path):
                             "WHERE weight_basis = 'lines'").fetchall():
         got = eng.fund_votes(r["proposal_id"])["result"]["lines"]
         assert len(got) == r["n_lines"]
+
+
+def test_fund_votes_never_mixes_eras(tmp_path):
+    eng, _ = _build(tmp_path, xml_same_day=True)
+    for r in eng.db.execute("SELECT proposal_id, n_lines FROM proposals").fetchall():
+        got = eng.fund_votes(r["proposal_id"])["result"]["lines"]
+        assert len(got) == r["n_lines"], r["proposal_id"]

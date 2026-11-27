@@ -2069,7 +2069,8 @@ class Engine:
 
         for v in self.ledger.execute(
             f"""SELECT v.vote_series, v.how_voted, v.shares_voted, v.vote_description,
-                       v.accession, f.cik, f.source_url, v.proposal_number AS pnum
+                       v.accession, f.cik, f.source_url, v.proposal_number AS pnum,
+                       (v.legacy_format IS NOT NULL) AS lg
                 FROM votes v JOIN filings f ON f.accession = v.accession
                 WHERE f.institution_id=? AND v.is_duplicate=0 AND {NON_LEGACY_VOTE_SQL}
                   AND v.vote_source='SECURITY HOLDER' AND {iso}=?
@@ -2079,6 +2080,8 @@ class Engine:
                                              v["vote_series"], r["meeting_date"])
                                  or UNLABELLED) != r["adviser"]:
                 continue                       # another adviser's fund, another policy
+            if bool(v["lg"]) != is_legacy:
+                continue                       # the other era's line: never one decision
             if is_legacy and (v["pnum"] or "").strip() != item_no:
                 continue                       # another printed item with the same text
             if norm(v["vote_description"]) == norm(r["description"]):
