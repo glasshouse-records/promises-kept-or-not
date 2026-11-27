@@ -8,10 +8,11 @@ Two parsers written independently from that contract (`legacy_regvoted_blocks`,
 unchanged (multiset agreement over all 14 fields, `legacy_pe.guarded`, the per-filing gate,
 contests dropped, validated security ids, fund -> series only through the SGML header and the
 reviewed aliases). Only the printed vocabulary differs, so rows are translated to the Issue No.
-forms before `legacy_issueno.to_vote_rows` sees them: 'Withheld' -> Withhold, 'Take No Action'
--> TNA, Management -> Mgmt, Shareholder -> ShrHoldr, a vote is by construction 'Voted - ...' so
+forms before `legacy_issueno.to_vote_rows` sees them: 'Withheld' -> Withhold, Management -> Mgmt, Shareholder -> ShrHoldr, a vote is by construction 'Voted - ...' so
 the meeting status is Voted, and the contract's MM/DD/YYYY date becomes the ISO form the shared
-code reads. Anything outside the closed vocabularies becomes '' and so is dropped.
+code reads. Anything outside the closed vocabularies becomes '' and so is dropped. 'Take No
+Action' is dropped and counted, as in legacy_iss (vote) and legacy_issueno (status): nothing was
+cast, and Global X prints it on "Non-Voting Meeting Note" / "Non-Voting Agenda Item" rows.
 
 Detection: `legacy_iss.doc_format` returns 'regvoted' on the column header. Ingest is opt-in
 under the `--legacy-issueno` flag; report types LEGACY_REGVOTED / LEGACY_REGVOTED_REJECTED.
@@ -38,7 +39,7 @@ _PARSER_NAMES = ("legacy_regvoted_blocks", "legacy_regvoted_lines")
 # (the closed set of printed forms; anything else is not in the dict and is dropped)
 VOTE_FORMS = {"For": "For", "Against": "Against", "Abstain": "Abstain", "Withheld": "Withhold",
               "Withhold": "Withhold", "1 Year": "1 Year", "2 Years": "2 Years",
-              "3 Years": "3 Years", "Take No Action": "TNA"}
+              "3 Years": "3 Years"}
 PROPONENT_FORMS = {"Management": "Mgmt", "Shareholder": "ShrHoldr"}
 _DATE = re.compile(r"(\d{2})/(\d{2})/(\d{4})")
 

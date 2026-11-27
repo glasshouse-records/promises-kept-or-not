@@ -51,7 +51,7 @@ def test_other_formats_keep_their_detection():
 @pytest.mark.parametrize("printed,how", [
     ("For", "FOR"), ("Against", "AGAINST"), ("Abstain", "ABSTAIN"), ("Withheld", "WITHHOLD"),
     ("Withhold", "WITHHOLD"), ("1 Year", "1 YEAR"), ("2 Years", "2 YEARS"),
-    ("3 Years", "3 YEARS"), ("Take No Action", "TNA")])
+    ("3 Years", "3 YEARS")])
 def test_vote_vocabulary(printed, how):
     votes, info = _votes([_row(vote=printed)])
     assert [v["how_voted"] for v in votes] == [how]
@@ -60,7 +60,10 @@ def test_vote_vocabulary(printed, how):
     assert votes[0]["vote_source"] == "ISSUER"
 
 
-@pytest.mark.parametrize("vote", ["Non-Voting", "Voted - Split", "Voted", "N/A", ""])
+# 'Take No Action' is dropped, as in legacy_iss (vote) and legacy_issueno (status): nothing was
+# cast, and Global X prints it on "Non-Voting Meeting Note" agenda rows (1,017 in 0001135428-23-000255).
+@pytest.mark.parametrize("vote", ["Non-Voting", "Voted - Split", "Voted", "N/A", "",
+                                  "Take No Action"])
 def test_other_votes_are_dropped_and_counted(vote):
     votes, info = _votes([_row(vote=vote)])
     assert votes == [] and info["dropped_vote"] == 1
