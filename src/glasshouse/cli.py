@@ -1111,7 +1111,7 @@ def main(argv: list[str] | None = None) -> int:
                             "agree on, gated per filing; tagged issueno, promoted 2026-11-23) "
                             "and its HTML-table export (Putnam, Neuberger Berman; tagged "
                             "issueno_html, promoted 2026-11-23), and the 'Registrant Voted' text "
-                            "layout (Global X; tagged regvoted) and its HTML-table rendering (The Advisors' Inner Circle Fund III / GQG; tagged regvoted_html), both promoted 2026-11-27")
+                            "layout (Global X; tagged regvoted) and its HTML-table rendering (The Advisors' Inner Circle Fund III / GQG; tagged regvoted_html), both promoted 2026-11-27, and Federated Hermes' one-row-per-vote table (tagged fedflat, promoted 2026-11-27)")
     npx_p.set_defaults(func=cmd_ingest_npx)
     com = ing.add_parser("commitments")
     com.add_argument("--wayback", action="store_true",

@@ -107,7 +107,10 @@ def test_constants_and_quarantine():
     assert legacy_fedflat.LEGACY_FORMAT == "fedflat"
     assert legacy_fedflat.REPORT_OK == "LEGACY_FEDFLAT"
     assert legacy_fedflat.REPORT_REJECTED == "LEGACY_FEDFLAT_REJECTED"
-    assert "fedflat" not in ledger.PROMOTED_LEGACY_FORMATS
+    # Promoted 2026-11-27 after review (no blockers), the proposal_number fix (j) and a
+    # 12-row hand sample against the filings (plus the reviewer's 10).
+    assert "fedflat" in ledger.PROMOTED_LEGACY_FORMATS
+    assert "'fedflat'" in ledger.NON_LEGACY_VOTE_SQL
 
 
 def test_parser_pair():

@@ -1100,7 +1100,20 @@ both parsers read it.
   cell (`5.1.1 Reelect ...`, `A1 Elect ...`) it stays part of `vote_description` as printed.
   `Issuer` is read as a management item. 17 filings, 67,701 lines; both parsers agree on every
   row. Promoted after that review and a 16-row hand sample against the filings.
-- **Columns.** `legacy_format` is `proxyedge`, `iss_text`, `iss_html`, `issueno`, `issueno_html`, `regvoted` or `regvoted_html` (NULL for XML
+- **Federated Hermes' flat table (`legacy_format` `fedflat`, promoted 2026-11-27).** Federated
+  prints one HTML table row per vote, every field in its own labelled column (Issuer Name ...
+  Ballot Issue Number, Proposal Text, Proponent, Mgmt Reco, Vote Cast, Fund Name[, Logical
+  Ballot Status]). Two parsers written independently from one contract (rules F1-F6) read the
+  rows by header label; a row whose values fall outside closed lists is dropped and counted,
+  never repaired (a row missing one source cell shifts left and always fails those lists).
+  Dates are month-first: no date in these filings has a first part above 12, 56,582 rows
+  have a second part above 12, and every record date precedes its meeting date. The fund is a
+  cell on every row, so the issuer-order guard does not apply (one filing prints its
+  alphabetical runs in reverse page order); the disputed-meeting guard does. TNA, Do Not Vote
+  and N/A votes and N/A (non-voting note) proponents are dropped. 17 filings, 84,418 lines
+  (69,909 after dedupe: two are N-PX/A restatements); both parsers agree on every row.
+  Promoted after review (no blockers) and a 12-row hand sample against the filings.
+- **Columns.** `legacy_format` is `proxyedge`, `iss_text`, `iss_html`, `issueno`, `issueno_html`, `regvoted`, `regvoted_html` or `fedflat` (NULL for XML
   rows). `proposal_number` is the item number as printed (2022-23 legacy lines only; NULL
   on XML lines): a fund can print two different items with identical text at one meeting
   (Principal Funds 04/26/2023 prints one item 56 times, once per sub-fund; 'Instructions if

@@ -1,7 +1,7 @@
 """Legacy (July 2022 - June 2023) N-PX votes in Federated Hermes' flat table: one HTML table
 row per vote, read by header label (Issuer Name ... Vote Cast, Fund Name[, Logical Ballot
-Status]). legacy_format 'fedflat', quarantined (not in `ledger.PROMOTED_LEGACY_FORMATS`)
-until a reviewer pass and a hand sample. Contract: docs/research/legacy-npx.md ("Contract:
+Status]). legacy_format 'fedflat', promoted into `ledger.PROMOTED_LEGACY_FORMATS` on 2026-11-27 after
+a reviewer pass (no blockers), the proposal_number fix and a 12-row hand sample. Contract: docs/research/legacy-npx.md ("Contract:
 Federated flat table", rules F1-F6).
 
 Two parsers written independently from that contract (`legacy_fedflat_cells`, an
