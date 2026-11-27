@@ -134,3 +134,16 @@ From the first run on the real document (2,166 "Meeting Date:" lines have no iss
 4. Vote: `Voted - X` becomes X only when X is For, Against, Abstain, Withhold, Withheld,
    1 Year, 2 Years or 3 Years; every other vote string stays verbatim (`Voted - Split`).
 5. Proposal lines under a fund heading with no meeting yet are dropped (counted).
+
+### Registrant Voted amendment R2 (2026-11-27)
+
+From the first comparison of the two parsers (1.9% disagreement; list in
+data/research/regvoted_disagreements.txt):
+1. fund_heading is the nearest non-empty line above the column header that does NOT start
+   with `Sub-Adviser:` (Global X Emerging Markets ETF prints a centred
+   `Sub-Adviser: Mirae Asset Global Investments` line between its name and the header;
+   222 such lines). The sub-adviser line is ignored.
+2. `Ticker:` may follow the security id with no space (`Security ID: J6384J101Ticker: 3993`):
+   security_id is the text between `Security ID:` and `Ticker:`, stripped.
+3. Any other difference must be resolved from the contract text, never by copying the
+   other parser's output; a case the contract does not decide drops the meeting.
