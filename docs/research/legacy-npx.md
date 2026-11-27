@@ -27,6 +27,7 @@
 - **ProxyEdge reports "For/Against Management", not the management recommendation.** Storing an inferred recommendation would be a derived fact. The decision is pending.
 - **The filing's SGML header (`.hdr.sgml`) lists each series ID with its name.** So fund heading → series ID can come from the filing itself.
 - **One filing can carry another registrant's funds.** JP Morgan Mutual Fund Investment Trust's 2023 N-PX document is the same 35 MB report as the ETF Trust's. Rule: a fund section is kept only if its name maps to a series in the filing's own header. Otherwise the same votes would be counted under two registrants.
+- **Closed-end funds have no series.** Exception to the rule above: if the header lists no series at all and the filing's agreed rows carry exactly one fund heading, the rows map to an empty `vote_series` (as the XML-era rows of the same funds). Recorded in `legacy_parse.series_fallback` with series id `""`.
 - **The documents are large** (up to 35 MB of text), so the cache under `data/legacy_cache/` is gzip-compressed and keeps one copy per document.
 - **ISS text: two parsers agree on 4,827,995 rows over every cached 2023 ISS document** (2026-11-21), with 21 rows that differ; every document is under the 0.5% gate (worst 0.29%). Three format quirks found by the disagreements, each now a regression test in both parsers:
   - Invesco frames fund headings as `=Name====`, with no space.

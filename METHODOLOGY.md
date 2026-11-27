@@ -1027,6 +1027,14 @@ both parsers read it.
   recorded in `legacy_parse.series_fallback` as `[(heading, series id, rows)]` per
   filing document; the stored vote row itself has no such flag, so identify them by
   `accession` plus `vote_series` in that list.
+  **Single-fund registrant rule (added 2026-11-27; applies on the next re-ingest):** closed-end
+  funds have no series id. When a filing's SGML header lists NO series at all AND, across all
+  of the filing's documents, the agreed rows carry exactly ONE fund heading (same
+  normalisation as the header path), those rows are stored with `vote_series` = "" (empty),
+  exactly as the XML-era N-PX rows of such funds are, and attributed to the filing's registrant
+  CIK. Two or more headings, or any series in the header, leave every heading unmapped as
+  before. Each use is recorded in `legacy_parse.series_fallback` as `[(heading, "", rows)]`
+  (the empty series id marks this rule).
 - **Dropped on purpose:** every row of a proxy contest: a card label, a "Dissident
   Recommendation" column, or a meeting typed "Proxy Contest". ISS often prints the
   dissident's card under a "Management Recommendation" header, e.g. Illumina 2023-05-25,

@@ -324,6 +324,24 @@ def note_fallback(info: dict, heading: str, sid: str) -> None:
     info.setdefault("series_fallback", Counter())[(" ".join(heading.split()), sid)] += 1
 
 
+def single_fund_map(hdr_text: str, headings) -> dict[str, str]:
+    """Single-fund registrant rule. A filing whose SGML header lists NO series at all and
+    whose agreed rows (over ALL its documents) carry exactly ONE fund heading (same `_norm`
+    as the header path) maps that heading to the empty series, like the XML-era rows of a
+    closed-end fund (which has no series). {norm(heading): ""}, else {}."""
+    if header_series_ids(hdr_text):
+        return {}
+    norms = {_norm(h) for h in headings}
+    return dict.fromkeys(norms, "") if len(norms) == 1 and "" not in norms else {}
+
+
+def note_single_fund(info: dict, single: dict[str, str], headings) -> None:
+    """Audit: rows mapped by the single-fund rule go to `series_fallback` with series id ""."""
+    for h in headings:
+        if _norm(h) in single:
+            note_fallback(info, h, "")
+
+
 # -- security identifiers: validated, never repaired ---------------------------
 
 _CUSIP_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ*@#"
@@ -455,12 +473,14 @@ def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
     smap = series_map(hdr_text)
     fa, sids = filing_aliases(aliases, filing.cik), header_series_ids(hdr_text)
     fb = build_fallback(series_dataset, filing.cik, hdr_text)
+    ag = [(name, text, *agreed(text)) for name, text in sorted(docs.items())
+          if "Agenda Number:" in text]
+    single = single_fund_map(hdr_text, (r["fund_name"] for _, _, rows, _ in ag for r in rows))
+    smap = {**smap, **single}
     parsed = []
-    for name, text in sorted(docs.items()):
-        if "Agenda Number:" not in text:
-            continue
-        rows, st = agreed(text)
+    for name, text, rows, st in ag:
         votes, info = to_vote_rows(rows, smap, fa, sids, fb)
+        note_single_fund(info, single, (r["fund_name"] for r in rows))
         parsed.append((name, text.count("Agenda Number:"), st, votes, info))
     return record_filing(conn, filing, institution_id, today, parsed, REPORT_OK,
                          REPORT_REJECTED)

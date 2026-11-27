@@ -206,12 +206,15 @@ def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
     fa = legacy_pe.filing_aliases(aliases, filing.cik)
     sids = legacy_pe.header_series_ids(hdr_text)
     fb = legacy_pe.build_fallback(series_dataset, filing.cik, hdr_text)
+    ag = [(name, text, *layout.agreed(text)) for name, text in sorted(docs.items())
+          if legacy_iss.doc_format(text) == layout.LEGACY_FORMAT]
+    single = legacy_pe.single_fund_map(
+        hdr_text, (r["fund_heading"] for _, _, rows, _ in ag for r in rows))
+    smap = {**smap, **single}
     parsed = []
-    for name, text in sorted(docs.items()):
-        if legacy_iss.doc_format(text) != layout.LEGACY_FORMAT:
-            continue
-        rows, st = layout.agreed(text)
+    for name, text, rows, st in ag:
         votes, info = layout.to_vote_rows(rows, smap, fa, sids, fallback=fb)
+        legacy_pe.note_single_fund(info, single, (r["fund_heading"] for r in rows))
         info["funds_unmapped"] = info["unmapped"]
         parsed.append((name, len(re.findall(r"(?i)meeting\s+date", text)), st, votes, info))
         logger.info("%s %s: agreed=%d emitted=%d unmapped=%d contest=%d vocab=%d",

@@ -364,13 +364,19 @@ def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
     fa = legacy_pe.filing_aliases(aliases, filing.cik)
     sids = legacy_pe.header_series_ids(hdr_text)
     fb = legacy_pe.build_fallback(series_dataset, filing.cik, hdr_text)
-    parsed = []
+    ag = []
     for name, text in sorted(docs.items()):
         if doc_format(text) != fmt:
             continue
         text = prepare(text)  # Courier-HTML ISS text -> plain lines, for BOTH parsers
-        rows, st = agreed(text, PARSERS[fmt])
+        ag.append((name, text, *agreed(text, PARSERS[fmt])))
+    single = legacy_pe.single_fund_map(
+        hdr_text, (r["fund_heading"] for _, _, rows, _ in ag for r in rows))
+    smap = {**smap, **single}
+    parsed = []
+    for name, text, rows, st in ag:
         votes, info = to_vote_rows(rows, smap, tag, fa, sids, fb)
+        legacy_pe.note_single_fund(info, single, (r["fund_heading"] for r in rows))
         info["funds_unmapped"] = info["unmapped"]
         parsed.append((name, text.count("Meeting Date:"), st, votes, info))
         logger.info("%s %s: agreed=%d emitted=%d unmapped=%d contest=%d vocab=%d",
