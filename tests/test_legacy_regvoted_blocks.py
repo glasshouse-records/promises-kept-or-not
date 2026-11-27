@@ -298,3 +298,29 @@ def test_r3_three_part_ids_and_outside_forms():
     assert parse(doc(body))[0]["proposal_id"] == "3.1.1"
     body = MEET + " O.1 Elect Jang                                         Management     For          Voted - For\n"
     assert parse(doc(body)) == []
+
+
+def test_r4_notes_after_a_closed_proposal_are_not_proposal_text():
+    text = fx("blocks_notes.txt")
+    rows = parse(text)
+    aia = {r["proposal_id"]: r for r in by(rows, "AIA GROUP LTD")}
+    assert aia["12"]["proposal_text"] == (
+        "To Approve and Adopt the Agency Share Purchase Plan of the Company with the Amended Terms")
+    assert aia["12"]["vote"] == "Against"
+    assert aia["11"]["proposal_text"].endswith("with the Amended Terms")
+    assert len(by(rows, "AL RAJHI BANK")) >= 2
+    assert parse_stats(text)["ignored_note_line"] == 5
+
+
+def test_r4_text_whitespace_is_collapsed():
+    body = MEET + (
+        " 1  Elect   Jane    Doe\n"
+        "      and   Sons                                         Management     For          Voted - For\n")
+    assert parse(doc(body))[0]["proposal_text"] == "Elect Jane Doe and Sons"
+
+
+def test_r4_second_column_line_after_a_closed_proposal_is_not_a_note():
+    body = MEET + ROW + "      stray                                              Management     For          Voted - For\n"
+    text = doc(body)
+    assert parse(text) == []
+    assert parse_stats(text)["dropped_columns_on_two_lines"] == 1

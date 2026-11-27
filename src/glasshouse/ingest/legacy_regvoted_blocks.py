@@ -160,6 +160,9 @@ def _meeting(heading: str, ident: tuple[str, str, str], rest: list[tuple[str, tu
             continue
         elif cur is not None and ln[:2].isspace():
             start = 0
+            if cur["cols"] and not _cols(ln):
+                stats["ignored_note_line"] += 1  # R4: unnumbered line after a closed proposal
+                continue
         else:
             stats["dropped_unrecognised_line"] += 1
             return []
@@ -182,7 +185,7 @@ def _meeting(heading: str, ident: tuple[str, str, str], rest: list[tuple[str, tu
         if len(p["cols"]) != 1:
             stats["dropped_no_columns" if not p["cols"] else "dropped_columns_on_two_lines"] += 1
             continue
-        text = " ".join(p["texts"])
+        text = " ".join(" ".join(p["texts"]).split())
         if not text:
             stats["dropped_no_text"] += 1
             continue
