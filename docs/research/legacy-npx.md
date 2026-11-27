@@ -41,3 +41,23 @@
   - Contract amendment 1 accepts upper-case FOR/AGAINST/ABSTAIN/WITHHOLD.
   - Lower-case values, bare digits, "Unknown", "Againt", "Took No Action" and "Non-Voting" are dropped.
   - Fidelity's HTML prefixes fund names with "VOTE SUMMARY REPORT", so those sections stay unmapped (dropped). Fidelity is read by the older `npx_legacy` parser, which has no second parser yet.
+
+## ProxyEdge contract amendment PE-I (2026-11-27): capital I printed as lower-case i
+
+JPMorgan Exchange-Traded Fund Trust's 2022-23 N-PX (0001438934-23-000406, 10,991
+meetings) prints EVERY capital letter I as a lower-case i, in the SEC's own copy
+(`iSiN:`, `UNiTED`, `MSCi`, `DiRECTORS`); both ProxyEdge parsers read 0 rows. The
+layout is otherwise standard ProxyEdge, with Word/HTML style fragments between
+sections. Amendment, applied by each parser's own builder without reading the other:
+
+1. Block labels and column-header words are recognised with the letter i standing for
+   I (compare after replacing i by I in the label word only; `iSiN:` = `ISIN:`). No
+   other label tolerance is added.
+2. Identifiers (Security/CUSIP, ISIN, Ticker) are upper-cased before validation; the
+   existing check-digit rules then apply unchanged.
+3. Every free-text field (fund heading, issuer, proposal text, proposal type, vote,
+   for/against-management) is kept exactly as printed. Nothing is "un-mangled".
+   Vote and type vocabularies keep their existing matching rules (amendment 1).
+4. Word/HTML style fragment lines (containing `mso-`, `font-family`, `&quot;`,
+   `height:` or `justify;`) are never fund headings, issuers or proposal text.
+5. Everything else, including the per-filing 0.5% agreement gate, is unchanged.
