@@ -216,6 +216,20 @@ _FEDFLAT_HDR = re.compile(r"(?i)" + _CELL_GAP.join(
                          + r"\s*(?:</[^>]+>\s*)*</t[dh]>")
 
 
+# Dodge & Cox: the proposals column header, each label alone in its own cell, in this order
+# (spacer cells between them); 'Vote Cast' may be written with a non-breaking space.
+_DC_GAP = r"(?:\s|&nbsp;|&#160;|\xa0|<[^>]*>)*?"
+_DC_IN = r"(?:\s|<(?!/?t[dh]\b)[^>]*>)*"     # other tags (<p>, <b>, <hr>) inside the cell
+_DC_CELL = _DC_IN + r"</t[dh]>" + _DC_GAP + r"<t[dh]\b[^>]*>" + _DC_IN
+_DODGECOX_HDR = re.compile(
+    r"(?i)<t[dh]\b[^>]*>" + _DC_IN + "#" + _DC_CELL + "Proposal" + _DC_CELL + r"Mgt\s+Rec" + _DC_CELL
+    + r"Vote(?:\s|&nbsp;|&#160;|\xa0)+Cast" + _DC_CELL + r"Sponsor" + _DC_IN + r"</t[dh]>")
+
+
+def is_dodgecox(text: str) -> bool:
+    return "Sponsor" in text and _DODGECOX_HDR.search(text) is not None
+
+
 def is_fedflat(text: str) -> bool:
     return "Reco" in text and _FEDFLAT_HDR.search(text) is not None
 
@@ -224,7 +238,8 @@ def doc_format(text: str) -> str | None:
     """One document's format, checked in order: ISS text (also as Courier HTML), ISS
     HTML, 'issueno' (legacy "Issue No." layout), 'issueno_html' (the same as HTML tables),
     'regvoted' ("Registrant Voted" text), 'regvoted_html' (the same as HTML tables),
-    'fedflat' (Federated's one-row-per-vote table), ProxyEdge."""
+    'fedflat' (Federated's one-row-per-vote table), 'dodgecox' (Dodge & Cox's table),
+    ProxyEdge."""
     if is_iss_text(text) or courier_html_to_text(text) is not None:
         return "iss"
     if is_iss_html(text):
@@ -238,13 +253,15 @@ def doc_format(text: str) -> str | None:
         return "regvoted_html" if "</td" in m.group(0).lower() else "regvoted"
     if is_fedflat(text):
         return "fedflat"
+    if is_dodgecox(text):
+        return "dodgecox"
     if "Agenda Number:" in text:
         return "proxyedge"
     return None
 
 
 def detect_format(docs: dict[str, str]) -> str | None:
-    """'iss', 'iss_html', 'issueno', 'issueno_html', 'regvoted', 'regvoted_html', 'fedflat', 'proxyedge', or None (none, or a mix we will not guess about)."""
+    """'iss', 'iss_html', 'issueno', 'issueno_html', 'regvoted', 'regvoted_html', 'fedflat', 'dodgecox', 'proxyedge', or None (none, or a mix we will not guess about)."""
     found = {f for f in map(doc_format, docs.values()) if f}
     return found.pop() if len(found) == 1 else None
 

@@ -693,7 +693,8 @@ def dedupe_enforcement(conn: sqlite3.Connection) -> int:
 
 LEGACY_ACCEPTED_REPORT_TYPES = ("LEGACY_PROXYEDGE", "LEGACY_ISS", "LEGACY_ISSHTML",
                                 "LEGACY_ISSUENO", "LEGACY_ISSUENO_HTML", "LEGACY_REGVOTED",
-                                "LEGACY_REGVOTED_HTML", "LEGACY_FEDFLAT")
+                                "LEGACY_REGVOTED_HTML", "LEGACY_FEDFLAT",
+                                "LEGACY_DODGECOX")
 
 
 def legacy_stale_parser_filings(conn: sqlite3.Connection) -> list[tuple]:
