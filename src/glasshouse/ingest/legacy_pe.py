@@ -31,7 +31,7 @@ from .edgar import Filing, filing_directory
 
 logger = logging.getLogger(__name__)
 
-PARSER_VERSION = "2026-11-22b"   # written on every legacy_parse row; bump on any parse/guard change
+PARSER_VERSION = "2026-11-27"    # written on every legacy_parse row; bump on any parse/guard change
 KEYS = legacy_pe_blocks.KEYS
 MAX_DISAGREEMENT = 0.005
 PERIOD = "2023-06-30"

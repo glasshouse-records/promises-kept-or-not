@@ -17,7 +17,7 @@ def conn(tmp_path):
 
 
 def test_parser_version_constant():
-    assert legacy_pe.PARSER_VERSION == "2026-11-22b"
+    assert legacy_pe.PARSER_VERSION == "2026-11-27"
 
 
 def test_migration_adds_guard_columns_idempotently(tmp_path):
