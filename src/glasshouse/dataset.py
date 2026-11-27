@@ -47,7 +47,7 @@ DATA_DICTIONARY: dict[str, dict] = {
                        "FUND NOTICE REPORT, INSTITUTIONAL MANAGER VOTING REPORT); LEGACY_NO_COVER "
                        "= pre-2024 filing with no structured cover, skipped; LEGACY_PARSED = such a "
                        "filing read from HTML (its votes are not shipped); LEGACY_PROXYEDGE, LEGACY_ISS, "
-                       "LEGACY_ISSHTML, LEGACY_ISSUENO, LEGACY_ISSUENO_HTML, LEGACY_REGVOTED = 2022-23 text filings read by two agreeing parsers, and "
+                       "LEGACY_ISSHTML, LEGACY_ISSUENO, LEGACY_ISSUENO_HTML, LEGACY_REGVOTED, LEGACY_REGVOTED_HTML = 2022-23 text filings read by two agreeing parsers, and "
                        "the same with _REJECTED when the agreement gate failed or nothing "
                        "parsed (votes quarantined, not shipped; see METHODOLOGY.md); NULL for 13-F and "
                        "N-PORT filings",
@@ -94,7 +94,7 @@ DATA_DICTIONARY: dict[str, dict] = {
                                      "printed recommendation and the vote (see METHODOLOGY); FOR, "
                                      "AGAINST or empty",
         "legacy_format": "NULL = a line from an SEC XML N-PX filing. 'proxyedge', 'iss_text', "
-                         "'iss_html', 'issueno', 'issueno_html' or 'regvoted' = a line from a 2022-23 (July 2022 - June 2023) text filing "
+                         "'iss_html', 'issueno', 'issueno_html', 'regvoted' or 'regvoted_html' = a line from a 2022-23 (July 2022 - June 2023) text filing "
                          "read by two independent parsers that agreed on it; see METHODOLOGY "
                          "('Legacy N-PX, July 2022 - June 2023'). Such lines have no share counts "
                          "and no category",

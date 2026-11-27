@@ -1,8 +1,10 @@
 """Legacy (July 2022 - June 2023) N-PX votes in the "Registrant Voted" layout printed as HTML
 tables (SEI for The Advisors' Inner Circle Fund III: GQG and other advisers' series).
-legacy_format 'regvoted_html', QUARANTINED: not in `ledger.PROMOTED_LEGACY_FORMATS` until a
-reviewer pass and a hand sample. Contract: docs/research/legacy-npx.md ("Registrant Voted"
-HTML-table layout, rules H1-H9 and amendments HR1-HR5).
+legacy_format 'regvoted_html', promoted into `ledger.PROMOTED_LEGACY_FORMATS` on 2026-11-27
+after a reviewer pass (fix: amendments HR6-HR8; a proposal split by a page break no longer
+yields its tail as a proposal) and a 16-row hand sample against the filings. Contract:
+docs/research/legacy-npx.md ("Registrant Voted" HTML-table layout, rules H1-H9 and
+amendments HR1-HR8).
 
 Two parsers written independently from that contract (`legacy_regvoted_html_cells`, an
 html.parser tokenizer; `legacy_regvoted_html_rows`, regular expressions over the markup)

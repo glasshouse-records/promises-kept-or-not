@@ -34,7 +34,7 @@ DB_PATH = DATA_DIR / "glasshouse.db"
 # parsers. The name is historical; the predicate is "nothing unpromoted leaks". ONE predicate,
 # used everywhere votes ship or are analysed; unqualified so it works with or without a `v.`
 # alias (filings has neither column).
-PROMOTED_LEGACY_FORMATS = ("proxyedge", "iss_text", "iss_html", "issueno", "issueno_html", "regvoted")
+PROMOTED_LEGACY_FORMATS = ("proxyedge", "iss_text", "iss_html", "issueno", "issueno_html", "regvoted", "regvoted_html")
 _PROMOTED_SQL = ",".join(f"'{f}'" for f in PROMOTED_LEGACY_FORMATS)
 NON_LEGACY_VOTE_SQL = (f"IFNULL(vote_source,'') != 'legacy_html' AND "
                        f"(legacy_format IS NULL OR legacy_format IN ({_PROMOTED_SQL}))")

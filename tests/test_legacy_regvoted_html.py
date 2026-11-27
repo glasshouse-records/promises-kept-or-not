@@ -93,8 +93,9 @@ def test_constants_and_quarantine():
     assert legacy_regvoted_html.LEGACY_FORMAT == "regvoted_html"
     assert legacy_regvoted_html.REPORT_OK == "LEGACY_REGVOTED_HTML"
     assert legacy_regvoted_html.REPORT_REJECTED == "LEGACY_REGVOTED_HTML_REJECTED"
-    assert "regvoted_html" not in ledger.PROMOTED_LEGACY_FORMATS
-    assert "regvoted_html" not in ledger.NON_LEGACY_VOTE_SQL
+    # Promoted 2026-11-27 after review (fix: amendments HR6-HR8) and a 16-row hand sample.
+    assert "regvoted_html" in ledger.PROMOTED_LEGACY_FORMATS
+    assert "'regvoted_html'" in ledger.NON_LEGACY_VOTE_SQL
 
 
 def test_parser_pair():

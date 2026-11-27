@@ -1086,7 +1086,21 @@ both parsers read it.
   company's votes to the one before). One filing (0001135428-23-000255), 97,562 lines.
   Promoted after that review and hand checks: 18 stored rows field by field and one split vote
   (Visa 2023 independent-chair proposal) under the right fund in all 6 funds.
-- **Columns.** `legacy_format` is `proxyedge`, `iss_text`, `iss_html`, `issueno`, `issueno_html` or `regvoted` (NULL for XML
+- **"Registrant Voted" as HTML tables (`legacy_format` `regvoted_html`, promoted
+  2026-11-27).** SEI prints the same columns as HTML tables for The Advisors' Inner Circle
+  Fund III (GQG and other advisers' series), one N-PX per fund; some filings put the issuer,
+  Security ID and Meeting Date lines between the tables, and some print no proposal numbers.
+  Two parsers written independently from one contract (rules H1-H9, amendments HR1-HR8) read
+  the document as one stream of table rows and stand-alone lines; a proposal is closed by the
+  row carrying its proponent, recommendation and vote, from closed lists. A proposal cut by a
+  page break is dropped together with its continuation (review found both parsers otherwise
+  emitted the continuation as a proposal of its own); a meeting with an unlisted vote value,
+  an id the contract does not read, a dissident or management-nominee item, or two identical
+  proposal texts is dropped whole. Where the filer prints the item number inside the text
+  cell (`5.1.1 Reelect ...`, `A1 Elect ...`) it stays part of `vote_description` as printed.
+  `Issuer` is read as a management item. 17 filings, 67,701 lines; both parsers agree on every
+  row. Promoted after that review and a 16-row hand sample against the filings.
+- **Columns.** `legacy_format` is `proxyedge`, `iss_text`, `iss_html`, `issueno`, `issueno_html`, `regvoted` or `regvoted_html` (NULL for XML
   rows). `shares_voted` is NULL: these formats print no share counts.
   `management_recommendation` has the XML meaning: whether THIS vote went with (FOR)
   or against (AGAINST) management, not what management recommended. ProxyEdge prints
