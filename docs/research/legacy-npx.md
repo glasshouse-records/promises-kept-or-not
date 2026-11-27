@@ -298,3 +298,22 @@ HR4. Page furniture is ignored (counted) wherever it occurs: a one-value row mat
      `Page | N`, `Page N`, or digits only. It never becomes or continues a proposal.
 HR5. An empty Security ID (`Security ID:` with nothing after it) gives security_id '' and
      the meeting is KEPT (as the text layout: '' if none); validation is downstream.
+
+### Registrant Voted HTML amendments HR6-HR8 (2026-11-27)
+
+Review found a blind spot both parsers share (so the agreement gate cannot see it): a
+proposal split by a page break had its head dropped at the repeated column header, and its
+tail then started a new unnumbered proposal (H6b) that took the vote ("A Director: Brian M.
+Levitt" | Withheld, TORONTO-DOMINION in 0001135428-23-000235; 162 such rows over 7 filings).
+HR6. When a repeated column header (H2) arrives while a proposal is OPEN, that proposal is
+     dropped (counted) AND every following row up to and including the next column row
+     (H5) is skipped (counted). A new issuer, Meeting Date or proposal-id row ends the skip
+     early (that row is read normally).
+HR7. A row inside a meeting whose LAST value starts with `Voted` but which is not a column
+     row (H5), e.g. an unlisted rec such as `Two Years`, drops the whole meeting (counted).
+HR8. A proposal whose text (first text piece) starts with an id-like token the H6(a) pattern
+     does not accept drops the whole meeting (counted): a token ending in `.` or `)` that is
+     a Roman numeral (I-XXX), one or two letters, or letters/digits containing a digit
+     (`O1.`, `S4.`, `1)`, `1a)`, `E.23`, `I.`); or digits and dots glued to a letter
+     (`12.14Approve`, `4.113Re-election`, `9.c9`). Section labels (`AGM`, `EGM`) glued onto
+     such proposals go with them.
