@@ -32,6 +32,7 @@ from . import (
     legacy_pe,
     legacy_period,
     legacy_regvoted,
+    legacy_regvoted_html,
 )
 from .edgar import Filing, filing_directory, list_filings
 
@@ -254,10 +255,13 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                    else "issueno_html" if rt in ("LEGACY_ISSUENO_HTML",
                                                  "LEGACY_ISSUENO_HTML_REJECTED")
                    else "regvoted" if rt in ("LEGACY_REGVOTED", "LEGACY_REGVOTED_REJECTED")
+                   else "regvoted_html" if rt in ("LEGACY_REGVOTED_HTML",
+                                                  "LEGACY_REGVOTED_HTML_REJECTED")
                    else None)
             if (reingest and fam == "iss" and legacy_iss_text) or \
                     (reingest and fam == "proxyedge" and legacy_proxyedge) or \
-                    (reingest and fam in ("issueno", "issueno_html", "regvoted") and legacy_issueno_flag):
+                    (reingest and fam in ("issueno", "issueno_html", "regvoted", "regvoted_html")
+                     and legacy_issueno_flag):
                 # a named legacy filing re-parsed under its own format's flag; the record
                 # is replaced in one transaction by legacy_pe.record_filing (XML rows
                 # are never touched: it deletes only legacy_format IS NOT NULL votes)
@@ -353,6 +357,9 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                             conn, filing, institution_id, today)
                     elif fmt == "regvoted" and legacy_issueno_flag:
                         n = legacy_regvoted.ingest_filing_from_sources(
+                            conn, filing, institution_id, today)
+                    elif fmt == "regvoted_html" and legacy_issueno_flag:
+                        n = legacy_regvoted_html.ingest_filing_from_sources(
                             conn, filing, institution_id, today)
                     else:                   # neither format (or not the one asked for)
                         stats["no_format"] = stats.get("no_format", 0) + 1
@@ -502,6 +509,9 @@ def _reingest_legacy(conn: sqlite3.Connection, filing: Filing, institution_id: s
             n = legacy_issueno_html.ingest_filing_from_sources(conn, filing, institution_id, today)
         elif fam == "regvoted" and fmt == "regvoted":
             n = legacy_regvoted.ingest_filing_from_sources(conn, filing, institution_id, today)
+        elif fam == "regvoted_html" and fmt == "regvoted_html":
+            n = legacy_regvoted_html.ingest_filing_from_sources(conn, filing, institution_id,
+                                                                today)
         else:
             stats["no_format"] = stats.get("no_format", 0) + 1
             return
