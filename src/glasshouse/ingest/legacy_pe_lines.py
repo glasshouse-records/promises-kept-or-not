@@ -45,7 +45,15 @@ AMBIGUOUS_GAP = 20
 
 _DASH = re.compile(r"^-{20,}\s*$")
 _AGENDA = re.compile(r"^\s*(.*?)\s*Agenda Number:\s*(.*?)\s*$")
-_LABEL = re.compile(r"^\s*(Security|Meeting Type|Meeting Date|Ticker|ISIN):(.*)$")
+_LABEL_NAMES = ("Security", "Meeting Type", "Meeting Date", "Ticker", "ISIN")
+# PE-I: some filings print every capital I as a lower-case i (`iSiN:`); in a label word
+# the letter i stands for I. No other tolerance. Identifier values are upper-cased below.
+_LABEL_CANON = {n.replace("i", "I"): n for n in _LABEL_NAMES}
+_LABEL = re.compile(
+    r"^\s*(" + "|".join(re.sub(r"[iI]", "[iI]", n) for n in _LABEL_NAMES)
+    + r"):(.*)$")
+# Word/HTML style fragments that leak between sections; never headings, issuers or text.
+_STYLE_FRAGMENT = ("mso-", "font-family", "&quot;", "height:", "justify;")
 _TYPE_AT = re.compile(r"\s{2,}(" + "|".join(map(re.escape, PROPOSAL_TYPES)) + r")(?=\s|$)")
 _VOTE = re.compile(
     r"(" + "|".join(map(re.escape, VOTE_VOCAB)) + r")(?: (" + "|".join(
@@ -75,6 +83,14 @@ class _Meeting:
     labels: dict[str, str] = field(default_factory=dict)
     bad: str = ""  # reason the whole meeting is dropped
     props: list[_Prop] = field(default_factory=list)
+
+
+def _label_key(word: str) -> str:
+    return _LABEL_CANON[word.replace("i", "I")]
+
+
+def _is_style_fragment(line: str) -> bool:
+    return any(f in line for f in _STYLE_FRAGMENT)
 
 
 def _iso_date(s: str) -> str:
@@ -167,10 +183,12 @@ def _walk(text: str, rows: list[dict] | None, stats: Counter, reasons: Counter) 
                     ln = lines[j]
                     lab = _LABEL.match(ln)
                     if lab:
-                        k = lab.group(1)
+                        k = _label_key(lab.group(1))
                         if k in meeting.labels:
                             meeting.bad = "duplicate_label"
                         meeting.labels[k] = lab.group(2).strip()
+                    elif _is_style_fragment(ln):
+                        pass
                     elif ln.strip():
                         meeting.bad = "malformed_header"
                     if ln.startswith("<"):
@@ -185,6 +203,9 @@ def _walk(text: str, rows: list[dict] | None, stats: Counter, reasons: Counter) 
             continue
         if line.startswith("<"):
             close_meeting()
+        elif _is_style_fragment(line):
+            close_prop()  # never text: and never attach later wrap lines across it
+            heading = None
         elif not line.strip():
             close_prop()
             heading = None
@@ -271,9 +292,9 @@ def _finish(m: _Meeting, rows: list[dict] | None, stats: Counter, reasons: Count
                 "fund_name": m.fund,
                 "issuer_name": m.issuer,
                 "agenda_number": m.agenda,
-                "security_id": m.labels.get("Security", ""),
-                "ticker": m.labels.get("Ticker", ""),
-                "isin": m.labels.get("ISIN", ""),
+                "security_id": m.labels.get("Security", "").upper(),
+                "ticker": m.labels.get("Ticker", "").upper(),
+                "isin": m.labels.get("ISIN", "").upper(),
                 "meeting_type": m.labels.get("Meeting Type", ""),
                 "meeting_date": iso,
                 "proposal_id": p.pid,

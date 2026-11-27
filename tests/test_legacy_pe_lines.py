@@ -249,3 +249,55 @@ def test_amend_names_whitespace_normalised():
     rows = parse(_doc(_row("1", "A", "Mgmt", "For", "For"), fund="Fund   One", issuer="ACME   CORP"))
     assert rows[0]["fund_name"] == "Fund One"
     assert rows[0]["issuer_name"] == "ACME CORP"
+
+
+# -- amendment PE-I: capital I printed as lower-case i ------------------------
+
+def _mangled():
+    return parse((FIX / "mangled_i_lines.txt").read_text())
+
+
+def test_pe_i_rows_come_out_and_labels_with_i_read():
+    rows = _mangled()
+    assert [r["proposal_id"] for r in rows] == ["1", "2", "3", "1a.", "2"]
+    r = rows[0]
+    assert r["meeting_type"] == "AGM" and r["meeting_date"] == "2023-05-30"
+    assert r["agenda_number"] == "717129628"
+
+
+def test_pe_i_identifiers_uppercased_and_check_digits_valid():
+    from glasshouse.ingest.legacy_pe import classify_security_id, isin_valid
+    r = _mangled()[0]
+    assert r["isin"] == "CNE100000GR6" and isin_valid(r["isin"])
+    assert r["security_id"] == "Y0029J108"
+    assert classify_security_id(r["isin"]) == ("", "CNE100000GR6")
+    assert _mangled()[3]["isin"] == "US9113121068"
+
+
+def test_pe_i_free_text_kept_exactly_as_printed():
+    rows = _mangled()
+    assert rows[0]["issuer_name"] == "AiER EYE HOSPiTAL GROUP CO LTD"
+    assert rows[1]["proposal_text"] == "APPROVE REPORT OF THE BOARD OF DiRECTORS"
+    assert rows[2]["proposal_text"] == "APPROVE AMENDMENTS TO ARTiCLES OF"
+    assert rows[3]["issuer_name"] == "UNiTED PARCEL SERViCE INC"
+    assert rows[4]["proposal_type"] == "Shr" and rows[4]["vote"] == "Against"
+
+
+def test_pe_i_style_fragments_never_become_text():
+    rows = _mangled()
+    assert {r["fund_name"] for r in rows} == {
+        "JPMorgan Active China ETF", "JPMorgan BetaBuilders MSCi US REiT ETF"}
+    bad = ("mso-", "font-family", "&quot;", "height:", "justify;")
+    for r in rows:
+        for k in ("fund_name", "issuer_name", "proposal_text", "proposal_id"):
+            assert not any(b in r[k] for b in bad), (k, r[k])
+
+
+def test_pe_i_fragment_line_is_not_a_fund_heading_or_proposal():
+    doc = _doc(_row("1", "ELECT A", "Mgmt", "For", "For"))
+    frag = 'mso-fareast-font-family:&quot;Times New Roman&quot;"'
+    # fragment directly above the real heading, and inside the proposal block
+    mangled = frag + "\n" + doc.replace("\n\n1 ", "\n\nheight:15.75pt\"\n1 ", 1)
+    rows = parse(mangled)
+    assert [r["fund_name"] for r in rows] == ["Test Fund"]
+    assert all("height" not in r["proposal_text"] for r in rows)

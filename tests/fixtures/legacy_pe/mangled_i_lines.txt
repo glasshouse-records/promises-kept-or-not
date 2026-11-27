@@ -1,0 +1,50 @@
+<DOCUMENT>
+<TEXT>
+UNiTED STATES SECURiTiES AND EXCHANGE COMMiSSiON
+
+line-height:normal"
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black"Date of fiscal year
+end:  February 28
+height:15.75pt"
+
+&quot;Times New Roman&quot;;color:black"
+JPMorgan Active China ETF
+--------------------------------------------------------------------------------------------------------------------------
+ AiER EYE HOSPiTAL GROUP CO LTD                                                              Agenda Number:  717129628
+--------------------------------------------------------------------------------------------------------------------------
+        Security:  y0029j108
+    Meeting Type:  AGM
+    Meeting Date:  30-May-2023
+          Ticker:
+            iSiN:  cne100000gr6
+--------------------------------------------------------------------------------------------------------------------------
+
+Prop.# Proposal                                                  Proposal      Proposal Vote                  For/Against
+                                                                 Type                                         Management
+
+1      APPROVE ANNUAL REPORT AND SUMMARY                         Mgmt          For                            For
+
+2      APPROVE REPORT OF THE BOARD OF DiRECTORS                  Mgmt          For                            For
+
+3      APPROVE AMENDMENTS TO ARTiCLES OF                         Mgmt          Against                        Against
+justify;line-height:normal"
+mso-padding-alt:0in 0in 0in 0in"
+JPMorgan BetaBuilders MSCi US REiT ETF
+--------------------------------------------------------------------------------------------------------------------------
+ UNiTED PARCEL SERViCE INC                                                                   Agenda Number:  935000001
+--------------------------------------------------------------------------------------------------------------------------
+        Security:  911312106
+    Meeting Type:  Annual
+    Meeting Date:  10-May-2023
+          Ticker:
+            iSiN:  US9113121068
+--------------------------------------------------------------------------------------------------------------------------
+
+Prop.# Proposal                                                  Proposal      Proposal Vote                  For/Against
+                                                                 Type                                         Management
+
+1a.    ELECT DiRECTOR: CAROL TOME                                Mgmt          For                            For
+
+2      SHAREHOLDER PROPOSAL ON LOBBYiNG                          Shr           Against                        For
+
+
