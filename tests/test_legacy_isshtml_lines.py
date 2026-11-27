@@ -207,3 +207,37 @@ def test_a6_damaged_meetings_dropped_next_meeting_read_normally():
         rows, st = _frk(f"lines_{name}.htm")
         assert [(r["issuer_name"], r["proposal_id"]) for r in rows] == [("SECOND INC", "1")], name
         assert st["reasons"][reason] == 1, name
+
+
+def _id_cell(inner: str) -> str:
+    base = load("lines_basic.htm")
+    old = "Ticker:&nbsp;&nbsp;ALNY\n<br>Security ID:&nbsp;&nbsp;02043Q107"
+    assert old in base
+    return base.replace(old, inner)
+
+
+NB = "&#xa0;"
+ONE = f"TICKER:{NB*2}3660{NB*6}SECURITY ID:{NB*2}88557W101"
+
+
+def test_amend7_one_line_both_orders_and_case():
+    for inner in (ONE, ONE.replace("TICKER", "ticker").replace("SECURITY ID", "security id"),
+                  ONE.replace("TICKER", "Ticker").replace("SECURITY ID", "Security Id"),
+                  f"SECURITY ID:{NB*2}88557W101{NB*6}TICKER:{NB*2}3660",
+                  "Security Id: 88557W101 ticker: 3660"):
+        rows = p.parse(_id_cell(inner))
+        assert len(rows) == 3, inner
+        assert {(r["ticker"], r["security_id"]) for r in rows} == {("3660", "88557W101")}, inner
+
+
+def test_amend7_duplicate_label_rejects_meeting():
+    for inner in ("TICKER: A  TICKER: B  SECURITY ID: 88557W101",
+                  "TICKER: A  SECURITY ID: 1  SECURITY ID: 2"):
+        st = p.parse_stats(_id_cell(inner))
+        assert st["reasons"]["duplicate_id_label"] == 1
+        assert p.parse(_id_cell(inner)) == []
+
+
+def test_amend7_two_line_form_unchanged():
+    rows = p.parse(load("lines_basic.htm"))
+    assert (rows[0]["ticker"], rows[0]["security_id"]) == ("ALNY", "02043Q107")

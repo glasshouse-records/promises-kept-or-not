@@ -96,6 +96,28 @@ def _label(lines: list[str], name: str) -> str | None:
     return None
 
 
+_IDLAB = re.compile(r"(ticker|security id):", re.I)
+
+
+def _id_labels(lines: list[str]) -> tuple[dict[str, str], bool]:
+    """Amendment 7: Ticker/Security ID values of a header cell; both may share one line.
+
+    A value runs from its label to the next label on the same line (or the line end).
+    Returns (values by lower-case label, True if a label occurs twice within one line)."""
+    out: dict[str, str] = {}
+    for ln in lines:
+        ms = list(_IDLAB.finditer(ln))
+        if not ms or ms[0].start() != 0:
+            continue
+        keys = [m[1].lower() for m in ms]
+        if len(set(keys)) != len(keys):
+            return {}, True
+        for i, m in enumerate(ms):
+            end = ms[i + 1].start() if i + 1 < len(ms) else len(ln)
+            out.setdefault(keys[i], ln[m.end():end].strip())
+    return out, False
+
+
 def _run(text: str) -> tuple[list[dict], Counter, dict]:
     rows: list[dict] = []
     reasons: Counter = Counter()
@@ -197,7 +219,11 @@ def _run(text: str) -> tuple[list[dict], Counter, dict]:
                 elif tag == "td" and (_label(lines, "Ticker") is not None
                                       or _label(lines, "Security ID") is not None):
                     if meeting is not None:
-                        t, sid = _label(lines, "Ticker"), _label(lines, "Security ID")
+                        ids, dup = _id_labels(lines)
+                        if dup:
+                            void("duplicate_id_label")
+                            continue
+                        t, sid = ids.get("ticker"), ids.get("security id")
                         if t is not None:
                             meeting["ticker"] = t
                             have.add("t")
