@@ -9,7 +9,8 @@ unchanged (multiset agreement over all 14 fields, `legacy_pe.guarded`, the per-f
 contests dropped, validated security ids, fund -> series only through the SGML header and the
 reviewed aliases). Only the printed vocabulary differs, so rows are translated to the Issue No.
 forms before `legacy_issueno.to_vote_rows` sees them: 'Withheld' -> Withhold, Management -> Mgmt, Shareholder -> ShrHoldr, a vote is by construction 'Voted - ...' so
-the meeting status is Voted, and the contract's MM/DD/YYYY date becomes the ISO form the shared
+the meeting status is Voted, the bare printed security id is typed by its shape (9 characters
+CUSIP, 12 ISIN; the shared check-digit validation still decides), and the contract's MM/DD/YYYY date becomes the ISO form the shared
 code reads. Anything outside the closed vocabularies becomes '' and so is dropped. 'Take No
 Action' is dropped and counted, as in legacy_iss (vote) and legacy_issueno (status): nothing was
 cast, and Global X prints it on "Non-Voting Meeting Note" / "Non-Voting Agenda Item" rows.
@@ -58,6 +59,15 @@ def agreed(text: str, parsers=None) -> tuple[list[dict], dict]:
     return legacy_issueno.agreed(text, parsers or _load_parsers())
 
 
+def _typed_id(raw: str) -> str:
+    """The bare printed id as '<TYPE> <ID>' for the shared validator: 9 characters -> CUSIP,
+    12 -> ISIN, by shape only; the check digits there still decide (never repaired)."""
+    v = (raw or "").strip()
+    if not re.fullmatch(r"[A-Za-z0-9]+", v):
+        return ""
+    return {9: f"CUSIP {v}", 12: f"ISIN {v}"}.get(len(v), "")
+
+
 def translate(row: dict) -> dict:
     """One parsed row in the Issue No. forms; unknown values become '' (dropped downstream)."""
     out = dict(row)
@@ -65,6 +75,7 @@ def translate(row: dict) -> dict:
     out["rec"] = VOTE_FORMS.get(row["rec"], "")
     out["proponent"] = PROPONENT_FORMS.get(row["proponent"], "")
     out["meeting_status"] = "Voted"
+    out["security_id"] = _typed_id(row["security_id"])
     m = _DATE.fullmatch(row["meeting_date"] or "")
     if m:
         out["meeting_date"] = f"{m.group(3)}-{m.group(1)}-{m.group(2)}"

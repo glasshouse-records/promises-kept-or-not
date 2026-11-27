@@ -19,7 +19,7 @@ COLHDR = " Proposal      Proposed by Mgt. Position Registrant Voted"
 
 def _row(**kw):
     base = {"fund_heading": FUND, "issuer_name": "ABBVIE INC.", "ticker": "ABBV",
-            "security_id": "CUSIP 00287Y109", "meeting_date": "05/05/2023",
+            "security_id": "00287Y109", "meeting_date": "05/05/2023",
             "meeting_status": "", "meeting_type": "Annual", "country": "",
             "proposal_id": "1", "proposal_text": "Elect X", "proponent": "Management",
             "rec": "For", "vote": "For", "for_against": ""}
@@ -67,6 +67,19 @@ def test_vote_vocabulary(printed, how):
 def test_other_votes_are_dropped_and_counted(vote):
     votes, info = _votes([_row(vote=vote)])
     assert votes == [] and info["dropped_vote"] == 1
+
+
+# The layout prints the bare id (` Security ID: 00287Y109`); the shared validator wants
+# '<TYPE> <ID>'. The type comes from the shape only; check digits still decide, never repaired.
+@pytest.mark.parametrize("printed,cusip,isin", [
+    ("00287Y109", "00287Y109", ""),            # US CUSIP
+    ("Y4084T100", "Y4084T100", ""),            # CINS (as printed in 0001135428-23-000255)
+    ("US00287Y1091", "00287Y109", "US00287Y1091"),
+    ("G46188111", "", ""),                     # fails its check digit as printed: blank
+    ("00287Y10", "", ""), ("", "", "")])
+def test_bare_security_id_is_typed_by_shape_and_validated(printed, cusip, isin):
+    votes, info = _votes([_row(security_id=printed)])
+    assert (votes[0]["cusip"], votes[0]["isin"]) == (cusip, isin)
 
 
 def test_proponent_mapping():
