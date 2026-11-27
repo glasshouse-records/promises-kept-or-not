@@ -162,3 +162,10 @@ def test_other_layouts_keep_the_order_guard():
     rows = [_row(issuer_name=n) for n in ("Pfizer", "Kimberly", "Exxon", "Abbvie", "Verizon")]
     _, st = legacy_issueno.agreed("", (_Stub(rows), _Stub(rows)))
     assert st["rows_dropped_order"] > 0
+
+
+def test_stale_parser_check_covers_every_issueno_family_layout():
+    from glasshouse.ingest import legacy_issueno_html, legacy_regvoted, legacy_regvoted_html
+    for mod in (legacy_issueno, legacy_issueno_html, legacy_regvoted, legacy_regvoted_html,
+                legacy_fedflat):
+        assert mod.REPORT_OK in ledger.LEGACY_ACCEPTED_REPORT_TYPES, mod.__name__
