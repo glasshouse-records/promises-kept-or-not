@@ -282,6 +282,48 @@ def alias_series(heading: str, aliases: dict[str, str] | None,
     return None, True
 
 
+class SeriesFallback:
+    """The SEC Investment Company Series and Class dataset, narrowed to ONE filing.
+
+    `by_name` = normalised series name -> series id, for the filing's own registrant CIK
+    only, and only names that mean exactly one series there. `header_names` = every
+    normalised name the filing's own header prints (ambiguous ones included): a heading
+    with a header candidate is never looked up here. Same `_norm` as the header path, no
+    fuzzy matching: a heading maps only on an exact match to exactly one series."""
+
+    def __init__(self, by_name: dict[str, str], header_names: set[str]):
+        self.by_name, self.header_names = by_name, header_names
+
+    def lookup(self, heading: str, suffix: bool = False) -> str | None:
+        """Series id for a heading, else None. `suffix` mirrors the ISS header path: exact
+        name first, else one trailing ' - SUFFIX' removed."""
+        keys = [_norm(heading)]
+        if suffix and " - " in heading:
+            keys.append(_norm(heading.rsplit(" - ", 1)[0]))
+        for k in keys:
+            if k in self.header_names:
+                return None
+            if k in self.by_name:
+                return self.by_name[k]
+        return None
+
+
+def build_fallback(dataset: dict[str, dict[str, set[str]]] | None, cik: object,
+                   hdr_text: str) -> SeriesFallback | None:
+    """Fallback for one filing from `sec_series.load_dataset` output (CIK10 -> normalised
+    name -> series ids). None when there is no dataset or no series for the CIK."""
+    names = (dataset or {}).get(_cik10(cik))
+    if not names:
+        return None
+    unique = {n: next(iter(ids)) for n, ids in names.items() if len(ids) == 1}
+    return SeriesFallback(unique, {_norm(n) for n, _ in _header_pairs(hdr_text)})
+
+
+def note_fallback(info: dict, heading: str, sid: str) -> None:
+    """Record, per (heading, series id), a row mapped through the SEC series dataset."""
+    info.setdefault("series_fallback", Counter())[(" ".join(heading.split()), sid)] += 1
+
+
 # -- security identifiers: validated, never repaired ---------------------------
 
 _CUSIP_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ*@#"
@@ -339,7 +381,8 @@ def classify_security_id(raw: str) -> tuple[str, str]:
 
 def to_vote_rows(rows: list[dict], smap: dict[str, str],
                  aliases: dict[str, str] | None = None,
-                 header_sids: set[str] | None = None) -> tuple[list[dict], dict]:
+                 header_sids: set[str] | None = None,
+                 fallback: SeriesFallback | None = None) -> tuple[list[dict], dict]:
     """Agreed rows -> ledger vote dicts, plus drop counters. Only funds named in THIS
     filing's header are kept (a combined document can carry other registrants' funds)."""
     out: list[dict] = []
@@ -351,6 +394,10 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
         if sid is None:
             sid, bad = alias_series(r["fund_name"], aliases, header_sids)
             info["alias_not_in_header"] += bad
+        if sid is None and fallback and _heading(r["fund_name"]) not in (aliases or {}):
+            sid = fallback.lookup(r["fund_name"])
+            if sid:
+                note_fallback(info, r["fund_name"], sid)
         if sid is None:
             unmapped[r["fund_name"]] += 1
             continue
@@ -401,17 +448,19 @@ def is_candidate(filing: Filing) -> bool:
 
 def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str | None,
                   today: str, docs: dict[str, str], hdr_text: str,
-                  aliases: dict[tuple[str, str], str] | None = None) -> int:
+                  aliases: dict[tuple[str, str], str] | None = None,
+                  series_dataset: dict | None = None) -> int:
     """Parse every vote document of one filing, gate it, record it. One transaction
     (no network inside). Returns votes inserted."""
     smap = series_map(hdr_text)
     fa, sids = filing_aliases(aliases, filing.cik), header_series_ids(hdr_text)
+    fb = build_fallback(series_dataset, filing.cik, hdr_text)
     parsed = []
     for name, text in sorted(docs.items()):
         if "Agenda Number:" not in text:
             continue
         rows, st = agreed(text)
-        votes, info = to_vote_rows(rows, smap, fa, sids)
+        votes, info = to_vote_rows(rows, smap, fa, sids, fb)
         parsed.append((name, text.count("Agenda Number:"), st, votes, info))
     return record_filing(conn, filing, institution_id, today, parsed, REPORT_OK,
                          REPORT_REJECTED)
@@ -455,14 +504,16 @@ def record_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
                        agreed, a_only, b_only, disagreement_rate, funds_unmapped,
                        rows_inserted, parsed_at, rows_dropped_disputed,
                        meetings_dropped_disputed, order_resets, order_repeats,
-                       rows_dropped_order, parser_version)
-                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                       rows_dropped_order, parser_version, series_fallback)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (acc, name, meetings, st["rows_a"], st["rows_b"], st["agreed"], st["a_only"],
                  st["b_only"], st["disagreement_rate"],
                  repr(sorted(info["funds_unmapped"].items())) if info["funds_unmapped"]
                  else "", n, now, st.get("rows_dropped_disputed"),
                  st.get("meetings_dropped_disputed"), st.get("order_resets"),
-                 st.get("order_repeats"), st.get("rows_dropped_order"), PARSER_VERSION))
+                 st.get("order_repeats"), st.get("rows_dropped_order"), PARSER_VERSION,
+                 repr(sorted((h, sid, c) for (h, sid), c in info["series_fallback"].items()))
+                 if info.get("series_fallback") else ""))
         conn.commit()
     except Exception:
         conn.rollback()
@@ -533,6 +584,8 @@ def ingest_filing_from_sources(conn: sqlite3.Connection, filing: Filing,
                                institution_id: str | None, today: str) -> int:
     """Fetch (network/cache, no write lock held) then ingest one filing."""
     docs, hdr = load_filing_texts(filing)
-    n = ingest_filing(conn, filing, institution_id, today, docs, hdr, load_aliases())
+    from . import sec_series
+    n = ingest_filing(conn, filing, institution_id, today, docs, hdr, load_aliases(),
+                      sec_series.load_dataset())
     logger.info("ingested LEGACY_PROXYEDGE %s: %d votes", filing.accession_number, n)
     return n

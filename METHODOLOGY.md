@@ -1002,6 +1002,20 @@ both parsers read it.
   Account", "T. Rowe Price"/trust-name prefixes. An alias counts only if its series is
   listed in that filing's own header. No fuzzy matching. A heading that still does not
   match is dropped and counted, so recall is knowingly incomplete.
+  **Second candidate source (added 2026-11-27; applies on the next re-ingest of a filing):**
+  the SEC's own open dataset "Investment Company Series and Class Information" (annual
+  CSVs, 2022 and 2023, `src/glasshouse/ingest/sec_series.py`, cached in
+  `data/cache/sec_series/`). A heading maps through it only if (1) the filing's own header
+  gives NO candidate for that heading (a header name that is ambiguous counts as a
+  candidate), (2) no reviewed alias exists for that (registrant CIK, heading), (3) the
+  series belongs, per the dataset, to the SAME registrant CIK as the filing, and (4) the
+  heading equals exactly one series name there after the same normalisation as the header
+  path (trademark marks, whitespace, case; ISS-family headings also try one trailing
+  " - SUFFIX" removed, as for the header). Two series with the same normalised name under
+  one registrant leave the heading unmapped. No fuzzy matching. Rows mapped this way are
+  recorded in `legacy_parse.series_fallback` as `[(heading, series id, rows)]` per
+  filing document; the stored vote row itself has no such flag, so identify them by
+  `accession` plus `vote_series` in that list.
 - **Dropped on purpose:** every row of a proxy contest: a card label, a "Dissident
   Recommendation" column, or a meeting typed "Proxy Contest". ISS often prints the
   dissident's card under a "Management Recommendation" header, e.g. Illumina 2023-05-25,

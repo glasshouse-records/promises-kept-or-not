@@ -163,7 +163,8 @@ CREATE TABLE IF NOT EXISTS legacy_parse (
     order_resets              INTEGER,
     order_repeats             INTEGER,
     rows_dropped_order        INTEGER,
-    parser_version            TEXT
+    parser_version            TEXT,
+    series_fallback           TEXT   -- headings mapped via the SEC series dataset: [(heading, series, rows)]
 );
 
 CREATE TABLE IF NOT EXISTS enforcement_actions (
@@ -421,7 +422,8 @@ def _migrate(conn: sqlite3.Connection) -> None:
     lcols = {r[1] for r in conn.execute("PRAGMA table_info(legacy_parse)")}
     for col, typ in (("rows_dropped_disputed", "INTEGER"), ("meetings_dropped_disputed", "INTEGER"),
                      ("order_resets", "INTEGER"), ("order_repeats", "INTEGER"),
-                     ("rows_dropped_order", "INTEGER"), ("parser_version", "TEXT")):
+                     ("rows_dropped_order", "INTEGER"), ("parser_version", "TEXT"),
+                     ("series_fallback", "TEXT")):
         if col not in lcols:
             conn.execute(f"ALTER TABLE legacy_parse ADD COLUMN {col} {typ}")
             conn.commit()

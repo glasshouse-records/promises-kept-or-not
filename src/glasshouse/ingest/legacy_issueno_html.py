@@ -59,16 +59,19 @@ def agreed(text: str, parsers=None) -> tuple[list[dict], dict]:
 
 
 def to_vote_rows(rows: list[dict], smap: dict[str, str], aliases: dict[str, str] | None = None,
-                 header_sids: set[str] | None = None) -> tuple[list[dict], dict]:
+                 header_sids: set[str] | None = None,
+                 fallback=None) -> tuple[list[dict], dict]:
     return legacy_issueno.to_vote_rows(rows, smap, aliases, header_sids,
-                                       legacy_format=LEGACY_FORMAT)
+                                       legacy_format=LEGACY_FORMAT, fallback=fallback)
 
 
 def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str | None,
                   today: str, docs: dict[str, str], hdr_text: str,
-                  aliases: dict[tuple[str, str], str] | None = None) -> int:
+                  aliases: dict[tuple[str, str], str] | None = None,
+                  series_dataset: dict | None = None) -> int:
     return legacy_issueno.ingest_filing(conn, filing, institution_id, today, docs, hdr_text,
-                                        aliases, layout=sys.modules[__name__])
+                                        aliases, layout=sys.modules[__name__],
+                                        series_dataset=series_dataset)
 
 
 def ingest_filing_from_sources(conn: sqlite3.Connection, filing: Filing,

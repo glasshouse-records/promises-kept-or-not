@@ -141,7 +141,8 @@ def _security_id(raw: str) -> tuple[str, str]:
 def to_vote_rows(rows: list[dict], smap: dict[str, str],
                  aliases: dict[str, str] | None = None,
                  header_sids: set[str] | None = None,
-                 legacy_format: str = LEGACY_FORMAT) -> tuple[list[dict], dict]:
+                 legacy_format: str = LEGACY_FORMAT,
+                 fallback=None) -> tuple[list[dict], dict]:
     """Agreed rows -> ledger vote dicts (tagged `legacy_format`), plus drop counters."""
     out: list[dict] = []
     unmapped: Counter = Counter()
@@ -149,7 +150,8 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
             "dropped_sponsor": 0, "alias_not_in_header": 0, "policy_section_dropped": 0,
             "dropped_status": 0}
     for r in rows:
-        sid, bad = legacy_iss._series_for(r["fund_heading"], smap, aliases, header_sids)
+        sid, bad = legacy_iss._series_for(r["fund_heading"], smap, aliases, header_sids,
+                                       fallback, info)
         info["alias_not_in_header"] += bad
         if sid is None and legacy_iss.is_policy_section(r["fund_heading"]):
             info["policy_section_dropped"] += 1
@@ -193,7 +195,8 @@ def to_vote_rows(rows: list[dict], smap: dict[str, str],
 
 def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str | None,
                   today: str, docs: dict[str, str], hdr_text: str,
-                  aliases: dict[tuple[str, str], str] | None = None, layout=None) -> int:
+                  aliases: dict[tuple[str, str], str] | None = None, layout=None,
+                  series_dataset: dict | None = None) -> int:
     """Parse every document of one filing in this layout, gate it, record it. One
     transaction (no network inside). Returns votes inserted. `layout` = a module with
     LEGACY_FORMAT, REPORT_OK, REPORT_REJECTED, agreed and to_vote_rows (default: this one;
@@ -202,12 +205,13 @@ def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
     smap = legacy_pe.series_map(hdr_text)
     fa = legacy_pe.filing_aliases(aliases, filing.cik)
     sids = legacy_pe.header_series_ids(hdr_text)
+    fb = legacy_pe.build_fallback(series_dataset, filing.cik, hdr_text)
     parsed = []
     for name, text in sorted(docs.items()):
         if legacy_iss.doc_format(text) != layout.LEGACY_FORMAT:
             continue
         rows, st = layout.agreed(text)
-        votes, info = layout.to_vote_rows(rows, smap, fa, sids)
+        votes, info = layout.to_vote_rows(rows, smap, fa, sids, fallback=fb)
         info["funds_unmapped"] = info["unmapped"]
         parsed.append((name, len(re.findall(r"(?i)meeting\s+date", text)), st, votes, info))
         logger.info("%s %s: agreed=%d emitted=%d unmapped=%d contest=%d vocab=%d",
@@ -227,7 +231,8 @@ def ingest_filing_from_sources(conn: sqlite3.Connection, filing: Filing,
     docs, hdr = legacy_pe.load_filing_texts(filing)
     if legacy_iss.detect_format(docs) != layout.LEGACY_FORMAT:
         return None
+    from . import sec_series
     n = ingest_filing(conn, filing, institution_id, today, docs, hdr, legacy_pe.load_aliases(),
-                      layout=layout)
+                      layout=layout, series_dataset=sec_series.load_dataset())
     logger.info("ingested %s %s: %d votes", layout.REPORT_OK, filing.accession_number, n)
     return n

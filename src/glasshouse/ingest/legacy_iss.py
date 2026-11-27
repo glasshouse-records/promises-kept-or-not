@@ -266,7 +266,8 @@ def is_policy_section(heading: str) -> bool:
     return bool(words) and words[-1].upper() == "POLICY"
 
 
-def _series_for(heading, smap, aliases, header_sids) -> tuple[str | None, bool]:
+def _series_for(heading, smap, aliases, header_sids, fallback=None, info=None
+                ) -> tuple[str | None, bool]:
     if is_policy_section(heading):
         return None, False
     sid = smap.get(legacy_pe._norm(heading))
@@ -274,20 +275,26 @@ def _series_for(heading, smap, aliases, header_sids) -> tuple[str | None, bool]:
         sid = smap.get(legacy_pe._norm(heading.rsplit(" - ", 1)[0]))
     if sid is not None:
         return sid, False
-    return legacy_pe.alias_series(heading, aliases, header_sids)
+    sid, bad = legacy_pe.alias_series(heading, aliases, header_sids)
+    if sid is None and fallback and legacy_pe._heading(heading) not in (aliases or {}):
+        sid = fallback.lookup(heading, suffix=True)
+        if sid and info is not None:
+            legacy_pe.note_fallback(info, heading, sid)
+    return sid, bad
 
 
 def to_vote_rows(rows: list[dict], smap: dict[str, str],
                  legacy_format: str = LEGACY_FORMAT,
                  aliases: dict[str, str] | None = None,
-                 header_sids: set[str] | None = None) -> tuple[list[dict], dict]:
+                 header_sids: set[str] | None = None,
+                 fallback=None) -> tuple[list[dict], dict]:
     """Agreed rows -> ledger vote dicts, plus drop counters."""
     out: list[dict] = []
     unmapped: Counter = Counter()
     info = {"contest_rows_dropped": 0, "dropped_vote": 0, "dropped_date": 0,
             "dropped_sponsor": 0, "alias_not_in_header": 0, "policy_section_dropped": 0}
     for r in rows:
-        sid, bad = _series_for(r["fund_heading"], smap, aliases, header_sids)
+        sid, bad = _series_for(r["fund_heading"], smap, aliases, header_sids, fallback, info)
         info["alias_not_in_header"] += bad
         if sid is None and is_policy_section(r["fund_heading"]):
             info["policy_section_dropped"] += 1
@@ -334,7 +341,8 @@ is_candidate = legacy_pe.is_candidate
 def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str | None,
                   today: str, docs: dict[str, str], hdr_text: str,
                   fmt: str = "iss",
-                  aliases: dict[tuple[str, str], str] | None = None) -> int:
+                  aliases: dict[tuple[str, str], str] | None = None,
+                  series_dataset: dict | None = None) -> int:
     """Parse every document of one filing that is in format `fmt` ('iss' text or
     'iss_html'), gate it, record it. One transaction (no network inside). Returns votes
     inserted."""
@@ -342,13 +350,14 @@ def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
     smap = legacy_pe.series_map(hdr_text)
     fa = legacy_pe.filing_aliases(aliases, filing.cik)
     sids = legacy_pe.header_series_ids(hdr_text)
+    fb = legacy_pe.build_fallback(series_dataset, filing.cik, hdr_text)
     parsed = []
     for name, text in sorted(docs.items()):
         if doc_format(text) != fmt:
             continue
         text = prepare(text)  # Courier-HTML ISS text -> plain lines, for BOTH parsers
         rows, st = agreed(text, PARSERS[fmt])
-        votes, info = to_vote_rows(rows, smap, tag, fa, sids)
+        votes, info = to_vote_rows(rows, smap, tag, fa, sids, fb)
         info["funds_unmapped"] = info["unmapped"]
         parsed.append((name, text.count("Meeting Date:"), st, votes, info))
         logger.info("%s %s: agreed=%d emitted=%d unmapped=%d contest=%d vocab=%d",
@@ -367,7 +376,8 @@ def ingest_filing_from_sources(conn: sqlite3.Connection, filing: Filing,
     fmt = detect_format(docs)
     if fmt not in PARSERS:
         return None
+    from . import sec_series
     n = ingest_filing(conn, filing, institution_id, today, docs, hdr, fmt,
-                      legacy_pe.load_aliases())
+                      legacy_pe.load_aliases(), sec_series.load_dataset())
     logger.info("ingested %s %s: %d votes", FORMATS[fmt][1], filing.accession_number, n)
     return n
