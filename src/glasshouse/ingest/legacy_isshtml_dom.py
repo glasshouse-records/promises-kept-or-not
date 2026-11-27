@@ -200,6 +200,19 @@ def _title(s: str) -> str:
     return re.sub(r"[A-Za-z]+", lambda m: m.group().capitalize(), s)
 
 
+_ID_LABEL_RE = re.compile(r"(ticker:|security id:)", re.I)
+
+
+def _id_line(ln: str) -> dict[str, str] | None:
+    """Amendment 7: values of the Ticker:/Security ID: labels in one line (either order, one
+    or both); None when a label occurs twice in the line."""
+    parts = _ID_LABEL_RE.split(ln)  # [pre, label, value, label, value, ...]
+    labs = [parts[i].lower() for i in range(1, len(parts), 2)]
+    if len(set(labs)) != len(labs):
+        return None
+    return {lab: _collapse(parts[i + 1]) for lab, i in zip(labs, range(1, len(parts), 2))}
+
+
 def _parse_meeting(lines: list[str]):
     """-> (meeting dict | None, reason).  Needs an issuer line and a good Meeting Date."""
     labels = {"meeting date:": "md", "record date:": "rd", "meeting type:": "mt"}
@@ -313,12 +326,20 @@ def _run(text: str) -> tuple[list[dict], dict]:
                 elif any(ln.lower().startswith(("ticker:", "security id:")) for ln in lines):
                     if meeting is not None:
                         for ln in lines:
-                            low = ln.lower()
-                            if low.startswith("ticker:"):
-                                meeting["ticker"] = _collapse(ln[7:])
+                            if not ln.lower().startswith(("ticker:", "security id:")):
+                                continue
+                            vals = _id_line(ln)
+                            if vals is None:  # amendment 7: a label twice in one line
+                                del out[meeting_start:]
+                                meeting, meeting_bad = None, "dup_id_label"
+                                stats["bad_meetings"] += 1
+                                meeting_reasons[meeting_bad] += 1
+                                break
+                            if "ticker:" in vals:
+                                meeting["ticker"] = vals["ticker:"]
                                 seen_ticker = True
-                            elif low.startswith("security id:"):
-                                meeting["security_id"] = _collapse(ln[12:])
+                            if "security id:" in vals:
+                                meeting["security_id"] = vals["security id:"]
                                 seen_secid = True
                 elif "proxy card" in c.text.lower():
                     card = c.text

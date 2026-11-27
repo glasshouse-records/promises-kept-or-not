@@ -275,3 +275,37 @@ def test_amendment6_not_applied_without_pagebreak():
     t = _fk().replace("<!-- PAGEBREAK_START -->", "").replace("<!-- PAGEBREAK_END -->", "")
     t = t.replace("<tr><td><p>1.1</p>", "<tr><td><p>Ticker: ZZZ</p></td></tr><tr><td><p>1.1</p>")
     assert "late_label" not in m.parse_stats(t)["meeting_reasons"]
+
+
+def _idline(line):
+    t = load("basic").replace("Ticker:&nbsp;&nbsp;ALNY\n<br>Security ID:&nbsp;&nbsp;02043Q107", line)
+    assert line in t
+    return t
+
+
+NB = "&#xa0;"
+
+
+def test_amendment7_ticker_and_security_id_on_one_line():
+    for line, want in [
+        (f"TICKER:{NB*2}3660{NB*6}SECURITY ID:{NB*2}88557W101", ("3660", "88557W101")),
+        (f"SECURITY ID:{NB*2}88557W101{NB*6}TICKER:{NB*2}3660", ("3660", "88557W101")),
+        ("ticker: ab security id: 02043Q107", ("ab", "02043Q107")),
+        ("Ticker: AB<br>Security ID: ", ("AB", "")),
+        ("Ticker: Security ID: 02043Q107", ("", "02043Q107")),
+    ]:
+        rows = m.parse(_idline(line))
+        assert rows and {(r["ticker"], r["security_id"]) for r in rows} == {want}, line
+
+
+def test_amendment7_label_twice_in_one_line_rejects_meeting():
+    for line in ("Ticker: A Security ID: 1 Ticker: B", "Security ID: 1 ticker: A SECURITY ID: 2"):
+        t = _idline(line)
+        st_ = m.parse_stats(t)
+        assert m.parse(t) == []
+        assert st_["bad_meetings"] == 1 and st_["meeting_reasons"]["dup_id_label"] == 1
+
+
+def test_amendment7_two_line_form_unchanged():
+    r = m.parse(load("basic"))[0]
+    assert (r["ticker"], r["security_id"]) == ("ALNY", "02043Q107")
