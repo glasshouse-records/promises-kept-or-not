@@ -1059,6 +1059,23 @@ def cmd_engine(args) -> int:
     return 0
 
 
+def cmd_screen(args) -> int:
+    """Run the insight screens over the engine (read-only); every hit is a lead."""
+    import json
+    from pathlib import Path
+
+    from . import engine, screens
+    try:
+        res = screens.run(engine.Engine(), args.which, year=args.year)
+    except (ValueError, FileNotFoundError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    print(screens.render(res, top=args.top))
+    if args.json:
+        Path(args.json).write_text(json.dumps(res, indent=1, ensure_ascii=False))
+    return 0
+
+
 def cmd_ask(args) -> int:
     """Ask the evidence engine one question; prints the cited JSON envelope."""
     from . import engine
@@ -1419,6 +1436,13 @@ def main(argv: list[str] | None = None) -> int:
     ask.add_argument("tool")
     ask.add_argument("params", nargs="*", help="key=value arguments")
     ask.set_defaults(func=cmd_ask)
+    scr = sub.add_parser("screen", help="insight screens over the engine (S3 peer outlier, "
+                         "S5 ESG-labelled funds): ranked leads, never findings")
+    scr.add_argument("which", choices=["S3", "S5", "all"])
+    scr.add_argument("--year", type=int)
+    scr.add_argument("--top", type=int, default=20, help="rows shown (JSON has all)")
+    scr.add_argument("--json", help="write every candidate, all fields, to this file")
+    scr.set_defaults(func=cmd_screen)
     dk = sub.add_parser("desk", help="the desk: mechanically re-check an investigating "
                         "agent's draft against the record (never publishes)")
     dk_sub = dk.add_subparsers(dest="action", required=True)
