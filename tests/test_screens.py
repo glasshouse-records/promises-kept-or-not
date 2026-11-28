@@ -20,14 +20,15 @@ def _ledger(tmp_path, name):
                       "'2026-01-01','06/30/2024','FUND VOTING REPORT')",
                       (f"ACC-{cik}", cik, iid, f"https://sec.example/{cik}"))
 
-    def vote(cik, i, how, date="05/20/2024", series=None, fmt=None, desc=None):
+    def vote(cik, i, how, date="05/20/2024", series=None, fmt=None, desc=None, pnum=None):
         c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date,"
                   " vote_description, vote_source, how_voted, management_recommendation,"
-                  " shares_voted, vote_series, legacy_format, category_type, is_duplicate)"
-                  " VALUES (?,?,?,?,?,'SECURITY HOLDER',?,'AGAINST',100,?,?,?,0)",
+                  " shares_voted, vote_series, legacy_format, category_type, is_duplicate,"
+                  " proposal_number)"
+                  " VALUES (?,?,?,?,?,'SECURITY HOLDER',?,'AGAINST',100,?,?,?,0,?)",
                   (f"ACC-{cik}", f"ISSUER {i}", f"CUSIP{i:04d}", date,
                    desc or f"Report on Climate Transition Plan {i}", how, series, fmt,
-                   "" if fmt else "SHAREHOLDER PROPOSAL"))
+                   "" if fmt else "SHAREHOLDER PROPOSAL", pnum))
 
     return c, path, inst, vote
 
@@ -168,9 +169,14 @@ def _s5_engine(tmp_path, other_adviser=False):
     return _build(c, path, tmp_path, reg)
 
 
+def _themed(out):
+    """S5 rows for one theme (the pooled summary rows left out)."""
+    return [c for c in out["candidates"] if c["theme"] != "pooled"]
+
+
 def test_s5_flags_esg_named_fund_voting_below_its_siblings(tmp_path):
     out = screens.s5_esg_funds(_s5_engine(tmp_path))
-    hits = out["candidates"]
+    hits = _themed(out)
     assert len(hits) == 1
     h = hits[0]
     assert (h["series_id"], h["series_name"]) == ("S1", "Acme Sustainable Equity")
@@ -178,17 +184,19 @@ def test_s5_flags_esg_named_fund_voting_below_its_siblings(tmp_path):
     assert h["n_peers"] == 2                              # S2 and S3, not S1 itself
     assert h["gap_pp"] == -100.0 and h["score"] == round(100 * 35 ** 0.5, 2)
     assert len(h["example_proposal_ids"]) == 3
-    assert h["reproduce"][0].startswith("glasshouse ask fund_votes proposal_id=")
+    assert h["reproduce"][0] == "glasshouse ask fund_record series_id=S1 theme=climate"
+    assert h["reproduce"][1].startswith("glasshouse ask fund_votes proposal_id=")
+    assert h["label"] == "with_house" and h["theme"] == "climate"
     assert [m["series_name"] for m in out["matched_funds"]] == ["Acme Sustainable Equity"]
 
 
 def test_s5_never_compares_with_another_advisers_funds(tmp_path):
     # S4 belongs to adviser BBB: S1 has the same-adviser siblings S2 and S3 only
-    hits = screens.s5_esg_funds(_s5_engine(tmp_path, other_adviser=True))["candidates"]
+    hits = _themed(screens.s5_esg_funds(_s5_engine(tmp_path, other_adviser=True)))
     assert len(hits) == 1 and hits[0]["entity"] == "hh/AAA" and hits[0]["n_peers"] == 2
 
 
-def test_s5_floor_and_no_candidate_when_esg_fund_votes_for(tmp_path):
+def test_s5_floor_and_both_directions_when_esg_fund_votes_for(tmp_path):
     c, path, inst, vote = _ledger(tmp_path, "s5b")
     inst("hh", ["11"])
     for sid, name in (("S1", "Acme ESG Fund"), ("S2", "Acme Core")):
@@ -197,7 +205,7 @@ def test_s5_floor_and_no_candidate_when_esg_fund_votes_for(tmp_path):
     for i in range(29):                                    # 29 shared: under the floor
         vote("11", i, "AGAINST", series="S1")
         vote("11", i, "FOR", series="S2")
-    assert screens.s5_esg_funds(_build(c, path, tmp_path))["candidates"] == []
+    assert screens.s5_esg_funds(_build(c, path, tmp_path))["candidates"] == []   # floor
 
     c, path, inst, vote = _ledger(tmp_path, "s5c")
     inst("hh", ["11"])
@@ -207,7 +215,8 @@ def test_s5_floor_and_no_candidate_when_esg_fund_votes_for(tmp_path):
     for i in range(35):                                    # ESG fund 20 pp ABOVE siblings
         vote("11", i, "FOR", series="S1")
         vote("11", i, "FOR" if i < 28 else "AGAINST", series="S2")
-    assert screens.s5_esg_funds(_build(c, path, tmp_path))["candidates"] == []
+    rows = _themed(screens.s5_esg_funds(_build(c, path, tmp_path)))
+    assert [(r["label"], r["gap_pp"]) for r in rows] == [("differs", 20.0)]   # reported, not hidden
 
 
 def test_s5_legacy_counts(tmp_path):
@@ -221,7 +230,7 @@ def test_s5_legacy_counts(tmp_path):
         date, fmt = ("05/20/2023", "proxyedge") if legacy else ("09/20/2023", None)
         vote("11", i, "AGAINST", date, series="S1", fmt=fmt)
         vote("11", i, "FOR", date, series="S2", fmt=fmt)
-    h = screens.s5_esg_funds(_build(c, path, tmp_path))["candidates"][0]
+    h = _themed(screens.s5_esg_funds(_build(c, path, tmp_path)))[0]
     assert h["n_ballots"] == 36 and h["n_legacy_ballots"] == 8 and h["includes_legacy"]
     assert h["n_ballots_ex_legacy"] == 28 and h["holds_without_legacy"] is False
 
@@ -252,3 +261,138 @@ def test_s5_bulk_lines_agree_with_fund_votes(tmp_path):
         fast = sorted((x["fund_series"], x["fund_series_name"], x["how_voted"])
                       for x in bulk[pid])
         assert fast == slow and fast
+
+
+# ------------------------------------------------------- fund_record (engine tool)
+
+def test_fund_record_counts_each_theme_and_lists_the_ballots(tmp_path):
+    eng = _s5_engine(tmp_path)
+    env = eng.fund_record(series_id="S1")
+    assert env["tool"] == "fund_record" and env["args"] == {"series_id": "S1"}
+    [row] = env["result"]["series"]
+    assert (row["series_id"], row["series_name"], row["institution"]) == (
+        "S1", "Acme Sustainable Equity", "hh")
+    t = row["themes"]["climate"]
+    assert (t["for"], t["against"], t["split"], t["other"], t["ballots"]) == (0, 35, 0, 0, 35)
+    assert len(t["proposals"]) == 35
+    pid = t["proposals"][0]["proposal_id"]
+    assert t["proposals"][0]["ballot_key"] == eng.db.execute(
+        "SELECT ballot_key FROM proposals WHERE proposal_id=?", (pid,)).fetchone()[0]
+    assert {x["how_voted"] for x in eng.fund_votes(pid)["result"]["lines"]
+            if x["fund_series"] == "S1"} == {"AGAINST"}
+    assert env["caveats"]
+    # the same series by name, and narrowed by theme/year
+    assert eng.fund_record(fund="sustainable equity")["result"]["series"] == env["result"]["series"]
+    assert eng.fund_record(series_id="S1", theme="nature")["result"]["series"][0]["themes"] == {}
+    assert eng.fund_record(series_id="S1", year=2023)["result"]["series"][0]["themes"] == {}
+    got = eng.fund_record(series_id="S1", since="2024-05-01", until="2024-05-31")
+    assert got["result"]["series"][0]["themes"]["climate"]["ballots"] == 35
+    json.dumps(env)
+
+
+def test_fund_record_split_other_and_rollback(tmp_path):
+    c, path, inst, vote = _ledger(tmp_path, "fr")
+    inst("hh", ["11"])
+    c.execute("INSERT INTO fund_series (series_id, accession, name) VALUES ('S1','ACC-11','Acme')")
+    vote("11", 0, "FOR", series="S1")
+    vote("11", 1, "AGAINST", series="S1")
+    vote("11", 2, "FOR", series="S1")
+    vote("11", 2, "AGAINST", series="S1")               # one series, both ways: SPLIT
+    vote("11", 3, "ABSTAIN", series="S1")
+    vote("11", 4, "AGAINST", series="S1", desc="Remove climate change targets")   # roll-back
+    eng = _build(c, path, tmp_path)
+    t = eng.fund_record(series_id="S1")["result"]["series"][0]["themes"]["climate"]
+    assert (t["for"], t["against"], t["split"], t["other"], t["ballots"]) == (1, 1, 1, 1, 4)
+
+
+def test_fund_record_refuses_vague_or_unknown_requests(tmp_path):
+    eng = _s5_engine(tmp_path)
+    for kw in ({}, {"series_id": "NOPE"}, {"fund": "no such fund"}, {"series_id": "S1", "theme": "x"}):
+        try:
+            eng.fund_record(**kw)
+        except ValueError:
+            continue
+        raise AssertionError(f"{kw} should have been refused")
+
+
+def test_fund_record_is_registered_everywhere_tools_are_listed():
+    assert "fund_record" in engine.TOOLS
+    import inspect
+    assert list(inspect.signature(engine.Engine.fund_record).parameters)[1:] == [
+        "series_id", "fund", "theme", "year", "since", "until"]
+
+
+def _dup_ledger(tmp_path, name="dup"):
+    """Each issuer's item sits under TWO proposal ids (legacy printed item numbers 1 and 2,
+    same company, meeting and wording)."""
+    c, path, inst, vote = _ledger(tmp_path, name)
+    inst("hh", ["11"])
+    for sid, nm in (("S1", "Acme ESG Fund"), ("S2", "Acme Core")):
+        c.execute("INSERT INTO fund_series (series_id, accession, name) VALUES (?,?,?)",
+                  (sid, "ACC-11", nm))
+    for i in range(35):
+        for pn in ("1", "2"):
+            vote("11", i, "AGAINST", "05/20/2023", series="S1", fmt="proxyedge", pnum=pn)
+            vote("11", i, "FOR", "05/20/2023", series="S2", fmt="proxyedge", pnum=pn)
+    return c, path
+
+
+def test_a_proposal_under_two_ids_is_counted_once(tmp_path):
+    c, path = _dup_ledger(tmp_path)
+    eng = _build(c, path, tmp_path)
+    assert eng.db.execute("SELECT COUNT(*) FROM proposals").fetchone()[0] == 70
+    t = eng.fund_record(series_id="S1")["result"]["series"][0]["themes"]["climate"]
+    assert t["ballots"] == 35 and t["against"] == 35 and len(t["proposals"]) == 35
+    assert t["collapsed_duplicates"] == 35
+    out = screens.s5_esg_funds(eng)
+    [h] = _themed(out)
+    assert h["n_ballots"] == 35 and h["n_collapsed_duplicates"] == 35
+    assert out["n_collapsed_duplicates"] == 35
+
+
+def test_s5_per_theme_rows_pooled_summary_labels_and_summary_line(tmp_path):
+    c, path, inst, vote = _ledger(tmp_path, "s5t")
+    inst("hh", ["11"])
+    for sid, nm in (("E1", "Acme ESG Leaders"), ("E2", "Acme Sustainable Core"),
+                    ("E3", "Acme Climate Mid"), ("S2", "Acme Core Equity")):
+        c.execute("INSERT INTO fund_series (series_id, accession, name) VALUES (?,?,?)",
+                  (sid, "ACC-11", nm))
+    hr = "Report on Human Rights Impact Assessment"
+    for i in range(35):                  # climate: core votes FOR on 20 of 35
+        core = "FOR" if i < 20 else "AGAINST"
+        vote("11", i, core, series="S2")
+        vote("11", i, "FOR", series="E1")                  # +42.9 pp: differs
+        vote("11", i, core, series="E2")                   # 0 pp: with_house
+        vote("11", i, "FOR" if i < 25 else "AGAINST", series="E3")   # +14.3 pp: between
+    for i in range(100, 110):            # ten human-rights ballots: under the per-theme floor
+        vote("11", i, "AGAINST", series="S2", desc=hr)
+        vote("11", i, "AGAINST", series="E1", desc=hr)
+    out = screens.s5_esg_funds(_build(c, path, tmp_path))
+    rows = {(r["series_id"], r["theme"]): r for r in out["candidates"]}
+    assert rows[("E1", "climate")]["label"] == "differs"
+    assert rows[("E2", "climate")]["label"] == "with_house"
+    assert rows[("E3", "climate")]["label"] == "between"
+    assert ("E1", "human-rights") not in rows                 # 10 ballots: per-row floor
+    p = rows[("E1", "pooled")]
+    assert p["n_ballots"] == 45 and p["pooled"] is True and rows[("E1", "climate")]["pooled"] is False
+    assert out["summary"] == ("3 ESG-named series with ≥30 ballots: 1 with house (±5pp), "
+                              "1 differ (+15pp or more), 1 between")
+    assert out["summary"] in screens.render({"S5": out | {"n_candidates": 0}})
+
+
+def test_s5_esg_adviser_group_is_compared_with_the_main_group(tmp_path):
+    for n, esg_key in enumerate(("MAIN_SUSTAINABILITY", "ZZ")):   # suffix; all-series-ESG
+        c, path, inst, vote = _ledger(tmp_path, f"s5g{n}")
+        inst("hh", ["11", "22"])
+        for cik, sid, nm in (("11", "S1", "Acme Core Equity"), ("22", "S9", "Acme Sustainable Fund")):
+            c.execute("INSERT INTO fund_series (series_id, accession, name) VALUES (?,?,?)",
+                      (sid, f"ACC-{cik}", nm))
+        for i in range(35):
+            vote("11", i, "AGAINST", series="S1")
+            vote("22", i, "FOR", series="S9")
+        reg = {"hh": {"npx_ciks": [{"cik": "11", "adviser_key": "MAIN"},
+                                   {"cik": "22", "adviser_key": esg_key}]}}
+        out = screens.s5_esg_funds(_build(c, path, tmp_path, reg))
+        groups = [r for r in _themed(out) if r["kind"] == "group"]
+        assert [(g["entity"], g["compared_with"], g["label"], g["n_ballots"], g["gap_pp"])
+                for g in groups] == [(f"hh/{esg_key}", "hh/MAIN", "differs", 35, 100.0)], esg_key

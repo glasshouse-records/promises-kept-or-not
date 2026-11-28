@@ -2103,6 +2103,157 @@ class Engine:
                      "same series across years before saying a manager changed its vote: "
                      "a different mix of funds can move the total on its own."])
 
+    def series_names(self) -> dict[str, tuple[str, str]]:
+        """series_id -> (name, institution) from the most recent filing that names the
+        series (the rule `fund_votes` uses for `fund_series_name`)."""
+        latest: dict[str, tuple] = {}
+        for r in self.ledger.execute(
+                "SELECT fs.series_id sid, fs.name name, f.institution_id iid, "
+                "COALESCE(f.filing_date, f.period_of_report, '') d, f.accession acc "
+                "FROM fund_series fs JOIN filings f ON f.accession = fs.accession "
+                "WHERE fs.name IS NOT NULL AND fs.name != ''"):
+            key = (r["d"], r["acc"])
+            if r["sid"] not in latest or key > latest[r["sid"]][0]:
+                latest[r["sid"]] = (key, r["name"], r["iid"])
+        return {sid: (name, iid) for sid, (_, name, iid) in latest.items()}
+
+    def bulk_fund_lines(self, pids, names: dict, series=None) -> dict[int, list]:
+        """The fund lines behind each proposal in `pids`, in ONE pass over the ledger.
+        Same matching rules as `fund_votes` (which costs ~0.3 s a call, too slow for
+        thousands of proposals); a test pins the two together. `series`, if given,
+        keeps only those fund series. Returns pid -> lines with fund_series,
+        fund_series_name and how_voted."""
+        rules = defaultdict(dict)       # institution -> cik -> key rules
+        for x in self.db.execute("SELECT institution_id, cik, adviser, rules FROM registrants"):
+            rules[x["institution_id"]][x["cik"]] = (
+                json.loads(x["rules"]) if x["rules"] else
+                {"default": x["adviser"], "history": [], "series": {}})
+        full = {pid: self.db.execute("SELECT * FROM proposals WHERE proposal_id=?",
+                                     (pid,)).fetchone() for pid in pids}
+        index = defaultdict(list)       # (institution, cusip|issuer, ISO day) -> proposal ids
+        for pid, r in full.items():
+            index[(r["institution_id"], r["cusip"], r["meeting_date"])].append(pid)
+            index[(r["institution_id"], r["issuer_name"], r["meeting_date"])].append(pid)
+        first = {}
+        for pid, r in full.items():     # a legacy decision is one printed item: its number
+            f = self.ledger.execute(
+                "SELECT legacy_format IS NOT NULL, proposal_number FROM votes WHERE id=?",
+                (r["vote_id"],)).fetchone()
+            first[pid] = (bool(f and f[0]), ((f[1] if f else "") or "").strip())
+        want = {pid: norm(r["description"]) for pid, r in full.items()}
+        iso = iso_meeting_date("v.meeting_date")
+        insts = sorted({r["institution_id"] for r in full.values()})
+        if not insts:
+            return {}
+        sel = sorted(series) if series is not None else None
+        extra = f" AND v.vote_series IN ({','.join('?' * len(sel))})" if sel else ""
+        out: dict[int, list] = defaultdict(list)
+        for v in self.ledger.execute(
+                f"SELECT f.institution_id AS inst, v.vote_series, v.how_voted, "
+                f"v.vote_description, f.cik, UPPER(TRIM(v.cusip)) AS cusip, v.issuer_name, "
+                f"{iso} AS md, v.proposal_number AS pnum, (v.legacy_format IS NOT NULL) AS lg "
+                f"FROM votes v JOIN filings f ON f.accession = v.accession "
+                f"WHERE f.institution_id IN ({','.join('?' * len(insts))}) "
+                f"AND v.is_duplicate=0 AND {NON_LEGACY_VOTE_SQL} "
+                f"AND v.vote_source='SECURITY HOLDER'{extra}", [*insts, *(sel or [])]):
+            inst = v["inst"]
+            for pid in {*index.get((inst, v["cusip"], v["md"]), ()),
+                        *index.get((inst, v["issuer_name"], v["md"]), ())}:
+                r = full[pid]
+                if r["adviser"] and (resolve_key(
+                        rules[inst].get(_norm_cik(v["cik"])), v["vote_series"],
+                        r["meeting_date"]) or UNLABELLED) != r["adviser"]:
+                    continue                # another adviser's fund
+                is_legacy, item_no = first[pid]
+                if bool(v["lg"]) != is_legacy:
+                    continue                # the other era's line
+                if is_legacy and (v["pnum"] or "").strip() != item_no:
+                    continue
+                if norm(v["vote_description"]) == want[pid]:
+                    out[pid].append({
+                        "fund_series": v["vote_series"], "how_voted": v["how_voted"],
+                        "fund_series_name": (names.get(v["vote_series"]) or (None,))[0]})
+        return out
+
+    def fund_record(self, series_id=None, fund=None, theme=None, year=None,
+                    since=None, until=None) -> dict:
+        """One fund series' record across ballots in the engine's proposal set: per
+        theme, how many items it voted FOR / AGAINST / SPLIT / other, and the proposal
+        ids and ballot keys counted. Name the series by `series_id` or by a
+        case-insensitive part of its latest name in `fund`. Roll-back proposals are left
+        out, as in every theme query; an item filed under two proposal ids counts once."""
+        if not (series_id or fund):
+            raise ValueError("name the fund: series_id=S000012345 or fund=<part of its name>")
+        if theme and theme not in THEMES:
+            raise ValueError(f"unknown theme {theme!r}; known: {', '.join(THEMES)}.")
+        names = self.series_names()
+        found = {sid: v for sid, v in names.items()
+                 if (not series_id or sid == series_id)
+                 and (not fund or fund.lower() in v[0].lower())}
+        if series_id and series_id not in found and not fund:
+            ins = {r[0] for r in self.ledger.execute(
+                "SELECT DISTINCT f.institution_id FROM votes v JOIN filings f "
+                f"ON f.accession = v.accession WHERE v.vote_series=? AND v.is_duplicate=0 "
+                f"AND {NON_LEGACY_VOTE_SQL}", (series_id,)) if r[0]}
+            found = dict.fromkeys([series_id] if ins else [], (None, sorted(ins)[0] if ins else None))
+        if not found:
+            raise ValueError(f"no fund series matches series_id={series_id!r} fund={fund!r}")
+        if len(found) > 25:
+            raise ValueError(f"{len(found)} series match {fund!r}: narrow it or use series_id")
+        insts = sorted({v[1] for v in found.values()})
+        props: dict[int, dict] = {}
+        for t in ([theme] if theme else list(THEMES)):
+            join, w, p = self._where(theme=t, year=year, since=since, until=until)
+            for r in self.db.execute(
+                    f"SELECT p.* FROM proposals p {join} WHERE {w} AND p.institution_id IN "
+                    f"({','.join('?' * len(insts))})", [*p, *insts]):
+                props.setdefault(r["proposal_id"], dict(r) | {"_themes": set()})["_themes"].add(t)
+        lines = self.bulk_fund_lines(props, names, series=set(found))
+        rows = []
+        for sid, (name, inst) in sorted(found.items()):
+            by_theme: dict[str, dict] = {}
+            seen: dict[str, set] = defaultdict(set)
+            for pid in sorted(props):
+                votes = {(ln["how_voted"] or "").upper() for ln in lines.get(pid, ())
+                         if ln["fund_series"] == sid}
+                if not votes:
+                    continue
+                pr = props[pid]
+                has_for, has_against = "FOR" in votes, bool(votes & {"AGAINST", "WITHHOLD"})
+                pos = ("SPLIT" if has_for and has_against else "FOR" if has_for
+                       else "AGAINST" if has_against else "OTHER")
+                key = proposal_key(pr)
+                for t in sorted(pr["_themes"]):
+                    b = by_theme.setdefault(t, {"for": 0, "against": 0, "split": 0, "other": 0,
+                                                "ballots": 0, "collapsed_duplicates": 0,
+                                                "proposals": []})
+                    if key in seen[t]:
+                        b["collapsed_duplicates"] += 1
+                        continue
+                    seen[t].add(key)
+                    b[pos.lower()] += 1
+                    b["ballots"] += 1
+                    b["proposals"].append({"proposal_id": pid, "ballot_key": pr["ballot_key"],
+                                           "meeting_date": pr["meeting_date"],
+                                           "company": pr["issuer_name"], "position": pos})
+            rows.append({"series_id": sid, "series_name": name, "institution": inst,
+                         "themes": by_theme})
+        return _env("fund_record",
+                    _clean(series_id=series_id, fund=fund, theme=theme, year=year,
+                           since=since, until=until),
+                    {"series": rows},
+                    ["A series' position on an item is FOR or AGAINST when all its lines "
+                     "agree, SPLIT when it filed both, `other` when it abstained or filed "
+                     "neither (withhold counts as AGAINST).",
+                     "Only items tagged with a theme are counted, roll-back proposals "
+                     "excluded; an item tagged with two themes counts in both rows, so do "
+                     "not add themes up. An item filed under two proposal ids counts once "
+                     "(`collapsed_duplicates`).",
+                     "These are the ballots in the engine's proposal set for this fund's "
+                     "manager and adviser, not every vote the fund cast; the rate is on "
+                     "ballots, not shares. Screen S5 counts only items its siblings also "
+                     "voted, so its n can be smaller. The name is the latest filing's."])
+
     def filers(self, institution: str, adviser=None) -> dict:
         """Which of a manager's fund registrants are on file — how much of the
         manager the vote record actually covers."""
@@ -2243,10 +2394,18 @@ VOTE_TOOLS = ("proposals", "voting_record", "reversals", "say_vs_do", "director_
               "director_votes", "director_panel", "pay_record")
 
 TOOLS = ("coverage", "policy_versions", "policy_counts", "policy_search", "policy_diff", "policy_in_force",
-         "proposals", "voting_record", "peers", "ballot", "fund_votes", "reversals", "say_vs_do", "filers",
+         "proposals", "voting_record", "peers", "ballot", "fund_votes", "fund_record", "reversals", "say_vs_do", "filers",
          "director_record", "director_votes", "director_peers", "director_panel", "pay_record",
          "company",
          "enforcement", "holdings", "verify_quote", "sql")
+
+
+def proposal_key(r) -> tuple:
+    """One real item, however many proposal ids it sits under: (CUSIP or issuer name,
+    meeting date, normalised wording). Shared by `fund_record` and screen S5 so their
+    counts agree."""
+    return ((r["cusip"] or r["issuer_name"] or "").strip().upper(), r["meeting_date"],
+            norm(r["description"]))
 
 
 def _clean(**kw) -> dict:

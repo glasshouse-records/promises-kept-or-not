@@ -30,6 +30,7 @@ Read the caveats; they are part of the answer.
     .venv/bin/glasshouse ask company name=EXXON year=2024
     .venv/bin/glasshouse ask ballot proposal_id=1234
     .venv/bin/glasshouse ask fund_votes proposal_id=1234    # each fund series behind a position; fund_series_name is the latest filing's name, null if none
+    .venv/bin/glasshouse ask fund_record series_id=S000012345 theme=climate    # ONE fund series across ballots: for/against/split/other per theme + the proposals counted; cite as stat path result.series[series_id=S000012345].themes.climate.for
     .venv/bin/glasshouse ask voting_record institution=jpmorgan theme=climate since=2024-07-01 until=2025-06-30
     .venv/bin/glasshouse ask director_record institution=vanguard since=2025-01-01 until=2025-06-30
     .venv/bin/glasshouse ask director_peers since=2025-01-01 until=2025-06-30

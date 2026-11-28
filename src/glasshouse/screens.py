@@ -21,19 +21,20 @@ much as distance (rubric item 2).
 
 S5 ESG-labelled funds. A fund series whose name matches ESG_NAME is compared with the
 SAME entity's (institution + adviser) other, non-ESG-named series on the SAME
-environmental/social shareholder proposals (themes in ES_THEMES, roll-back proposals
-excluded as the engine does; the engine's proposals are all vote_source SECURITY HOLDER).
-A series' position on a proposal is FOR or AGAINST only if all its decided lines agree.
-Shared proposals = those where the ESG series and >= 1 other series have a position.
-`entity_rate` = the ESG series' FOR-rate over them; `peer_median` = mean over proposals of
-the FOR share among the other series (one proposal, one vote); `n_peers` = the number of
-other series seen. Candidate when entity_rate <= peer_median + 0.05 and n_ballots >= 30.
-score = (peer_median - entity_rate) * 100 * sqrt(n_ballots).
+environmental/social shareholder proposals (roll-back proposals excluded as the engine
+does). A series' position on a proposal is FOR or AGAINST only if all its decided lines
+agree. `entity_rate` = the ESG series' FOR-rate over the shared proposals; `peer_median` =
+mean over proposals of the FOR share among the other series. Both directions are reported:
+`differs` (gap >= +15 pp), `with_house` (gap <= +5 pp, i.e. within 5 pp or below),
+`between`. Each theme (ES_THEMES) is scored on its own, the 30-ballot floor applies per
+row, and the `pooled` row (all themes) is a summary only. An ESG adviser group (adviser
+key ending _SUSTAINABILITY/_SOCIAL/_ESG/_SUSTAINABLE, or every series ESG-named) is
+compared, kind `group`, with the same institution's non-ESG group sharing the most items.
+An item filed under several proposal ids (same company, meeting, wording) counts once.
 """
 
 from __future__ import annotations
 
-import json
 import math
 import re
 import statistics
@@ -48,7 +49,10 @@ MIN_OVERLAP = 30
 MIN_PEERS = 2
 GAP_PP = 15.0
 S5_TOLERANCE = 0.05
+S5_DIFFERS_PP = 15.0
 ES_THEMES = ("climate", "nature", "human-rights", "labor-rights", "board-diversity")
+
+ESG_GROUP_KEY = re.compile(r"_(?:SUSTAINABILITY|SOCIAL|ESG|SUSTAINABLE)$", re.IGNORECASE)
 
 # Whole words, except the stems Sustainab* and Responsib* (Sustainable, Sustainability,
 # Responsible, Responsibly). "Impactful Growth", "Greenwich", "Socialite", "Cleanse" and
@@ -160,18 +164,7 @@ def s3_peer_outliers(eng: engine.Engine, year: int | None = None) -> dict:
 # ------------------------------------------------------------------------- S5
 
 def _series_names(eng: engine.Engine) -> dict[str, tuple[str, str]]:
-    """series_id -> (name, institution) from the most recent filing naming it (the rule
-    `fund_votes` uses for `fund_series_name`)."""
-    latest: dict[str, tuple] = {}
-    for r in eng.ledger.execute(
-            "SELECT fs.series_id sid, fs.name name, f.institution_id iid, "
-            "COALESCE(f.filing_date, f.period_of_report, '') d, f.accession acc "
-            "FROM fund_series fs JOIN filings f ON f.accession = fs.accession "
-            "WHERE fs.name IS NOT NULL AND fs.name != ''"):
-        key = (r["d"], r["acc"])
-        if r["sid"] not in latest or key > latest[r["sid"]][0]:
-            latest[r["sid"]] = (key, r["name"], r["iid"])
-    return {sid: (name, iid) for sid, (_, name, iid) in latest.items()}
+    return eng.series_names()
 
 
 def _esg_series(eng: engine.Engine) -> dict[str, dict]:
@@ -181,58 +174,9 @@ def _esg_series(eng: engine.Engine) -> dict[str, dict]:
 
 
 def _bulk_lines(eng: engine.Engine, props: dict[int, dict], names: dict) -> dict[int, list]:
-    """The fund lines behind each proposal in `props`, in ONE pass over the ledger.
-    Same matching rules as `Engine.fund_votes` (which costs ~0.3 s a call, too slow for
-    thousands of proposals); a test pins the two together. Returns pid -> lines with
-    fund_series, fund_series_name and how_voted."""
-    rules = defaultdict(dict)       # institution -> cik -> key rules
-    for x in eng.db.execute("SELECT institution_id, cik, adviser, rules FROM registrants"):
-        rules[x["institution_id"]][x["cik"]] = (
-            json.loads(x["rules"]) if x["rules"] else
-            {"default": x["adviser"], "history": [], "series": {}})
-    full = {pid: eng.db.execute("SELECT * FROM proposals WHERE proposal_id=?",
-                                (pid,)).fetchone() for pid in props}
-    index = defaultdict(list)       # (institution, cusip|issuer, ISO day) -> proposal ids
-    for pid, r in full.items():
-        index[(r["institution_id"], r["cusip"], r["meeting_date"])].append(pid)
-        index[(r["institution_id"], r["issuer_name"], r["meeting_date"])].append(pid)
-    first = {}
-    for pid, r in full.items():     # a legacy decision is one printed item: its number
-        f = eng.ledger.execute(
-            "SELECT legacy_format IS NOT NULL, proposal_number FROM votes WHERE id=?",
-            (r["vote_id"],)).fetchone()
-        first[pid] = (bool(f and f[0]), ((f[1] if f else "") or "").strip())
-    want = {pid: engine.norm(r["description"]) for pid, r in full.items()}
-    iso = iso_meeting_date("v.meeting_date")
-    insts = sorted({r["institution_id"] for r in full.values()})
-    out: dict[int, list] = defaultdict(list)
-    for v in eng.ledger.execute(
-            f"SELECT f.institution_id AS inst, v.vote_series, v.how_voted, "
-            f"v.vote_description, f.cik, UPPER(TRIM(v.cusip)) AS cusip, v.issuer_name, "
-            f"{iso} AS md, v.proposal_number AS pnum, (v.legacy_format IS NOT NULL) AS lg "
-            f"FROM votes v JOIN filings f ON f.accession = v.accession "
-            f"WHERE f.institution_id IN ({','.join('?' * len(insts))}) "
-            f"AND v.is_duplicate=0 AND {NON_LEGACY_VOTE_SQL} "
-            f"AND v.vote_source='SECURITY HOLDER'", insts):
-        inst = v["inst"]
-        pids = {*index.get((inst, v["cusip"], v["md"]), ()),
-                *index.get((inst, v["issuer_name"], v["md"]), ())}
-        for pid in pids:
-            r = full[pid]
-            if r["adviser"] and (engine.resolve_key(
-                    rules[inst].get(engine._norm_cik(v["cik"])), v["vote_series"],
-                    r["meeting_date"]) or engine.UNLABELLED) != r["adviser"]:
-                continue                    # another adviser's fund
-            is_legacy, item_no = first[pid]
-            if bool(v["lg"]) != is_legacy:
-                continue                    # the other era's line
-            if is_legacy and (v["pnum"] or "").strip() != item_no:
-                continue
-            if engine.norm(v["vote_description"]) == want[pid]:
-                out[pid].append({
-                    "fund_series": v["vote_series"], "how_voted": v["how_voted"],
-                    "fund_series_name": (names.get(v["vote_series"]) or (None,))[0]})
-    return out
+    """The fund lines behind each proposal in `props` (the engine's bulk loader, which
+    follows the matching rules of `Engine.fund_votes`; a test pins the two together)."""
+    return eng.bulk_fund_lines(props, names)
 
 
 def _positions(lines) -> dict[str, tuple[str, str | None]]:
@@ -247,13 +191,89 @@ def _positions(lines) -> dict[str, tuple[str, str | None]]:
     return {s: (next(iter(v)), names[s]) for s, v in seen.items() if len(v) == 1}
 
 
+def s5_label(gap_pp: float) -> str:
+    """`differs`: the ESG-named fund votes at least 15 pp MORE favourably than its house;
+    `with_house`: within 5 pp of it, or below; otherwise `between`."""
+    if gap_pp >= S5_DIFFERS_PP:
+        return "differs"
+    return "with_house" if gap_pp <= S5_TOLERANCE * 100 else "between"
+
+
+def _dedupe(rows: list) -> tuple[list, int]:
+    """One row per real item (engine.proposal_key), lowest proposal id first."""
+    seen, kept = set(), []
+    for r in sorted(rows, key=lambda r: r[0]):
+        k = engine.proposal_key(r[1])
+        if k not in seen:
+            seen.add(k)
+            kept.append(r)
+    return kept, len(rows) - len(kept)
+
+
+def _s5_row(*, kind, ent, sid, name, theme, rows, n_peers, compared_with, collapsed) -> dict | None:
+    """One candidate from `rows` = [(proposal id, proposal, position, comparison FOR-rate)]
+    already de-duplicated; None under the 30-ballot floor."""
+    n = len(rows)
+    if n < MIN_BALLOTS:
+        return None
+    rate = _rate(r[2] for r in rows)
+    med = sum(r[3] for r in rows) / n
+    gap = round((rate - med) * 100, 2)
+    label = s5_label(gap)
+    legacy = [r for r in rows if r[1]["weight_basis"] == "lines"]
+    ex = [r for r in rows if r[1]["weight_basis"] != "lines"]
+    ex_rate = _rate(r[2] for r in ex) if ex else None
+    ex_med = sum(r[3] for r in ex) / len(ex) if ex else None
+    ex_gap = round((ex_rate - ex_med) * 100, 2) if ex else None
+    deviating = sorted((r[0], r[1]["ballot_key"]) for r in rows
+                       if (r[2] == "FOR") != (r[3] > 0.5)) or sorted(
+        (r[0], r[1]["ballot_key"]) for r in rows)
+    ex_ids = deviating[:3]
+    repro = []
+    if kind == "series":
+        repro.append(f"glasshouse ask fund_record series_id={sid}"
+                     + ("" if theme == "pooled" else f" theme={theme}"))
+    repro += [f"glasshouse ask fund_votes proposal_id={i}" for i, _ in ex_ids]
+    return {
+        "screen": "S5", "kind": kind, "label": label, "pooled": theme == "pooled",
+        "entity": ent, "series_id": sid, "series_name": name, "theme": theme,
+        "compared_with": compared_with,
+        "year": ",".join(str(y) for y in sorted({r[1]["year"] for r in rows if r[1]["year"]})),
+        "n_ballots": n, "entity_rate": round(rate, 4), "peer_median": round(med, 4),
+        "n_peers": n_peers, "gap_pp": gap,
+        "score": round(((rate - med) if label != "with_house" else (med - rate))
+                       * 100 * math.sqrt(n), 2),
+        "n_collapsed_duplicates": collapsed,
+        "includes_legacy": bool(legacy), "n_legacy_ballots": len(legacy),
+        "n_ballots_ex_legacy": len(ex),
+        "entity_rate_ex_legacy": round(ex_rate, 4) if ex else None,
+        "peer_median_ex_legacy": round(ex_med, 4) if ex else None,
+        "gap_pp_ex_legacy": ex_gap,
+        "holds_without_legacy": bool(ex) and len(ex) >= MIN_BALLOTS and (
+            s5_label(ex_gap) == label),
+        "example_proposal_ids": [i for i, _ in ex_ids],
+        "example_ballot_keys": [k for _, k in ex_ids],
+        "reproduce": repro}
+
+
+def _is_esg_group(ent: str, member_names: set) -> bool:
+    """An ESG adviser group: its adviser key ends _SUSTAINABILITY, _SOCIAL, _ESG or
+    _SUSTAINABLE, or every one of its series carries an ESG name."""
+    _, adv = _split_entity(ent)
+    if adv and ESG_GROUP_KEY.search(adv):
+        return True
+    return bool(member_names) and all(esg_name(n) for n in member_names)
+
+
 def s5_esg_funds(eng: engine.Engine, year: int | None = None) -> dict:
     esg = _esg_series(eng)
     matched = [{"series_id": s, "institution": v["institution"], "series_name": v["name"]}
                for s, v in esg.items()]
     insts = {v["institution"] for v in esg.values()}
+    empty = {"screen": "S5", "year": year, "candidates": [], "matched_funds": matched,
+             "summary": _s5_summary([]), "n_collapsed_duplicates": 0}
     if not insts:
-        return {"screen": "S5", "year": year, "candidates": [], "matched_funds": []}
+        return empty
     iso = iso_meeting_date("v.meeting_date")
     seen_pairs: set = set()          # (institution, cusip|issuer, ISO date) an ESG series voted
     ids = ",".join("?" * len(esg))
@@ -268,17 +288,20 @@ def s5_esg_funds(eng: engine.Engine, year: int | None = None) -> dict:
     for theme in ES_THEMES:
         join, w, p = eng._where(theme=theme, year=year)
         for r in eng.db.execute(
-                f"SELECT p.proposal_id pid, p.institution_id i, p.cusip c, p.issuer_name n, "
-                f"p.meeting_date d, p.ballot_key bk, p.weight_basis wb, p.year y, "
-                f"{engine._ENTITY.format('p')} ent FROM proposals p {join} WHERE {w}", p):
-            if r["i"] in insts and ((r["i"], r["c"], r["d"]) in seen_pairs
-                                    or (r["i"], r["n"], r["d"]) in seen_pairs):
-                row = props.setdefault(r["pid"], dict(r) | {"themes": set()})
-                row["themes"].add(theme)
-    acc: dict[tuple, dict] = defaultdict(lambda: {"props": [], "others": set()})
+                f"SELECT p.*, {engine._ENTITY.format('p')} ent FROM proposals p {join} "
+                f"WHERE {w}", p):
+            if r["institution_id"] in insts and (
+                    (r["institution_id"], r["cusip"], r["meeting_date"]) in seen_pairs
+                    or (r["institution_id"], r["issuer_name"], r["meeting_date"]) in seen_pairs):
+                row = props.setdefault(r["proposal_id"], dict(r) | {"themes_es": set()})
+                row["themes_es"].add(theme)
     all_lines = _bulk_lines(eng, props, _series_names(eng))
+    members: dict[str, set] = defaultdict(set)      # entity -> names of its series seen
+    acc: dict[tuple, dict] = defaultdict(lambda: {"props": [], "others": set()})
     for pid in sorted(props):
         pr = props[pid]
+        for ln in all_lines.get(pid, ()):
+            members[pr["ent"]].add(ln["fund_series_name"])
         pos = _positions(all_lines.get(pid, ()))
         other = {s: v[0] for s, v in pos.items() if not esg_name(v[1])}
         if not other:
@@ -289,43 +312,62 @@ def s5_esg_funds(eng: engine.Engine, year: int | None = None) -> dict:
                 a = acc[(pr["ent"], s, name)]
                 a["props"].append((pid, pr, position, o_for))
                 a["others"] |= set(other)
-    out = []
+    out, collapsed_total = [], 0
     for (ent, sid, name), a in acc.items():
-        rows = a["props"]
-        n = len(rows)
-        if n < MIN_BALLOTS:
+        pooled_collapsed = 0
+        for theme in (*ES_THEMES, "pooled"):
+            rows = [r for r in a["props"] if theme == "pooled" or theme in r[1]["themes_es"]]
+            rows, collapsed = _dedupe(rows)
+            if theme == "pooled":
+                pooled_collapsed = collapsed
+            row = _s5_row(kind="series", ent=ent, sid=sid, name=name, theme=theme, rows=rows,
+                          n_peers=len(a["others"]), compared_with=ent, collapsed=collapsed)
+            if row:
+                out.append(row)
+        collapsed_total += pooled_collapsed
+    # ESG adviser groups against the same institution's main group, same items
+    by_ent: dict[str, list] = defaultdict(list)
+    for pid in sorted(props):
+        by_ent[props[pid]["ent"]].append(pid)
+    esg_groups = {e for e in by_ent if _split_entity(e)[1]
+                  and _is_esg_group(e, members.get(e, set()))}
+    for g in sorted(esg_groups):
+        inst = _split_entity(g)[0]
+        mine = {engine.proposal_key(props[p]): p for p in reversed(by_ent[g])}
+        best = None
+        for m in sorted(e for e in by_ent if e != g and _split_entity(e)[0] == inst
+                        and e not in esg_groups):
+            overlap = len(mine.keys() & {engine.proposal_key(props[p]) for p in by_ent[m]})
+            if overlap and (best is None or overlap > best[0]):
+                best = (overlap, m)
+        if not best:
             continue
-        rate = _rate(r[2] for r in rows)
-        med = sum(r[3] for r in rows) / n
-        if rate > med + S5_TOLERANCE:
-            continue
-        legacy = [r for r in rows if r[1]["wb"] == "lines"]
-        ex = [r for r in rows if r[1]["wb"] != "lines"]
-        ex_rate = _rate(r[2] for r in ex) if ex else None
-        ex_med = sum(r[3] for r in ex) / len(ex) if ex else None
-        ex_ok = bool(ex) and len(ex) >= MIN_BALLOTS and ex_rate <= ex_med + S5_TOLERANCE
-        deviating = sorted((r[0], r[1]["bk"]) for r in rows
-                           if (r[2] == "FOR") != (r[3] > 0.5)) or sorted(
-            (r[0], r[1]["bk"]) for r in rows)
-        ex_ids = deviating[:3]
-        out.append({
-            "screen": "S5", "entity": ent, "series_id": sid, "series_name": name,
-            "theme": ",".join(sorted(set().union(*(r[1]["themes"] for r in rows)))),
-            "year": ",".join(str(y) for y in sorted({r[1]["y"] for r in rows if r[1]["y"]})),
-            "n_ballots": n, "entity_rate": round(rate, 4), "peer_median": round(med, 4),
-            "n_peers": len(a["others"]), "gap_pp": round((rate - med) * 100, 2),
-            "score": round((med - rate) * 100 * math.sqrt(n), 2),
-            "includes_legacy": bool(legacy), "n_legacy_ballots": len(legacy),
-            "n_ballots_ex_legacy": len(ex),
-            "entity_rate_ex_legacy": round(ex_rate, 4) if ex else None,
-            "peer_median_ex_legacy": round(ex_med, 4) if ex else None,
-            "gap_pp_ex_legacy": round((ex_rate - ex_med) * 100, 2) if ex else None,
-            "holds_without_legacy": ex_ok,
-            "example_proposal_ids": [i for i, _ in ex_ids],
-            "example_ballot_keys": [k for _, k in ex_ids],
-            "reproduce": [f"glasshouse ask fund_votes proposal_id={i}" for i, _ in ex_ids]})
-    out.sort(key=lambda c: (-c["score"], c["entity"], c["series_id"]))
-    return {"screen": "S5", "year": year, "candidates": out, "matched_funds": matched}
+        main = {engine.proposal_key(props[p]): p for p in reversed(by_ent[best[1]])}
+        for theme in (*ES_THEMES, "pooled"):
+            rows, kept = [], 0
+            for k, pid in sorted(mine.items(), key=lambda kv: kv[1]):
+                pr, mp = props[pid], props.get(main.get(k))
+                if theme != "pooled" and theme not in pr["themes_es"]:
+                    continue
+                kept += 1
+                if mp and pr["position"] in ("FOR", "AGAINST") and mp["position"] in (
+                        "FOR", "AGAINST"):
+                    rows.append((pid, pr, pr["position"], 1.0 if mp["position"] == "FOR" else 0.0))
+            n_dup = sum(1 for p in by_ent[g] if theme == "pooled" or theme in props[p]["themes_es"]) - kept
+            row = _s5_row(kind="group", ent=g, sid="", name=_split_entity(g)[1], theme=theme,
+                          rows=rows, n_peers=1, compared_with=best[1], collapsed=n_dup)
+            if row:
+                out.append(row)
+    out.sort(key=lambda c: (-c["score"], c["entity"], c["series_id"], c["theme"]))
+    return {"screen": "S5", "year": year, "candidates": out, "matched_funds": matched,
+            "summary": _s5_summary(out), "n_collapsed_duplicates": collapsed_total}
+
+
+def _s5_summary(cands: list) -> str:
+    rows = [c for c in cands if c["kind"] == "series" and c["pooled"]]
+    n = {k: sum(1 for c in rows if c["label"] == k) for k in ("with_house", "differs", "between")}
+    return (f"{len(rows)} ESG-named series with ≥30 ballots: {n['with_house']} with house "
+            f"(±5pp), {n['differs']} differ (+15pp or more), {n['between']} between")
 
 
 # ------------------------------------------------------------------------- run
@@ -352,11 +394,15 @@ def render(res: dict, top: int | None = None) -> str:
         shown = r["candidates"][:top] if top else r["candidates"]
         lines.append(f"== {n}: {r['n_candidates']} candidates (leads, not findings)"
                      f"{'; showing top ' + str(len(shown)) if shown else ''}")
+        if r.get("summary"):
+            lines.append(r["summary"])
         lines.append(f"{'score':>8} {'entity':<28} {'theme':<16} {'year':<10} {'n':>5} "
                      f"{'rate':>6} {'peers':>6} {'gap_pp':>7} {'np':>3} {'legacy n':>9} "
                      f"{'holds w/o':>9}")
         for c in shown:
             ent = c["entity"] + (f" [{c['series_name']}]" if "series_name" in c else "")
+            if c.get("label"):
+                ent = f"{c['label']} {ent}"
             lines.append(f"{c['score']:>8.1f} {ent[:60]:<28} {c['theme'][:16]:<16} "
                          f"{str(c['year'])[:10]:<10} {c['n_ballots']:>5} {c['entity_rate']:>6.3f} "
                          f"{c['peer_median']:>6.3f} {c['gap_pp']:>7.1f} {c['n_peers']:>3} "
