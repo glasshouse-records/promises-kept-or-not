@@ -187,6 +187,64 @@ def _ballot_key(cusip: str, issuer: str, date: str, desc: str) -> str:
     return f"{who}|{date}|{' '.join(sorted(set(toks))[:14])}"
 
 
+BALLOT_DAYS = 7           # meeting-date drift tolerated when two keys are merged
+BALLOT_JACCARD = 0.85     # shared share of significant words ...
+BALLOT_MIN_SHARED = 7     # ... and at least this many shared words (a short title never merges)
+
+
+def _ballot_tokens(desc: str) -> frozenset:
+    return frozenset(t for t in re.findall(r"[a-z0-9]+", (desc or "").lower()) if t not in _STOP)
+
+
+def _days_apart(a: str, b: str) -> int | None:
+    try:
+        return abs((date.fromisoformat(a) - date.fromisoformat(b)).days)
+    except ValueError:
+        return None
+
+
+def _merge_ballot_keys(items: list[dict]) -> dict[str, str]:
+    """Map each base ballot key to the key its cluster is known by. `items` carry
+    key, who (CUSIP or issuer), date, tokens (ALL significant words, the key keeps 14),
+    rollback, owners (set of (institution, adviser) that filed it).
+
+    Two keys merge only when ALL hold: same company; meeting dates equal or within
+    BALLOT_DAYS (an adjourned meeting, a date typed off by a day); opposite-direction
+    flag equal; the word sets share at least BALLOT_MIN_SHARED words and BALLOT_JACCARD of
+    their union (one differing word among many); and no manager+adviser filed both — a manager that voted both items proves they are two items. Each key is
+    compared with the cluster's first key only (sorted order), so similarity never chains.
+    A miss leaves a proposal unmatched (recoverable); a false merge would compare votes
+    on two different proposals (not)."""
+    by_key: dict[str, dict] = {}
+    for it in items:
+        k = by_key.setdefault(it["key"], {**it, "owners": set(it["owners"])})
+        k["owners"] |= set(it["owners"])
+    by_who: dict[str, list] = defaultdict(list)
+    for it in by_key.values():
+        if it["who"] and it["tokens"]:
+            by_who[it["who"]].append(it)
+    canon: dict[str, str] = {k: k for k in by_key}
+    for group in by_who.values():
+        clusters: list[list[dict]] = []
+        for it in sorted(group, key=lambda x: x["key"]):
+            for cl in clusters:
+                rep = cl[0]
+                gap = _days_apart(rep["date"], it["date"]) if rep["date"] != it["date"] else 0
+                if gap is None or gap > BALLOT_DAYS or rep["rollback"] != it["rollback"]:
+                    continue
+                inter = len(rep["tokens"] & it["tokens"])
+                if inter < BALLOT_MIN_SHARED or inter / len(rep["tokens"] | it["tokens"]) < BALLOT_JACCARD:
+                    continue
+                if any(m["owners"] & it["owners"] for m in cl):
+                    continue                # one manager filed both: two items
+                cl.append(it)
+                canon[it["key"]] = rep["key"]
+                break
+            else:
+                clusters.append([it])
+    return canon
+
+
 MIXED_BASIS = "MIXED WEIGHT BASIS"
 LEGACY_UNCATEGORISED = (
     "The 2022-23 season (meetings before 2023-07-01) is read from text filings that print no "
@@ -692,13 +750,18 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
     resolvers = {iid: rules[iid] for iid in split}
     groups = _grouped(led, "v.vote_source = 'SECURITY HOLDER'", resolvers)
 
-    rows, fts = [], []
+    rows, fts, bk_items = [], [], []
     for pid, g in _stable_ids(groups):
         v = g["row"]
         desc = v["d"] or ""
         themes = [t for t, rx in theme_rx.items() if rx.search(desc)]
         md = v["md"] or ""
         year = int(md[:4]) if md[:4].isdigit() else None
+        bkey = _ballot_key(v["cusip"], v["issuer_name"], md, desc)
+        bk_items.append({"key": bkey, "date": md, "tokens": _ballot_tokens(desc),
+                         "rollback": is_rollback(desc), "owners": {(v["iid"], g["adviser"])},
+                         "who": (v["cusip"] or "").strip().upper()
+                         or re.sub(r"[^a-z0-9]", "", (v["issuer_name"] or "").lower())[:24]})
         rows.append((pid, v["iid"], v["issuer_name"], (v["cusip"] or "").strip().upper(), md,
                      year, desc, v["category_type"],
                      ("MIXED" if g["with_m"] and g["against_m"] else
@@ -708,10 +771,12 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
                      g["against"], g["abstain"] + g["other"],
                      "," + ",".join(themes) + "," if themes else "",
                      int(is_rollback(desc)),
-                     _ballot_key(v["cusip"], v["issuer_name"], md, desc),
+                     bkey,
                      v["accession"], v["source_url"] or "", v["id"], g["adviser"],
                      _weight_basis(g)))
         fts.append((pid, desc, v["issuer_name"] or ""))
+    canon = _merge_ballot_keys(bk_items)
+    rows = [(*r[:16], canon[r[16]], *r[17:]) for r in rows]
     eng.executemany("INSERT INTO proposals VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
     eng.executemany("INSERT INTO proposal_fts(rowid, description, issuer_name) VALUES (?,?,?)", fts)
 
