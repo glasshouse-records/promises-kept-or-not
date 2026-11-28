@@ -231,8 +231,9 @@ The ratio is non-support: (AGAINST + ABSTAIN) / (FOR + AGAINST + ABSTAIN). It le
 abstain vote) out of both numerator and denominator, because counting them as
 support or as opposition would state a position the manager did not take. They
 are still in `items`. In pandas: `pd.read_parquet('facts/director_decisions.parquet')`.
-`proposal_id` and `director_id` are not stable across rebuilds; cite `accession`
-and `source_url`.
+`proposal_id` is stable from the 2026-11-28 engine on (a hash of the decision's
+identity; read it as a string in JavaScript, it can exceed 2^53); `director_id` is
+not stable across rebuilds. Cite `accession` and `source_url` as well.
 
 ## Quickstart B: the evidence engine
 
