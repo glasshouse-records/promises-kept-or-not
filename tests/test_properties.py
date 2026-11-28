@@ -118,3 +118,39 @@ def test_concern_recency_decays(years_ago):
 def _has_tokens(s: str) -> bool:
     from glasshouse.entities import _token_set
     return bool(_token_set(s))
+
+
+# ── share-class collapse: ballots never exceed rows, and distinct issuers never merge ──
+
+from glasshouse.engine import collapse_ballots  # noqa: E402
+
+_row = st.fixed_dictionaries({
+    "cusip": st.text(alphabet="0123456789ABCDEFGHJKLMNPQRSTUVWXY", min_size=0, max_size=9),
+    "issuer_name": st.sampled_from(["ACME CORP", "Acme  Corp", "BETA PLC", ""]),
+    "meeting_date": st.sampled_from(["2025-04-22", "2025-05-01"]),
+    "description": st.sampled_from(["Report on Lobbying", "Report on Climate"]),
+    "position": st.sampled_from(["FOR", "AGAINST", "SPLIT"]),
+    "institution_id": st.sampled_from(["a", "b"]),
+    "adviser": st.sampled_from([None, "X"]),
+    "weight_basis": st.just("shares"), "mgmt_rec": st.just("AGAINST"),
+    "ballot_key": st.just("k"),
+})
+
+
+@given(st.lists(_row, max_size=30))
+def test_collapsed_ballots_never_exceed_rows(rows):
+    for i, r in enumerate(rows):
+        r["proposal_id"] = i + 1
+    out = collapse_ballots(rows)
+    assert len(out) <= len(rows)
+    assert sum(b["n_rows"] for b in out) == len(rows)
+    for b in out:       # MIXED exactly when the classes' positions differ
+        assert (b["position"] == "MIXED") == (len({m["position"] for m in b["rows"]}) > 1)
+
+
+@given(st.lists(_row, max_size=30))
+def test_distinct_cusip6_never_collapse(rows):
+    for i, r in enumerate(rows):
+        r["proposal_id"] = i + 1
+        r["cusip"] = f"{i:06d}105"          # every first-6 differs
+    assert len(collapse_ballots(rows)) == len(rows)

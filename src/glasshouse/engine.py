@@ -1142,6 +1142,7 @@ class Engine:
         decided = t["FOR"] + t["AGAINST"]
         return {"proposals": sum(t.values()), "for": t["FOR"], "against": t["AGAINST"],
                 "split": t["SPLIT"], "abstain": t["ABSTAIN"], "none": t["NONE"],
+                "mixed": t["MIXED"],
                 "support_rate": round(t["FOR"] / decided, 4) if decided else None}
 
     def _basis(self, table: str, alias: str, join: str, w: str, p: list) -> list[str]:
@@ -1510,16 +1511,17 @@ class Engine:
         join, w, p = self._where(institution=institution, theme=theme, query=query,
                                  company=company, include_rollback=include_rollback,
                                  since=since, until=until, adviser=adviser)
-        rows = self.db.execute(
-            f"SELECT p.year, p.position, p.weight_basis, COUNT(*) n FROM proposals p {join} "
-            f"WHERE {w} GROUP BY p.year, p.position, p.weight_basis", p).fetchall()
+        raw = self.db.execute(
+            f"SELECT p.* FROM proposals p {join} WHERE {w} ORDER BY p.proposal_id", p).fetchall()
+        ballots = collapse_ballots(raw)
+        rows = [{"year": b["row"]["year"], "position": b["position"],
+                 "weight_basis": b["row"]["weight_basis"], "n": 1} for b in ballots]
         years = defaultdict(list)
         for r in rows:
             years[r["year"]].append(r)
-        mr = self.db.execute(
-            f"""SELECT SUM(p.position IN ('FOR','AGAINST') AND p.mgmt_rec='AGAINST') agm,
-                       SUM(p.position IN ('FOR','AGAINST')) decided
-                FROM proposals p {join} WHERE {w}""", p).fetchone()
+        decided = [b for b in ballots if b["position"] in ("FOR", "AGAINST")]
+        mr = {"agm": sum(1 for b in decided if b["mgmt_rec"] == "AGAINST"),
+              "decided": len(decided)}
         return _env("voting_record", _clean(institution=institution, theme=theme, query=query,
                                             company=company, since=since, until=until,
                                             include_rollback=include_rollback,
@@ -1528,10 +1530,11 @@ class Engine:
                      "by_year": {y: self._tally(rs, True) for y, rs in sorted(years.items(),
                                  key=lambda kv: kv[0] or 0)},
                      "against_management": {
-                         "count": mr["agm"] or 0, "of": mr["decided"] or 0}},
+                         "count": mr["agm"] or 0, "of": mr["decided"] or 0},
+                     **_collapse_note(len(raw), ballots)},
                     [*self._pooled(institution, adviser),
                      *self._basis("proposals", "p", join, w, p),
-                     "Counts are proposals, not fund ballot lines.",
+                     "Counts are ballots, not fund ballot lines.", SHARE_CLASS_CAVEAT,
                      *self._weighting("proposals", "p", join, w, p),
                      "Use fund_votes() to see which funds.",
                      "`since`/`until` take ISO dates for periods finer than a year.",
@@ -1552,19 +1555,29 @@ class Engine:
         faced different ballots'. Only proposals at least `min_managers` voted on."""
         join, w, p = self._where(theme=theme, query=query, year=year, since=since,
                                  until=until)
-        rows = self.db.execute(
-            f"SELECT p.ballot_key, {_ENTITY.format('p')} AS ent, p.position "
-            f"FROM proposals p {join} WHERE {w}", p).fetchall()
+        raw = self.db.execute(
+            f"SELECT p.*, {_ENTITY.format('p')} AS ent FROM proposals p {join} WHERE {w} "
+            "ORDER BY p.proposal_id", p).fetchall()
+        ents = defaultdict(set)
+        for r in raw:
+            ents[r["ballot_key"]].add(r["ent"])
+        prefer = {k: len(v) for k, v in ents.items()}
+        ballots = collapse_ballots(raw, prefer)
         by_ballot, undecided = defaultdict(dict), defaultdict(lambda: defaultdict(int))
-        for r in rows:
-            if r["position"] in ("FOR", "AGAINST"):
-                by_ballot[r["ballot_key"]][r["ent"]] = r["position"]
+        mixed = defaultdict(lambda: defaultdict(int))
+        for b in ballots:
+            r = b["row"]
+            if b["position"] in ("FOR", "AGAINST"):
+                by_ballot[r["ballot_key"]][r["ent"]] = b["position"]
+            elif b["position"] == "MIXED":
+                mixed[r["ballot_key"]][r["ent"]] += 1
             else:
                 undecided[r["ballot_key"]][r["ent"]] += 1
         shared = {k: v for k, v in by_ballot.items() if len(v) >= min_managers}
         out = defaultdict(lambda: {"shared_proposals": 0, "for": 0, "with_majority": 0,
                                    "alone_against": 0, "alone_for": 0,
-                                   "split_or_unvoted_not_counted": 0})
+                                   "split_or_unvoted_not_counted": 0,
+                                   "mixed_not_counted": 0})
         for key, votes in shared.items():
             n_for = sum(1 for x in votes.values() if x == "FOR")
             maj = "FOR" if n_for * 2 > len(votes) else "AGAINST" if n_for * 2 < len(votes) else None
@@ -1577,6 +1590,8 @@ class Engine:
                 o["alone_for"] += pos == "FOR" and n_for == 1
             for iid, n in undecided.get(key, {}).items():
                 out[iid]["split_or_unvoted_not_counted"] += n
+            for iid, n in mixed.get(key, {}).items():
+                out[iid]["mixed_not_counted"] += n
         for o in out.values():
             o["support_rate"] = (round(o["for"] / o["shared_proposals"], 4)
                                  if o["shared_proposals"] else None)
@@ -1587,8 +1602,9 @@ class Engine:
                                     until=until, min_managers=min_managers,
                                     institution=institution, adviser=adviser),
                     {"shared_proposals": len(shared), "candidate_proposals": len(by_ballot),
-                     "managers": table},
-                    [*_ENTITY_NOTE, *self._basis("proposals", "p", join, w, p),
+                     "managers": table,
+                     **_collapse_note(len(raw), ballots)},
+                    [*_ENTITY_NOTE, SHARE_CLASS_CAVEAT, *self._basis("proposals", "p", join, w, p),
                      "Proposals are matched across managers by company, meeting date and "
                      "wording. Matching is strict, so some identical proposals go "
                      "unmatched; no two different proposals are merged.",
@@ -1637,17 +1653,20 @@ class Engine:
                 (query, v["commitment_id"]))]
             join, w, p = self._where(institution=iid, theme=theme,
                                      query=None if theme else query, adviser=sc)
-            did = self.db.execute(
-                f"SELECT p.position, COUNT(*) n FROM proposals p {join} WHERE {w} "
-                "AND p.meeting_date >= ? AND p.meeting_date < ? GROUP BY p.position",
+            raw = self.db.execute(
+                f"SELECT p.* FROM proposals p {join} WHERE {w} "
+                "AND p.meeting_date >= ? AND p.meeting_date < ? ORDER BY p.proposal_id",
                 p + [v["captured"], until]).fetchall()
+            bl = collapse_ballots(raw)
+            did = [{"position": b["position"], "n": 1} for b in bl]
             end = until if not until.startswith("9999") else (last_vote or v["captured"])
             days = (datetime.fromisoformat(end) - datetime.fromisoformat(v["captured"])).days
             out.append({"commitment_id": v["commitment_id"], "doc_label": v["doc_label"],
                         "in_force_from": v["captured"],
                         "in_force_until": None if until.startswith("9999") else until,
                         "window_days": days, "archive_gap": days > GAP_DAYS,
-                        "said": said, "did": self._tally(did)})
+                        "said": said, "did": self._tally(did),
+                        **_collapse_note(len(raw), bl)})
         jb, wb, pb = self._where(institution=iid, theme=theme,
                                  query=None if theme else query, adviser=sc)
         uncovered = []
@@ -1666,7 +1685,7 @@ class Engine:
         return _env("say_vs_do", _clean(institution=iid, query=query, theme=theme,
                                         adviser=adviser), out,
                     [*self._notes(iid), *uncovered,
-                     *self._basis("proposals", "p", jb, wb, pb),
+                     *self._basis("proposals", "p", jb, wb, pb), SHARE_CLASS_CAVEAT,
                      *[g for g in (_authored_gap(v) for v in vers) if g],
                      *([f"Scoped to adviser {sc}: only that adviser's policy documents and "
                         "only votes cast by its funds."] if sc else []),
@@ -2307,6 +2326,7 @@ class Engine:
         for sid, (name, inst) in sorted(found.items()):
             by_theme: dict[str, dict] = {}
             seen: dict[str, set] = defaultdict(set)
+            kept: dict[str, dict[tuple, list]] = defaultdict(dict)   # theme -> class key -> items
             for pid in sorted(props):
                 mine = [ln for ln in lines.get(pid, ()) if ln["fund_series"] == sid]
                 if not mine:
@@ -2316,17 +2336,31 @@ class Engine:
                 key = proposal_key(pr)
                 for t in sorted(pr["_themes"]):
                     b = by_theme.setdefault(t, {"for": 0, "against": 0, "split": 0, "other": 0,
-                                                "ballots": 0, "collapsed_duplicates": 0,
+                                                "mixed": 0, "ballots": 0,
+                                                "collapsed_duplicates": 0,
+                                                "share_class_rows_collapsed": 0,
                                                 "proposals": []})
                     if key in seen[t]:
                         b["collapsed_duplicates"] += 1
                         continue
                     seen[t].add(key)
+                    kept[t].setdefault(share_class_key(pr), []).append((pid, pr, pos))
+            for t, classes in kept.items():
+                b = by_theme[t]
+                for items in classes.values():
+                    pid, pr, pos = items[0]
+                    poss = {x[2] for x in items}
+                    if len(poss) > 1:
+                        pos = "MIXED"
                     b[pos.lower()] += 1
                     b["ballots"] += 1
+                    b["share_class_rows_collapsed"] += len(items) - 1
                     b["proposals"].append({"proposal_id": pid, "ballot_key": pr["ballot_key"],
                                            "meeting_date": pr["meeting_date"],
-                                           "company": pr["issuer_name"], "position": pos})
+                                           "company": pr["issuer_name"], "position": pos,
+                                           **({"class_proposal_ids": [x[0] for x in items]}
+                                              if len(items) > 1 else {})})
+                b["proposals"].sort(key=lambda x: x["proposal_id"])
             rows.append({"series_id": sid, "series_name": name, "institution": inst,
                          "themes": by_theme})
         return _env("fund_record",
@@ -2342,6 +2376,7 @@ class Engine:
                      "excluded; an item tagged with two themes counts in both rows, so do "
                      "not add themes up. An item filed under two proposal ids counts once "
                      "(`collapsed_duplicates`).",
+                     SHARE_CLASS_CAVEAT + " Here the position of a class is the series' own.",
                      "These are the ballots in the engine's proposal set for this fund's "
                      "manager and adviser, not every vote the fund cast; the rate is on "
                      "ballots, not shares. Screen S5 counts only items its siblings also "
@@ -2499,6 +2534,57 @@ def proposal_key(r) -> tuple:
     counts agree."""
     return ((r["cusip"] or r["issuer_name"] or "").strip().upper(), r["meeting_date"],
             norm(r["description"]))
+
+
+SHARE_CLASS_MIN_CUSIP = 8     # shorter codes (or none) identify no issuer: never collapsed
+
+
+def share_class_key(r) -> tuple:
+    """One BALLOT however many share classes it was filed under (common, preferreds: one
+    proposal row per filed CUSIP): (institution, adviser, first 6 CUSIP characters, issuer
+    name, meeting date, wording), all normalised. Legacy (line-weighted) rows never collapse. The issuer name is part of the key because
+    non-US codes (Y1594G107 / Y1594G115) share a prefix without sharing an issuer. A row with
+    no usable code, name, date or wording is its own ballot."""
+    c = (r["cusip"] or "").strip().upper()
+    iss, desc = norm(r["issuer_name"]), norm(r["description"])
+    if (len(c) < SHARE_CLASS_MIN_CUSIP or not iss or not desc or not r["meeting_date"]
+            or r["weight_basis"] == "lines"):      # 2022-23 legacy: items are told apart by
+        return ("single", r["proposal_id"])        # printed number, which this table lacks
+    return (r["institution_id"], r["adviser"], c[:6], iss, r["meeting_date"], desc)
+
+
+def collapse_ballots(rows, prefer: dict | None = None) -> list[dict]:
+    """Proposal rows -> ballots, one per `share_class_key`. A ballot's `position` is the
+    classes' common position, or MIXED when they differ (never resolved to one class);
+    `mgmt_rec` likewise. `row` is the representative: the class whose ballot_key is shared
+    by most entities (`prefer`: ballot_key -> count), then the lowest proposal id, so a
+    class only some managers filed still matches across managers."""
+    groups: dict[tuple, list] = {}
+    for r in rows:
+        groups.setdefault(share_class_key(r), []).append(r)
+    out = []
+    for members in groups.values():
+        members.sort(key=lambda r: (-(prefer or {}).get(r["ballot_key"], 0), r["proposal_id"]))
+        pos = {m["position"] for m in members}
+        mg = {m["mgmt_rec"] for m in members}
+        out.append({"row": members[0], "rows": members, "n_rows": len(members),
+                    "position": pos.pop() if len(pos) == 1 else "MIXED",
+                    "mgmt_rec": mg.pop() if len(mg) == 1 else "MIXED"})
+    return out
+
+
+def _collapse_note(n_rows: int, ballots: list[dict]) -> dict:
+    return {"share_class_rows_collapsed": n_rows - len(ballots),
+            "mixed": sum(1 for b in ballots if b["position"] == "MIXED")}
+
+
+SHARE_CLASS_CAVEAT = ("One ballot item filed under several share classes (common and "
+                      "preferred stock: one proposal row per CUSIP) counts ONCE, matched by "
+                      "institution, adviser, first 6 CUSIP characters, issuer name, meeting "
+                      "date and wording. `share_class_rows_collapsed` is how many extra "
+                      "rows that removed. When the classes were voted differently the ballot "
+                      "is MIXED: counted in `mixed`, in neither FOR nor AGAINST and not in "
+                      "the support rate. proposals() and ballot() still list every row.")
 
 
 def _series_position(lines) -> str:

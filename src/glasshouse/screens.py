@@ -148,13 +148,23 @@ def s3_peer_outliers(eng: engine.Engine, year: int | None = None,
     out, low_match = [], []
     firm_keys = _firm_keys(eng)
     catch_pids, catch_ents, amb_pids, dup_dropped = set(), set(), set(), []
+    collapsed_rows = mixed_ballots = 0     # share-class rows folded into one ballot; MIXED ballots
     for theme in engine.THEMES:
         join, w, p = eng._where(theme=theme, year=year)
-        rows = eng.db.execute(
-            f"SELECT p.proposal_id pid, p.year y, p.ballot_key bk, p.description d, "
-            f"{engine._ENTITY.format('p')} ent, p.position pos, p.weight_basis wb "
-            f"FROM proposals p {join} WHERE {w} "
-            f"AND p.position IN ('FOR','AGAINST') ORDER BY p.proposal_id", p).fetchall()
+        raw = eng.db.execute(
+            f"SELECT p.*, {engine._ENTITY.format('p')} ent FROM proposals p {join} "
+            f"WHERE {w} ORDER BY p.proposal_id", p).fetchall()
+        prefer: dict = defaultdict(set)
+        for r in raw:
+            prefer[r["ballot_key"]].add(r["ent"])
+        cb = engine.collapse_ballots(raw, {k: len(v) for k, v in prefer.items()})
+        collapsed_rows += len(raw) - len(cb)
+        mixed_ballots += sum(1 for b in cb if b["position"] == "MIXED")
+        rows = [{"pid": b["row"]["proposal_id"], "y": b["row"]["year"],
+                 "bk": b["row"]["ballot_key"], "d": b["row"]["description"],
+                 "ent": b["row"]["ent"], "pos": b["position"],
+                 "wb": b["row"]["weight_basis"]}
+                for b in cb if b["position"] in ("FOR", "AGAINST")]
         ballots = defaultdict(lambda: defaultdict(dict))        # year -> bk -> ent -> row
         decided = defaultdict(lambda: defaultdict(set))         # year -> ent -> proposal ids
         for r in rows:
@@ -239,7 +249,8 @@ def s3_peer_outliers(eng: engine.Engine, year: int | None = None,
             "low_match": low_match, "excluded_catch_all": len(catch_pids),
             "excluded_catch_all_entities": len(catch_ents),
             "n_ambiguous_excluded": len(amb_pids),
-            "duplicate_firm_entities_dropped": len(dup_dropped)}
+            "duplicate_firm_entities_dropped": len(dup_dropped),
+            "share_class_rows_collapsed": collapsed_rows, "mixed": mixed_ballots}
 
 
 # ------------------------------------------------------------------------- S5
@@ -280,15 +291,22 @@ def s5_label(gap_pp: float) -> str:
     return "with_house" if gap_pp <= S5_TOLERANCE * 100 else "between"
 
 
-def _dedupe(rows: list) -> tuple[list, int]:
-    """One row per real item (engine.proposal_key), lowest proposal id first."""
-    seen, kept = set(), []
+def _dedupe(rows: list) -> tuple[list, int, int]:
+    """One row per real ballot, lowest proposal id first: the same item under two proposal
+    ids (engine.proposal_key) counts once, and so do the share classes of one ballot
+    (engine.share_class_key). A ballot whose classes the series voted differently is MIXED
+    and dropped from the rate. Returns (kept, rows removed, MIXED ballots dropped)."""
+    seen, first = set(), []
     for r in sorted(rows, key=lambda r: r[0]):
         k = engine.proposal_key(r[1])
         if k not in seen:
             seen.add(k)
-            kept.append(r)
-    return kept, len(rows) - len(kept)
+            first.append(r)
+    classes: dict[tuple, list] = {}
+    for r in first:
+        classes.setdefault(engine.share_class_key(r[1]), []).append(r)
+    kept = [c[0] for c in classes.values() if len({x[2] for x in c}) == 1]
+    return kept, len(rows) - len(classes), len(classes) - len(kept)
 
 
 def _s5_row(*, kind, ent, sid, name, theme, rows, n_peers, compared_with, collapsed,
@@ -348,6 +366,22 @@ def _year_views(rows: list):
     if len(years) > 1:
         for y in years:
             yield y, [r for r in rows if r[1]["year"] == y]
+
+
+def _ballots_of(props: dict, pids) -> dict:
+    """One entity's ballots: class key (share classes folded, adviser left out so two
+    entities of one institution line up) -> (lowest proposal id, position or MIXED).
+    The same item under two proposal ids is one ballot too."""
+    groups: dict[tuple, list] = {}
+    for pid in sorted(pids):
+        k = engine.share_class_key(props[pid])
+        groups.setdefault(k[:1] + k[2:] if k[0] != "single" else engine.proposal_key(props[pid]),
+                          []).append(pid)
+    out = {}
+    for k, ps in groups.items():
+        pos = {props[p]["position"] for p in ps}
+        out[k] = (ps[0], pos.pop() if len(pos) == 1 else "MIXED")
+    return out
 
 
 def _is_esg_group(ent: str, member_names: set) -> bool:
@@ -428,16 +462,17 @@ def s5_esg_funds(eng: engine.Engine, year: int | None = None,
             k = (sid, engine.proposal_key(r[1]))
             if k not in owner or _pref(ent) < _pref(owner[k]):
                 owner[k] = ent
-    out, collapsed_total = [], 0
+    out, collapsed_total, mixed_total = [], 0, 0
     for (ent, sid, name), a in acc.items():
         mine_rows = [r for r in a["props"] if owner[(sid, engine.proposal_key(r[1]))] == ent]
         cross = len(a["props"]) - len(mine_rows)
         pooled_collapsed = 0
         for theme in (*ES_THEMES, "pooled"):
             trows = [r for r in mine_rows if theme == "pooled" or theme in r[1]["themes_es"]]
-            trows, collapsed = _dedupe(trows)
+            trows, collapsed, mixed = _dedupe(trows)
             if theme == "pooled":
                 pooled_collapsed = collapsed + cross
+                mixed_total += mixed
             for by_year, yrows in _year_views(trows):
                 row = _s5_row(kind="series", ent=ent, sid=sid, name=name, theme=theme,
                               rows=yrows, n_peers=len(a["others"]), compared_with=ent,
@@ -453,26 +488,27 @@ def s5_esg_funds(eng: engine.Engine, year: int | None = None,
                   and _is_esg_group(e, members.get(e, set()))}
     for g in sorted(esg_groups):
         inst = _split_entity(g)[0]
-        mine = {engine.proposal_key(props[p]): p for p in reversed(by_ent[g])}
+        mine = _ballots_of(props, by_ent[g])
         best = None
         for m in sorted(e for e in by_ent if e != g and _split_entity(e)[0] == inst
                         and e not in esg_groups):
-            overlap = len(mine.keys() & {engine.proposal_key(props[p]) for p in by_ent[m]})
+            overlap = len(mine.keys() & _ballots_of(props, by_ent[m]).keys())
             if overlap and (best is None or overlap > best[0]):
                 best = (overlap, m)
         if not best:
             continue
-        main = {engine.proposal_key(props[p]): p for p in reversed(by_ent[best[1]])}
+        main = _ballots_of(props, by_ent[best[1]])
         for theme in (*ES_THEMES, "pooled"):
             rows, kept = [], 0
-            for k, pid in sorted(mine.items(), key=lambda kv: kv[1]):
-                pr, mp = props[pid], props.get(main.get(k))
+            for k, (pid, gpos) in sorted(mine.items(), key=lambda kv: kv[1][0]):
+                pr, mp = props[pid], main.get(k)
                 if theme != "pooled" and theme not in pr["themes_es"]:
                     continue
                 kept += 1
-                if mp and pr["position"] in ("FOR", "AGAINST") and mp["position"] in (
-                        "FOR", "AGAINST"):
-                    rows.append((pid, pr, pr["position"], 1.0 if mp["position"] == "FOR" else 0.0))
+                if mp and gpos in ("FOR", "AGAINST") and mp[1] in ("FOR", "AGAINST"):
+                    rows.append((pid, pr, gpos, 1.0 if mp[1] == "FOR" else 0.0))
+                elif theme == "pooled" and "MIXED" in (gpos, mp[1] if mp else None):
+                    mixed_total += 1
             n_dup = sum(1 for p in by_ent[g] if theme == "pooled" or theme in props[p]["themes_es"]) - kept
             for by_year, yrows in _year_views(rows):
                 row = _s5_row(kind="group", ent=g, sid="", name=_split_entity(g)[1], theme=theme,
@@ -485,7 +521,8 @@ def s5_esg_funds(eng: engine.Engine, year: int | None = None,
             "summary": _s5_summary(out), "n_collapsed_duplicates": collapsed_total,
             "excluded_catch_all": len(catch_pids),
             "excluded_catch_all_entities": len(catch_ents),
-            "n_ambiguous_excluded": len(amb_pids)}
+            "n_ambiguous_excluded": len(amb_pids),
+            "share_class_rows_collapsed": collapsed_total, "mixed": mixed_total}
 
 
 def _s5_summary(cands: list) -> str:
@@ -528,6 +565,9 @@ def render(res: dict, top: int | None = None) -> str:
                      f"ambiguous-polarity proposals (--include-ambiguous keeps them)"
                      + (f"; {r['duplicate_firm_entities_dropped']} duplicate-firm entity-years"
                         if "duplicate_firm_entities_dropped" in r else "")
+                     + f"; {r.get('share_class_rows_collapsed', 0)} share-class rows folded "
+                       f"into their ballot, {r.get('mixed', 0)} MIXED ballots left out "
+                       "(classes voted differently)"
                      + (f"; {len(r['low_match'])} rows under the {MIN_MATCH_RATE:.0%} "
                         f"match guard held out as low_match" if "low_match" in r else ""))
         lines.append(f"{'score':>8} {'entity':<28} {'theme':<16} {'year':<10} {'n':>5} "
