@@ -299,7 +299,9 @@ NEW_TABLES: dict[str, dict] = {
     "proposal_decisions": {"_": "DERIVED. One row per (manager, adviser, company, meeting, "
         "proposal) decision on shareholder-sponsored proposals, rebuilt from `votes` by "
         "src/glasshouse/engine.py (`glasshouse engine build`). Not a ledger table.",
-        "proposal_id": "engine row id; not stable across rebuilds",
+        "proposal_id": "engine id: a hash of the decision's identity (manager, company, "
+            "meeting, wording, adviser); later builds of the same ledger give the same id. "
+            "Bundles built before 2026-11-28 number rows by build order",
         "institution_id": "→ institutions.id", "issuer_name": "company voted on, as filed",
         "cusip": "security CUSIP, as filed",
         "meeting_date": "meeting date, ISO YYYY-MM-DD", "year": "meeting year",
