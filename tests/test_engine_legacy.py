@@ -70,7 +70,7 @@ def test_xml_group_ids_do_not_change_when_legacy_rows_are_added(both):
     for pid, key in before.items():
         assert after[pid][:3] == key and after[pid][3] == "shares"
     legacy_ids = [pid for pid, k in after.items() if k[3] == "lines"]
-    assert legacy_ids and min(legacy_ids) > max(before)
+    assert legacy_ids and not set(legacy_ids) & set(before)
 
 
 def test_legacy_and_xml_lines_never_share_a_group(both):

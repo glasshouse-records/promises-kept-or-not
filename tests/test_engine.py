@@ -1169,7 +1169,7 @@ def test_an_institution_without_keys_builds_identically_with_or_without_notes(tm
     assert not any("POOLED" in c for c in cfg.voting_record("g")["caveats"])
 
 
-def test_split_off_items_are_numbered_after_every_pooled_item(tmp_path):
+def test_split_off_items_keep_the_pooled_ids_and_get_their_own(tmp_path):
     led = _lines_ledger(tmp_path, "g", [("71", "S1", "05/20/2024", "FOR"),
                                         ("71", "S2", "05/20/2024", "AGAINST"),
                                         ("71", "S1", "05/21/2024", "FOR")])
@@ -1183,7 +1183,7 @@ def test_split_off_items_are_numbered_after_every_pooled_item(tmp_path):
         "SELECT meeting_date, adviser, proposal_id FROM proposals")}
     assert new[("2024-05-20", "P")] == old["2024-05-20"]
     assert new[("2024-05-21", "P")] == old["2024-05-21"]
-    assert new[("2024-05-20", "Q")] > max(old.values())
+    assert new[("2024-05-20", "Q")] not in old.values()   # a split-off item gets its own id
 
 
 # ------------------------------------------- review batch 2026-11-17 (items 1-8)

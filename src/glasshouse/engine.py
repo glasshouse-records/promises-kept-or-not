@@ -30,6 +30,7 @@ source_url) that `verify.py` resolves when it checks a draft.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
@@ -557,6 +558,31 @@ def _ids(groups: dict[tuple, dict]) -> list[tuple[int, dict]]:
     return list(enumerate(order, 1))
 
 
+def _hash_id(parts: tuple) -> int:
+    """63-bit positive integer from a canonical tuple (fits SQLite's INTEGER PRIMARY KEY)."""
+    h = hashlib.sha256("\x1f".join(str(p) for p in parts).encode()).digest()
+    return (int.from_bytes(h[:8], "big") & (2 ** 63 - 1)) or 1
+
+
+def _stable_ids(groups: dict[tuple, dict]) -> list[tuple[int, dict]]:
+    """(id, group) pairs with ids derived from WHAT the item is, not from build order, so
+    a draft's `proposal_id` survives every later ingest. The identity is the group key
+    (institution, company, meeting, normalised wording, era[, legacy item number]). A group
+    that merely splits an older pooled group by adviser keeps the pooled group's id for the
+    first adviser (as it always did) and adds the adviser to the identity of the others.
+    Two groups hashing alike stop the build."""
+    out, seen = [], {}
+    for key, g in groups.items():
+        ident = ("x", *key) if g["extra"] else ("p", key[0], *key[2:])
+        pid = _hash_id(ident)
+        if pid in seen:
+            raise RuntimeError(f"proposal id collision: {ident!r} and {seen[pid]!r} both hash "
+                               f"to {pid}; refusing to build")
+        seen[pid] = ident
+        out.append((pid, g))
+    return out
+
+
 def _multi_group(led: sqlite3.Connection, rules: dict, doc_rules: dict) -> dict[str, set]:
     """The institutions whose votes or policies fall into several adviser groups,
     each with every group key it has (plus UNLABELLED if some line resolves to
@@ -667,7 +693,7 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
     groups = _grouped(led, "v.vote_source = 'SECURITY HOLDER'", resolvers)
 
     rows, fts = [], []
-    for pid, g in _ids(groups):
+    for pid, g in _stable_ids(groups):
         v = g["row"]
         desc = v["d"] or ""
         themes = [t for t, rx in theme_rx.items() if rx.search(desc)]

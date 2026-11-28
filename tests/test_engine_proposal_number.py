@@ -43,7 +43,7 @@ def test_distinct_legacy_items_are_separate_decisions_and_xml_is_unchanged(tmp_p
     leg = [r for r in rows if r["weight_basis"] == "lines"]
     assert len(xml) == 1 and xml[0]["n_lines"] == 2 and xml[0]["position"] == "SPLIT"
     assert sorted((r["position"], r["n_lines"]) for r in leg) == [("AGAINST", 2), ("FOR", 1)]
-    assert xml[0]["proposal_id"] < min(r["proposal_id"] for r in leg)   # XML ids do not move
+    assert xml[0]["proposal_id"] not in {r["proposal_id"] for r in leg}
 
 
 def test_fund_votes_for_a_legacy_item_returns_only_that_item(tmp_path):
