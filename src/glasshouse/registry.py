@@ -53,3 +53,24 @@ def npx_ciks(inst_id: str, institutions: dict[str, dict] | None = None) -> list[
     inst = institutions[inst_id]
     trusts = inst.get("npx_ciks") or []
     return trusts if trusts else [{"cik": inst["cik"], "name": inst["display_name"]}]
+
+
+def institution_for_cik(cik: str, institutions: dict[str, dict] | None = None) -> str | None:
+    """The one institution whose N-PX filer CIKs include `cik`, else None.
+
+    CIKs compare as integers (leading zeros are formatting). Zero matches or more
+    than one match both return None: an ambiguous attribution is never guessed."""
+    try:
+        want = int(str(cik).strip())
+    except ValueError:
+        return None
+    institutions = institutions or load()
+    hits = set()
+    for inst_id in institutions:
+        for t in npx_ciks(inst_id, institutions):
+            try:
+                if int(str(t["cik"]).strip()) == want:
+                    hits.add(inst_id)
+            except (ValueError, KeyError):
+                continue
+    return next(iter(hits)) if len(hits) == 1 else None

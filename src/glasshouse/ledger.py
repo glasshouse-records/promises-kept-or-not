@@ -648,6 +648,29 @@ def record_ingest_run(conn: sqlite3.Connection, source: str, fetched: int,
     conn.commit()
 
 
+def backfill_filing_institutions(conn: sqlite3.Connection, institutions: dict | None = None,
+                                 dry_run: bool = False) -> list[tuple[str, str, str]]:
+    """Set institution_id on filings where it is NULL/'' and the CIK maps to exactly one
+    registered institution. Never changes a non-empty value. Returns [(accession, cik,
+    institution_id)] set (or that would be set, when dry_run). One commit."""
+    from . import registry
+    institutions = institutions or registry.load()
+    out = []
+    for acc, cik in conn.execute(
+            "SELECT accession, cik FROM filings "
+            "WHERE institution_id IS NULL OR institution_id = '' ORDER BY accession").fetchall():
+        inst = registry.institution_for_cik(cik, institutions)
+        if inst:
+            out.append((acc, cik, inst))
+    if dry_run:
+        return out
+    for acc, _cik, inst in out:
+        conn.execute("UPDATE filings SET institution_id = ? WHERE accession = ? "
+                     "AND (institution_id IS NULL OR institution_id = '')", (inst, acc))
+    conn.commit()
+    return out
+
+
 def insert_enforcement(conn: sqlite3.Connection, actions: list[EnforcementAction]) -> int:
     n = 0
     for a in actions:
@@ -762,6 +785,13 @@ def integrity_check(conn: sqlite3.Connection) -> dict[str, list]:
         "LEFT JOIN filings f ON f.accession = v.accession WHERE f.accession IS NULL"
     ).fetchall()
     problems["votes_orphaned"] = [tuple(r) for r in rows]
+
+    # A filing with votes but no institution is invisible to every per-institution view.
+    rows = conn.execute(
+        "SELECT f.accession, f.cik FROM filings f "
+        "WHERE (f.institution_id IS NULL OR f.institution_id = '') "
+        "AND EXISTS (SELECT 1 FROM votes v WHERE v.accession = f.accession)").fetchall()
+    problems["filings_with_votes_no_institution"] = [tuple(r) for r in rows]
 
     # Legacy rows carry the XML meaning of management_recommendation: FOR / AGAINST / ''.
     rows = conn.execute(

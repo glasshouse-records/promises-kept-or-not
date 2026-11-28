@@ -102,6 +102,7 @@ ALLOW = [
     ("ledger.py", "SELECT COUNT(*) FROM votes v JOIN filings f"),  # integrity checks
     ("ledger.py", "FROM votes WHERE is_duplicate = 0 AND accession IN"),  # integrity
     ("ledger.py", "SELECT v.id, v.accession FROM votes v"),   # integrity / dedupe
+    ("ledger.py", "EXISTS (SELECT 1 FROM votes v WHERE v.accession = f.accession)"),  # integrity: any row
     ("engine.py", "SELECT MAX(id) FROM votes"),               # index watermark vs ledger growth
     ("release.py", "SELECT MAX(id) FROM votes"),              # release watermark
     ("release.py", "FROM votes v LEFT JOIN filings f"),       # {where} = PUBLIC_TABLES (has predicate)

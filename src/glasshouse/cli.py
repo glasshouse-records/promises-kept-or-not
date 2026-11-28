@@ -88,6 +88,13 @@ def cmd_ingest_npx(args) -> int:
             print(f"error: not in ledger: {sorted(reingest - known)}", file=sys.stderr)
             return 2
         for cik, inst_id in rows:
+            if not inst_id:
+                inst_id = registry.institution_for_cik(cik)
+                if not inst_id:
+                    print(f"error: filing for CIK {cik} has no institution and the CIK is "
+                          f"not registered to exactly one; fix config/institutions.yaml",
+                          file=sys.stderr)
+                    return 2
             stats = npx.ingest_npx(conn, cik, institution_id=inst_id, reingest=reingest,
                                    reingest_reason=args.reason,
                                    legacy_proxyedge=getattr(args, "legacy_proxyedge", False),
@@ -96,7 +103,17 @@ def cmd_ingest_npx(args) -> int:
             print(f"  CIK {cik}: {stats}")
         return 0
     if args.cik:
-        targets.append((args.cik, args.institution))
+        resolved = registry.institution_for_cik(args.cik)
+        if args.institution and resolved and resolved != args.institution:
+            print(f"error: CIK {args.cik} is registered to {resolved}, not "
+                  f"{args.institution}", file=sys.stderr)
+            return 2
+        inst_id = args.institution or resolved
+        if not inst_id:
+            print(f"error: CIK {args.cik} is not registered to exactly one institution; "
+                  f"pass --institution (never record an orphan filing)", file=sys.stderr)
+            return 2
+        targets.append((args.cik, inst_id))
     elif args.institution:
         for trust in registry.npx_ciks(args.institution):
             targets.append((trust["cik"], args.institution))
@@ -989,6 +1006,21 @@ def cmd_dedupe(_args) -> int:
     return 0
 
 
+def cmd_backfill_institutions(args) -> int:
+    import sqlite3
+    # dry run gets a read-only handle: it cannot write
+    conn = (sqlite3.connect(f"file:{ledger.DB_PATH}?mode=ro", uri=True)
+            if args.dry_run else _conn())
+    done = ledger.backfill_filing_institutions(conn, dry_run=args.dry_run)
+    for acc, cik, inst in done:
+        print(f"  {acc}  CIK {cik} -> {inst}")
+    verb = "would set" if args.dry_run else "set"
+    print(f"  {verb} institution_id on {len(done)} filings")
+    if done and not args.dry_run:
+        ledger.record_ingest_run(conn, "backfill-institutions", len(done), len(done))
+    return 0
+
+
 def cmd_integrity(_args) -> int:
     conn = _conn()
     problems = ledger.integrity_check(conn)
@@ -1396,6 +1428,10 @@ def main(argv: list[str] | None = None) -> int:
     dkv.set_defaults(func=cmd_desk)
 
     sub.add_parser("integrity").set_defaults(func=cmd_integrity)
+    bf = sub.add_parser("backfill-institutions", help="set institution_id on filings that "
+                        "lack one, where the CIK maps to exactly one registered institution")
+    bf.add_argument("--dry-run", action="store_true")
+    bf.set_defaults(func=cmd_backfill_institutions)
     sub.add_parser("dedupe", help="mark exact-duplicate vote rows so analytics "
                    "never sum the same shares twice").set_defaults(func=cmd_dedupe)
 
