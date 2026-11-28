@@ -289,6 +289,15 @@ def position_from_shares(for_: float, against: float, n_abstain: int) -> str:
 _ROLLBACK_EXTRA = re.compile(
     r"\b(remove|drop|rescind|revisit|reconsider|eliminate)\b.{0,70}"
     r"\b(emissions?|ghg|greenhouse|climate|net[\s-]?zero|decarboni[sz]ation)\b", re.IGNORECASE)
+# Anti-ESG climate "cost framing" (c4 d): proposals (NCPPR's NextEra 'Net Zero Business
+# Performance Risks', 'Costs and Benefits of ... GHG Emissions Reduction Plans') that ask the
+# company to weigh its emission-reduction policy as a cost. Three narrow patterns, each
+# checked against every proposal wording in the live engine: no pro-climate title matches.
+_CLIMATE = r"(?:emissions?|ghg|greenhouse|climate|net[\s-]?zero|decarboni[sz]ation)"
+_ROLLBACK_COST = re.compile(
+    r"\bnet[\s-]?zero\s+bus\w*\s+performance\s+risks?\b"
+    r"|\bcosts?\s+(?:and|&)\s+benefits?\b[^.]{0,60}\b" + _CLIMATE
+    + r"|\baggressive\s+(?:emissions?|ghg|climate|net[\s-]?zero)", re.IGNORECASE)
 # Anti-DEI rollback wording the shared detector misses (ROADMAP h3). Scoped to the
 # DEI acronym / "diversity, equity" so a pro-diversity title never matches.
 _DEI = r"(?:\bd\.?e\.?i\b\.?|diversity[,\s]+equity)"
@@ -308,6 +317,7 @@ def is_rollback(description: str) -> bool:
         return False
     return bool(proposal_is_oppositional(description or "")
                 or _ROLLBACK_EXTRA.search(description or "")
+                or _ROLLBACK_COST.search(description or "")
                 or _ROLLBACK_DEI.search(description or ""))
 
 

@@ -38,8 +38,15 @@ version's in-force window; nothing here re-matches policy text except one filter
 sentence counts as a stated stance only if it mentions the theme (contradictions.THEMES) and
 reads "generally ... support / vote for / vote in favor" with no hedge (STANCE_HEDGE). Votes in
 the window are the theme's decided ballots (share classes collapsed, MIXED left out). Hit:
-a stance, >= 30 decided ballots, support rate <= S2_MAX_RATE; score = (1 - rate) * 100 *
-sqrt(n). Windows over GAP_DAYS (no capture for over a year) are never used. An institution
+a stance, >= 30 decided ballots, support rate <= S2_MAX_RATE AND >= 20 pp below the median
+of the other firms' FOR-rates on the SAME ballots (ballots >= 3 firms voted; per-peer rate over
+the shared ballots, peers with >= 30 of them, >= 2 peers; catch-alls excluded, share classes
+collapsed): `peer_median`, `n_peers`, `n_shared`, `gap_pp`; score = -gap_pp * sqrt(n_shared).
+When the stance sentence is about disclosure/reports, the rate, floor and peer control use
+disclosure/report proposals only (`proposal_type`, a keyword rule); the full-theme rate and
+the type mix stay as context. Ambiguous-polarity ballots are left out of the rate and
+counted per candidate (`n_ambiguous_ballots`) so it reconciles with `ask say_vs_do`, which
+includes them. Windows over GAP_DAYS (no capture for over a year) are never used. An institution
 whose advisers differ is only ever paired adviser by adviser; a version without an
 adviser there is unpaired and skipped.
 
@@ -49,9 +56,10 @@ S1 walk-back. For consecutive readable versions A -> B of one document (one advi
 copy (difflib ratio >= S1_REFLOW: a reflow, not a removal). Support on T is measured on
 ballots >= 3 firms voted (S3's peer ballots) in the window before B's capture date
 (from max(A's capture, 365 days earlier)) and after it (until the next version or 365 days):
-`entity_rate` = FOR-rate, `peer_rate` = mean over the same ballots of the FOR share among
-the OTHER firms. Hit: both sides >= 30 ballots, the entity fell >= 10 pp and by >= 10 pp
-more than its peers moved. The change date is only known to lie between two captures.
+`entity_rate` = FOR-rate; each other firm with >= 10 of those ballots on each side gets its
+own before/after FOR-rate on the same ballots, and `peer_change_pp` is the MEDIAN of their
+changes over `n_peers` firms (>= 2 required). Hit: both sides >= 30 ballots, the entity fell
+>= 10 pp and by >= 10 pp more than its peers' median change. The change date is only known to lie between two captures.
 """
 
 from __future__ import annotations
@@ -562,6 +570,8 @@ S2_MAX_RATE = 0.40
 S1_MIN_MOVE_PP = 10.0
 S1_WINDOW_DAYS = 365
 S1_REFLOW = 0.8
+S1_PEER_MIN = 10          # ballots per side a peer needs to count in S1's peer change
+S2_MIN_GAP_PP = 20.0      # S2: entity rate this far below the same-ballot peer median
 
 # FTS terms that fetch a theme's policy sentences from `say_vs_do` (the tool's own matching),
 # each narrowed to sentences that talk about support so its 8-sentence cap is not spent elsewhere.
@@ -603,6 +613,59 @@ def _snippet(rx, text: str, width: int = 90) -> str:
     return ("..." if a else "") + text[a:b] + ("..." if b < len(text) else "")
 
 
+_TARGET = re.compile(r"\b(?:targets?|goals?|reduc\w+|phase[\s-]?out|science[\s-]based|cut)\b",
+                     re.IGNORECASE)
+_PLAN = re.compile(r"\b(?:transition|plans?|pathways?|roadmap|strateg\w+)\b", re.IGNORECASE)
+_DISCLOSURE = re.compile(r"\b(?:report\w*|disclos\w*|transparen\w*|assess\w*|audit\w*|"
+                         r"review|analysis|quantif\w+|publish\w*)\b", re.IGNORECASE)
+_STANCE_DISCLOSURE = re.compile(r"\b(?:report\w*|disclos\w*|transparen\w*)\b", re.IGNORECASE)
+
+
+def proposal_type(description: str | None) -> str:
+    """Coarse class of a proposal's wording: target (targets, goals, reductions), plan
+    (transition plans, pathways, strategy), disclosure (reports, disclosure), else other.
+    First match wins in that order, so 'Report on Transition Plan' is a plan."""
+    d = description or ""
+    if _TARGET.search(d):
+        return "target"
+    if _PLAN.search(d):
+        return "plan"
+    if _DISCLOSURE.search(d):
+        return "disclosure"
+    return "other"
+
+
+def stance_is_disclosure(sentence: str) -> bool:
+    """Is a stated-support sentence's object disclosure/reporting?"""
+    return bool(_STANCE_DISCLOSURE.search(sentence))
+
+
+def _peer_control(eligible: list, own_firm: str, firm_keys: dict, by_bk: dict):
+    """Same-ballot peer control for an entity's decided ballots: (n_shared, entity FOR-rate on
+    them, median peer FOR-rate, n_peers), or None. A shared ballot is one >= MIN_MANAGERS
+    firms voted FOR/AGAINST."""
+    own, peers = [], defaultdict(list)
+    for b in eligible:
+        keys = [k for k in {r["ballot_key"] for r in b["rows"]} if k in by_bk]
+        if not keys:
+            continue
+        bk = max(sorted(keys), key=lambda k: len(by_bk[k]))
+        others: dict = {}
+        for e, x in sorted(by_bk[bk].items()):
+            f = firm_of(e, firm_keys)
+            if f != own_firm:
+                others.setdefault(f, x["pos"])
+        if len(others) + 1 < MIN_MANAGERS:
+            continue
+        own.append(b["position"] == "FOR")
+        for f, pos in others.items():
+            peers[f].append(pos == "FOR")
+    rates = [sum(v) / len(v) for v in peers.values() if len(v) >= MIN_OVERLAP]
+    if not own or len(rates) < MIN_PEERS:
+        return None
+    return len(own), sum(own) / len(own), statistics.median(rates), len(rates)
+
+
 def _decided_rate(ballots) -> float | None:
     f = sum(1 for b in ballots if b["position"] == "FOR")
     a = sum(1 for b in ballots if b["position"] == "AGAINST")
@@ -633,6 +696,10 @@ def s2_say_vs_do(eng: engine.Engine, year: int | None = None,
     out, amb_pids, catch_pids = [], set(), set()
     n_gap = n_stance = collapsed_rows = mixed_ballots = 0
     groups, unpaired = _version_groups(eng)
+    firm_keys = _firm_keys(eng)
+    peer_stats = {"collapsed": 0, "mixed": 0, "catch": set(), "amb": set()}
+    theme_bks: dict = {}
+    n_no_control = 0
     for iid, adv, sc in groups:
         ent = f"{iid}/{adv}" if adv else iid
         for theme in S2_FTS:
@@ -657,7 +724,7 @@ def s2_say_vs_do(eng: engine.Engine, year: int | None = None,
                     n_gap += 1
                     continue
                 until = v["in_force_until"] or "9999-12-31"
-                win = []
+                win, amb_rows = [], []
                 for r in rows:
                     if not v["in_force_from"] <= r["meeting_date"] < until:
                         continue
@@ -665,24 +732,46 @@ def s2_say_vs_do(eng: engine.Engine, year: int | None = None,
                         catch_pids.add(r["proposal_id"])
                     elif not include_ambiguous and AMBIGUOUS_POLARITY.search(r["description"] or ""):
                         amb_pids.add(r["proposal_id"])
+                        amb_rows.append(r)
                     else:
                         win.append(r)
                 bl = engine.collapse_ballots(win)
                 collapsed_rows += len(win) - len(bl)
                 mixed_ballots += sum(1 for b in bl if b["position"] == "MIXED")
-                n_for = sum(1 for b in bl if b["position"] == "FOR")
-                n_against = sum(1 for b in bl if b["position"] == "AGAINST")
-                n = n_for + n_against
+                dec_all = [b for b in bl if b["position"] in ("FOR", "AGAINST")]
+                abl = [b for b in engine.collapse_ballots(amb_rows)
+                       if b["position"] in ("FOR", "AGAINST")]
+                mix = defaultdict(int)
+                for b in dec_all:
+                    mix[proposal_type(b["row"]["description"])] += 1
+                disclosure = any(stance_is_disclosure(t) for t in said)
+                dec = ([b for b in dec_all if proposal_type(b["row"]["description"]) == "disclosure"]
+                       if disclosure else dec_all)
+                n = len(dec)
                 if n < MIN_BALLOTS:
                     continue
+                n_for = sum(1 for b in dec if b["position"] == "FOR")
+                n_against = n - n_for
                 rate = n_for / n
                 if rate > S2_MAX_RATE:
                     continue
-                dec = [b for b in bl if b["position"] in ("FOR", "AGAINST")]
+                if theme not in theme_bks:
+                    theme_bks[theme] = _theme_ballots(eng, theme, include_ambiguous, peer_stats)
+                firm = firm_of(rows[0]["ent"], firm_keys) if rows else None
+                ctl = _peer_control(dec, firm, firm_keys, theme_bks[theme])
+                if ctl is None or ctl[0] < MIN_BALLOTS:
+                    n_no_control += 1
+                    continue
+                n_shared, shared_rate, med, n_peers = ctl
+                gap = (shared_rate - med) * 100
+                if gap > -S2_MIN_GAP_PP:
+                    continue
                 ex = [b for b in dec if b["row"]["weight_basis"] != "lines"]
                 ex_rate = _decided_rate(ex)
+                ex_ctl = _peer_control(ex, firm, firm_keys, theme_bks[theme]) if ex else None
                 legacy = len(dec) - len(ex)
                 ex_ids = sorted(b["row"]["proposal_id"] for b in dec if b["position"] == "AGAINST")[:3]
+                all_dec = dec_all + abl
                 out.append({
                     "screen": "S2", "entity": ent, "theme": theme,
                     "year": f"{v['in_force_from']}..{v['in_force_until'] or 'latest'}",
@@ -690,15 +779,26 @@ def s2_say_vs_do(eng: engine.Engine, year: int | None = None,
                     "in_force_from": v["in_force_from"], "in_force_until": v["in_force_until"],
                     "window_days": v["window_days"], "said": said[:3],
                     "said_context": [_snippet(_STANCE, t) for t in said[:3]],
+                    "basis": "disclosure" if disclosure else "all",
+                    "full_theme_n": len(dec_all),
+                    "full_theme_rate": round(_decided_rate(dec_all), 4),
+                    "type_mix": dict(sorted(mix.items())),
                     "n_ballots": n, "for": n_for, "against": n_against,
                     "mixed": sum(1 for b in bl if b["position"] == "MIXED"),
-                    "entity_rate": round(rate, 4), "gap_pp": round((rate - 1) * 100, 2),
-                    "score": round((1 - rate) * 100 * math.sqrt(n), 2),
+                    "n_ambiguous_ballots": len(abl),
+                    "entity_rate_with_ambiguous": round(_decided_rate(all_dec), 4),
+                    "entity_rate": round(rate, 4), "peer_median": round(med, 4),
+                    "n_peers": n_peers, "n_shared": n_shared,
+                    "entity_rate_shared": round(shared_rate, 4),
+                    "gap_pp": round(gap, 2),
+                    "score": round(-gap * math.sqrt(n_shared), 2),
                     "includes_legacy": bool(legacy), "n_legacy_ballots": legacy,
                     "n_ballots_ex_legacy": len(ex),
                     "entity_rate_ex_legacy": round(ex_rate, 4) if ex_rate is not None else None,
                     "holds_without_legacy": bool(
-                        ex_rate is not None and len(ex) >= MIN_BALLOTS and ex_rate <= S2_MAX_RATE),
+                        ex_rate is not None and len(ex) >= MIN_BALLOTS and ex_rate <= S2_MAX_RATE
+                        and ex_ctl is not None and ex_ctl[0] >= MIN_BALLOTS
+                        and (ex_ctl[1] - ex_ctl[2]) * 100 <= -S2_MIN_GAP_PP),
                     "example_proposal_ids": ex_ids,
                     "reproduce": [f"glasshouse ask say_vs_do institution={iid} "
                                   f"query={S2_FTS[theme]!r} theme={theme}"
@@ -706,6 +806,7 @@ def s2_say_vs_do(eng: engine.Engine, year: int | None = None,
     out.sort(key=lambda c: (-c["score"], c["entity"], c["theme"], c["version_id"]))
     return {"screen": "S2", "year": year, "candidates": out, "matched_funds": [],
             "n_stance_versions": n_stance, "n_archive_gap_excluded": n_gap,
+            "n_no_peer_control": n_no_control,
             "n_unpaired_skipped": unpaired,
             "excluded_catch_all": len(catch_pids), "excluded_catch_all_entities": 0,
             "n_ambiguous_excluded": len(amb_pids),
@@ -745,23 +846,44 @@ def _theme_ballots(eng: engine.Engine, theme: str, include_ambiguous: bool, stat
 
 def _side(mine: list, by_bk: dict, firm: str, firm_keys: dict, start: str, end: str,
           with_legacy: bool) -> dict:
-    """The entity's FOR-rate on peer ballots (>= 3 managers) dated [start, end), and the
-    mean, over those same ballots, of the FOR share among the other firms."""
-    own, peer, pids = [], [], []
+    """The entity's FOR-rate on peer ballots (>= 3 firms) dated [start, end), and each other
+    firm's own FOR list over those same ballots (`peers`: firm -> [bool]; a firm with two
+    entities on one ballot counts once, the first by name)."""
+    own, pids, peers = [], [], defaultdict(list)
     for b in mine:
         if not start <= b["date"] < end or (b["legacy"] and not with_legacy):
             continue
-        others = [x["pos"] for e, x in by_bk[b["bk"]].items()
-                  if firm_of(e, firm_keys) != firm]
+        others: dict = {}
+        for e, x in sorted(by_bk[b["bk"]].items()):
+            f = firm_of(e, firm_keys)
+            if f != firm:
+                others.setdefault(f, x["pos"])
         if len(others) < MIN_MANAGERS - 1:
             continue
         own.append(b["pos"] == "FOR")
-        peer.append(sum(1 for o in others if o == "FOR") / len(others))
+        for f, pos in others.items():
+            peers[f].append(pos == "FOR")
         pids.append(b["pid"])
     n = len(own)
-    return {"n": n, "rate": sum(own) / n if n else None,
-            "peer": sum(peer) / n if n else None, "pids": pids,
+    return {"n": n, "rate": sum(own) / n if n else None, "peers": dict(peers), "pids": pids,
             "n_legacy": sum(1 for b in mine if b["legacy"] and start <= b["date"] < end)}
+
+
+def _peer_change(before: dict, after: dict):
+    """(median change in pp, n_peers, median rate before, median rate after) over the peers
+    that voted >= S1_PEER_MIN ballots in BOTH windows, each peer's own after-minus-before on
+    the same ballots as the entity; None when fewer than MIN_PEERS qualify."""
+    pb, pa, ch = [], [], []
+    for f, bv in before["peers"].items():
+        av = after["peers"].get(f, [])
+        if len(bv) >= S1_PEER_MIN and len(av) >= S1_PEER_MIN:
+            rb, ra = sum(bv) / len(bv), sum(av) / len(av)
+            pb.append(rb)
+            pa.append(ra)
+            ch.append((ra - rb) * 100)
+    if len(ch) < MIN_PEERS:
+        return None
+    return (statistics.median(ch), len(ch), statistics.median(pb), statistics.median(pa))
 
 
 def _iso_add(day: str, days: int) -> str:
@@ -771,9 +893,11 @@ def _iso_add(day: str, days: int) -> str:
 def _is_hit(before: dict, after: dict) -> bool:
     if before["n"] < MIN_BALLOTS or after["n"] < MIN_BALLOTS:
         return False
+    pc = _peer_change(before, after)
+    if pc is None:
+        return False
     change = (after["rate"] - before["rate"]) * 100
-    peer = (after["peer"] - before["peer"]) * 100
-    return change <= -S1_MIN_MOVE_PP and change - peer <= -S1_MIN_MOVE_PP
+    return change <= -S1_MIN_MOVE_PP and change - pc[0] <= -S1_MIN_MOVE_PP
 
 
 def s1_walk_back(eng: engine.Engine, year: int | None = None,
@@ -846,7 +970,7 @@ def s1_walk_back(eng: engine.Engine, year: int | None = None,
                 bx = _side(mine, by_bk, firm, firm_keys, b_start, b["captured"], False)
                 ax = _side(mine, by_bk, firm, firm_keys, b["captured"], a_end, False)
                 change = (aft["rate"] - bef["rate"]) * 100
-                peer_change = (aft["peer"] - bef["peer"]) * 100
+                peer_change, n_peers, peer_b, peer_a = _peer_change(bef, aft)
                 gap = change - peer_change
                 n_min = min(bef["n"], aft["n"])
                 ent = mine[0]["ent"]
@@ -860,10 +984,11 @@ def s1_walk_back(eng: engine.Engine, year: int | None = None,
                     "window_before": [b_start, b["captured"]], "window_after": [b["captured"], a_end],
                     "n_before": bef["n"], "n_after": aft["n"],
                     "rate_before": round(bef["rate"], 4), "rate_after": round(aft["rate"], 4),
-                    "peer_before": round(bef["peer"], 4), "peer_after": round(aft["peer"], 4),
+                    "n_peers": n_peers,
+                    "peer_before": round(peer_b, 4), "peer_after": round(peer_a, 4),
                     "change_pp": round(change, 2), "peer_change_pp": round(peer_change, 2),
                     "gap_pp": round(gap, 2), "n_ballots": n_min,
-                    "entity_rate": round(aft["rate"], 4), "peer_median": round(aft["peer"], 4),
+                    "entity_rate": round(aft["rate"], 4), "peer_median": round(peer_a, 4),
                     "score": round(-gap * math.sqrt(n_min), 2),
                     "includes_legacy": bool(bef["n_legacy"] or aft["n_legacy"]),
                     "n_legacy_ballots": bef["n_legacy"] + aft["n_legacy"],

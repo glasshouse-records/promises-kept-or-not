@@ -325,6 +325,31 @@ def test_rollback_wording_the_shared_detector_misses():
     assert not engine.is_rollback("Report on Climate Risks to Retirement Plan Beneficiaries")
 
 
+def test_anti_esg_climate_cost_framing_is_rollback_and_pro_climate_reports_are_not():
+    """c4 (d): real wordings from the live engine, themed climate and unflagged: the NextEra
+    'Net Zero Business Performance Risks' proposal (NCPPR) and a costs-and-benefits-of-the-
+    reduction-plans report ask the company to weigh climate action as a cost."""
+    for anti in (
+            'A proposal entitled "Report on Net Zero Business Performance Risks" requesting '
+            "the Board of Directors of NextEra Energy prepare a report within the next year, "
+            "evaluating the potential costs and benefits to NextEra Energy created by "
+            "aggressive emission reduction policies.",
+            "A proposal entitled ''Report on Net Zero Business Performance Risks'' requesting "
+            "the Board of Directors of NextEra Energy prepare a report",
+            'A proposal entitled "Report on Net Zero BUSAiness Performance Risks" requesting',
+            "A PROPOSAL ENTITLED REPORT ON NET ZERO BUSINESS PERFORMANCE RISKS&QUOT REQUESTING",
+            "Report on Costs and Benefits of the Company's GHG Emissions Reduction Plans"):
+        assert engine.is_rollback(anti), anti
+    for pro in ("Report on Climate Risk in Retirement Plan Options",
+                "Assess and Report on the Company's Retirement Funds' Management of Systemic "
+                "Climate Risk",
+                "Disclose Scope 3 Emissions",
+                "Report on Net Zero Transition Plan",
+                "Report on Climate Lobbying",
+                "Adopt Science-Based Emissions Reduction Targets"):
+        assert not engine.is_rollback(pro), pro
+
+
 def test_anti_dei_rollback_wording_is_flagged_and_pro_diversity_is_not():
     """ROADMAP h3: Colgate 2026-05-08 'Remove DEI from Board Candidate Considerations'
     sat in board-diversity unflagged, so BIS voting AGAINST read as voting against

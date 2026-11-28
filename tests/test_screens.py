@@ -700,9 +700,9 @@ def _s2_engine(tmp_path, name="s2"):
     _policy(c, tmp_path, "eps", "policy", "20220101000000", SUPPORT)     # a year of no capture
     for i in range(40):
         vote("1", i, "AGAINST")               # hit: says support, votes against
-        vote("3", i, "AGAINST")               # says oppose: no stance to break
+        vote("3", i, "FOR")                   # says oppose: no stance to break
         vote("4", i, "FOR")                   # says support, does
-        vote("5", i, "AGAINST")               # old capture: over 450 days of archive gap
+        vote("5", i, "FOR")                   # old capture: over 450 days of archive gap
     for i in range(25):
         vote("2", i, "AGAINST")               # under 30 ballots
     return _build(c, path, tmp_path)
@@ -721,10 +721,14 @@ def test_s2_supportive_stance_and_low_rate_is_a_hit_the_rest_are_not(tmp_path):
     assert h["version_id"] == vid and h["in_force_from"] == "2023-06-01"
     assert (h["n_ballots"], h["for"], h["against"], h["mixed"]) == (40, 0, 40, 0)
     assert h["entity_rate"] == 0.0 and h["score"] == round(100 * 40 ** 0.5, 2)
+    # c4 (a): the same-ballot peer control (gamma, delta, eps voted all 40; beta only 25)
+    assert (h["peer_median"], h["n_peers"], h["n_shared"]) == (1.0, 3, 40)
+    assert h["gap_pp"] == -100.0
     assert "generally support" in h["said"][0] and "generally support" in h["said_context"][0]
     # the same figures the engine's own tool gives for that version
     did = eng.say_vs_do("alpha", "climate", theme="climate")["result"][0]["did"]
     assert (did["for"], did["against"]) == (h["for"], h["against"])
+    assert h["n_ambiguous_ballots"] == 0
     assert out["n_archive_gap_excluded"] >= 1                 # eps: a gapped window is no evidence
     assert len(h["example_proposal_ids"]) == 3
     assert h["reproduce"][0].startswith("glasshouse ask say_vs_do institution=alpha ")
@@ -738,11 +742,15 @@ def test_s2_never_pairs_an_advisers_votes_with_another_advisers_policy(tmp_path)
     for name, aaa, bbb in (("s2a", "AGAINST", "FOR"), ("s2b", "FOR", "AGAINST")):
         c, path, inst, vote = _ledger(tmp_path, name)
         inst("grp", ["11", "22"])
+        for iid, cik in (("p1", "91"), ("p2", "92"), ("p3", "93")):
+            inst(iid, [cik])                       # three peers voting FOR on the same ballots
         _policy(c, tmp_path, "grp", "policy-aaa", "20230601000000", SUPPORT)
         _policy(c, tmp_path, "grp", "policy-bbb", "20230601000000", OPPOSE)
         for i in range(35):
             vote("11", i, aaa)
             vote("22", i, bbb)
+            for cik in ("91", "92", "93"):
+                vote(cik, i, "FOR")
         hits = _s2(_build(c, path, tmp_path, reg))
         if name == "s2a":       # AAA says support, AAA votes against: hit, on AAA's 35 only
             assert [(h["entity"], h["n_ballots"], h["entity_rate"]) for h in hits] == [
@@ -754,11 +762,16 @@ def test_s2_never_pairs_an_advisers_votes_with_another_advisers_policy(tmp_path)
 def test_s2_legacy_rows_are_flagged_and_counted_apart(tmp_path):
     c, path, inst, vote = _ledger(tmp_path, "s2lg")
     inst("alpha", ["1"])
+    for iid, cik in (("p1", "91"), ("p2", "92"), ("p3", "93")):
+        inst(iid, [cik])
     _policy(c, tmp_path, "alpha", "policy", "20230101000000", SUPPORT)
     for i in range(40):
         legacy = i < 15
         vote("1", i, "AGAINST", "05/20/2023" if legacy else "09/20/2023",
              fmt="proxyedge" if legacy else None)
+        for cik in ("91", "92", "93"):
+            vote(cik, i, "FOR", "05/20/2023" if legacy else "09/20/2023",
+                 fmt="proxyedge" if legacy else None)
     [h] = _s2(_build(c, path, tmp_path))
     assert h["includes_legacy"] is True and h["n_legacy_ballots"] == 15
     assert h["n_ballots_ex_legacy"] == 25 and h["holds_without_legacy"] is False
@@ -767,10 +780,14 @@ def test_s2_legacy_rows_are_flagged_and_counted_apart(tmp_path):
 def test_s2_catch_all_and_ambiguous_are_excluded_and_counted(tmp_path):
     c, path, inst, vote = _ledger(tmp_path, "s2ca")
     inst("grp", ["11", "22"])
+    for iid, cik in (("p1", "91"), ("p2", "92"), ("p3", "93")):
+        inst(iid, [cik])
     _policy(c, tmp_path, "grp", "policy-aaa", "20230601000000", SUPPORT)
     for i in range(35):
         vote("11", i, "AGAINST", desc=f"Report on Climate Congruency {i}")   # ambiguous
         vote("22", i, "AGAINST")                                              # UNRESOLVED
+        for cik in ("91", "92", "93"):
+            vote(cik, i, "FOR", desc=f"Report on Climate Congruency {i}")
     reg = {"grp": {"npx_ciks": [{"cik": "11", "adviser_key": "AAA"},
                                 {"cik": "22", "adviser_key": "UNRESOLVED"}],
                    "commitments": [{"label": "policy-aaa", "adviser_key": "AAA"}]}}
@@ -859,3 +876,162 @@ def test_s1_and_s2_are_in_all_and_json_serialisable(tmp_path):
     json.dumps(res)
     text = screens.render(res)
     assert "== S1" in text and "== S2" in text
+
+
+# ------------------------------------------------------------------ c4 fixes
+
+def _s2_peers(tmp_path, name, peer_how, own_desc=None, own=None, policy=SUPPORT, n=40,
+              extra=None):
+    """alpha says `policy` and votes AGAINST `n` ballots (or per `own`); gamma, delta and eps
+    vote `peer_how` on the same ballots."""
+    c, path, inst, vote = _ledger(tmp_path, name)
+    for iid, cik in (("alpha", "1"), ("gamma", "3"), ("delta", "4"), ("eps", "5")):
+        inst(iid, [cik])
+    _policy(c, tmp_path, "alpha", f"policy-{name}", "20230601000000", policy)
+    for i in range(n):
+        d = own_desc(i) if own_desc else None
+        vote("1", i, own(i) if own else "AGAINST", desc=d)
+        for cik in "345":
+            vote(cik, i, peer_how, desc=d)
+    if extra:
+        extra(inst, vote, c)
+    return _build(c, path, tmp_path)
+
+
+def test_s2_a_low_rate_that_peers_share_is_no_hit(tmp_path):
+    """c4 (a): Nuveen sat BELOW 40% but ABOVE its peers' median. A rate alone is not a gap."""
+    assert _s2(_s2_peers(tmp_path, "s2p1", "AGAINST")) == []        # peers voted the same
+    [h] = _s2(_s2_peers(tmp_path, "s2p2", "FOR"))
+    assert h["peer_median"] == 1.0 and h["gap_pp"] == -100.0 and h["n_shared"] == 40
+    assert h["score"] == round(100 * 40 ** 0.5, 2)                  # gap to peers x sqrt(n)
+
+
+def test_s2_gap_to_peers_must_reach_20_points_and_peers_are_per_manager_medians(tmp_path):
+    # alpha FOR 12 of 40 (30%); peers FOR on 40% of the same ballots: only 10 points below
+    def own(i):
+        return "FOR" if i < 12 else "AGAINST"
+    c, path, inst, vote = _ledger(tmp_path, "s2gap")
+    for iid, cik in (("alpha", "1"), ("gamma", "3"), ("delta", "4"), ("eps", "5")):
+        inst(iid, [cik])
+    _policy(c, tmp_path, "alpha", "policy", "20230601000000", SUPPORT)
+    for i in range(40):
+        vote("1", i, own(i))
+        for cik in "345":
+            vote(cik, i, "FOR" if i < 16 else "AGAINST")
+    assert _s2(_build(c, path, tmp_path)) == []
+
+
+def test_s2_ballots_voted_by_fewer_than_three_managers_are_no_peer_ballots(tmp_path):
+    c, path, inst, vote = _ledger(tmp_path, "s2two")
+    for iid, cik in (("alpha", "1"), ("gamma", "3")):
+        inst(iid, [cik])
+    _policy(c, tmp_path, "alpha", "policy", "20230601000000", SUPPORT)
+    for i in range(40):
+        vote("1", i, "AGAINST")
+        vote("3", i, "FOR")
+    assert _s2(_build(c, path, tmp_path)) == []                     # no peer control possible
+
+
+def test_proposal_type_classes():
+    pt = screens.proposal_type
+    assert pt("Report on Climate Lobbying") == "disclosure"
+    assert pt("Disclose Scope 3 Emissions") == "disclosure"
+    assert pt("Adopt Science-Based Emissions Reduction Targets") == "target"
+    assert pt("Set a Net Zero Emissions Goal") == "target"
+    assert pt("Report on Climate Transition Plan") == "plan"
+    assert pt("Adopt a Transition Plan Aligned with Paris") == "plan"
+    assert pt("Elect Directors") == "other"
+    assert screens.stance_is_disclosure(
+        "We will generally support reasonable shareholder resolutions seeking disclosure of "
+        "greenhouse gas emissions and strategies to reduce impact on the global climate.")
+    assert not screens.stance_is_disclosure(SUPPORT)
+
+
+DISCLOSE = "We generally support shareholder proposals seeking disclosure of climate risk."
+
+
+def test_s2_disclosure_stance_is_measured_on_disclosure_proposals_only(tmp_path):
+    """c4 (c): the sentence promises support for disclosure; target/plan proposals are context."""
+    def desc(i):
+        return f"Report on Climate Risk Disclosure {i}" if i < 35 else f"Adopt Climate Targets {i}"
+
+    def own(i):
+        return "AGAINST" if i < 35 else "FOR"
+    eng = _s2_peers(tmp_path, "s2ty", "FOR", own_desc=desc, own=own, policy=DISCLOSE, n=45)
+    [h] = _s2(eng)
+    assert h["basis"] == "disclosure" and h["n_ballots"] == 35 and h["entity_rate"] == 0.0
+    assert h["full_theme_n"] == 45 and round(h["full_theme_rate"], 4) == round(10 / 45, 4)
+    assert h["type_mix"] == {"disclosure": 35, "target": 10}
+    # a plan-stance sentence keeps the whole theme as its basis
+    [h2] = _s2(_s2_peers(tmp_path, "s2ty2", "FOR", own_desc=desc, own=own, n=45))
+    assert h2["basis"] == "all" and h2["n_ballots"] == 45
+
+
+def test_s2_the_30_ballot_floor_applies_to_the_disclosure_subset(tmp_path):
+    def desc(i):
+        return f"Report on Climate Risk Disclosure {i}" if i < 25 else f"Adopt Climate Targets {i}"
+    assert _s2(_s2_peers(tmp_path, "s2fl", "FOR", own_desc=desc, policy=DISCLOSE, n=45)) == []
+
+
+def test_s2_reports_ambiguous_ballots_so_it_reconciles_with_the_say_vs_do_tool(tmp_path):
+    """c4 (e): Nuveen n was 50 in the screen and 57 in say_vs_do: the tool counts the
+    ambiguous-polarity retirement-plan climate ballots the screen leaves out. The screen now
+    says how many, so the two figures reconcile exactly."""
+    def desc(i):
+        return f"Report on Climate Risk in Retirement Plan Options {i}" if i >= 40 \
+            else f"Report on Climate Transition Plan {i}"
+    eng = _s2_peers(tmp_path, "s2am", "FOR", own_desc=desc, n=46)
+    [h] = _s2(eng)
+    did = eng.say_vs_do("alpha", "climate", theme="climate")["result"][0]["did"]
+    assert did["for"] + did["against"] == 46 and h["n_ballots"] == 40
+    assert h["n_ambiguous_ballots"] == 6
+    assert h["n_ballots"] + h["n_ambiguous_ballots"] == did["for"] + did["against"]
+    assert h["entity_rate_with_ambiguous"] == 0.0
+
+
+def _s1_peers(tmp_path, name, peer_fns):
+    """alpha falls from FOR to AGAINST; gamma/delta/beta follow `peer_fns` (before, after) FOR
+    counts (of 40 ballots each side)."""
+    c, path, inst, vote = _ledger(tmp_path, name)
+    ciks = {"alpha": "1", "beta": "2", "gamma": "3", "delta": "4"}
+    for iid, cik in ciks.items():
+        inst(iid, [cik])
+    _policy(c, tmp_path, "alpha", "policy", "20230601000000", PATHWAY + " " + SUPPORT)
+    _policy(c, tmp_path, "alpha", "policy", "20240601000000", CASE + " " + SUPPORT)
+    for i in range(40):
+        vote("1", i, "FOR", "09/20/2023")
+        for cik, (b, _a) in zip("234", peer_fns):
+            vote(cik, i, "FOR" if i < b else "AGAINST", "09/20/2023")
+    for i in range(100, 140):
+        vote("1", i, "AGAINST", "09/20/2024")
+        for cik, (_b, a) in zip("234", peer_fns):
+            vote(cik, i, "FOR" if i - 100 < a else "AGAINST", "09/20/2024")
+    return _build(c, path, tmp_path)
+
+
+def test_s1_peer_change_is_the_median_of_each_peers_own_change(tmp_path):
+    """c4 (b): one peer collapsing no longer drags the control (the mean would be -33.3)."""
+    out = screens.s1_walk_back(_s1_peers(tmp_path, "s1m", [(40, 40), (40, 40), (40, 0)]))
+    [h] = out["candidates"]
+    assert h["peer_change_pp"] == 0.0 and h["n_peers"] == 3
+    assert h["change_pp"] == -100.0 and h["gap_pp"] == -100.0
+
+
+def test_s1_a_peer_with_under_10_ballots_a_side_is_not_a_peer(tmp_path):
+    c, path, inst, vote = _ledger(tmp_path, "s1few")
+    for iid, cik in (("alpha", "1"), ("beta", "2"), ("gamma", "3"), ("delta", "4")):
+        inst(iid, [cik])
+    _policy(c, tmp_path, "alpha", "policy", "20230601000000", PATHWAY + " " + SUPPORT)
+    _policy(c, tmp_path, "alpha", "policy", "20240601000000", CASE + " " + SUPPORT)
+    for i in range(40):
+        vote("1", i, "FOR", "09/20/2023")
+        vote("2", i, "FOR", "09/20/2023")
+        vote("3", i, "FOR", "09/20/2023")
+        if i < 9:
+            vote("4", i, "FOR", "09/20/2023")        # delta: 9 before
+    for i in range(100, 140):
+        vote("1", i, "AGAINST", "09/20/2024")
+        for cik in "234":
+            vote(cik, i, "FOR", "09/20/2024")
+    [h] = _s1(_build(c, path, tmp_path))
+    assert h["n_peers"] == 2
