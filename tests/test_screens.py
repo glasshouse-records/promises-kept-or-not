@@ -600,3 +600,32 @@ def test_s5_rows_are_split_per_year_as_well_as_pooled(tmp_path):
         "2023": (35, 0.0), "2024": (35, 1.0)}
     assert per_year["2023"]["reproduce"][0].endswith("series_id=S1 theme=climate year=2023")
     assert out["summary"].startswith("1 ESG-named series")      # per-year rows are not extra series
+
+
+def test_proposal_lines_table_matches_the_ledger_scan(tmp_path):
+    """The build records which lines make up each proposal; bulk_fund_lines reads them
+    instead of rescanning the whole ledger (fund_record took ~90 s). An engine built
+    before the table existed falls back to the scan and must give the same lines."""
+    import shutil
+    eng = _s5_engine(tmp_path, other_adviser=True)
+    assert eng.db.execute("SELECT COUNT(*) FROM proposal_lines").fetchone()[0] == \
+        eng.db.execute("SELECT SUM(n_lines) FROM proposals").fetchone()[0]
+    names = screens._series_names(eng)
+    pids = {r[0]: {} for r in eng.db.execute("SELECT proposal_id FROM proposals")}
+    fast = eng.bulk_fund_lines(pids, names)
+    old = tmp_path / "old-engine.db"
+    shutil.copy(tmp_path / "s5-engine.db", old)
+    con = sqlite3.connect(old)
+    con.execute("DROP TABLE proposal_lines")
+    con.commit()
+    con.close()
+    legacy = engine.Engine(old, tmp_path / "s5.db")
+    slow = legacy.bulk_fund_lines(pids, names)
+    def norm_(d):
+        return {p: sorted((x["fund_series"], x["how_voted"], x["shares"]) for x in v)
+                for p, v in d.items()}
+
+    assert norm_(fast) == norm_(slow) and fast
+    assert legacy.fund_record(series_id="S1") == eng.fund_record(series_id="S1")
+    only = eng.bulk_fund_lines(pids, names, series={"S1"})
+    assert {x["fund_series"] for v in only.values() for x in v} == {"S1"}

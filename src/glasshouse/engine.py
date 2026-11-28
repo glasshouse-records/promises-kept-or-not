@@ -79,6 +79,12 @@ CREATE TABLE proposals (
 );
 CREATE INDEX ix_p_inst ON proposals(institution_id, year);
 CREATE INDEX ix_p_ballot ON proposals(ballot_key);
+CREATE TABLE proposal_lines (     -- the fund lines each proposal was built from (exact
+    proposal_id INTEGER NOT NULL, -- membership; lets fund_record skip a ledger scan)
+    vote_series TEXT, how_voted TEXT, shares REAL
+);
+CREATE INDEX ix_pl_series ON proposal_lines(vote_series);
+CREATE INDEX ix_pl_pid ON proposal_lines(proposal_id);
 CREATE INDEX ix_p_cusip ON proposals(cusip);
 CREATE VIRTUAL TABLE proposal_fts USING fts5(description, issuer_name, content='');
 CREATE TABLE director_votes (
@@ -531,7 +537,8 @@ _FREQ_DESC = re.compile(r"frequen|how often|every\s+((one|1|two|2|three|3)\s*(\(
 
 
 def _grouped(led: sqlite3.Connection, which: str,
-             resolvers: dict[str, dict[str, dict]] | None = None) -> dict[tuple, dict]:
+             resolvers: dict[str, dict[str, dict]] | None = None,
+             keep_lines: bool = False) -> dict[tuple, dict]:
     """Collapse fund ballot lines to one decision per (manager, company, meeting,
     item), carrying line and share tallies. `which` is a fixed SQL condition
     chosen by build(), never caller input.
@@ -577,11 +584,14 @@ def _grouped(led: sqlite3.Connection, which: str,
             seen_adv.append(adv)
             g = groups[key] = {"row": v, "adviser": adv, "era": era,
                                "extra": len(seen_adv) > 1, "isins": set(), "for": 0, "against": 0, "abstain": 0, "other": 0,
-                               "n": 0, "with_m": 0, "against_m": 0, "sf": 0.0, "sa": 0.0, "freq": 0}
+                               "n": 0, "with_m": 0, "against_m": 0, "sf": 0.0, "sa": 0.0, "freq": 0,
+                               "lines": []}
         # N-PX's "management recommendation" element records whether THIS vote
         # went with (FOR) or against (AGAINST) management — not what management
         # recommended. Say-on-pay shows it plainly: FOR/FOR and AGAINST/AGAINST.
         g["isins"].add(v["isin"])
+        if keep_lines:
+            g["lines"].append((v["vseries"], v["how_voted"], v["shares_voted"]))
         mr = (v["mr"] or "").strip().upper()
         g["with_m"] += mr == "FOR"
         g["against_m"] += mr == "AGAINST"
@@ -748,9 +758,9 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
     for iid, keys in split.items():
         eng.executemany("INSERT INTO adviser_scope VALUES (?,?)", [(iid, k) for k in sorted(keys)])
     resolvers = {iid: rules[iid] for iid in split}
-    groups = _grouped(led, "v.vote_source = 'SECURITY HOLDER'", resolvers)
+    groups = _grouped(led, "v.vote_source = 'SECURITY HOLDER'", resolvers, keep_lines=True)
 
-    rows, fts, bk_items = [], [], []
+    rows, fts, bk_items, line_rows = [], [], [], []
     for pid, g in _stable_ids(groups):
         v = g["row"]
         desc = v["d"] or ""
@@ -775,9 +785,13 @@ def build(ledger_path: Path = DB_PATH, engine_path: Path = ENGINE_PATH,
                      v["accession"], v["source_url"] or "", v["id"], g["adviser"],
                      _weight_basis(g)))
         fts.append((pid, desc, v["issuer_name"] or ""))
+        line_rows += [(pid, *ln) for ln in g["lines"]]
+        g["lines"] = []
     canon = _merge_ballot_keys(bk_items)
     rows = [(*r[:16], canon[r[16]], *r[17:]) for r in rows]
     eng.executemany("INSERT INTO proposals VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
+    eng.executemany("INSERT INTO proposal_lines VALUES (?,?,?,?)", line_rows)
+    del line_rows
     eng.executemany("INSERT INTO proposal_fts(rowid, description, issuer_name) VALUES (?,?,?)", fts)
 
     # Management's director nominees: where board-composition policy is acted on.
@@ -2214,6 +2228,8 @@ class Engine:
         thousands of proposals); a test pins the two together. `series`, if given,
         keeps only those fund series. Returns pid -> lines with fund_series,
         fund_series_name and how_voted."""
+        if self._has("proposal_lines"):     # recorded at build: no ledger scan
+            return self._lines_from_build(pids, names, series)
         rules = defaultdict(dict)       # institution -> cik -> key rules
         for x in self.db.execute("SELECT institution_id, cik, adviser, rules FROM registrants"):
             rules[x["institution_id"]][x["cik"]] = (
@@ -2266,6 +2282,29 @@ class Engine:
                         "fund_series": v["vote_series"], "how_voted": v["how_voted"],
                         "shares": v["sh"],
                         "fund_series_name": (names.get(v["vote_series"]) or (None,))[0]})
+        return out
+
+    def _lines_from_build(self, pids, names: dict, series=None) -> dict[int, list]:
+        """`bulk_fund_lines` from the lines the build recorded under each proposal (exact
+        membership, the same lines `_grouped` tallied). An engine built before
+        `proposal_lines` existed takes the ledger-scan path instead."""
+        want = set(pids)
+        out: dict[int, list] = defaultdict(list)
+        if series is not None:
+            sel = sorted(series)
+            cur = self.db.execute(
+                "SELECT proposal_id, vote_series, how_voted, shares FROM proposal_lines "
+                f"WHERE vote_series IN ({','.join('?' * len(sel))}) ORDER BY rowid", sel) if sel else ()
+            rows = (r for r in cur if r[0] in want)
+        else:
+            ordered = sorted(want)
+            rows = (r for i in range(0, len(ordered), 500) for r in self.db.execute(
+                "SELECT proposal_id, vote_series, how_voted, shares FROM proposal_lines "
+                f"WHERE proposal_id IN ({','.join('?' * len(ordered[i:i + 500]))}) "
+                "ORDER BY rowid", ordered[i:i + 500]))
+        for pid, ser, how, sh in rows:
+            out[pid].append({"fund_series": ser, "how_voted": how, "shares": sh,
+                             "fund_series_name": (names.get(ser) or (None,))[0]})
         return out
 
     def fund_record(self, series_id=None, fund=None, theme=None, year=None,
