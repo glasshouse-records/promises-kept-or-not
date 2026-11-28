@@ -2189,8 +2189,9 @@ class Engine:
                 FROM votes v JOIN filings f ON f.accession = v.accession
                 WHERE f.institution_id=? AND v.is_duplicate=0 AND {NON_LEGACY_VOTE_SQL}
                   AND v.vote_source='SECURITY HOLDER' AND {iso}=?
-                  AND (v.cusip=? OR v.issuer_name=?)""",
-                (r["institution_id"], r["meeting_date"], r["cusip"], r["issuer_name"])):
+                  AND (UPPER(TRIM(v.cusip))=? OR (?='' AND v.issuer_name=?))""",
+                (r["institution_id"], r["meeting_date"], r["cusip"], r["cusip"],
+                 r["issuer_name"])):
             if r["adviser"] and (resolve_key(rules.get(_norm_cik(v["cik"])),
                                              v["vote_series"], r["meeting_date"])
                                  or UNLABELLED) != r["adviser"]:
@@ -2233,71 +2234,22 @@ class Engine:
         return {sid: (name, iid) for sid, (_, name, iid) in latest.items()}
 
     def bulk_fund_lines(self, pids, names: dict, series=None) -> dict[int, list]:
-        """The fund lines behind each proposal in `pids`, in ONE pass over the ledger.
-        Same matching rules as `fund_votes` (which costs ~0.3 s a call, too slow for
-        thousands of proposals); a test pins the two together. `series`, if given,
+        """The fund lines behind each proposal in `pids`.
+        Reads the lines recorded at build (`fund_votes` re-reads the ledger, ~0.3 s a
+        call, too slow for thousands of proposals); a test pins the two together. Raises
+        if the engine predates `proposal_lines`. `series`, if given,
         keeps only those fund series. Returns pid -> lines with fund_series,
         fund_series_name and how_voted."""
-        if self._has("proposal_lines"):     # recorded at build: no ledger scan
-            return self._lines_from_build(pids, names, series)
-        rules = defaultdict(dict)       # institution -> cik -> key rules
-        for x in self.db.execute("SELECT institution_id, cik, adviser, rules FROM registrants"):
-            rules[x["institution_id"]][x["cik"]] = (
-                json.loads(x["rules"]) if x["rules"] else
-                {"default": x["adviser"], "history": [], "series": {}})
-        full = {pid: self.db.execute("SELECT * FROM proposals WHERE proposal_id=?",
-                                     (pid,)).fetchone() for pid in pids}
-        index = defaultdict(list)       # (institution, cusip|issuer, ISO day) -> proposal ids
-        for pid, r in full.items():
-            index[(r["institution_id"], r["cusip"], r["meeting_date"])].append(pid)
-            index[(r["institution_id"], r["issuer_name"], r["meeting_date"])].append(pid)
-        first = {}
-        for pid, r in full.items():     # a legacy decision is one printed item: its number
-            f = self.ledger.execute(
-                "SELECT legacy_format IS NOT NULL, proposal_number FROM votes WHERE id=?",
-                (r["vote_id"],)).fetchone()
-            first[pid] = (bool(f and f[0]), ((f[1] if f else "") or "").strip())
-        want = {pid: norm(r["description"]) for pid, r in full.items()}
-        iso = iso_meeting_date("v.meeting_date")
-        insts = sorted({r["institution_id"] for r in full.values()})
-        if not insts:
-            return {}
-        sel = sorted(series) if series is not None else None
-        extra = f" AND v.vote_series IN ({','.join('?' * len(sel))})" if sel else ""
-        out: dict[int, list] = defaultdict(list)
-        for v in self.ledger.execute(
-                f"SELECT f.institution_id AS inst, v.vote_series, v.how_voted, "
-                f"v.vote_description, f.cik, UPPER(TRIM(v.cusip)) AS cusip, v.issuer_name, "
-                f"{iso} AS md, v.proposal_number AS pnum, (v.legacy_format IS NOT NULL) AS lg, "
-                f"v.shares_voted AS sh "
-                f"FROM votes v JOIN filings f ON f.accession = v.accession "
-                f"WHERE f.institution_id IN ({','.join('?' * len(insts))}) "
-                f"AND v.is_duplicate=0 AND {NON_LEGACY_VOTE_SQL} "
-                f"AND v.vote_source='SECURITY HOLDER'{extra}", [*insts, *(sel or [])]):
-            inst = v["inst"]
-            for pid in {*index.get((inst, v["cusip"], v["md"]), ()),
-                        *index.get((inst, v["issuer_name"], v["md"]), ())}:
-                r = full[pid]
-                if r["adviser"] and (resolve_key(
-                        rules[inst].get(_norm_cik(v["cik"])), v["vote_series"],
-                        r["meeting_date"]) or UNLABELLED) != r["adviser"]:
-                    continue                # another adviser's fund
-                is_legacy, item_no = first[pid]
-                if bool(v["lg"]) != is_legacy:
-                    continue                # the other era's line
-                if is_legacy and (v["pnum"] or "").strip() != item_no:
-                    continue
-                if norm(v["vote_description"]) == want[pid]:
-                    out[pid].append({
-                        "fund_series": v["vote_series"], "how_voted": v["how_voted"],
-                        "shares": v["sh"],
-                        "fund_series_name": (names.get(v["vote_series"]) or (None,))[0]})
-        return out
+        if not self._has("proposal_lines"):
+            raise ValueError("this engine was built before `proposal_lines` existed: "
+                             "rebuild the engine (glasshouse engine build)")
+        return self._lines_from_build(pids, names, series)
 
     def _lines_from_build(self, pids, names: dict, series=None) -> dict[int, list]:
         """`bulk_fund_lines` from the lines the build recorded under each proposal (exact
-        membership, the same lines `_grouped` tallied). An engine built before
-        `proposal_lines` existed takes the ledger-scan path instead."""
+        membership, the same lines `_grouped` tallied). There is no ledger-scan fallback:
+        matching by issuer name attached a common-stock line to preferred-share
+        proposals of the same issuer."""
         want = set(pids)
         out: dict[int, list] = defaultdict(list)
         if series is not None:

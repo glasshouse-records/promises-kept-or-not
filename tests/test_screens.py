@@ -602,30 +602,70 @@ def test_s5_rows_are_split_per_year_as_well_as_pooled(tmp_path):
     assert out["summary"].startswith("1 ESG-named series")      # per-year rows are not extra series
 
 
-def test_proposal_lines_table_matches_the_ledger_scan(tmp_path):
-    """The build records which lines make up each proposal; bulk_fund_lines reads them
-    instead of rescanning the whole ledger (fund_record took ~90 s). An engine built
-    before the table existed falls back to the scan and must give the same lines."""
+def _share_class_engine(tmp_path):
+    """One issuer, one meeting, one wording, two CUSIPs (common, preferred); S1 voted the
+    common only, S2 the preferred only."""
+    c, path, inst, vote = _ledger(tmp_path, "cls")
+    inst("hh", ["11"])
+    for sid, nm in (("S1", "Acme Climate Fund"), ("S2", "Acme Pref Fund")):
+        c.execute("INSERT INTO fund_series (series_id, accession, name) VALUES (?,?,?)",
+                  (sid, "ACC-11", nm))
+    for sid, cusip, how in (("S1", "000000001", "FOR"), ("S2", "000000002", "AGAINST")):
+        c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date,"
+                  " vote_description, vote_source, how_voted, management_recommendation,"
+                  " shares_voted, vote_series, category_type, is_duplicate)"
+                  " VALUES ('ACC-11','ACME CORP',?,'05/20/2024','Report on Climate Transition Plan',"
+                  "'SECURITY HOLDER',?,'AGAINST',100,?,'SHAREHOLDER PROPOSAL',0)",
+                  (cusip, how, sid))
+    return _build(c, path, tmp_path)
+
+
+def test_a_fund_line_is_never_attached_to_another_share_class_of_the_issuer(tmp_path):
+    eng = _share_class_engine(tmp_path)
+    rows = eng.db.execute("SELECT proposal_id, cusip FROM proposals").fetchall()
+    assert len(rows) == 2
+    want = {"000000001": {"S1"}, "000000002": {"S2"}}
+    built = eng.bulk_fund_lines([r[0] for r in rows], {})
+    for pid, cusip in rows:
+        assert {x["fund_series"] for x in built[pid]} == want[cusip]
+        # fund_votes (per-proposal ledger read) must agree with the build
+        assert {x["fund_series"] for x in eng.fund_votes(pid)["result"]["lines"]} == want[cusip]
+
+
+def test_bulk_fund_lines_without_proposal_lines_says_to_rebuild(tmp_path):
     import shutil
+
+    import pytest
+    _share_class_engine(tmp_path)
+    old = tmp_path / "old-engine.db"
+    shutil.copy(tmp_path / "cls-engine.db", old)
+    con = sqlite3.connect(old)
+    con.execute("DROP TABLE proposal_lines")
+    con.commit()
+    con.close()
+    legacy = engine.Engine(old, tmp_path / "cls.db")
+    with pytest.raises(ValueError, match="rebuild the engine"):
+        legacy.bulk_fund_lines([1], {})
+    with pytest.raises(ValueError, match="rebuild the engine"):
+        legacy.fund_record(series_id="S1")
+
+
+def test_proposal_lines_table_matches_the_ledger_read(tmp_path):
+    """The build records which lines make up each proposal; bulk_fund_lines reads them
+    instead of rescanning the whole ledger (fund_record took ~90 s). fund_votes reads
+    the ledger per proposal and must give the same lines."""
     eng = _s5_engine(tmp_path, other_adviser=True)
     assert eng.db.execute("SELECT COUNT(*) FROM proposal_lines").fetchone()[0] == \
         eng.db.execute("SELECT SUM(n_lines) FROM proposals").fetchone()[0]
     names = screens._series_names(eng)
     pids = {r[0]: {} for r in eng.db.execute("SELECT proposal_id FROM proposals")}
     fast = eng.bulk_fund_lines(pids, names)
-    old = tmp_path / "old-engine.db"
-    shutil.copy(tmp_path / "s5-engine.db", old)
-    con = sqlite3.connect(old)
-    con.execute("DROP TABLE proposal_lines")
-    con.commit()
-    con.close()
-    legacy = engine.Engine(old, tmp_path / "s5.db")
-    slow = legacy.bulk_fund_lines(pids, names)
+    slow = {p: eng.fund_votes(p)["result"]["lines"] for p in pids}
+
     def norm_(d):
         return {p: sorted((x["fund_series"], x["how_voted"], x["shares"]) for x in v)
-                for p, v in d.items()}
+                for p, v in d.items() if v}
 
     assert norm_(fast) == norm_(slow) and fast
-    assert legacy.fund_record(series_id="S1") == eng.fund_record(series_id="S1")
     only = eng.bulk_fund_lines(pids, names, series={"S1"})
     assert {x["fund_series"] for v in only.values() for x in v} == {"S1"}
