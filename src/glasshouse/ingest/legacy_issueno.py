@@ -209,7 +209,9 @@ def ingest_filing(conn: sqlite3.Connection, filing: Filing, institution_id: str 
     fa = legacy_pe.filing_aliases(aliases, filing.cik)
     sids = legacy_pe.header_series_ids(hdr_text)
     fb = legacy_pe.build_fallback(series_dataset, filing.cik, hdr_text)
-    ag = [(name, text, *layout.agreed(text)) for name, text in sorted(docs.items())
+    # Courier-HTML text -> plain lines (as legacy_iss.ingest_filing does); no-op otherwise
+    ag = [(name, text, *layout.agreed(text))
+          for name, text in ((n, legacy_iss.prepare(t)) for n, t in sorted(docs.items()))
           if legacy_iss.doc_format(text) == layout.LEGACY_FORMAT]
     single = legacy_pe.single_fund_map(
         hdr_text, (r["fund_heading"] for _, _, rows, _ in ag for r in rows))

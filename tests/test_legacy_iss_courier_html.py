@@ -102,3 +102,45 @@ def test_courier_div_with_a_break_inside_text_is_refused():
 
 def test_div_documents_without_the_iss_header_are_left_alone():
     assert legacy_iss.courier_html_to_text(DIV_DOC.replace("Vote Cast", "Vote")) is None
+
+
+# -- Courier HTML holding the "Issue No." layout (Wellington 2023) --------------------------
+
+def _courier_issueno_doc():
+    from test_legacy_issueno import make_doc
+    plain = make_doc([("Mgmt", "For", "For", "For"), ("ShrHoldr", "Against", "Against", "For")])
+    # a stray ISS-style column header line, as in the real mixed documents
+    plain = "#     Proposal      Mgt Rec  Vote Cast    Sponsor\n" + plain
+    ps = "\n".join(
+        "<P style='font:10pt Courier New;margin:0'>" + ln.replace(" ", "&nbsp;") + "</P>"
+        for ln in plain.splitlines())
+    return "<DOCUMENT>\n<TYPE>N-PX\n<TEXT>\n<HTML><BODY>\n" + ps + "\n</BODY></HTML>\n", plain
+
+
+def test_courier_issueno_is_issueno_not_iss():
+    from glasshouse.ingest import legacy_issueno
+    raw, plain = _courier_issueno_doc()
+    assert legacy_iss.is_issueno(legacy_iss.prepare(raw))
+    assert legacy_iss.doc_format(raw) == "issueno"
+    assert legacy_iss.detect_format({"a.htm": raw}) == "issueno"
+    assert legacy_iss.doc_format(plain) == "issueno"
+    rows, st = legacy_issueno.agreed(legacy_iss.prepare(raw))
+    assert len(rows) == 2 and st["disagreement_rate"] == 0
+
+
+def test_courier_iss_fixture_stays_iss():
+    assert legacy_iss.doc_format(RAW) == "iss"
+    assert legacy_iss.doc_format(legacy_iss.prepare(RAW)) == "iss"
+
+
+def test_courier_issueno_ingests_end_to_end(tmp_path):
+    import test_legacy_issueno as t
+
+    from glasshouse.ingest import legacy_issueno
+    raw, _ = _courier_issueno_doc()
+    conn = t._conn(tmp_path)
+    n = legacy_issueno.ingest_filing(conn, t._filing(), "sc", "2026-11-28",
+                                     {"doc.htm": raw}, t.HDR)
+    assert n == 2
+    assert conn.execute("SELECT report_type FROM filings WHERE accession=?",
+                        (t.ACC,)).fetchone()[0] == "LEGACY_ISSUENO"

@@ -269,8 +269,12 @@ def doc_format(text: str) -> str | None:
     'regvoted' ("Registrant Voted" text), 'regvoted_html' (the same as HTML tables),
     'fedflat' (Federated's one-row-per-vote table), 'dodgecox' (Dodge & Cox's table),
     ProxyEdge."""
-    if is_iss_text(text) or courier_html_to_text(text) is not None:
-        return "iss"
+    converted = None if is_iss_text(text) else courier_html_to_text(text)
+    if is_iss_text(text) or converted is not None:
+        # The ISS and "Issue No." layouts share the Ticker / Security ID / Meeting Date
+        # header lines; a document whose (converted) text carries the Issue No. column
+        # header is that layout, and the ISS parsers read 0 rows of it.
+        return "issueno" if is_issueno(text if converted is None else converted) else "iss"
     if is_iss_html(text):
         return "iss_html"
     if is_issueno(text):
