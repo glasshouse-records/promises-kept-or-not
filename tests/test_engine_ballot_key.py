@@ -64,3 +64,32 @@ def test_other_company_or_far_date_or_short_titles_never_merge(tmp_path):
         ("d", "Report on Lobbying Payments", "05/20/2024", "ACME", "000111222"),
         ("e", "Report on Lobbying Payments and Climate", "05/20/2024", "ACME", "000111222")])
     assert len(set(keys.values())) == 5
+
+
+DIRECTORS = ("Shareholder Proposal Requesting Independent Board Chair Separate From Chief "
+             "Executive Officer Role Effective Immediately Policy Nominee Elect Director ")
+
+
+def test_items_differing_only_after_the_fourteenth_word_stay_apart(tmp_path):
+    """Regression: the key used to keep only 14 words, so two long items that differed
+    in a name late in the text (or whose differing word sorted late) shared one key."""
+    keys = _build(tmp_path, [
+        ("a", DIRECTORS + "Paula Poskon", "05/20/2024", "ACME", "000111222"),
+        ("b", DIRECTORS + "Steven Vick", "05/20/2024", "ACME", "000111222"),
+        ("c", DIRECTORS + "Zed Zimmerman", "05/20/2024", "ACME", "000111222")])
+    assert len(set(keys.values())) == 3
+
+
+def test_one_word_names_and_fragments_do_not_make_a_variant(tmp_path):
+    keys = _build(tmp_path, [
+        ("a", DIRECTORS + "Adriana", "05/20/2024", "ACME", "000111222"),
+        ("b", DIRECTORS + "S", "05/20/2024", "ACME", "000111222")])
+    assert len(set(keys.values())) == 2
+
+
+def test_html_entity_residue_is_not_a_difference(tmp_path):
+    keys = _build(tmp_path, [
+        ("a", LONG.replace("Role", "&quot;Role&quot;"), "05/20/2024", "ACME", "000111222"),
+        ("b", LONG, "05/20/2024", "ACME", "000111222"),
+        ("c", LONG + " _x000D_", "05/20/2024", "ACME", "000111222")])
+    assert len(set(keys.values())) == 1

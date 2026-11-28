@@ -188,18 +188,27 @@ def _ballot_key(cusip: str, issuer: str, date: str, desc: str) -> str:
     description's significant words — deliberately strict: a miss leaves a
     proposal unmatched (fewer comparisons), which is recoverable; a false merge
     would compare votes on two different proposals, which is not."""
-    toks = [t for t in re.findall(r"[a-z0-9]+", (desc or "").lower()) if t not in _STOP]
+    toks = _ballot_tokens(desc)
     who = (cusip or "").strip().upper() or re.sub(r"[^a-z0-9]", "", (issuer or "").lower())[:24]
-    return f"{who}|{date}|{' '.join(sorted(set(toks))[:14])}"
+    # ALL significant words, no cap: a cap kept only the first 14 alphabetically, so two
+    # items differing in a name or subject beyond them (director "Paula Poskon" vs
+    # "Steven Vick") shared a key. Variants are re-joined by _merge_ballot_keys instead.
+    return f"{who}|{date}|{' '.join(sorted(toks))}"
 
 
 BALLOT_DAYS = 7           # meeting-date drift tolerated when two keys are merged
-BALLOT_JACCARD = 0.85     # shared share of significant words ...
-BALLOT_MIN_SHARED = 7     # ... and at least this many shared words (a short title never merges)
+BALLOT_MIN_SHARED = 7     # shared significant words at least (a short title never merges) ...
+# ... and the two word sets differ by ONE extra word, alphabetic and 3+ letters ("Annually").
+# A substituted word is a different item (a director's name, a report's subject), and a
+# lone digit or fragment ("nd", "s", an item number) is no evidence of a variant.
+
+
+_NOISE = {"quot", "amp", "apos", "nbsp", "lt", "gt", "x000d", "x000a"}   # HTML/XML residue
 
 
 def _ballot_tokens(desc: str) -> frozenset:
-    return frozenset(t for t in re.findall(r"[a-z0-9]+", (desc or "").lower()) if t not in _STOP)
+    return frozenset(t for t in re.findall(r"[a-z0-9]+", (desc or "").lower())
+                     if t not in _STOP and t not in _NOISE)
 
 
 def _days_apart(a: str, b: str) -> int | None:
@@ -211,13 +220,13 @@ def _days_apart(a: str, b: str) -> int | None:
 
 def _merge_ballot_keys(items: list[dict]) -> dict[str, str]:
     """Map each base ballot key to the key its cluster is known by. `items` carry
-    key, who (CUSIP or issuer), date, tokens (ALL significant words, the key keeps 14),
+    key, who (CUSIP or issuer), date, tokens (ALL significant words, as the key),
     rollback, owners (set of (institution, adviser) that filed it).
 
     Two keys merge only when ALL hold: same company; meeting dates equal or within
     BALLOT_DAYS (an adjourned meeting, a date typed off by a day); opposite-direction
-    flag equal; the word sets share at least BALLOT_MIN_SHARED words and BALLOT_JACCARD of
-    their union (one differing word among many); and no manager+adviser filed both — a manager that voted both items proves they are two items. Each key is
+    flag equal; the word sets share at least BALLOT_MIN_SHARED words and differ by at most one extra
+    alphabetic word (never a substituted word); and no manager+adviser filed both — a manager that voted both items proves they are two items. Each key is
     compared with the cluster's first key only (sorted order), so similarity never chains.
     A miss leaves a proposal unmatched (recoverable); a false merge would compare votes
     on two different proposals (not)."""
@@ -238,8 +247,9 @@ def _merge_ballot_keys(items: list[dict]) -> dict[str, str]:
                 gap = _days_apart(rep["date"], it["date"]) if rep["date"] != it["date"] else 0
                 if gap is None or gap > BALLOT_DAYS or rep["rollback"] != it["rollback"]:
                     continue
-                inter = len(rep["tokens"] & it["tokens"])
-                if inter < BALLOT_MIN_SHARED or inter / len(rep["tokens"] | it["tokens"]) < BALLOT_JACCARD:
+                diff = rep["tokens"] ^ it["tokens"]
+                if (len(rep["tokens"] & it["tokens"]) < BALLOT_MIN_SHARED or len(diff) > 1
+                        or any(not (t.isalpha() and len(t) >= 3) for t in diff)):
                     continue
                 if any(m["owners"] & it["owners"] for m in cl):
                     continue                # one manager filed both: two items
