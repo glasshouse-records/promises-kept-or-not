@@ -2242,7 +2242,8 @@ class Engine:
         for v in self.ledger.execute(
                 f"SELECT f.institution_id AS inst, v.vote_series, v.how_voted, "
                 f"v.vote_description, f.cik, UPPER(TRIM(v.cusip)) AS cusip, v.issuer_name, "
-                f"{iso} AS md, v.proposal_number AS pnum, (v.legacy_format IS NOT NULL) AS lg "
+                f"{iso} AS md, v.proposal_number AS pnum, (v.legacy_format IS NOT NULL) AS lg, "
+                f"v.shares_voted AS sh "
                 f"FROM votes v JOIN filings f ON f.accession = v.accession "
                 f"WHERE f.institution_id IN ({','.join('?' * len(insts))}) "
                 f"AND v.is_duplicate=0 AND {NON_LEGACY_VOTE_SQL} "
@@ -2263,6 +2264,7 @@ class Engine:
                 if norm(v["vote_description"]) == want[pid]:
                     out[pid].append({
                         "fund_series": v["vote_series"], "how_voted": v["how_voted"],
+                        "shares": v["sh"],
                         "fund_series_name": (names.get(v["vote_series"]) or (None,))[0]})
         return out
 
@@ -2305,14 +2307,11 @@ class Engine:
             by_theme: dict[str, dict] = {}
             seen: dict[str, set] = defaultdict(set)
             for pid in sorted(props):
-                votes = {(ln["how_voted"] or "").upper() for ln in lines.get(pid, ())
-                         if ln["fund_series"] == sid}
-                if not votes:
+                mine = [ln for ln in lines.get(pid, ()) if ln["fund_series"] == sid]
+                if not mine:
                     continue
                 pr = props[pid]
-                has_for, has_against = "FOR" in votes, bool(votes & {"AGAINST", "WITHHOLD"})
-                pos = ("SPLIT" if has_for and has_against else "FOR" if has_for
-                       else "AGAINST" if has_against else "OTHER")
+                pos = _series_position(mine)
                 key = proposal_key(pr)
                 for t in sorted(pr["_themes"]):
                     b = by_theme.setdefault(t, {"for": 0, "against": 0, "split": 0, "other": 0,
@@ -2334,8 +2333,10 @@ class Engine:
                            since=since, until=until),
                     {"series": rows},
                     ["A series' position on an item is FOR or AGAINST when all its lines "
-                     "agree, SPLIT when it filed both, `other` when it abstained or filed "
-                     "neither (withhold counts as AGAINST).",
+                     "agree, or the other side carries under 5% of the shares (lines, where no "
+                     "share counts were filed); SPLIT when the minority side carries 5% or "
+                     "more; `other` when it abstained or filed neither (withhold counts as "
+                     "AGAINST).",
                      "Only items tagged with a theme are counted, roll-back proposals "
                      "excluded; an item tagged with two themes counts in both rows, so do "
                      "not add themes up. An item filed under two proposal ids counts once "
@@ -2497,6 +2498,28 @@ def proposal_key(r) -> tuple:
     counts agree."""
     return ((r["cusip"] or r["issuer_name"] or "").strip().upper(), r["meeting_date"],
             norm(r["description"]))
+
+
+def _series_position(lines) -> str:
+    """One fund series' position on one item from its lines, by the engine's own rule
+    (`position_from_shares`: weighted by shares, by lines where none were filed, the
+    minority side needing 5% to make a SPLIT). FOR | AGAINST | SPLIT | OTHER; withhold
+    counts as AGAINST."""
+    f = a = 0
+    sf = sa = 0.0
+    n_other = 0
+    for ln in lines:
+        hv = (ln["how_voted"] or "").strip().upper()
+        sh = ln.get("shares") or 0.0
+        if hv == "FOR":
+            f, sf = f + 1, sf + sh
+        elif hv in ("AGAINST", "WITHHOLD"):
+            a, sa = a + 1, sa + sh
+        else:
+            n_other += 1
+    pos = (position_from_shares(sf, sa, n_other) if sf + sa > 0
+           else position_from_shares(f, a, n_other))
+    return pos if pos in ("FOR", "AGAINST", "SPLIT") else "OTHER"
 
 
 def _clean(**kw) -> dict:

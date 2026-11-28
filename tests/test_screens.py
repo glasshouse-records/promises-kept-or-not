@@ -20,14 +20,15 @@ def _ledger(tmp_path, name):
                       "'2026-01-01','06/30/2024','FUND VOTING REPORT')",
                       (f"ACC-{cik}", cik, iid, f"https://sec.example/{cik}"))
 
-    def vote(cik, i, how, date="05/20/2024", series=None, fmt=None, desc=None, pnum=None):
+    def vote(cik, i, how, date="05/20/2024", series=None, fmt=None, desc=None, pnum=None,
+             shares=100):
         c.execute("INSERT INTO votes (accession, issuer_name, cusip, meeting_date,"
                   " vote_description, vote_source, how_voted, management_recommendation,"
                   " shares_voted, vote_series, legacy_format, category_type, is_duplicate,"
                   " proposal_number)"
-                  " VALUES (?,?,?,?,?,'SECURITY HOLDER',?,'AGAINST',100,?,?,?,0,?)",
+                  " VALUES (?,?,?,?,?,'SECURITY HOLDER',?,'AGAINST',?,?,?,?,0,?)",
                   (f"ACC-{cik}", f"ISSUER {i}", f"CUSIP{i:04d}", date,
-                   desc or f"Report on Climate Transition Plan {i}", how, series, fmt,
+                   desc or f"Report on Climate Transition Plan {i}", how, shares, series, fmt,
                    "" if fmt else "SHAREHOLDER PROPOSAL", pnum))
 
     return c, path, inst, vote
@@ -303,6 +304,26 @@ def test_fund_record_split_other_and_rollback(tmp_path):
     eng = _build(c, path, tmp_path)
     t = eng.fund_record(series_id="S1")["result"]["series"][0]["themes"]["climate"]
     assert (t["for"], t["against"], t["split"], t["other"], t["ballots"]) == (1, 1, 1, 1, 4)
+
+
+def test_fund_record_applies_the_five_percent_split_rule(tmp_path):
+    """A sliver the other way (loaned shares, a sub-account) is not a split: the minority
+    side must carry 5% of the shares, as everywhere else in the engine."""
+    c, path, inst, vote = _ledger(tmp_path, "fr5")
+    inst("hh", ["11"])
+    c.execute("INSERT INTO fund_series (series_id, accession, name) VALUES ('S1','ACC-11','Acme')")
+    vote("11", 0, "FOR", series="S1", shares=970)
+    vote("11", 0, "AGAINST", series="S1", shares=30)      # 3% against: FOR
+    vote("11", 1, "AGAINST", series="S1", shares=960)
+    vote("11", 1, "FOR", series="S1", shares=40)          # 4% for: AGAINST
+    vote("11", 2, "FOR", series="S1", shares=900)
+    vote("11", 2, "AGAINST", series="S1", shares=100)     # 10% against: SPLIT
+    vote("11", 3, "FOR", series="S1", shares=None)        # no share counts: lines, 1 v 1
+    vote("11", 3, "AGAINST", series="S1", shares=None)
+    eng = _build(c, path, tmp_path)
+    t = eng.fund_record(series_id="S1")["result"]["series"][0]["themes"]["climate"]
+    assert (t["for"], t["against"], t["split"], t["other"]) == (1, 1, 2, 0)
+    assert {p["position"] for p in t["proposals"] if "ISSUER 2" in p["company"]} == {"SPLIT"}
 
 
 def test_fund_record_refuses_vague_or_unknown_requests(tmp_path):
