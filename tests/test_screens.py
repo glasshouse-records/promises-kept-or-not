@@ -396,3 +396,141 @@ def test_s5_esg_adviser_group_is_compared_with_the_main_group(tmp_path):
         groups = [r for r in _themed(out) if r["kind"] == "group"]
         assert [(g["entity"], g["compared_with"], g["label"], g["n_ballots"], g["gap_pp"])
                 for g in groups] == [(f"hh/{esg_key}", "hh/MAIN", "differs", 35, 100.0)], esg_key
+
+
+# ------------------------------------------------- 3b c1/c2 fixes: guards on both screens
+
+def _s3_base(tmp_path, name, extra=None, n=40, desc=None, reg=None):
+    """alpha FOR, beta/gamma AGAINST on n shared ballots; `extra(inst, vote)` adds more."""
+    c, path, inst, vote = _ledger(tmp_path, name)
+    for iid, cik in (("alpha", "1"), ("beta", "2"), ("gamma", "3")):
+        inst(iid, [cik])
+    if extra:
+        extra(inst, vote, c)
+    for i in range(n):
+        vote("1", i, "FOR", desc=desc and desc.format(i))
+        vote("2", i, "AGAINST", desc=desc and desc.format(i))
+        vote("3", i, "AGAINST", desc=desc and desc.format(i))
+    return c, path, vote
+
+
+def test_s3_catch_all_buckets_are_never_peers_or_entities(tmp_path):
+    def extra(inst, vote, c):
+        inst("grp", ["11", "22", "33"])
+        for i in range(40):
+            vote("11", i, "FOR")              # grp/UNRESOLVED, grp/EXTERNAL, grp/unlabelled
+            vote("22", i, "FOR")              # all vote FOR, like alpha: they would pull the
+            vote("33", i, "FOR")              # median up and be flagged themselves
+    c, path, vote = _s3_base(tmp_path, "s3ca", extra)
+    reg = {"grp": {"npx_ciks": [{"cik": "11", "adviser_key": "UNRESOLVED"},
+                                {"cik": "22", "adviser_key": "EXTERNAL"},
+                                {"cik": "33", "adviser_key": "REAL"}]}}
+    out = screens.s3_peer_outliers(_build(c, path, tmp_path, reg))
+    ents = {h["entity"]: h for h in out["candidates"]}
+    assert "grp/UNRESOLVED" not in ents and "grp/EXTERNAL" not in ents
+    assert ents["alpha"]["n_peers"] == 3 and ents["alpha"]["peer_median"] == 0.0
+    assert out["excluded_catch_all"] >= 2 * 40 and out["excluded_catch_all_entities"] >= 2
+
+
+def _harris(inst, vote, c):
+    inst("hm", ["11"])
+    inst("nx", ["22", "33"])
+    for i in range(40):
+        vote("11", i, "AGAINST")
+        vote("22", i, "AGAINST")
+    vote("33", 0, "AGAINST")                  # nx's second adviser votes too: nx is multi-adviser
+
+
+def test_s3_one_firm_under_two_institutions_counts_once(tmp_path):
+    c, path, vote = _s3_base(tmp_path, "s3fm", _harris)
+    reg = {"hm": {"npx_ciks": [{"cik": "11", "adviser_key": "HARRIS_ASSOCIATES"}]},
+           "nx": {"npx_ciks": [{"cik": "22", "adviser_key": "HARRIS_ASSOCIATES"},
+                               {"cik": "33", "adviser_key": "OTHER"}]}}
+    out = screens.s3_peer_outliers(_build(c, path, tmp_path, reg))
+    h = [x for x in out["candidates"] if x["entity"] == "alpha"][0]
+    assert h["n_peers"] == 3                  # beta, gamma and ONE Harris, not four
+    assert out["duplicate_firm_entities_dropped"] == 1
+
+
+def test_s3_firm_via_adviser_key_history_matches_adviser_key(tmp_path):
+    c, path, vote = _s3_base(tmp_path, "s3fh", _harris)
+    reg = {"hm": {"npx_ciks": [{"cik": "11", "adviser_key_history":
+                                [{"key": "HARRIS_ASSOCIATES", "from": "2020-01-01"}]}]},
+           "nx": {"npx_ciks": [{"cik": "22", "adviser_key": "HARRIS_ASSOCIATES"},
+                               {"cik": "33", "adviser_key": "OTHER"}]}}
+    out = screens.s3_peer_outliers(_build(c, path, tmp_path, reg))
+    assert [x for x in out["candidates"] if x["entity"] == "alpha"][0]["n_peers"] == 3
+
+
+def test_s3_low_match_rate_goes_to_low_match_not_the_ranking(tmp_path):
+    def extra(inst, vote, c):
+        pass
+    c, path, vote = _s3_base(tmp_path, "s3lm")
+    for i in range(100, 160):                 # 60 alpha-only items: no shared ballot
+        vote("1", i, "FOR")
+    out = screens.s3_peer_outliers(_build(c, path, tmp_path))
+    assert [h["entity"] for h in out["candidates"]] == ["beta", "gamma"]   # they match fully
+    (row,) = out["low_match"]
+    assert row["entity"] == "alpha" and row["match_rate"] == 0.4
+    assert row["n_matched"] == 40 and row["n_theme_year_proposals"] == 100
+
+
+def test_s3_match_rate_is_reported_on_candidates(tmp_path):
+    c, path, vote = _s3_base(tmp_path, "s3mr")
+    for i in range(100, 110):
+        vote("1", i, "FOR")                   # 40 of 50: 0.8, above the guard
+    out = screens.s3_peer_outliers(_build(c, path, tmp_path))
+    h = [x for x in out["candidates"] if x["entity"] == "alpha"][0]
+    assert h["match_rate"] == 0.8 and out["low_match"] == []
+
+
+def test_ambiguous_polarity_constant_matches_the_listed_wordings():
+    for d in ("Report on Climate Congruency", "Misalignment of lobbying", "THIRD-PARTY review",
+              "retirement plan options climate", "net zero transition risk",
+              "climate commitments and their impact"):
+        assert screens.AMBIGUOUS_POLARITY.search(d), d
+    assert not screens.AMBIGUOUS_POLARITY.search("Report on Climate Transition Plan")
+
+
+def test_s3_ambiguous_polarity_excluded_by_default_and_kept_by_flag(tmp_path):
+    c, path, vote = _s3_base(tmp_path, "s3am", desc="Report on Climate Congruency {}")
+    eng = _build(c, path, tmp_path)
+    out = screens.s3_peer_outliers(eng)
+    assert out["candidates"] == [] and out["n_ambiguous_excluded"] == 120
+    kept = screens.s3_peer_outliers(eng, include_ambiguous=True)
+    assert "alpha" in [h["entity"] for h in kept["candidates"]]
+    assert kept["n_ambiguous_excluded"] == 0
+
+
+def test_s5_ambiguous_excluded_by_default_and_kept_by_flag(tmp_path):
+    c, path, inst, vote = _ledger(tmp_path, "s5am")
+    inst("hh", ["11"])
+    for sid, nm in (("S1", "Acme Sustainable Equity"), ("S2", "Acme Core Equity")):
+        c.execute("INSERT INTO fund_series (series_id, accession, name) VALUES (?,?,?)",
+                  (sid, "ACC-11", nm))
+    for i in range(35):
+        vote("11", i, "AGAINST", series="S1", desc=f"Report on Climate Congruency {i}")
+        vote("11", i, "FOR", series="S2", desc=f"Report on Climate Congruency {i}")
+    eng = _build(c, path, tmp_path)
+    out = screens.s5_esg_funds(eng)
+    assert out["candidates"] == [] and out["n_ambiguous_excluded"] > 0
+    assert len(_themed(screens.s5_esg_funds(eng, include_ambiguous=True))) == 1
+
+
+def test_s5_catch_all_buckets_are_neither_entities_nor_comparison_groups(tmp_path):
+    for n, (esg_key, main_key) in enumerate((("UNRESOLVED", "MAIN"),
+                                              ("MAIN_SUSTAINABILITY", "UNRESOLVED"))):
+        c, path, inst, vote = _ledger(tmp_path, f"s5ca{n}")
+        inst("hh", ["11", "22"])
+        for cik, sid, nm in (("11", "S1", "Acme Core Equity"), ("22", "S9", "Acme Sustainable Fund")):
+            c.execute("INSERT INTO fund_series (series_id, accession, name) VALUES (?,?,?)",
+                      (sid, f"ACC-{cik}", nm))
+        for i in range(35):
+            vote("11", i, "AGAINST", series="S1")
+            vote("22", i, "FOR", series="S9")
+        keys = (main_key, esg_key) if n == 0 else (main_key, esg_key)
+        reg = {"hh": {"npx_ciks": [{"cik": "11", "adviser_key": keys[0]},
+                                   {"cik": "22", "adviser_key": keys[1]}]}}
+        out = screens.s5_esg_funds(_build(c, path, tmp_path, reg))
+        assert out["candidates"] == [], (n, out["candidates"])
+        assert out["excluded_catch_all"] > 0

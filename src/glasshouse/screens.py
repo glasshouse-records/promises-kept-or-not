@@ -35,6 +35,7 @@ An item filed under several proposal ids (same company, meeting, wording) counts
 
 from __future__ import annotations
 
+import json
 import math
 import re
 import statistics
@@ -51,6 +52,19 @@ GAP_PP = 15.0
 S5_TOLERANCE = 0.05
 S5_DIFFERS_PP = 15.0
 ES_THEMES = ("climate", "nature", "human-rights", "labor-rights", "board-diversity")
+
+MIN_MATCH_RATE = 0.5
+
+# Adviser keys that are catch-all buckets, not a manager: never a peer, never a comparison
+# group, never an entity. (engine.UNLABELLED, engine.EXTERNAL, and the config key UNRESOLVED.)
+CATCH_ALL = frozenset({"UNRESOLVED", engine.EXTERNAL, engine.UNLABELLED})
+
+# Proposal wordings whose direction is uncertain (does FOR mean more or less of the theme?):
+# direction uncertain, check sponsor. Excluded from S3/S5 rates by default and counted;
+# `include_ambiguous=True` / `--include-ambiguous` keeps them.
+AMBIGUOUS_POLARITY = re.compile(
+    r"congruen|misalign|third-party|retirement plan.*climate|net zero.*risk"
+    r"|climate commitments.*impact", re.IGNORECASE)
 
 ESG_GROUP_KEY = re.compile(r"_(?:SUSTAINABILITY|SOCIAL|ESG|SUSTAINABLE)$", re.IGNORECASE)
 
@@ -69,6 +83,34 @@ def esg_name(name: str | None) -> bool:
 def _split_entity(ent: str) -> tuple[str, str | None]:
     inst, _, adv = ent.partition("/")
     return inst, adv or None
+
+
+def is_catch_all(ent: str) -> bool:
+    """`institution/UNRESOLVED`, `/EXTERNAL`, `/unlabelled`: a bucket, not a manager."""
+    return _split_entity(ent)[1] in CATCH_ALL
+
+
+def _firm_keys(eng: engine.Engine) -> dict[str, set]:
+    """institution -> the real (non catch-all) adviser keys its registrants can resolve to."""
+    out: dict[str, set] = defaultdict(set)
+    for r in eng.db.execute("SELECT institution_id, adviser, rules FROM registrants"):
+        keys = {r["adviser"]} - {None}
+        if r["rules"]:
+            keys |= engine.rule_keys(json.loads(r["rules"]))
+        out[r["institution_id"]] |= keys - CATCH_ALL
+    return out
+
+
+def firm_of(ent: str, firm_keys: dict[str, set]) -> str:
+    """The firm behind an entity, so one adviser filed under two institutions (Harris
+    Associates as `harris_oakmark` and `natixis/HARRIS_ASSOCIATES`) is one firm. An entity
+    `inst/KEY` is firm KEY; a bare `inst` is firm KEY when the config gives the institution
+    exactly one real adviser key, else the institution itself."""
+    inst, adv = _split_entity(ent)
+    if adv:
+        return f"adviser:{adv}"
+    keys = firm_keys.get(inst, set())
+    return f"adviser:{next(iter(keys))}" if len(keys) == 1 else f"institution:{inst}"
 
 
 def _reproduce_peers(ent: str, theme: str, year: int) -> str:
@@ -99,21 +141,47 @@ def _vs_peers(ent: str, ballots: set, by_ent: dict) -> tuple[float, float, int]:
     return rate, (statistics.median(rates) if rates else float("nan")), len(rates)
 
 
-def s3_peer_outliers(eng: engine.Engine, year: int | None = None) -> dict:
-    out = []
+def s3_peer_outliers(eng: engine.Engine, year: int | None = None,
+                    include_ambiguous: bool = False) -> dict:
+    out, low_match = [], []
+    firm_keys = _firm_keys(eng)
+    catch_pids, catch_ents, amb_pids, dup_dropped = set(), set(), set(), []
     for theme in engine.THEMES:
         join, w, p = eng._where(theme=theme, year=year)
         rows = eng.db.execute(
-            f"SELECT p.proposal_id pid, p.year y, p.ballot_key bk, "
+            f"SELECT p.proposal_id pid, p.year y, p.ballot_key bk, p.description d, "
             f"{engine._ENTITY.format('p')} ent, p.position pos, p.weight_basis wb "
-            f"FROM proposals p {join} WHERE {w} AND p.ballot_key IS NOT NULL "
+            f"FROM proposals p {join} WHERE {w} "
             f"AND p.position IN ('FOR','AGAINST') ORDER BY p.proposal_id", p).fetchall()
         ballots = defaultdict(lambda: defaultdict(dict))        # year -> bk -> ent -> row
+        decided = defaultdict(lambda: defaultdict(set))         # year -> ent -> proposal ids
         for r in rows:
-            if r["y"] is not None:
+            if r["y"] is None:
+                continue
+            if is_catch_all(r["ent"]):
+                catch_pids.add(r["pid"])
+                catch_ents.add(r["ent"])
+                continue
+            if not include_ambiguous and AMBIGUOUS_POLARITY.search(r["d"] or ""):
+                amb_pids.add(r["pid"])
+                continue
+            decided[r["y"]][r["ent"]].add(r["pid"])
+            if r["bk"] is not None:
                 ballots[r["y"]][r["bk"]][r["ent"]] = (r["pos"], r["pid"], r["wb"] == "lines")
         for y, bks in ballots.items():
-            shared = {bk: v for bk, v in bks.items() if len(v) >= MIN_MANAGERS}
+            # one firm once: of several entities of one firm keep the one with most ballots
+            size = defaultdict(int)
+            for v in bks.values():
+                for e in v:
+                    size[e] += 1
+            keep: dict[str, str] = {}
+            for e in sorted(size, key=lambda e: (-size[e], e)):
+                keep.setdefault(firm_of(e, firm_keys), e)
+            dropped = {e for e in size if keep[firm_of(e, firm_keys)] != e}
+            dup_dropped += [(theme, y, e) for e in sorted(dropped)]
+            shared = {bk: {e: x for e, x in v.items() if e not in dropped}
+                      for bk, v in bks.items()}
+            shared = {bk: v for bk, v in shared.items() if len(v) >= MIN_MANAGERS}
             legacy = {bk for bk, v in shared.items() if any(x[2] for x in v.values())}
             by_ent = defaultdict(dict)
             for bk, v in shared.items():
@@ -139,12 +207,17 @@ def s3_peer_outliers(eng: engine.Engine, year: int | None = None) -> dict:
                     if (mine[bk][0] == "FOR") != (_rate(
                         v[0] for e2, v in shared[bk].items() if e2 != ent) > 0.5))
                 ex_ids = deviating[:3]
-                out.append({
+                n_total = len(decided[y][ent])
+                n_matched = len({mine[bk][1] for bk in allb})
+                match_rate = n_matched / n_total if n_total else 0.0
+                row = {
                     "screen": "S3", "entity": ent, "theme": theme, "year": y,
                     "n_ballots": len(allb), "entity_rate": round(rate, 4),
                     "peer_median": round(med, 4), "n_peers": n_peers,
                     "gap_pp": round(gap, 2),
                     "score": round(abs(gap) * math.sqrt(len(allb)), 2),
+                    "match_rate": round(match_rate, 4), "n_matched": n_matched,
+                    "n_theme_year_proposals": n_total,
                     "includes_legacy": bool(allb & legacy),
                     "n_legacy_ballots": len(allb & legacy),
                     "n_ballots_ex_legacy": len(exb),
@@ -156,9 +229,15 @@ def s3_peer_outliers(eng: engine.Engine, year: int | None = None) -> dict:
                         and abs(ex_gap) >= GAP_PP and (ex_gap > 0) == (gap > 0)),
                     "example_proposal_ids": [i for i, _ in ex_ids],
                     "example_ballot_keys": [k for _, k in ex_ids],
-                    "reproduce": [_reproduce_peers(ent, theme, y)]})
-    out.sort(key=lambda c: (-c["score"], c["entity"], c["theme"], c["year"]))
-    return {"screen": "S3", "year": year, "candidates": out, "matched_funds": []}
+                    "reproduce": [_reproduce_peers(ent, theme, y)]}
+                (out if match_rate >= MIN_MATCH_RATE else low_match).append(row)
+    for lst in (out, low_match):
+        lst.sort(key=lambda c: (-c["score"], c["entity"], c["theme"], c["year"]))
+    return {"screen": "S3", "year": year, "candidates": out, "matched_funds": [],
+            "low_match": low_match, "excluded_catch_all": len(catch_pids),
+            "excluded_catch_all_entities": len(catch_ents),
+            "n_ambiguous_excluded": len(amb_pids),
+            "duplicate_firm_entities_dropped": len(dup_dropped)}
 
 
 # ------------------------------------------------------------------------- S5
@@ -265,13 +344,16 @@ def _is_esg_group(ent: str, member_names: set) -> bool:
     return bool(member_names) and all(esg_name(n) for n in member_names)
 
 
-def s5_esg_funds(eng: engine.Engine, year: int | None = None) -> dict:
+def s5_esg_funds(eng: engine.Engine, year: int | None = None,
+                 include_ambiguous: bool = False) -> dict:
     esg = _esg_series(eng)
     matched = [{"series_id": s, "institution": v["institution"], "series_name": v["name"]}
                for s, v in esg.items()]
     insts = {v["institution"] for v in esg.values()}
     empty = {"screen": "S5", "year": year, "candidates": [], "matched_funds": matched,
-             "summary": _s5_summary([]), "n_collapsed_duplicates": 0}
+             "summary": _s5_summary([]), "n_collapsed_duplicates": 0,
+             "excluded_catch_all": 0, "excluded_catch_all_entities": 0,
+             "n_ambiguous_excluded": 0}
     if not insts:
         return empty
     iso = iso_meeting_date("v.meeting_date")
@@ -285,6 +367,7 @@ def s5_esg_funds(eng: engine.Engine, year: int | None = None) -> dict:
         seen_pairs.add((r["i"], r["c"], r["d"]))
         seen_pairs.add((r["i"], r["n"], r["d"]))
     props: dict[int, dict] = {}
+    catch_pids, catch_ents, amb_pids = set(), set(), set()
     for theme in ES_THEMES:
         join, w, p = eng._where(theme=theme, year=year)
         for r in eng.db.execute(
@@ -293,6 +376,13 @@ def s5_esg_funds(eng: engine.Engine, year: int | None = None) -> dict:
             if r["institution_id"] in insts and (
                     (r["institution_id"], r["cusip"], r["meeting_date"]) in seen_pairs
                     or (r["institution_id"], r["issuer_name"], r["meeting_date"]) in seen_pairs):
+                if is_catch_all(r["ent"]):
+                    catch_pids.add(r["proposal_id"])
+                    catch_ents.add(r["ent"])
+                    continue
+                if not include_ambiguous and AMBIGUOUS_POLARITY.search(r["description"] or ""):
+                    amb_pids.add(r["proposal_id"])
+                    continue
                 row = props.setdefault(r["proposal_id"], dict(r) | {"themes_es": set()})
                 row["themes_es"].add(theme)
     all_lines = _bulk_lines(eng, props, _series_names(eng))
@@ -360,7 +450,10 @@ def s5_esg_funds(eng: engine.Engine, year: int | None = None) -> dict:
                 out.append(row)
     out.sort(key=lambda c: (-c["score"], c["entity"], c["series_id"], c["theme"]))
     return {"screen": "S5", "year": year, "candidates": out, "matched_funds": matched,
-            "summary": _s5_summary(out), "n_collapsed_duplicates": collapsed_total}
+            "summary": _s5_summary(out), "n_collapsed_duplicates": collapsed_total,
+            "excluded_catch_all": len(catch_pids),
+            "excluded_catch_all_entities": len(catch_ents),
+            "n_ambiguous_excluded": len(amb_pids)}
 
 
 def _s5_summary(cands: list) -> str:
@@ -375,14 +468,15 @@ def _s5_summary(cands: list) -> str:
 SCREENS = {"S3": s3_peer_outliers, "S5": s5_esg_funds}
 
 
-def run(eng: engine.Engine, which: str = "all", year: int | None = None) -> dict:
+def run(eng: engine.Engine, which: str = "all", year: int | None = None,
+        include_ambiguous: bool = False) -> dict:
     names = list(SCREENS) if which.lower() == "all" else [which.upper()]
     bad = [n for n in names if n not in SCREENS]
     if bad:
         raise ValueError(f"unknown screen {which!r}; known: {', '.join(SCREENS)}, all")
     res = {}
     for n in names:
-        r = SCREENS[n](eng, year=year)
+        r = SCREENS[n](eng, year=year, include_ambiguous=include_ambiguous)
         r["n_candidates"] = len(r["candidates"])
         res[n] = r
     return res
@@ -396,6 +490,14 @@ def render(res: dict, top: int | None = None) -> str:
                      f"{'; showing top ' + str(len(shown)) if shown else ''}")
         if r.get("summary"):
             lines.append(r["summary"])
+        lines.append(f"excluded: {r.get('excluded_catch_all', 0)} proposals of "
+                     f"{r.get('excluded_catch_all_entities', 0)} catch-all entities "
+                     f"(UNRESOLVED/EXTERNAL/unlabelled); {r.get('n_ambiguous_excluded', 0)} "
+                     f"ambiguous-polarity proposals (--include-ambiguous keeps them)"
+                     + (f"; {r['duplicate_firm_entities_dropped']} duplicate-firm entity-years"
+                        if "duplicate_firm_entities_dropped" in r else "")
+                     + (f"; {len(r['low_match'])} rows under the {MIN_MATCH_RATE:.0%} "
+                        f"match guard held out as low_match" if "low_match" in r else ""))
         lines.append(f"{'score':>8} {'entity':<28} {'theme':<16} {'year':<10} {'n':>5} "
                      f"{'rate':>6} {'peers':>6} {'gap_pp':>7} {'np':>3} {'legacy n':>9} "
                      f"{'holds w/o':>9}")

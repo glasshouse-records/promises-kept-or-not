@@ -1066,7 +1066,8 @@ def cmd_screen(args) -> int:
 
     from . import engine, screens
     try:
-        res = screens.run(engine.Engine(), args.which, year=args.year)
+        res = screens.run(engine.Engine(), args.which, year=args.year,
+                          include_ambiguous=args.include_ambiguous)
     except (ValueError, FileNotFoundError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -1440,6 +1441,8 @@ def main(argv: list[str] | None = None) -> int:
                          "S5 ESG-labelled funds): ranked leads, never findings")
     scr.add_argument("which", choices=["S3", "S5", "all"])
     scr.add_argument("--year", type=int)
+    scr.add_argument("--include-ambiguous", action="store_true",
+                     help="keep proposals whose direction is uncertain (default: excluded, counted)")
     scr.add_argument("--top", type=int, default=20, help="rows shown (JSON has all)")
     scr.add_argument("--json", help="write every candidate, all fields, to this file")
     scr.set_defaults(func=cmd_screen)
