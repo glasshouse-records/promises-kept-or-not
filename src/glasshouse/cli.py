@@ -1437,9 +1437,9 @@ def main(argv: list[str] | None = None) -> int:
     ask.add_argument("tool")
     ask.add_argument("params", nargs="*", help="key=value arguments")
     ask.set_defaults(func=cmd_ask)
-    scr = sub.add_parser("screen", help="insight screens over the engine (S3 peer outlier, "
-                         "S5 ESG-labelled funds): ranked leads, never findings")
-    scr.add_argument("which", choices=["S3", "S5", "all"])
+    scr = sub.add_parser("screen", help="insight screens over the engine (S1 walk-back, S2 say vs do, "
+                         "S3 peer outlier, S5 ESG-labelled funds): ranked leads, never findings")
+    scr.add_argument("which", choices=["S1", "S2", "S3", "S5", "all"])
     scr.add_argument("--year", type=int)
     scr.add_argument("--include-ambiguous", action="store_true",
                      help="keep proposals whose direction is uncertain (default: excluded, counted)")

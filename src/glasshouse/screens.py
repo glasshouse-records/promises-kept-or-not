@@ -31,17 +31,41 @@ row, and the `pooled` row (all themes) is a summary only. An ESG adviser group (
 key ending _SUSTAINABILITY/_SOCIAL/_ESG/_SUSTAINABLE, or every series ESG-named) is
 compared, kind `group`, with the same institution's non-ESG group sharing the most items.
 An item filed under several proposal ids (same company, meeting, wording) counts once.
+
+S2 say vs do. For each institution (or institution/ADVISER) and theme, the engine's
+`say_vs_do` supplies the policy versions, the sentences matching the theme and each
+version's in-force window; nothing here re-matches policy text except one filter: a said
+sentence counts as a stated stance only if it mentions the theme (contradictions.THEMES) and
+reads "generally ... support / vote for / vote in favor" with no hedge (STANCE_HEDGE). Votes in
+the window are the theme's decided ballots (share classes collapsed, MIXED left out). Hit:
+a stance, >= 30 decided ballots, support rate <= S2_MAX_RATE; score = (1 - rate) * 100 *
+sqrt(n). Windows over GAP_DAYS (no capture for over a year) are never used. An institution
+whose advisers differ is only ever paired adviser by adviser; a version without an
+adviser there is unpaired and skipped.
+
+S1 walk-back. For consecutive readable versions A -> B of one document (one adviser),
+`policy_diff` gives the removed sentences. A removed sentence mentioning theme T
+(contradictions.THEMES commitment words) is a removal unless an added sentence is a near
+copy (difflib ratio >= S1_REFLOW: a reflow, not a removal). Support on T is measured on
+ballots >= 3 firms voted (S3's peer ballots) in the window before B's capture date
+(from max(A's capture, 365 days earlier)) and after it (until the next version or 365 days):
+`entity_rate` = FOR-rate, `peer_rate` = mean over the same ballots of the FOR share among
+the OTHER firms. Hit: both sides >= 30 ballots, the entity fell >= 10 pp and by >= 10 pp
+more than its peers moved. The change date is only known to lie between two captures.
 """
 
 from __future__ import annotations
 
+import difflib
 import json
 import math
 import re
 import statistics
 from collections import defaultdict
+from datetime import date, timedelta
 
 from . import engine
+from .contradictions import THEMES as POLICY_THEMES
 from .ledger import NON_LEGACY_VOTE_SQL, iso_meeting_date
 
 MIN_BALLOTS = 30
@@ -532,9 +556,339 @@ def _s5_summary(cands: list) -> str:
             f"(±5pp), {n['differs']} differ (+15pp or more), {n['between']} between")
 
 
+# ------------------------------------------------------------------------- S2 / S1
+
+S2_MAX_RATE = 0.40
+S1_MIN_MOVE_PP = 10.0
+S1_WINDOW_DAYS = 365
+S1_REFLOW = 0.8
+
+# FTS terms that fetch a theme's policy sentences from `say_vs_do` (the tool's own matching),
+# each narrowed to sentences that talk about support so its 8-sentence cap is not spent elsewhere.
+_SUPPORT_FTS = "(support OR supports OR vote OR favor OR favour)"
+S2_FTS = {
+    "anti-corruption": "(corruption OR bribery OR ethics)",
+    "human-rights": '("human rights")',
+    "climate": "(climate OR emissions)",
+    "lobbying-disclosure": '(lobbying OR "political spending" OR "political contributions")',
+    "board-diversity": "(diversity OR diverse)",
+    "nature": "(deforestation OR biodiversity OR water)",
+    "labor-rights": '("labor rights" OR "labour rights" OR workforce OR "human capital")',
+}
+
+_STANCE = re.compile(
+    r"\bgenerally\b(?:\s+\w+){0,2}?\s+(?:support|supports|vote\s+for|votes\s+for"
+    r"|vote\s+in\s+favou?r|votes\s+in\s+favou?r)\b", re.IGNORECASE)
+# A hedge anywhere in the sentence means it is not an unconditional stance: precision first.
+STANCE_HEDGE = re.compile(
+    r"\b(?:against|oppose[sd]?|not|unless|except|case[\s-]by[\s-]case|only\s+if|provided"
+    r"|rarely|but|however)\b", re.IGNORECASE)
+
+
+def stated_support(theme: str, sentence: str) -> bool:
+    """A policy sentence that says the manager 'generally supports' the theme: it mentions
+    the theme, reads generally + support/vote for/vote in favor, and carries no hedge."""
+    rx = "|".join(POLICY_THEMES[theme]["commitment"])
+    return bool(re.search(rx, sentence, re.IGNORECASE) and _STANCE.search(sentence)
+                and not STANCE_HEDGE.search(sentence))
+
+
+def _snippet(rx, text: str, width: int = 90) -> str:
+    """The stretch of a (possibly very long) policy sentence around the first match, so a
+    reader sees WHY it matched the theme."""
+    m = re.search(getattr(rx, "pattern", rx), text, re.IGNORECASE)
+    if not m:
+        return text[:2 * width]
+    a, b = max(0, m.start() - width), min(len(text), m.end() + width)
+    return ("..." if a else "") + text[a:b] + ("..." if b < len(text) else "")
+
+
+def _decided_rate(ballots) -> float | None:
+    f = sum(1 for b in ballots if b["position"] == "FOR")
+    a = sum(1 for b in ballots if b["position"] == "AGAINST")
+    return f / (f + a) if f + a else None
+
+
+def _version_groups(eng: engine.Engine):
+    """(institution, adviser-or-None, scope) for every policy document owner; None scope
+    for an institution whose advisers do not differ. A multi-adviser institution's version
+    without a (real) adviser key cannot be paired with votes and is yielded as unpaired."""
+    unpaired = 0
+    out = []
+    for r in eng.db.execute("SELECT DISTINCT institution_id, adviser FROM policy_versions "
+                            "WHERE n_sentences >= ? ORDER BY 1, 2", (engine.READABLE_MIN,)):
+        iid, adv = r["institution_id"], r["adviser"]
+        if eng.advisers_of(iid)["multi"]:
+            if adv is None or adv in CATCH_ALL:
+                unpaired += 1
+                continue
+            out.append((iid, adv, adv))
+        else:
+            out.append((iid, adv, None))
+    return out, unpaired
+
+
+def s2_say_vs_do(eng: engine.Engine, year: int | None = None,
+                 include_ambiguous: bool = False) -> dict:
+    out, amb_pids, catch_pids = [], set(), set()
+    n_gap = n_stance = collapsed_rows = mixed_ballots = 0
+    groups, unpaired = _version_groups(eng)
+    for iid, adv, sc in groups:
+        ent = f"{iid}/{adv}" if adv else iid
+        for theme in S2_FTS:
+            try:
+                env = eng.say_vs_do(iid, f"{S2_FTS[theme]} AND {_SUPPORT_FTS}", theme=theme,
+                                    adviser=sc)
+            except ValueError:
+                unpaired += 1
+                break
+            stances = [(v, [s for s in v["said"] if stated_support(theme, s)])
+                       for v in env["result"]]
+            stances = [(v, s) for v, s in stances if s]
+            if not stances:
+                continue
+            join, w, p = eng._where(institution=iid, theme=theme, adviser=sc, year=year)
+            rows = eng.db.execute(
+                f"SELECT p.*, {engine._ENTITY.format('p')} ent FROM proposals p {join} "
+                f"WHERE {w} ORDER BY p.proposal_id", p).fetchall()
+            for v, said in stances:
+                n_stance += 1
+                if v["archive_gap"]:
+                    n_gap += 1
+                    continue
+                until = v["in_force_until"] or "9999-12-31"
+                win = []
+                for r in rows:
+                    if not v["in_force_from"] <= r["meeting_date"] < until:
+                        continue
+                    if is_catch_all(r["ent"]):
+                        catch_pids.add(r["proposal_id"])
+                    elif not include_ambiguous and AMBIGUOUS_POLARITY.search(r["description"] or ""):
+                        amb_pids.add(r["proposal_id"])
+                    else:
+                        win.append(r)
+                bl = engine.collapse_ballots(win)
+                collapsed_rows += len(win) - len(bl)
+                mixed_ballots += sum(1 for b in bl if b["position"] == "MIXED")
+                n_for = sum(1 for b in bl if b["position"] == "FOR")
+                n_against = sum(1 for b in bl if b["position"] == "AGAINST")
+                n = n_for + n_against
+                if n < MIN_BALLOTS:
+                    continue
+                rate = n_for / n
+                if rate > S2_MAX_RATE:
+                    continue
+                dec = [b for b in bl if b["position"] in ("FOR", "AGAINST")]
+                ex = [b for b in dec if b["row"]["weight_basis"] != "lines"]
+                ex_rate = _decided_rate(ex)
+                legacy = len(dec) - len(ex)
+                ex_ids = sorted(b["row"]["proposal_id"] for b in dec if b["position"] == "AGAINST")[:3]
+                out.append({
+                    "screen": "S2", "entity": ent, "theme": theme,
+                    "year": f"{v['in_force_from']}..{v['in_force_until'] or 'latest'}",
+                    "version_id": v["commitment_id"], "doc_label": v["doc_label"],
+                    "in_force_from": v["in_force_from"], "in_force_until": v["in_force_until"],
+                    "window_days": v["window_days"], "said": said[:3],
+                    "said_context": [_snippet(_STANCE, t) for t in said[:3]],
+                    "n_ballots": n, "for": n_for, "against": n_against,
+                    "mixed": sum(1 for b in bl if b["position"] == "MIXED"),
+                    "entity_rate": round(rate, 4), "gap_pp": round((rate - 1) * 100, 2),
+                    "score": round((1 - rate) * 100 * math.sqrt(n), 2),
+                    "includes_legacy": bool(legacy), "n_legacy_ballots": legacy,
+                    "n_ballots_ex_legacy": len(ex),
+                    "entity_rate_ex_legacy": round(ex_rate, 4) if ex_rate is not None else None,
+                    "holds_without_legacy": bool(
+                        ex_rate is not None and len(ex) >= MIN_BALLOTS and ex_rate <= S2_MAX_RATE),
+                    "example_proposal_ids": ex_ids,
+                    "reproduce": [f"glasshouse ask say_vs_do institution={iid} "
+                                  f"query={S2_FTS[theme]!r} theme={theme}"
+                                  + (f" adviser={sc}" if sc else "")]})
+    out.sort(key=lambda c: (-c["score"], c["entity"], c["theme"], c["version_id"]))
+    return {"screen": "S2", "year": year, "candidates": out, "matched_funds": [],
+            "n_stance_versions": n_stance, "n_archive_gap_excluded": n_gap,
+            "n_unpaired_skipped": unpaired,
+            "excluded_catch_all": len(catch_pids), "excluded_catch_all_entities": 0,
+            "n_ambiguous_excluded": len(amb_pids),
+            "share_class_rows_collapsed": collapsed_rows, "mixed": mixed_ballots}
+
+
+def _theme_ballots(eng: engine.Engine, theme: str, include_ambiguous: bool, stats: dict) -> dict:
+    """bk -> {entity: ballot} for the theme's decided, non catch-all, non ambiguous ballots
+    (share classes collapsed as S3 does); each ballot is a dict of position/date/legacy/pid."""
+    join, w, p = eng._where(theme=theme)
+    raw = eng.db.execute(
+        f"SELECT p.*, {engine._ENTITY.format('p')} ent FROM proposals p {join} "
+        f"WHERE {w} ORDER BY p.proposal_id", p).fetchall()
+    prefer: dict = defaultdict(set)
+    for r in raw:
+        prefer[r["ballot_key"]].add(r["ent"])
+    cb = engine.collapse_ballots(raw, {k: len(v) for k, v in prefer.items()})
+    stats["collapsed"] += len(raw) - len(cb)
+    stats["mixed"] += sum(1 for b in cb if b["position"] == "MIXED")
+    by_bk: dict = defaultdict(dict)
+    for b in cb:
+        r = b["row"]
+        if b["position"] not in ("FOR", "AGAINST") or r["ballot_key"] is None:
+            continue
+        if is_catch_all(r["ent"]):
+            stats["catch"].add(r["proposal_id"])
+            continue
+        if not include_ambiguous and AMBIGUOUS_POLARITY.search(r["description"] or ""):
+            stats["amb"].add(r["proposal_id"])
+            continue
+        by_bk[r["ballot_key"]][r["ent"]] = {
+            "bk": r["ballot_key"], "pos": b["position"], "date": r["meeting_date"],
+            "legacy": r["weight_basis"] == "lines", "pid": r["proposal_id"],
+            "inst": r["institution_id"], "adv": r["adviser"], "ent": r["ent"]}
+    return by_bk
+
+
+def _side(mine: list, by_bk: dict, firm: str, firm_keys: dict, start: str, end: str,
+          with_legacy: bool) -> dict:
+    """The entity's FOR-rate on peer ballots (>= 3 managers) dated [start, end), and the
+    mean, over those same ballots, of the FOR share among the other firms."""
+    own, peer, pids = [], [], []
+    for b in mine:
+        if not start <= b["date"] < end or (b["legacy"] and not with_legacy):
+            continue
+        others = [x["pos"] for e, x in by_bk[b["bk"]].items()
+                  if firm_of(e, firm_keys) != firm]
+        if len(others) < MIN_MANAGERS - 1:
+            continue
+        own.append(b["pos"] == "FOR")
+        peer.append(sum(1 for o in others if o == "FOR") / len(others))
+        pids.append(b["pid"])
+    n = len(own)
+    return {"n": n, "rate": sum(own) / n if n else None,
+            "peer": sum(peer) / n if n else None, "pids": pids,
+            "n_legacy": sum(1 for b in mine if b["legacy"] and start <= b["date"] < end)}
+
+
+def _iso_add(day: str, days: int) -> str:
+    return (date.fromisoformat(day) + timedelta(days=days)).isoformat()
+
+
+def _is_hit(before: dict, after: dict) -> bool:
+    if before["n"] < MIN_BALLOTS or after["n"] < MIN_BALLOTS:
+        return False
+    change = (after["rate"] - before["rate"]) * 100
+    peer = (after["peer"] - before["peer"]) * 100
+    return change <= -S1_MIN_MOVE_PP and change - peer <= -S1_MIN_MOVE_PP
+
+
+def s1_walk_back(eng: engine.Engine, year: int | None = None,
+                 include_ambiguous: bool = False) -> dict:
+    stats = {"collapsed": 0, "mixed": 0, "catch": set(), "amb": set()}
+    firm_keys = _firm_keys(eng)
+    themes: dict = {}
+    out, n_pairs, n_gap, n_unpaired, n_reflow = [], 0, 0, 0, 0
+    vers: dict = defaultdict(list)
+    for r in eng.db.execute("SELECT * FROM policy_versions WHERE n_sentences >= ? "
+                            "ORDER BY institution_id, doc_label, captured, commitment_id",
+                            (engine.READABLE_MIN,)):
+        vers[(r["institution_id"], r["doc_label"])].append(dict(r))
+    multi = {}
+    for (iid, _label), vs in sorted(vers.items()):
+        for i in range(len(vs) - 1):
+            a, b = vs[i], vs[i + 1]
+            if a["adviser"] != b["adviser"]:
+                n_unpaired += 1
+                continue
+            multi.setdefault(iid, eng.advisers_of(iid)["multi"])
+            if multi[iid] and (b["adviser"] is None or b["adviser"] in CATCH_ALL):
+                n_unpaired += 1
+                continue
+            sc = b["adviser"] if multi[iid] else None
+            n_pairs += 1
+            if year and int(b["captured"][:4]) != year:
+                continue
+            d = eng.policy_diff(iid, a["commitment_id"], b["commitment_id"])["result"]
+            added = [t.lower() for t in d["added"]]
+            for theme in S2_FTS:
+                rx = re.compile("|".join(POLICY_THEMES[theme]["commitment"]), re.IGNORECASE)
+                removed = []
+                for t in d["removed"]:
+                    if not rx.search(t):
+                        continue
+                    low = t.lower()
+                    if any(difflib.SequenceMatcher(None, low, x).ratio() >= S1_REFLOW
+                           for x in added):
+                        n_reflow += 1
+                    else:
+                        removed.append(t)
+                if not removed:
+                    continue
+                days = (date.fromisoformat(b["captured"])
+                        - date.fromisoformat(a["captured"])).days
+                if days > engine.GAP_DAYS:
+                    n_gap += 1
+                    continue
+                if theme not in themes:
+                    themes[theme] = _theme_ballots(eng, theme, include_ambiguous, stats)
+                by_bk = themes[theme]
+                mine = {}
+                for bk, ents in by_bk.items():
+                    for e in sorted(ents):
+                        x = ents[e]
+                        if x["inst"] == iid and (sc is None or x["adv"] == sc):
+                            mine.setdefault(bk, x)
+                mine = sorted(mine.values(), key=lambda x: (x["date"], x["pid"]))
+                if not mine:
+                    continue
+                firm = firm_of(mine[0]["ent"], firm_keys)
+                nxt = [x["captured"] for x in vs[i + 2:]]
+                a_end = min([_iso_add(b["captured"], S1_WINDOW_DAYS), *nxt[:1]])
+                b_start = max(a["captured"], _iso_add(b["captured"], -S1_WINDOW_DAYS))
+                bef = _side(mine, by_bk, firm, firm_keys, b_start, b["captured"], True)
+                aft = _side(mine, by_bk, firm, firm_keys, b["captured"], a_end, True)
+                if not _is_hit(bef, aft):
+                    continue
+                bx = _side(mine, by_bk, firm, firm_keys, b_start, b["captured"], False)
+                ax = _side(mine, by_bk, firm, firm_keys, b["captured"], a_end, False)
+                change = (aft["rate"] - bef["rate"]) * 100
+                peer_change = (aft["peer"] - bef["peer"]) * 100
+                gap = change - peer_change
+                n_min = min(bef["n"], aft["n"])
+                ent = mine[0]["ent"]
+                out.append({
+                    "screen": "S1", "entity": ent, "theme": theme, "year": b["captured"],
+                    "doc_label": a["doc_label"],
+                    "from_version": a["commitment_id"], "to_version": b["commitment_id"],
+                    "from_captured": a["captured"], "to_captured": b["captured"],
+                    "removed": removed, "n_removed": len(removed),
+                    "removed_context": [_snippet(rx, t) for t in removed],
+                    "window_before": [b_start, b["captured"]], "window_after": [b["captured"], a_end],
+                    "n_before": bef["n"], "n_after": aft["n"],
+                    "rate_before": round(bef["rate"], 4), "rate_after": round(aft["rate"], 4),
+                    "peer_before": round(bef["peer"], 4), "peer_after": round(aft["peer"], 4),
+                    "change_pp": round(change, 2), "peer_change_pp": round(peer_change, 2),
+                    "gap_pp": round(gap, 2), "n_ballots": n_min,
+                    "entity_rate": round(aft["rate"], 4), "peer_median": round(aft["peer"], 4),
+                    "score": round(-gap * math.sqrt(n_min), 2),
+                    "includes_legacy": bool(bef["n_legacy"] or aft["n_legacy"]),
+                    "n_legacy_ballots": bef["n_legacy"] + aft["n_legacy"],
+                    "n_before_ex_legacy": bx["n"], "n_after_ex_legacy": ax["n"],
+                    "holds_without_legacy": _is_hit(bx, ax),
+                    "example_proposal_ids": sorted(aft["pids"])[:3],
+                    "reproduce": [
+                        f"glasshouse ask policy_diff institution={iid} "
+                        f"from_id={a['commitment_id']} to_id={b['commitment_id']}",
+                        f"glasshouse ask peers theme={theme} since={b_start} until={a_end} "
+                        f"min_managers={MIN_MANAGERS} institution={iid}"
+                        + (f" adviser={sc}" if sc else "")]})
+    out.sort(key=lambda c: (-c["score"], c["entity"], c["theme"], c["to_version"]))
+    return {"screen": "S1", "year": year, "candidates": out, "matched_funds": [],
+            "n_version_pairs": n_pairs, "n_archive_gap_excluded": n_gap,
+            "n_unpaired_skipped": n_unpaired, "n_reflowed_not_removed": n_reflow,
+            "excluded_catch_all": len(stats["catch"]), "excluded_catch_all_entities": 0,
+            "n_ambiguous_excluded": len(stats["amb"]),
+            "share_class_rows_collapsed": stats["collapsed"], "mixed": stats["mixed"]}
+
+
 # ------------------------------------------------------------------------- run
 
-SCREENS = {"S3": s3_peer_outliers, "S5": s5_esg_funds}
+SCREENS = {"S3": s3_peer_outliers, "S5": s5_esg_funds, "S2": s2_say_vs_do,
+           "S1": s1_walk_back}
 
 
 def run(eng: engine.Engine, which: str = "all", year: int | None = None,
@@ -549,6 +903,40 @@ def run(eng: engine.Engine, which: str = "all", year: int | None = None,
         r["n_candidates"] = len(r["candidates"])
         res[n] = r
     return res
+
+
+def _render_policy(n: str, r: dict, shown: list) -> list[str]:
+    lines = []
+    if n == "S2":
+        lines.append(f"{r['n_stance_versions']} policy versions state support for a theme; "
+                     f"{r['n_archive_gap_excluded']} dropped for an archive gap, "
+                     f"{r['n_unpaired_skipped']} adviser-unpaired skipped")
+        lines.append(f"{'score':>8} {'entity':<24} {'theme':<14} {'ver':>7} {'in force':<23} "
+                     f"{'n':>4} {'FOR':>4} {'AGN':>4} {'MIX':>4} {'rate':>6} {'leg':>4} {'w/o':>5}")
+        for c in shown:
+            lines.append(f"{c['score']:>8.1f} {c['entity'][:24]:<24} {c['theme'][:14]:<14} "
+                         f"{c['version_id']:>7} {c['year']:<23} {c['n_ballots']:>4} {c['for']:>4} "
+                         f"{c['against']:>4} {c['mixed']:>4} {c['entity_rate']:>6.3f} "
+                         f"{c['n_legacy_ballots']:>4} {str(c['holds_without_legacy']):>5}")
+            lines.append(f"{'':>8} said: {c['said_context'][0]}")
+            lines.append(f"{'':>8} ids {c['example_proposal_ids']}  {c['reproduce'][0]}")
+        return lines
+    lines.append(f"{r['n_version_pairs']} consecutive version pairs; "
+                 f"{r['n_archive_gap_excluded']} dropped for an archive gap, "
+                 f"{r['n_reflowed_not_removed']} removed-looking sentences were reflows, "
+                 f"{r['n_unpaired_skipped']} adviser-unpaired skipped")
+    lines.append(f"{'score':>8} {'entity':<24} {'theme':<14} {'from>to':<15} {'changed':<10} "
+                 f"{'before':>13} {'after':>13} {'peer chg':>8} {'gap_pp':>7} {'leg':>4} {'w/o':>5}")
+    for c in shown:
+        lines.append(f"{c['score']:>8.1f} {c['entity'][:24]:<24} {c['theme'][:14]:<14} "
+                     f"{c['from_version']}>{c['to_version']:<8} {c['to_captured']:<10} "
+                     f"{c['rate_before']:>6.3f} n={c['n_before']:<4} {c['rate_after']:>6.3f} "
+                     f"n={c['n_after']:<4} {c['peer_change_pp']:>8.1f} {c['gap_pp']:>7.1f} "
+                     f"{c['n_legacy_ballots']:>4} {str(c['holds_without_legacy']):>5}")
+        for t in c["removed_context"][:2]:
+            lines.append(f"{'':>8} removed: {t}")
+        lines.append(f"{'':>8} {c['reproduce'][0]}")
+    return lines
 
 
 def render(res: dict, top: int | None = None) -> str:
@@ -570,6 +958,9 @@ def render(res: dict, top: int | None = None) -> str:
                        "(classes voted differently)"
                      + (f"; {len(r['low_match'])} rows under the {MIN_MATCH_RATE:.0%} "
                         f"match guard held out as low_match" if "low_match" in r else ""))
+        if n in ("S1", "S2"):
+            lines += _render_policy(n, r, shown)
+            continue
         lines.append(f"{'score':>8} {'entity':<28} {'theme':<16} {'year':<10} {'n':>5} "
                      f"{'rate':>6} {'peers':>6} {'gap_pp':>7} {'np':>3} {'legacy n':>9} "
                      f"{'holds w/o':>9}")

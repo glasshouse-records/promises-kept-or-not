@@ -669,3 +669,193 @@ def test_proposal_lines_table_matches_the_ledger_read(tmp_path):
     assert norm_(fast) == norm_(slow) and fast
     only = eng.bulk_fund_lines(pids, names, series={"S1"})
     assert {x["fund_series"] for v in only.values() for x in v} == {"S1"}
+
+
+# ------------------------------------------------------------------ S1 / S2 (policy screens)
+
+FILLER = " ".join(f"Filler sentence number {k} is here." for k in range(8))
+SUPPORT = "We generally support shareholder proposals on climate transition plans."
+OPPOSE = "We generally vote against shareholder proposals on climate transition plans."
+PATHWAY = "We expect boards to disclose climate transition plans aligned with a 1.5 degree pathway."
+CASE = "We review governance matters on their merits."
+
+
+def _policy(c, tmp_path, iid, label, wb, body):
+    f = tmp_path / f"{iid}-{label}-{wb}.html"
+    f.write_text(f"<html><body><p>{body} {FILLER}</p></body></html>")
+    c.execute("INSERT INTO commitments (institution_id, doc_label, url, retrieval_date, sha256,"
+              " content_path, content_type, size_bytes, wayback_timestamp, text_sha256)"
+              " VALUES (?,?,'https://x.example/p.html','2026-01-01',?,?,'text/html',1,?,?)",
+              (iid, label, f"sha-{iid}-{label}-{wb}", str(f), wb, f"t-{iid}-{label}-{wb}"))
+
+
+def _s2_engine(tmp_path, name="s2"):
+    c, path, inst, vote = _ledger(tmp_path, name)
+    for iid, cik in (("alpha", "1"), ("beta", "2"), ("gamma", "3"), ("delta", "4"),
+                     ("eps", "5")):
+        inst(iid, [cik])
+    for iid, body in (("alpha", SUPPORT), ("beta", SUPPORT), ("gamma", OPPOSE),
+                      ("delta", SUPPORT)):
+        _policy(c, tmp_path, iid, "policy", "20230601000000", body)
+    _policy(c, tmp_path, "eps", "policy", "20220101000000", SUPPORT)     # a year of no capture
+    for i in range(40):
+        vote("1", i, "AGAINST")               # hit: says support, votes against
+        vote("3", i, "AGAINST")               # says oppose: no stance to break
+        vote("4", i, "FOR")                   # says support, does
+        vote("5", i, "AGAINST")               # old capture: over 450 days of archive gap
+    for i in range(25):
+        vote("2", i, "AGAINST")               # under 30 ballots
+    return _build(c, path, tmp_path)
+
+
+def _s2(eng, **kw):
+    return screens.s2_say_vs_do(eng, **kw)["candidates"]
+
+
+def test_s2_supportive_stance_and_low_rate_is_a_hit_the_rest_are_not(tmp_path):
+    eng = _s2_engine(tmp_path)
+    out = screens.s2_say_vs_do(eng)
+    assert [(h["entity"], h["theme"]) for h in out["candidates"]] == [("alpha", "climate")]
+    h = out["candidates"][0]
+    vid = eng.policy_versions("alpha")["result"][0]["commitment_id"]
+    assert h["version_id"] == vid and h["in_force_from"] == "2023-06-01"
+    assert (h["n_ballots"], h["for"], h["against"], h["mixed"]) == (40, 0, 40, 0)
+    assert h["entity_rate"] == 0.0 and h["score"] == round(100 * 40 ** 0.5, 2)
+    assert "generally support" in h["said"][0] and "generally support" in h["said_context"][0]
+    # the same figures the engine's own tool gives for that version
+    did = eng.say_vs_do("alpha", "climate", theme="climate")["result"][0]["did"]
+    assert (did["for"], did["against"]) == (h["for"], h["against"])
+    assert out["n_archive_gap_excluded"] >= 1                 # eps: a gapped window is no evidence
+    assert len(h["example_proposal_ids"]) == 3
+    assert h["reproduce"][0].startswith("glasshouse ask say_vs_do institution=alpha ")
+
+
+def test_s2_never_pairs_an_advisers_votes_with_another_advisers_policy(tmp_path):
+    reg = {"grp": {"npx_ciks": [{"cik": "11", "adviser_key": "AAA"},
+                                {"cik": "22", "adviser_key": "BBB"}],
+                   "commitments": [{"label": "policy-aaa", "adviser_key": "AAA"},
+                                   {"label": "policy-bbb", "adviser_key": "BBB"}]}}
+    for name, aaa, bbb in (("s2a", "AGAINST", "FOR"), ("s2b", "FOR", "AGAINST")):
+        c, path, inst, vote = _ledger(tmp_path, name)
+        inst("grp", ["11", "22"])
+        _policy(c, tmp_path, "grp", "policy-aaa", "20230601000000", SUPPORT)
+        _policy(c, tmp_path, "grp", "policy-bbb", "20230601000000", OPPOSE)
+        for i in range(35):
+            vote("11", i, aaa)
+            vote("22", i, bbb)
+        hits = _s2(_build(c, path, tmp_path, reg))
+        if name == "s2a":       # AAA says support, AAA votes against: hit, on AAA's 35 only
+            assert [(h["entity"], h["n_ballots"], h["entity_rate"]) for h in hits] == [
+                ("grp/AAA", 35, 0.0)]                          # pooled it would be 0.5
+        else:                   # BBB votes against but BBB's policy says oppose
+            assert hits == []
+
+
+def test_s2_legacy_rows_are_flagged_and_counted_apart(tmp_path):
+    c, path, inst, vote = _ledger(tmp_path, "s2lg")
+    inst("alpha", ["1"])
+    _policy(c, tmp_path, "alpha", "policy", "20230101000000", SUPPORT)
+    for i in range(40):
+        legacy = i < 15
+        vote("1", i, "AGAINST", "05/20/2023" if legacy else "09/20/2023",
+             fmt="proxyedge" if legacy else None)
+    [h] = _s2(_build(c, path, tmp_path))
+    assert h["includes_legacy"] is True and h["n_legacy_ballots"] == 15
+    assert h["n_ballots_ex_legacy"] == 25 and h["holds_without_legacy"] is False
+
+
+def test_s2_catch_all_and_ambiguous_are_excluded_and_counted(tmp_path):
+    c, path, inst, vote = _ledger(tmp_path, "s2ca")
+    inst("grp", ["11", "22"])
+    _policy(c, tmp_path, "grp", "policy-aaa", "20230601000000", SUPPORT)
+    for i in range(35):
+        vote("11", i, "AGAINST", desc=f"Report on Climate Congruency {i}")   # ambiguous
+        vote("22", i, "AGAINST")                                              # UNRESOLVED
+    reg = {"grp": {"npx_ciks": [{"cik": "11", "adviser_key": "AAA"},
+                                {"cik": "22", "adviser_key": "UNRESOLVED"}],
+                   "commitments": [{"label": "policy-aaa", "adviser_key": "AAA"}]}}
+    eng = _build(c, path, tmp_path, reg)
+    out = screens.s2_say_vs_do(eng)
+    assert out["candidates"] == [] and out["n_ambiguous_excluded"] == 35
+    assert [h["n_ballots"] for h in screens.s2_say_vs_do(eng, include_ambiguous=True)["candidates"]] == [35]
+
+
+def test_s2_stance_filter_rejects_hedged_and_off_theme_sentences():
+    ok = screens.stated_support
+    assert ok("climate", "We will generally support proposals on climate risk disclosure.")
+    assert not ok("climate", "We generally support proposals on board refreshment.")
+    assert not ok("climate", "We generally support climate proposals unless they are prescriptive.")
+    assert not ok("climate", "We generally vote against climate proposals.")
+    assert not ok("climate", "We evaluate climate proposals case-by-case.")
+
+
+def _s1_engine(tmp_path, name, removed=True, alpha_after="AGAINST", peers_after="FOR",
+               n_before=40, n_after=40):
+    c, path, inst, vote = _ledger(tmp_path, name)
+    for iid, cik in (("alpha", "1"), ("beta", "2"), ("gamma", "3"), ("delta", "4")):
+        inst(iid, [cik])
+    _policy(c, tmp_path, "alpha", "policy", "20230601000000", PATHWAY + " " + SUPPORT)
+    _policy(c, tmp_path, "alpha", "policy", "20240601000000",
+            (CASE if removed else PATHWAY) + " " + SUPPORT)
+    for i in range(n_before):
+        for cik in "1234":
+            vote(cik, i, "FOR", "09/20/2023")
+    for i in range(100, 100 + n_after):
+        vote("1", i, alpha_after, "09/20/2024")
+        for cik in "234":
+            vote(cik, i, peers_after, "09/20/2024")
+    return _build(c, path, tmp_path)
+
+
+def _s1(eng, **kw):
+    return screens.s1_walk_back(eng, **kw)["candidates"]
+
+
+def test_s1_removed_sentence_and_a_fall_larger_than_peers_is_a_hit(tmp_path):
+    eng = _s1_engine(tmp_path, "s1a")
+    out = screens.s1_walk_back(eng)
+    [h] = out["candidates"]
+    vs = {v["captured"]: v["commitment_id"] for v in eng.policy_versions("alpha")["result"]}
+    assert (h["entity"], h["theme"]) == ("alpha", "climate")
+    assert (h["from_version"], h["to_version"]) == (vs["2023-06-01"], vs["2024-06-01"])
+    assert h["from_captured"] == "2023-06-01" and h["to_captured"] == "2024-06-01"
+    assert h["removed"] == [PATHWAY] and "climate transition plans" in h["removed_context"][0]
+    assert (h["n_before"], h["n_after"]) == (40, 40)
+    assert (h["rate_before"], h["rate_after"]) == (1.0, 0.0)
+    assert (h["peer_before"], h["peer_after"], h["peer_change_pp"]) == (1.0, 1.0, 0.0)
+    assert h["change_pp"] == -100.0 and h["gap_pp"] == -100.0
+    assert h["score"] == round(100 * 40 ** 0.5, 2)
+    assert h["holds_without_legacy"] is True
+    assert any(r.startswith("glasshouse ask policy_diff") for r in h["reproduce"])
+    json.dumps(out)
+
+
+def test_s1_non_hits(tmp_path):
+    assert _s1(_s1_engine(tmp_path, "s1n1", removed=False)) == []        # nothing removed
+    assert _s1(_s1_engine(tmp_path, "s1n2", peers_after="AGAINST")) == []   # peers fell as far
+    assert _s1(_s1_engine(tmp_path, "s1n3", n_after=29)) == []           # 29 after
+    assert _s1(_s1_engine(tmp_path, "s1n4", n_before=29)) == []          # 29 before
+
+
+def test_s1_a_reflowed_sentence_is_not_a_removal(tmp_path):
+    c, path, inst, vote = _ledger(tmp_path, "s1rf")
+    for iid, cik in (("alpha", "1"), ("beta", "2"), ("gamma", "3")):
+        inst(iid, [cik])
+    _policy(c, tmp_path, "alpha", "policy", "20230601000000", PATHWAY)
+    _policy(c, tmp_path, "alpha", "policy", "20240601000000", PATHWAY.replace("We expect", "We expect that"))
+    for i in range(40):
+        for cik in "123":
+            vote(cik, i, "FOR", "09/20/2023")
+    for i in range(100, 140):
+        vote("1", i, "AGAINST", "09/20/2024")
+        vote("2", i, "FOR", "09/20/2024")
+        vote("3", i, "FOR", "09/20/2024")
+    assert _s1(_build(c, path, tmp_path)) == []
+
+
+def test_s1_and_s2_are_in_all_and_json_serialisable(tmp_path):
+    res = screens.run(_s1_engine(tmp_path, "s1all"), "all")
+    assert list(res) == ["S3", "S5", "S2", "S1"] or set(res) == {"S1", "S2", "S3", "S5"}
+    json.dumps(res)
+    text = screens.render(res)
+    assert "== S1" in text and "== S2" in text
