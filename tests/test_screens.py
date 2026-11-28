@@ -172,7 +172,7 @@ def _s5_engine(tmp_path, other_adviser=False):
 
 def _themed(out):
     """S5 rows for one theme (the pooled summary rows left out)."""
-    return [c for c in out["candidates"] if c["theme"] != "pooled"]
+    return [c for c in out["candidates"] if c["theme"] != "pooled" and not c.get("by_year")]
 
 
 def test_s5_flags_esg_named_fund_voting_below_its_siblings(tmp_path):
@@ -508,7 +508,9 @@ def test_s3_match_rate_is_reported_on_candidates(tmp_path):
 def test_ambiguous_polarity_constant_matches_the_listed_wordings():
     for d in ("Report on Climate Congruency", "Misalignment of lobbying", "THIRD-PARTY review",
               "retirement plan options climate", "net zero transition risk",
-              "climate commitments and their impact"):
+              "climate commitments and their impact",
+              "Report on the impact of climate commitments",     # word-order variants
+              "Climate risk in the retirement plan", "risk of net zero targets"):
         assert screens.AMBIGUOUS_POLARITY.search(d), d
     assert not screens.AMBIGUOUS_POLARITY.search("Report on Climate Transition Plan")
 
@@ -555,3 +557,46 @@ def test_s5_catch_all_buckets_are_neither_entities_nor_comparison_groups(tmp_pat
         out = screens.s5_esg_funds(_build(c, path, tmp_path, reg))
         assert out["candidates"] == [], (n, out["candidates"])
         assert out["excluded_catch_all"] > 0
+
+
+def test_s5_a_series_item_is_never_counted_under_two_keys(tmp_path):
+    """The same series filed the same items under two adviser keys (a pre-split key and
+    its ESG group): each item counts once, under the ESG group."""
+    c, path, inst, vote = _ledger(tmp_path, "s5two")
+    inst("hh", ["11", "22"])
+    for sid, nm, cik in (("S1", "Acme Sustainable Equity", "11"), ("S2", "Acme Core Equity", "11"),
+                         ("S5", "Other Core Equity", "22")):
+        c.execute("INSERT INTO fund_series (series_id, accession, name) VALUES (?,?,?)",
+                  (sid, f"ACC-{cik}", nm))
+    for i in range(35):
+        vote("11", i, "AGAINST", series="S1")
+        vote("22", i, "AGAINST", series="S1")
+        vote("11", i, "FOR", series="S2")
+        vote("22", i, "FOR", series="S5")
+    reg = {"hh": {"npx_ciks": [{"cik": "11", "adviser_key": "AAA"},
+                               {"cik": "22", "adviser_key": "BBB_ESG"}]}}
+    out = screens.s5_esg_funds(_build(c, path, tmp_path, reg))
+    rows = [r for r in _themed(out) if r["kind"] == "series" and r["series_id"] == "S1"]
+    assert [(r["entity"], r["n_ballots"]) for r in rows] == [("hh/BBB_ESG", 35)]
+    assert out["n_collapsed_duplicates"] >= 35
+
+
+def test_s5_rows_are_split_per_year_as_well_as_pooled(tmp_path):
+    c, path, inst, vote = _ledger(tmp_path, "s5yr")
+    inst("hh", ["11"])
+    for sid, nm in (("S1", "Acme Sustainable Equity"), ("S2", "Acme Core Equity")):
+        c.execute("INSERT INTO fund_series (series_id, accession, name) VALUES (?,?,?)",
+                  (sid, "ACC-11", nm))
+    for i in range(70):
+        date = "05/20/2023" if i < 35 else "05/20/2024"
+        vote("11", i, "AGAINST" if i < 35 else "FOR", series="S1", date=date)   # changes in 2024
+        vote("11", i, "FOR", series="S2", date=date)
+    out = screens.s5_esg_funds(_build(c, path, tmp_path))
+    rows = [r for r in out["candidates"] if r["kind"] == "series" and r["theme"] == "climate"]
+    pooled_years = [r for r in rows if not r.get("by_year")]
+    per_year = {r["year"]: r for r in rows if r.get("by_year")}
+    assert [(r["year"], r["n_ballots"]) for r in pooled_years] == [("2023,2024", 70)]
+    assert {y: (r["n_ballots"], r["entity_rate"]) for y, r in per_year.items()} == {
+        "2023": (35, 0.0), "2024": (35, 1.0)}
+    assert per_year["2023"]["reproduce"][0].endswith("series_id=S1 theme=climate year=2023")
+    assert out["summary"].startswith("1 ESG-named series")      # per-year rows are not extra series

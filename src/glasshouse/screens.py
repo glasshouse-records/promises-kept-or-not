@@ -63,8 +63,10 @@ CATCH_ALL = frozenset({"UNRESOLVED", engine.EXTERNAL, engine.UNLABELLED})
 # direction uncertain, check sponsor. Excluded from S3/S5 rates by default and counted;
 # `include_ambiguous=True` / `--include-ambiguous` keeps them.
 AMBIGUOUS_POLARITY = re.compile(
-    r"congruen|misalign|third-party|retirement plan.*climate|net zero.*risk"
-    r"|climate commitments.*impact", re.IGNORECASE)
+    r"congruen|misalign|third-party"
+    r"|retirement plan.*climate|climate.*retirement plan"
+    r"|net[\s-]zero.*risk|risk.*net[\s-]zero"
+    r"|climate commitments.*impact|impact.*climate commitments", re.IGNORECASE)
 
 ESG_GROUP_KEY = re.compile(r"_(?:SUSTAINABILITY|SOCIAL|ESG|SUSTAINABLE)$", re.IGNORECASE)
 
@@ -289,7 +291,8 @@ def _dedupe(rows: list) -> tuple[list, int]:
     return kept, len(rows) - len(kept)
 
 
-def _s5_row(*, kind, ent, sid, name, theme, rows, n_peers, compared_with, collapsed) -> dict | None:
+def _s5_row(*, kind, ent, sid, name, theme, rows, n_peers, compared_with, collapsed,
+            by_year=None) -> dict | None:
     """One candidate from `rows` = [(proposal id, proposal, position, comparison FOR-rate)]
     already de-duplicated; None under the 30-ballot floor."""
     n = len(rows)
@@ -311,10 +314,12 @@ def _s5_row(*, kind, ent, sid, name, theme, rows, n_peers, compared_with, collap
     repro = []
     if kind == "series":
         repro.append(f"glasshouse ask fund_record series_id={sid}"
-                     + ("" if theme == "pooled" else f" theme={theme}"))
+                     + ("" if theme == "pooled" else f" theme={theme}")
+                     + ("" if by_year is None else f" year={by_year}"))
     repro += [f"glasshouse ask fund_votes proposal_id={i}" for i, _ in ex_ids]
     return {
         "screen": "S5", "kind": kind, "label": label, "pooled": theme == "pooled",
+        "by_year": by_year is not None,
         "entity": ent, "series_id": sid, "series_name": name, "theme": theme,
         "compared_with": compared_with,
         "year": ",".join(str(y) for y in sorted({r[1]["year"] for r in rows if r[1]["year"]})),
@@ -333,6 +338,16 @@ def _s5_row(*, kind, ent, sid, name, theme, rows, n_peers, compared_with, collap
         "example_proposal_ids": [i for i, _ in ex_ids],
         "example_ballot_keys": [k for _, k in ex_ids],
         "reproduce": repro}
+
+
+def _year_views(rows: list):
+    """(by_year, rows) for the all-years view and, when the rows span several years, for
+    each year alone: a pooled rate hides dated changes."""
+    yield None, rows
+    years = sorted({r[1]["year"] for r in rows if r[1]["year"]})
+    if len(years) > 1:
+        for y in years:
+            yield y, [r for r in rows if r[1]["year"] == y]
 
 
 def _is_esg_group(ent: str, member_names: set) -> bool:
@@ -402,18 +417,33 @@ def s5_esg_funds(eng: engine.Engine, year: int | None = None,
                 a = acc[(pr["ent"], s, name)]
                 a["props"].append((pid, pr, position, o_for))
                 a["others"] |= set(other)
+    # One series' item is counted once however many adviser keys it was filed under:
+    # kept under an ESG adviser group if it has one, else under the lowest key.
+    def _pref(ent):
+        adv = _split_entity(ent)[1]
+        return (0 if adv and ESG_GROUP_KEY.search(adv) else 1 if adv else 2, ent)
+    owner: dict[tuple, str] = {}
+    for (ent, sid, _name), a in acc.items():
+        for r in a["props"]:
+            k = (sid, engine.proposal_key(r[1]))
+            if k not in owner or _pref(ent) < _pref(owner[k]):
+                owner[k] = ent
     out, collapsed_total = [], 0
     for (ent, sid, name), a in acc.items():
+        mine_rows = [r for r in a["props"] if owner[(sid, engine.proposal_key(r[1]))] == ent]
+        cross = len(a["props"]) - len(mine_rows)
         pooled_collapsed = 0
         for theme in (*ES_THEMES, "pooled"):
-            rows = [r for r in a["props"] if theme == "pooled" or theme in r[1]["themes_es"]]
-            rows, collapsed = _dedupe(rows)
+            trows = [r for r in mine_rows if theme == "pooled" or theme in r[1]["themes_es"]]
+            trows, collapsed = _dedupe(trows)
             if theme == "pooled":
-                pooled_collapsed = collapsed
-            row = _s5_row(kind="series", ent=ent, sid=sid, name=name, theme=theme, rows=rows,
-                          n_peers=len(a["others"]), compared_with=ent, collapsed=collapsed)
-            if row:
-                out.append(row)
+                pooled_collapsed = collapsed + cross
+            for by_year, yrows in _year_views(trows):
+                row = _s5_row(kind="series", ent=ent, sid=sid, name=name, theme=theme,
+                              rows=yrows, n_peers=len(a["others"]), compared_with=ent,
+                              collapsed=collapsed, by_year=by_year)
+                if row:
+                    out.append(row)
         collapsed_total += pooled_collapsed
     # ESG adviser groups against the same institution's main group, same items
     by_ent: dict[str, list] = defaultdict(list)
@@ -444,11 +474,13 @@ def s5_esg_funds(eng: engine.Engine, year: int | None = None,
                         "FOR", "AGAINST"):
                     rows.append((pid, pr, pr["position"], 1.0 if mp["position"] == "FOR" else 0.0))
             n_dup = sum(1 for p in by_ent[g] if theme == "pooled" or theme in props[p]["themes_es"]) - kept
-            row = _s5_row(kind="group", ent=g, sid="", name=_split_entity(g)[1], theme=theme,
-                          rows=rows, n_peers=1, compared_with=best[1], collapsed=n_dup)
-            if row:
-                out.append(row)
-    out.sort(key=lambda c: (-c["score"], c["entity"], c["series_id"], c["theme"]))
+            for by_year, yrows in _year_views(rows):
+                row = _s5_row(kind="group", ent=g, sid="", name=_split_entity(g)[1], theme=theme,
+                              rows=yrows, n_peers=1, compared_with=best[1], collapsed=n_dup,
+                              by_year=by_year)
+                if row:
+                    out.append(row)
+    out.sort(key=lambda c: (-c["score"], c["entity"], c["series_id"], c["theme"], c["year"]))
     return {"screen": "S5", "year": year, "candidates": out, "matched_funds": matched,
             "summary": _s5_summary(out), "n_collapsed_duplicates": collapsed_total,
             "excluded_catch_all": len(catch_pids),
@@ -457,7 +489,7 @@ def s5_esg_funds(eng: engine.Engine, year: int | None = None,
 
 
 def _s5_summary(cands: list) -> str:
-    rows = [c for c in cands if c["kind"] == "series" and c["pooled"]]
+    rows = [c for c in cands if c["kind"] == "series" and c["pooled"] and not c["by_year"]]
     n = {k: sum(1 for c in rows if c["label"] == k) for k in ("with_house", "differs", "between")}
     return (f"{len(rows)} ESG-named series with ≥30 ballots: {n['with_house']} with house "
             f"(±5pp), {n['differs']} differ (+15pp or more), {n['between']} between")
