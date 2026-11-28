@@ -262,6 +262,34 @@ def ingest_npx(conn: sqlite3.Connection, cik: str, *,
                    else "fedflat" if rt in ("LEGACY_FEDFLAT", "LEGACY_FEDFLAT_REJECTED")
                    else "dodgecox" if rt in ("LEGACY_DODGECOX", "LEGACY_DODGECOX_REJECTED")
                    else None)
+            if (reingest and rt.endswith("_REJECTED")
+                    and (legacy_iss_text or legacy_proxyedge or legacy_issueno_flag)):
+                # a rejected filing has no trusted family: the recorded one is only the format
+                # that failed, so route by the format its documents detect as now (fetched
+                # here, before any write)
+                try:
+                    detected = legacy_iss.detect_format(legacy_pe.load_filing_texts(filing)[0])
+                except Exception as exc:     # network or parse: the old record stays
+                    logger.warning("legacy re-ingest %s failed (%s) — old record kept",
+                                   filing.accession_number, exc)
+                    stats["failed"] += 1
+                    continue
+                dfam = ("iss" if detected in legacy_iss.PARSERS else detected)
+                need = ("--legacy-iss" if dfam == "iss" else
+                        "--legacy-proxyedge" if dfam == "proxyedge" else
+                        "--legacy-issueno" if dfam in ("issueno", "issueno_html", "regvoted",
+                                                       "regvoted_html", "fedflat", "dodgecox")
+                        else None)
+                given = {"--legacy-iss": legacy_iss_text, "--legacy-proxyedge": legacy_proxyedge,
+                         "--legacy-issueno": legacy_issueno_flag}
+                if need is None or not given[need]:
+                    logger.warning("%s is %s and its documents now detect as %s: skipped — "
+                                   "re-ingesting it needs %s", filing.accession_number, rt,
+                                   detected, need or "a supported format (none detected)")
+                    stats["skipped"] += 1
+                    continue
+                _reingest_legacy(conn, filing, institution_id, today, dfam, stats)
+                continue
             if (reingest and fam == "iss" and legacy_iss_text) or \
                     (reingest and fam == "proxyedge" and legacy_proxyedge) or \
                     (reingest and fam in ("issueno", "issueno_html", "regvoted", "regvoted_html",

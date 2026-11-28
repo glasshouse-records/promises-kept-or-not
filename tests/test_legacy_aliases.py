@@ -290,3 +290,32 @@ def test_reingest_with_a_wrong_format_keeps_the_old_rows(conn, monkeypatch):
     _record(conn, "LEGACY_ISS")
     st = _run(conn, monkeypatch, {"a": "nothing"}, [ACC], legacy_iss_text=True)
     assert st.get("no_format") == 1 and _votes(conn) == 1
+
+
+# -- 4. a REJECTED filing is re-routed by the format its documents detect as now ---------
+
+def _issueno_doc():
+    from test_legacy_issueno import SCHWAB
+    return SCHWAB
+
+
+def test_rejected_iss_filing_now_detected_issueno_dispatches_to_issueno(conn, monkeypatch):
+    from glasshouse.ingest import legacy_issueno
+    _record(conn, "LEGACY_ISS_REJECTED")
+    called = []
+    monkeypatch.setattr(legacy_issueno, "ingest_filing_from_sources",
+                        lambda *a, **k: called.append(a[1].accession_number) or 7)
+    st = _run(conn, monkeypatch, {"a": _issueno_doc()}, [ACC], legacy_issueno_text=True)
+    assert called == [ACC] and st["votes"] == 7 and st["skipped"] == 0
+
+
+def test_rejected_iss_filing_now_detected_issueno_is_skipped_under_the_iss_flag(
+        conn, monkeypatch, caplog):
+    from glasshouse.ingest import legacy_issueno
+    _record(conn, "LEGACY_ISS_REJECTED")
+    monkeypatch.setattr(legacy_issueno, "ingest_filing_from_sources",
+                        lambda *a, **k: pytest.fail("must not dispatch"))
+    with caplog.at_level("WARNING"):
+        st = _run(conn, monkeypatch, {"a": _issueno_doc()}, [ACC], legacy_iss_text=True)
+    assert st["skipped"] == 1 and st["votes"] == 0 and _votes(conn) == 1
+    assert "--legacy-issueno" in caplog.text
